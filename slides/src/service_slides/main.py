@@ -2,6 +2,8 @@ from concurrent.futures.thread import ThreadPoolExecutor
 from os import cpu_count, getenv
 import os
 import typing
+from concurrent.futures.thread import ThreadPoolExecutor
+from os import cpu_count
 
 from fastapi import FastAPI
 
