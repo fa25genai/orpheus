@@ -51,6 +51,10 @@ paths:
                   type: integer
                   description: >
                     Numerical identification of the course for which slides should be generated
+                lectureId:
+                  type: integer
+                  description: >
+                    Numerical identification of the lecture to which the slides will belong.
                 concept:
                   type: string
                   description: >
@@ -97,7 +101,7 @@ paths:
                 accepted:
                   summary: "Example accepted response"
                   value:
-                    slidesetId: 51
+                    lectureId: 51
                     status: "IN_PROGRESS"
                     created_at: "2025-09-22T09:12:33Z"
                     structure:
@@ -112,19 +116,19 @@ paths:
           description: "Unauthorized"
         "500":
           description: "Server error"
-  /v1/slides/{slidesetId}/status:
+  /v1/slides/{lectureId}/status:
     get:
       tags:
         - slides
       summary: "Get generation status for a previously-submitted request"
       operationId: getGenerationStatus
       parameters:
-        - name: slidesetId
+        - name: lectureId
           in: path
           required: true
           schema:
             type: string
-          description: "The slidesetId returned by /v1/slides/generate"
+          description: "The lectureId returned by /v1/slides/generate"
       responses:
         "200":
           description: "Status of the generation job"
@@ -135,14 +139,14 @@ paths:
               examples:
                 in_progress:
                   value:
-                    slidesetId: 42
+                    lectureId: 42
                     status: "IN_PROGRESS"
                     totalPages: 25
                     generatedPages: 10
                     lastUpdated: "2025-09-22T09:30:00Z"
                 done:
                   value:
-                    slidesetId: 43
+                    lectureId: 43
                     status: "DONE"
                     totalPages: 15
                     generatedPages: 15
@@ -186,7 +190,7 @@ components:
       type: object
       description: "Returned immediately after generation request accepted"
       properties:
-        slidesetId:
+        lectureId:
           type: integer
         status:
           type: string
@@ -201,7 +205,7 @@ components:
     GenerationStatusResponse:
       type: object
       properties:
-        slidesetId:
+        lectureId:
           type: integer
         status:
           type: string
