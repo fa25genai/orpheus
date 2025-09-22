@@ -15,16 +15,17 @@ class BaseSlidesApi:
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
         BaseSlidesApi.subclasses = BaseSlidesApi.subclasses + (cls,)
+
     async def get_generation_status(
         self,
-        lectureId: Annotated[StrictStr, Field(description="The lectureId returned by /v1/slides/generate")],
-    ) -> GenerationStatusResponse:
-        ...
-
+        lectureId: Annotated[
+            StrictStr, Field(description="The lectureId returned by /v1/slides/generate")
+        ],
+    ) -> GenerationStatusResponse: ...
 
     async def request_slide_generation(
         self,
         request_slide_generation_request: RequestSlideGenerationRequest,
     ) -> GenerationAcceptedResponse:
-        """Accepts a concept and supporting assets (images, graphs, tables, code listings, equations). The request returns immediately with a request_id and status (typically IN_PROGRESS). Final slide deck (PDF) is produced asynchronously; the client can poll the status endpoint and fetch the resulting deck when complete. """
+        """Accepts a concept and supporting assets (images, graphs, tables, code listings, equations). The request returns immediately with a request_id and status (typically IN_PROGRESS). Final slide deck (PDF) is produced asynchronously; the client can poll the status endpoint and fetch the resulting deck when complete."""
         ...
