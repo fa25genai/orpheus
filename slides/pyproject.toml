@@ -3,7 +3,9 @@ name = "service-slides"
 version = "0.1.0"
 description = "Orpheus Slide Service (FastAPI)"
 authors = [
-    {name = "Timo Seyfarth, Dominik Remo, Kilian Krampf"}
+    {name = "Timo Seyfarth"},
+    {name = "Dominik Remo"},
+    {name = "Kilian Krampf"}
 ]
 readme = "README.md"
 requires-python = ">= 3.13"
@@ -14,6 +16,7 @@ dependencies = [
 ]
 
 [tool.poetry]
+packages = [{include = "app"}]
 
 [tool.poetry.group.dev.dependencies]
 ruff = "0.13.1"
