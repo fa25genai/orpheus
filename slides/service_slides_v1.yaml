@@ -3,7 +3,7 @@ info:
   title: Orpheus Slide-Service API
   version: "0.1.0"
   description: |
-    API for the Orpheus slide & theme extraction services.
+    API for the Orpheus slide generation.
     From the repository: "The Orpheus System transforms static slides into interactive lecture videos with lifelike professor avatars, combining expressive narration, visual presence, and dynamic content to create engaging, personalized learning experiences."
     License: MIT (see repository).
   termsOfService: "https://github.com/fa25genai/orpheus"
@@ -23,8 +23,6 @@ servers:
 tags:
   - name: slides
     description: "Endpoints for slide generation, retrieval and status"
-  - name: theme
-    description: "Theme/template extraction from existing lecture slides"
 
 paths:
   /v1/slides/generate:
