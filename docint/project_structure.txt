@@ -1,0 +1,14 @@
+docint/
+├─ src/
+│  └─ docint_app/
+│     ├─ __init__.py
+│     ├─ main.py
+│     ├─ api/
+│     ├─ core/
+│     ├─ services/
+│     ├─ vectorstore/
+│     └─ utils/
+├─ tests/
+├─ pyproject.toml
+├─ .env
+└─ docker-compose.yml   # for local vector DB (Qdrant)
