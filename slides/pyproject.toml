@@ -15,6 +15,7 @@ dependencies = [
     "uvicorn[standard] (>=0.36.0,<0.37.0)"
 ]
 
+
 [tool.poetry]
 packages = [{include = "app"}]
 
