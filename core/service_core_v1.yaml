@@ -1,0 +1,39 @@
+openapi: 3.1.0
+info:
+  title: Orpheus CoreAI-Service API
+  version: "0.1.0"
+  description: |
+    API for the Orpheus core orchestration.
+    From the repository: "The Orpheus System transforms static slides into interactive lecture videos with lifelike professor avatars, combining expressive narration, visual presence, and dynamic content to create engaging, personalized learning experiences."
+    License: MIT (see repository).
+  termsOfService: "https://github.com/fa25genai/orpheus"
+  contact:
+    name: "Orpheus Project"
+    url: "https://github.com/fa25genai/orpheus/issues/new"
+  license:
+    name: MIT
+    url: "https://opensource.org/licenses/MIT"
+
+servers:
+  - url: "http://localhost:30606"
+    description: "Local development (random port chosen: 30606)"
+  - url: "http://orpheus-service-slidegen:8080"
+    description: "DNS service name for in-cluster service"
+
+tags:
+  - name: core
+    description: "Endpoints for core AI"
+
+paths:
+  
+
+components:
+  schemas:
+    UserProfile:
+      type: object
+      description: "Schemaless additional information about the user (e.g. preferences regarding slide style, difficulty level etc.)."
+
+
+externalDocs:
+  description: "Project repository and README"
+  url: "https://github.com/fa25genai/orpheus"
