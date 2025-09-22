@@ -11,6 +11,7 @@ from service_slides.impl.manager.layout_manager import LayoutManager
 from service_slides.llm_chain.shared_llm import create_base_model
 
 
+
 async def lifespan(app: FastAPI):
     splitting_model_name = getenv("SPLITTING_MODEL")
     if splitting_model_name is None:
@@ -41,6 +42,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="orpheus-service-slides", lifespan=lifespan)
 
 app.include_router(SlidesApiRouter)
+
 
 @app.get("/test")
 async def test_endpoint():

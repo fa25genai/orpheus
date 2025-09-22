@@ -90,7 +90,8 @@ async def request_slide_generation(
     if not BaseSlidesApi.subclasses:
         raise HTTPException(status_code=500, detail="Not implemented")
     return await BaseSlidesApi.subclasses[0]().request_slide_generation(
-        request_slide_generation_request,
+        request_slide_generation_request
+    ,
         http_request.app.state.executor,
         http_request.app.state.layout_manager,
         http_request.app.state.job_manager,
