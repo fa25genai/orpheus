@@ -17,7 +17,7 @@ dependencies = [
 
 
 [tool.poetry]
-packages = [{include = "src/service_slides"}]
+packages = [{ include = "service_slides", from = "src" }]
 
 [tool.poetry.group.dev.dependencies]
 ruff = "0.13.1"
