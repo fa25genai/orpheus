@@ -13,9 +13,16 @@ Once you edited the diagram, make sure to export it as svg to replace the existi
   <img src="./OrpheusArchitecture.svg" alt="Orpheus System Architecture" style="max-width: 80%; height: auto;">
 </div>
 
-| Service                   | Description                                                                                                                                               | OpenAPI Specification                        |
-|---------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------|
-| **AI Core**               | Orchestrates lecture generation from user prompts, managing asynchronous jobs for creating interactive slides and videos with lifelike professor avatars. | [AI Core](./core/service_core_v1.yaml)       |
-| **Document Intelligence** | Retrieves content related to the student question from instructor provided lecture slides and materials.                                                  |                                              |
-| **Slide Service**         | Generates lecture slides from a lecture script, stores generated slides and provides their generation status and download URL.                            | [Slide Service](./core/service_core_v1.yaml) |
-| **Avatar Service**        | Generates short videos of lifelike professor avatars with expressive narration.                                                                           |                                              |tar Service**        | Generates lifelike professor avatars with expressive narration.                                                                                           |                                              |
+| Service                      | Description                                                                                                                                                                              | OpenAPI Specification                        |
+|------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------|
+| **AI Core**                  | Orchestrates lecture generation from user prompts, creating a lecture script, and managing asynchronous jobs for creating interactive slides and videos with lifelike professor avatars. | [AI Core](./core/service_core_v1.yaml)       |
+| **Document Intelligence**    | Retrieves content related to the student question from instructor provided lecture slides and materials.                                                                                 |                                              |
+| **Slide Generation**         | Generates lecture slides from a lecture script, stores generated slides and provides their generation status and download URL.                                                           | [Slide Service](./core/service_core_v1.yaml) |
+| **Avatar Generation**        | Generates short videos of lifelike professor avatars with expressive narration.                                                                                                          |                                              |
+| **Lecture Content Delivery** | Contend Delivery Network (CDN) that stores the lecturer avatar videos and lecture slides.                                                                                                |                                              |
+
+Open questions:
+* Slide Generation vs folder name?
+* Avatar Generation vs folder name?
+* ai-core vs folder name?
+* lectur
