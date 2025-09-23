@@ -102,12 +102,12 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
-  /v1/video/{lectureId}/status:
+    /v1/video/{lectureId}/status:
     get:
       tags:
         - video
-      summary: "Get generation status for a previously-submitted request"
-      operationId: getGenerationStatus
+      summary: "Wait until video generation finishes and return the final result"
+      operationId: getGenerationResult
       parameters:
         - name: lectureId
           in: path
@@ -118,22 +118,26 @@ paths:
           description: "The lectureId returned by /v1/video/generate"
       responses:
         "200":
-          description: "Status of the generation job"
+          description: "Final result of the generation job."
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/GenerationStatusResponse"
               examples:
-                in_progress:
-                  value:
-                    lectureId: "3a6d2f2e-6b1a-4b0b-9d7e-2f5a2a4c1b9e"
-                    status: "IN_PROGRESS"
-                    lastUpdated: "2025-09-22T09:30:00Z"
                 done:
                   value:
                     lectureId: "0f2f9d77-8e67-4c5a-9c5d-0f2b9a3a1e12"
                     status: "DONE"
                     lastUpdated: "2025-09-22T09:41:00Z"
+                    resultUrl: "https://cdn.example.com/videos/0f2f9d77.mp4"
+                failed:
+                  value:
+                    lectureId: "0f2f9d77-8e67-4c5a-9c5d-0f2b9a3a1e12"
+                    status: "FAILED"
+                    lastUpdated: "2025-09-22T09:41:00Z"
+                    error:
+                      code: "TTS_ENGINE_ERROR"
+                      message: "Text-to-speech conversion failed."
         "404":
           description: "Request not found"
           content:
