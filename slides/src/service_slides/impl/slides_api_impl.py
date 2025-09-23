@@ -1,3 +1,4 @@
+import asyncio
 from datetime import datetime
 
 from concurrent.futures.thread import ThreadPoolExecutor
@@ -76,7 +77,7 @@ class SlidesApiImpl(BaseSlidesApi):
                 )
                 await job_manager.finish_page(request_slide_generation_request.lecture_id)
 
-            executor.submit(generate_item)
+            executor.submit(lambda : asyncio.run(generate_item()))
 
         status = await job_manager.get_status(request_slide_generation_request.lecture_id)
         return GenerationAcceptedResponse(

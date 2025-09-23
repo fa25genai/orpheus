@@ -1,7 +1,11 @@
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.messages import SystemMessage, HumanMessage
+from langchain_core.output_parsers import PydanticOutputParser
+from langchain_core.prompts import ChatPromptTemplate, SystemMessagePromptTemplate
+from langgraph_sdk.auth.exceptions import HTTPException
 from pydantic import BaseModel, Field
 from service_slides.impl.manager.layout_manager import LayoutDescription
+from service_slides.llm_chain.shared_llm import invoke_llm
 from service_slides.models.request_slide_generation_request_assets_inner import (
     RequestSlideGenerationRequestAssetsInner,
 )
@@ -39,15 +43,18 @@ class DetailedSlideStructure(BaseModel):
 #   "assets": []
 # }
 async def generate_slide_structure(
-    lecture_script: str,
-    available_layouts: List[LayoutDescription],
-    llm_model: BaseLanguageModel,
+        lecture_script: str,
+        available_layouts: List[LayoutDescription],
+        llm_model: BaseLanguageModel,
 ) -> DetailedSlideStructure:
-    structured_output_model = llm_model.with_structured_output(DetailedSlideStructure)
-    detailed_structure = structured_output_model.invoke(
+    parser = PydanticOutputParser(pydantic_object=DetailedSlideStructure)
+    prompt = ChatPromptTemplate.from_messages(
         [
+            SystemMessagePromptTemplate.from_template(
+                "You must *only* return JSON, **no prose**, in exactly this shape and conforming to the schema definition:\n{format_instructions}",
+            ),
             SystemMessage(
-                "You are a lecturer tasked with creating a slideset for a lecture. The lecture is already prepared with all relevant contents, examples and exercises. This is the outline:"
+                "You are a lecturer tasked with creating a slideset for a lecture. The lecture is already prepared with all relevant contents, examples and exercises. The slideset must not be empty. This is the outline:"
             ),
             HumanMessage(lecture_script),
             SystemMessage(
@@ -55,24 +62,32 @@ async def generate_slide_structure(
             ),
             SystemMessage("The available slide layouts are as follows: "),
             SystemMessage(
-                map(
+                list(map(
                     lambda layout: f"Name: {layout.name} ; description: {layout.description}",
                     available_layouts,
-                )
-            ),
+                ))
+            )
         ]
+    ).partial(
+        format_instructions=parser.get_format_instructions()
+    )
+    detailed_structure = invoke_llm(
+        model=llm_model,
+        prompt=prompt,
+        input_data={},
+        parser=parser
     )
     return detailed_structure
 
 
 async def generate_slide(
-    llm_model: BaseLanguageModel,
-    lecture_script: str,
-    slide_layout: str,
-    slide_template: str,
-    slide_content: str,
-    structure: DetailedSlideStructure,
-    assets: List[RequestSlideGenerationRequestAssetsInner],
+        llm_model: BaseLanguageModel,
+        lecture_script: str,
+        slide_layout: str,
+        slide_template: str,
+        slide_content: str,
+        structure: DetailedSlideStructure,
+        assets: List[RequestSlideGenerationRequestAssetsInner],
 ) -> str:
     # TODO
     pass
