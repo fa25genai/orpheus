@@ -208,12 +208,6 @@ components:
           type: string
           description: "Job status"
           enum: [ IN_PROGRESS, FAILED, DONE ]
-        totalPages:
-          type: integer
-          description: "Total amount of pages that have to be generated"
-        generatedPages:
-          type: integer
-          description: "Amount of generated pages at the last point of update"
         lastUpdated:
           type: string
           format: date-time
