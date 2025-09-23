@@ -126,25 +126,14 @@ export default function Home() {
                 </Card>
 
                 <Card className="p-8 bg-card border-border md:col-span-2">
-                  <div className="flex flex-col items-center justify-center h-98 space-y-4">
-                    <div className="w-full h-32 bg-muted rounded-lg flex items-center justify-center">
-                      <div className="text-center">
-                        <div className="w-12 h-12 bg-background rounded mx-auto mb-2"></div>
-                        <div className="space-y-1">
-                          <div className="h-2 bg-background rounded w-24 mx-auto"></div>
-                          <div className="h-2 bg-background rounded w-16 mx-auto"></div>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="text-center">
-                      <h3 className="text-lg font-semibold mb-2">
-                        Video about: {msg}
-                      </h3>
-                      <p className="text-sm text-muted-foreground">
-                        Customized content for your learning level
-                      </p>
-                    </div>
-                  </div>
+                    <iframe
+                        width="100%"
+                        height="100%"
+                        src="http://localhost:3030"
+                        className="w-full h-98"
+                        title="Generated Lecture Video"
+                        loading="lazy"
+                    />
                 </Card>
               </div>
             </div>
