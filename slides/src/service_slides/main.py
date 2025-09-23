@@ -1,5 +1,5 @@
 from concurrent.futures.thread import ThreadPoolExecutor
-from os import cpu_count
+from os import cpu_count, getenv
 
 from fastapi import FastAPI
 
@@ -10,12 +10,19 @@ from service_slides.llm_chain.shared_llm import create_base_model
 
 
 async def lifespan(app: FastAPI):
-    # Automatically create the best available model
-    splitting_model = create_base_model("llama3.3:latest", temperature=0.0)
+    splitting_model_name = getenv("SPLITTING_MODEL")
+    if splitting_model_name is None:
+        raise ValueError("SPLITTING_MODEL environment variable is not set")
+    
+    slidesgen_model_name = getenv("SLIDESGEN_MODEL")
+    if slidesgen_model_name is None:
+        raise ValueError("SLIDESGEN_MODEL environment variable is not set")
+
+    splitting_model = create_base_model(splitting_model_name, temperature=0.0)
     if splitting_model is not None:
         app.state.splitting_model = splitting_model
 
-    slidesgen_model = create_base_model("llama3.3:latest", temperature=0.0)
+    slidesgen_model = create_base_model(slidesgen_model_name, temperature=0.0)
     if slidesgen_model is not None:
         app.state.slidesgen_model = slidesgen_model
 

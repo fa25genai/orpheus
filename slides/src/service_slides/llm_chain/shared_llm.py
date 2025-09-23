@@ -5,11 +5,11 @@ from langchain_core.output_parsers import BaseOutputParser, StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import Runnable
 from langchain_core.language_models.base import BaseLanguageModel
-from langchain.chat_models import init_chat_model
 
 # Provider-specific imports
 from langchain_ollama.llms import OllamaLLM
 from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_openai import ChatOpenAI
 
 T = TypeVar('T')
 
@@ -46,14 +46,19 @@ def create_base_model(
     
     # Try OpenAI first
     if "OPENAI_API_KEY" in os.environ:
-        return init_chat_model(model_name, temperature, max_tokens)
-    
+        model_kwargs = {
+            "model": model_name,
+            "temperature": temperature,
+        }
+        if max_tokens:
+            model_kwargs["max_tokens"] = max_tokens
+        return ChatOpenAI(**model_kwargs)
+
     # Try Google GenAI second
     if "GOOGLE_API_KEY" in os.environ:
         model_kwargs = {
             "model": model_name,
             "temperature": temperature,
-            "google_api_key": os.environ["GOOGLE_API_KEY"]
         }
         if max_tokens:
             model_kwargs["max_output_tokens"] = max_tokens
