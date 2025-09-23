@@ -14,7 +14,7 @@ WORKDIR /app
 COPY src src
 COPY pyproject.toml README.md ./
 
-RUN poetry install
+RUN poetry install --only main
 
 EXPOSE 60303
 
