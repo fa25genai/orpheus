@@ -102,7 +102,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
-    /v1/video/{lectureId}/status:
+  /v1/video/{lectureId}/status:
     get:
       tags:
         - video
@@ -197,7 +197,7 @@ components:
           format: uuid
         status:
           type: string
-          enum: [ IN_PROGRESS, FAILED, DONE ]
+          enum: [FAILED, DONE ]
         createdAt:
           type: string
           format: date-time
