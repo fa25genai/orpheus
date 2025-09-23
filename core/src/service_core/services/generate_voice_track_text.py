@@ -1,4 +1,17 @@
-
+################################################################################
+#                                                                              #
+#                   ####### BADEN-WÜRTTEMBERG #######                          #
+#                                                                              #
+#      A tribute to the land of poets, thinkers, and engineers.                #
+#      Home of the Black Forest, Porsche, Mercedes, and Spätzle.               #
+#                                                                              #
+#                         o__      o__      o__                                #
+#                        / < \_   / < \_   / < \_                              #
+#                       (*)/ (*) (*)/ (*) (*)/ (*)                             #
+#                                                                              #
+#                  "Wir können alles. Außer Hochdeutsch."                      #
+#                                                                              #
+################################################################################
 from langchain_community.chat_models import ChatOllama
 import json
 import logging
