@@ -20,7 +20,7 @@ import json
 
 
 
-from pydantic import BaseModel, ConfigDict, Field, StrictStr, field_validator
+from pydantic import BaseModel, ConfigDict, Field, StrictStr
 from typing import Any, ClassVar, Dict, List, Optional
 try:
     from typing import Self
@@ -31,19 +31,8 @@ class DataResponse(BaseModel):
     """
     DataResponse
     """ # noqa: E501
-    status: Optional[StrictStr] = None
     slides_url: Optional[StrictStr] = Field(default=None, description="The URL to the generated slide/video deck. Only present if status is 'completed'.", alias="slidesUrl")
-    __properties: ClassVar[List[str]] = ["status", "slidesUrl"]
-
-    @field_validator('status')
-    def status_validate_enum(cls, value):
-        """Validates the enum"""
-        if value is None:
-            return value
-
-        if value not in ('processing', 'completed', 'failed',):
-            raise ValueError("must be one of enum values ('processing', 'completed', 'failed')")
-        return value
+    __properties: ClassVar[List[str]] = ["slidesUrl"]
 
     model_config = {
         "populate_by_name": True,
@@ -94,7 +83,6 @@ class DataResponse(BaseModel):
             return cls.model_validate(obj)
 
         _obj = cls.model_validate({
-            "status": obj.get("status"),
             "slidesUrl": obj.get("slidesUrl")
         })
         return _obj

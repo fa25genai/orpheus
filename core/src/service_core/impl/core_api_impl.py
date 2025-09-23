@@ -1,5 +1,6 @@
 from fastapi import HTTPException
 from uuid import UUID, uuid4
+from typing import Dict
 # Import the base class you are inheriting from
 from ..apis.core_api_base import BaseCoreApi
 # Import the generated Pydantic models
@@ -8,6 +9,8 @@ from ..models.prompt_response import PromptResponse
 from ..models.data_response import DataResponse
 # Import your custom service layer where the real work happens
 from ..services import decompose_input
+
+lecture_store: Dict[UUID, Dict] = {}
 
 class CoreApiImpl(BaseCoreApi):
     """
@@ -34,24 +37,32 @@ class CoreApiImpl(BaseCoreApi):
         lectureId: UUID,
     ) -> DataResponse:
         """
-        Retrieves the result of a slide generation job.
+        Returns a static, dummy response for slides.
+        This endpoint is stateless and does not use the lectureId to look up data.
         """
+        # Since no data is stored, we return a generic successful response.
+        # The URL is generated using the provided lectureId for consistency.
         try:
-            return lecture_service.get_lecture_slides(str(lectureId))
+            response = ''   # Do a call to slideHandler
+
+            return DataResponse(
+                slidesUrl=response['url']
+            )
         except ConnectionError as e:
             raise HTTPException(status_code=503, detail=f"Datastore error: {e}")
-        except KeyError:
-            raise HTTPException(status_code=404, detail="Lecture job not found.")
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {e}")
+
     async def get_video_by_lecture_id(
         self,
         lectureId: UUID,
     ) -> DataResponse:
         """
-        Retrieves the result of a video generation job.
+        Returns a static, dummy response for a video.
+        This endpoint is stateless and does not use the lectureId to look up data.
         """
-        try:
-            return lecture_service.get_lecture_video(str(lectureId))
-        except ConnectionError as e:
-            raise HTTPException(status_code=503, detail=f"Datastore error: {e}")
-        except KeyError:
-            raise HTTPException(status_code=404, detail="Lecture job not found.")
+        # Since no data is stored, we return a generic successful response.
+        # The URL is generated using the provided lectureId for consistency.
+        return DataResponse(
+            videoUrl=f"https://storage.example.com/videos/{lectureId}.mp4"
+        )

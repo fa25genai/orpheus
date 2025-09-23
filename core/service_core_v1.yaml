@@ -174,10 +174,6 @@ components:
     DataResponse:
       type: "object"
       properties:
-        status:
-          type: "string"
-          enum: ["processing", "completed", "failed"]
-          example: "completed"
         slidesUrl:
           type: "string"
           format: "uri"
