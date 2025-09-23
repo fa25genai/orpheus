@@ -14,11 +14,26 @@ export default function Home() {
 
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (prompt.trim()) {
       setMessages((prev) => [...prev, prompt]);
+      // Call API to get response
+      try {
+        const res = await fetch("/api/core", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({prompt}), // match your PromptRequest
+        });
+
+        const lectureId = await res.json();
+        console.log("Lecture created:", lectureId);
+      } catch (error) {
+        console.error("API error:", error);
+      }
+
       setPrompt(""); // clear input after submit
+      // Call function of API to send prompt
     }
   }
 
