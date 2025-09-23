@@ -37,38 +37,6 @@ class UserProfile(BaseModel):
     preferences: Optional[Preferences] = None
     enrolledCourses: Optional[List[str]] = None
 
-class GenerateRequest(BaseModel):
-    #slideMessages: List[constr(min_length=1)] = Field(..., min_items=1)
-    lectureId: UUID4
-    courseId: str
-    userProfile: UserProfile
-
-class ErrorModel(BaseModel):
-    code: Optional[str] = None
-    message: Optional[str] = None
-
-class GenerationAcceptedResponse(BaseModel):
-    lectureId: UUID4
-    status: Literal["IN_PROGRESS", "FAILED", "DONE"]
-    createdAt: datetime
-
-class GenerationStatusResponse(BaseModel):
-    lectureId: UUID4
-    status: Literal["IN_PROGRESS", "FAILED", "DONE"]
-    lastUpdated: datetime
-    error: Optional[ErrorModel] = None
-
-# ---------------------------
-# In-memory job store
-# ---------------------------
-
-class Job(BaseModel):
-    lectureId: UUID4
-    status: Literal["IN_PROGRESS", "FAILED", "DONE"]
-    lastUpdated: datetime
-    error: Optional[ErrorModel] = None
-
-JOBS: Dict[UUID, Job] = {}  # simple in-memory cache; replace with Redis/DB in prod
 
 slide_texts = ["Welcome to the course on AI.", "In this slide, we will discuss machine learning."]
 course_id = "course123"
@@ -77,7 +45,7 @@ voice_file = "kursche_voice.mp3"  # Path to a default voice file
 def generate_audio(
     slide_texts: List[str],
     *,
-    course_id: str,
+    course_id: str, # 
     user_profile: UserProfile = None,
     voice_file: str
 ) -> List[str]:
@@ -226,3 +194,17 @@ def generate_audio(
             pass
 
     return audio_paths
+
+
+'''
+slide_texts = ["Welcome to the course on AI.", "In this slide, we will discuss machine learning."]
+course_id = "course123"
+voice_file = "kursche_voice.mp3" 
+'''
+def main():
+    generate_audio(slide_texts, course_id, voice_file)
+
+
+if __name__ == 'main':
+    print('here')
+    main()
