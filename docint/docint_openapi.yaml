@@ -22,4 +22,65 @@ servers:
 tags:
   - name: docint
     description: "Endpoints for document storage and retrieval."
+  
+paths:
+  /v1/docint/retrieval:
+    get:
+      tags:
+        - docint
+      summary: provides texts and images with the highest confident score
+      operationId: retrievesDataForGeneration
+      parameters:
+        - name: courseId
+          in: query
+          required: true
+          schema:
+            type: string
+          description: "The ID of the course to retrieve content from."
+        - name: query
+          in: query
+          required: true
+          schema:
+            type: string
+          describing: "The user's query or prompt."
+    responses:
+          "200":
+            description: "A successful response containing relevant content and images."
+            content:
+              application/json:
+                schema:
+                  $ref: "#/components/schemas/RetrievalResponse"
+          "400":
+            description: "Bad Request - The request is missing a required parameter."
+          "404":
+            description: "Not Found - The courseId was not found."
 
+components:
+  schemas:
+    RetrievalResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            type: string
+          description: "An array of text snippets."
+        images:
+          type: array
+          items:
+            $ref: "#/components/schemas/ImageObject"
+          description: "An array of image objects."
+    ImageObject:
+      type: object
+      properties:
+        image/*:
+          schema:
+            type: string
+            format: binary
+          description: "Image"
+        description:
+          type: string
+          description: "A short description of the image."
+        textualDescription:
+          type: string
+          description: "A more detailed textual description of the image."
