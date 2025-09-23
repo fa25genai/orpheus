@@ -16,10 +16,14 @@ dependencies = [
 [dependency-groups]
 dev = [
     "ruff (==0.13.1)",
-    "mypy (==1.18.1)"
+    "mypy (==1.18.1)",
+    "openapi-generator-cli (>=7.15.0,<8.0.0)"
 ]
 
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+package-mode = false

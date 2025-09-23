@@ -581,6 +581,21 @@ files = [
 ]
 
 [[package]]
+name = "openapi-generator-cli"
+version = "7.15.0"
+description = "CLI for openapi generator"
+optional = false
+python-versions = "<4,>=3.9"
+groups = ["dev"]
+files = [
+    {file = "openapi_generator_cli-7.15.0-py3-none-any.whl", hash = "sha256:ff95305ce9a8ad1250fb16d6b0a20e6f5d3041fcb515f4b1a471719dbb1d56ef"},
+    {file = "openapi_generator_cli-7.15.0.tar.gz", hash = "sha256:93b3c1ac6d9d13d1309e95bedcbc0af839dcfe3047c840531cef662b61368fc1"},
+]
+
+[package.extras]
+jdk4py = ["jdk4py (>=21.0.4.1,<22) ; python_version >= \"3.10\""]
+
+[[package]]
 name = "orjson"
 version = "3.11.3"
 description = "Fast, correct Python JSON library supporting dataclasses, datetimes, and numpy"

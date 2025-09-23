@@ -8,7 +8,6 @@ docint/
 │     ├─ services/
 │     ├─ vectorstore/
 │     └─ utils/
-├─ tests/
 ├─ pyproject.toml
 ├─ .env
 └─ docker-compose.yml   # for local vector DB (Qdrant)
