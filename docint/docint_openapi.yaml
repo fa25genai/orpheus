@@ -1,4 +1,4 @@
-openapi: 3.0.4
+openapi: 3.1.0
 info:
   title: Document Intelligence API
   version: "0.1.0"
@@ -25,26 +25,72 @@ tags:
     description: "Endpoints for document storage and retrieval."
   
 paths:
-  /v1/upload:
+
+  /v1/upload/{courseId}:
     post:
       tags:
         - docint
       summary: uploads document
       operationId: uploadsDocument
+      parameters:
+        - name: courseId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: "The ID of the course to upload the content to."
       requestBody:
-        description: "uploads documents"
+        required: true
+        content:
+          application/pdf:
+            schema:
+              type: string
+              format: base64 
+      responses:
+        "201":
+          description: Successfully uploaded. Returns created ID.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  documentId:
+                    type: string
+                    description: The ID of the stored document.
+        "400":
+          description: Bad Request – missing file or parameters.
+        "404":
+          description: courseId not found.
+        "413":
+          description: Payload Too Large.
+        "415":
+          description: Unsupported Media Type (only PDFs accepted).
+        "500":
+          description: Server error.
 
+
+  /v1/delete/{documentId}:
+    delete:
+      tags:
+        - docint
+      summary: deletes document
+      operationId: deletesDocument
+      parameters:
+        - name: documentId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: "The ID of the document to delete."
       responses:
             "200":
-              description: "A successful response containing relevant content and images."
-              content:
-                application/json:
-                  schema:
-                    $ref: "#/components/schemas/RetrievalResponse"
+              description: "A successful response confirming deletion."
             "400":
               description: "Bad Request - The request is missing a required parameter."
             "404":
-              description: "Not Found - The courseId was not found."
+              description: "Not Found - The documentId was not found."
+
+              
   /v1/retrieval/{courseId}:
     get:
       tags:
