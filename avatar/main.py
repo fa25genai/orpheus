@@ -1,25 +1,15 @@
-from __future__ import annotations
-
-import time
 from datetime import datetime, timezone
 from typing import List, Optional, Literal, Dict
 from uuid import UUID
 
-from fastapi import FastAPI, BackgroundTasks, HTTPException, Response
-from pydantic import BaseModel, Field, UUID4, constr
+from fastapi import FastAPI, BackgroundTasks, Response, Request
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel, Field, constr
 
-app = FastAPI(
-    title="Service Video-Generation APIs",
-    version="0.1",
-    description=(
-        "API for the Orpheus video generation. Transforms fluent texts into "
-        "interactive lecture videos with lifelike professor avatars."
-    ),
-)
-
+app = FastAPI(title="Service Video-Generation APIs", version="0.1")
 
 # ---------------------------
-# Pydantic models (from spec)
+# Models
 # ---------------------------
 
 class Preferences(BaseModel):
@@ -28,7 +18,6 @@ class Preferences(BaseModel):
     expertiseLevel: Optional[Literal["beginner", "intermediate", "advanced", "expert"]] = None
     includePictures: Optional[Literal["none", "few", "many"]] = None
 
-
 class UserProfile(BaseModel):
     id: str
     role: Literal["student", "instructor"]
@@ -36,138 +25,95 @@ class UserProfile(BaseModel):
     preferences: Optional[Preferences] = None
     enrolledCourses: Optional[List[str]] = None
 
-
 class GenerateRequest(BaseModel):
     slideMessages: List[constr(min_length=1)] = Field(..., min_items=1)
-    lectureId: UUID4
+    lectureId: UUID
     courseId: str
     userProfile: UserProfile
-
 
 class ErrorModel(BaseModel):
     code: Optional[str] = None
     message: Optional[str] = None
 
-
 class GenerationAcceptedResponse(BaseModel):
-    # NOTE: your spec's enum omits "IN_PROGRESS"; the implementation returns it.
-    lectureId: UUID4
-    status: Literal["IN_PROGRESS", "FAILED", "DONE"]
+    lectureId: UUID
     createdAt: datetime
-
+    # status omitted on purpose to match your earlier schema (202 body minimal)
 
 class GenerationStatusResponse(BaseModel):
-    lectureId: UUID4
+    lectureId: UUID
     status: Literal["IN_PROGRESS", "FAILED", "DONE"]
     lastUpdated: datetime
-    resultUrl: Optional[str] = None  # uri when DONE
+    resultUrl: str                      # always present now
+    estimatedSecondsLeft: int           # 0 when DONE/FAILED
     error: Optional[ErrorModel] = None
-
 
 # ---------------------------
 # In-memory job store
 # ---------------------------
 
 class Job(BaseModel):
-    lectureId: UUID4
+    lectureId: UUID
     status: Literal["IN_PROGRESS", "FAILED", "DONE"]
     lastUpdated: datetime
-    resultUrl: Optional[str] = None
+    resultUrl: str
+    # ETA bookkeeping
+    startedAt: datetime
+    expectedDurationSec: int
     error: Optional[ErrorModel] = None
 
-
-JOBS: Dict[UUID, Job] = {}  # simple in-memory cache; replace with Redis/DB in prod
-
+JOBS: Dict[UUID, Job] = {}
 
 # ---------------------------
-# Generation functions (stubs)
+# Helpers
 # ---------------------------
 
-def generate_audio(
-        slide_texts: List[str],
-        *,
-        lecture_id: UUID4,  # <-- added
-        course_id: str,
-        user_profile: UserProfile,
-) -> List[str]:
-    """
-    Create per-slide audio files from text.
-
-    Returns a list of file paths (one per slide).
-    Replace the body with your TTS pipeline (e.g., Coqui, ElevenLabs, local TTS).
-    """
-    # Name pattern: {lecture_id}_slide_{i+1}.wav
-    lid = str(lecture_id)
-    audio_paths = [f"/tmp/{lid}_slide_{i + 1}.wav" for i, _ in enumerate(slide_texts)]
-
-    # TODO: generate real audio; for now this just returns target paths.
-    # If you want to materialize placeholder files, uncomment:
-    # from pathlib import Path
-    # for p in audio_paths: Path(p).touch()
-
-    return audio_paths
-
-
-def generate_video(
-        slide_texts: List[str],
-        audio_paths: List[str],
-        *,
-        lecture_id: UUID4,
-        course_id: str,
-        user_profile: UserProfile,
-) -> str:
-    """
-    Assemble the final video using the audio tracks and slide content.
-
-    Returns a URI (string) to the rendered video file.
-    Replace with your real compositor (e.g., moviepy/ffmpeg + avatar renderer).
-    """
-    # Use a file:// URI so it validates as a URI per the spec.
-    return f"file:///tmp/{lecture_id}_final.mp4"
-
-
-# ---------------------------
-# Background job runner
-# ---------------------------
+CDN_BASE = "https://cdn.example.com/videos"
 
 def _utcnow() -> datetime:
     return datetime.now(timezone.utc)
 
+def _result_url(lecture_id: UUID) -> str:
+    return f"{CDN_BASE}/{lecture_id}.mp4"
+
+def _estimate_total_seconds(slide_count: int) -> int:
+    # Heuristic: 8s overhead + 6s per slide (tweak as you learn)
+    return 8 + 6 * slide_count
+
+def _eta_seconds(job: Job) -> int:
+    if job.status in ("DONE", "FAILED"):
+        return 0
+    elapsed = int((_utcnow() - job.startedAt).total_seconds())
+    remaining = job.expectedDurationSec - elapsed
+    return max(0, remaining)
+
+# ---------------------------
+# Fake pipeline
+# ---------------------------
+
+def generate_audio(slide_texts: List[str], *, course_id: str, user_profile: UserProfile) -> List[str]:
+    # TODO: replace with real TTS
+    return [f"/tmp/{course_id}_slide_{i+1}.wav" for i, _ in enumerate(slide_texts)]
+
+def generate_video(slide_texts: List[str], audio_paths: List[str], *, lecture_id: UUID, course_id: str, user_profile: UserProfile) -> str:
+    # TODO: replace with real compositor + upload
+    return f"/tmp/{lecture_id}_final.mp4"
 
 def process_generation(payload: GenerateRequest) -> None:
-    """Runs the end-to-end pipeline; updates JOBS accordingly."""
     try:
-        audio_paths = generate_audio(
-            payload.slideMessages,
-            lecture_id=payload.lectureId,
-            course_id=payload.courseId,
-            user_profile=payload.userProfile,
-        )
-
-        result_uri = generate_video(
-            payload.slideMessages,
-            audio_paths,
-            lecture_id=payload.lectureId,
-            course_id=payload.courseId,
-            user_profile=payload.userProfile,
-        )
-
-        JOBS[payload.lectureId] = Job(
-            lectureId=payload.lectureId,
-            status="DONE",
-            lastUpdated=_utcnow(),
-            resultUrl=result_uri,
-            error=None,
-        )
+        audio_paths = generate_audio(payload.slideMessages, course_id=payload.courseId, user_profile=payload.userProfile)
+        _ = generate_video(payload.slideMessages, audio_paths, lecture_id=payload.lectureId, course_id=payload.courseId, user_profile=payload.userProfile)
+        # Mark done
+        job = JOBS[payload.lectureId]
+        job.status = "DONE"
+        job.lastUpdated = _utcnow()
+        JOBS[payload.lectureId] = job
     except Exception as exc:
-        JOBS[payload.lectureId] = Job(
-            lectureId=payload.lectureId,
-            status="FAILED",
-            lastUpdated=_utcnow(),
-            resultUrl=None,
-            error=ErrorModel(code="GENERATION_FAILED", message=str(exc)),
-        )
-
+        job = JOBS[payload.lectureId]
+        job.status = "FAILED"
+        job.lastUpdated = _utcnow()
+        job.error = ErrorModel(code="GENERATION_FAILED", message=str(exc))
+        JOBS[payload.lectureId] = job
 
 # ---------------------------
 # Routes
@@ -177,68 +123,45 @@ def process_generation(payload: GenerateRequest) -> None:
     "/v1/video/generate",
     response_model=GenerationAcceptedResponse,
     status_code=202,
-    responses={
-        400: {"model": ErrorModel},
-        401: {"model": ErrorModel},
-        500: {"model": ErrorModel},
-    },
+    responses={400: {"model": ErrorModel}, 401: {"model": ErrorModel}, 500: {"model": ErrorModel}},
 )
-def request_video_generation(payload: GenerateRequest, background: BackgroundTasks, response: Response):
-    # (Optional) idempotency: if a job with the same lectureId exists and is IN_PROGRESS/DONE, short-circuit here.
+def request_video_generation(payload: GenerateRequest, background: BackgroundTasks, response: Response, request: Request):
     now = _utcnow()
+    # pre-compute where the file will live
+    url = _result_url(payload.lectureId)
+    expected = _estimate_total_seconds(len(payload.slideMessages))
     JOBS[payload.lectureId] = Job(
         lectureId=payload.lectureId,
         status="IN_PROGRESS",
         lastUpdated=now,
-        resultUrl=None,
+        resultUrl=url,
+        startedAt=now,
+        expectedDurationSec=expected,
         error=None,
     )
-
+    # fire-and-forget
     background.add_task(process_generation, payload)
-
-    # Set Location header to the result endpoint (same path in your spec)
-    response.headers["Location"] = f"/v1/video/{payload.lectureId}/status"
-
-    return GenerationAcceptedResponse(
-        lectureId=payload.lectureId,
-        status="IN_PROGRESS",  # matches your example payload
-        createdAt=now,
-    )
-
+    # absolute Location per spec
+    base = str(request.base_url).rstrip("/")
+    response.headers["Location"] = f"{base}/v1/video/{payload.lectureId}/status"
+    return GenerationAcceptedResponse(lectureId=payload.lectureId, createdAt=now)
 
 @app.get(
     "/v1/video/{lectureId}/status",
     response_model=GenerationStatusResponse,
     responses={404: {"model": ErrorModel}},
 )
-def get_generation_result(lectureId: UUID4):
-    """
-    Blocks until the job is DONE or FAILED, then returns the final result.
-
-    NOTE: This intentionally waits indefinitely to match the spec. If you want
-    a timeout, add one (e.g., env var ORPHEUS_STATUS_TIMEOUT_SECONDS) and raise 202/204.
-    """
+def get_generation_status(lectureId: UUID):
     job = JOBS.get(lectureId)
     if not job:
-        raise HTTPException(status_code=404, detail="Request not found")
-
-    # Busy-wait with a small sleep to avoid pegging the CPU.
-    while job.status == "IN_PROGRESS":
-        time.sleep(0.2)
-        job = JOBS.get(lectureId)
-        if not job:
-            raise HTTPException(status_code=404, detail="Request not found")
-
-    # At this point: DONE or FAILED
+        return JSONResponse(status_code=404, content={"code": "NOT_FOUND", "message": "Request not found"})
     return GenerationStatusResponse(
         lectureId=job.lectureId,
         status=job.status,
         lastUpdated=job.lastUpdated,
         resultUrl=job.resultUrl,
+        estimatedSecondsLeft=_eta_seconds(job),
         error=job.error,
     )
 
-# ---------------------------
-# Entry point
-# ---------------------------
 # Run: uvicorn main:app --host 0.0.0.0 --port 8080 --reload
