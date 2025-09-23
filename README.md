@@ -12,13 +12,8 @@ Once you edited the diagram, make sure to export it as svg to replace the existi
 <div style="text-align: center;">
   <img src="./OrpheusArchitecture.svg" alt="Orpheus System Architecture" style="max-width: 80%; height: auto;">
 </div>
-## API Interface Documentation
 
-Once you edited the diagram, make sure to export it as svg to replace the existing [OrpheusArchitecture.svg](./OrpheusArchitecture.svg).
--->
-<div style="text-align: center;">
-  <img src="./OrpheusArchitecture.svg" alt="Orpheus System Architecture" style="max-width: 80%; height: auto;">
-</div>
+## API Interface Documentation
 
 TODO: exchange with actual service descriptions
 | Service                      | Description                                                                                                                                                                              | OpenAPI Specification                                                                  |
