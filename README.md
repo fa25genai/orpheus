@@ -22,7 +22,7 @@ TODO: exchange with actual service descriptions
 | **Document Intelligence**    | Retrieves content related to the student question from instructor provided lecture slides and materials.                                                                                 | [Document Intelligence](./document-intelligence/service_document-intelligence_v1.yaml) |
 | **Slide Generation**         | Generates lecture slides from a lecture script, stores generated slides and provides their generation status and download URL.                                                           | [Slide Service](./slides/service_slides_v1.yaml)                                       |
 | **Avatar Generation**        | Generates short videos of lifelike professor avatars with expressive narration.                                                                                                          |                                                                                        |
-| **Lecture Content Delivery** | Contend Delivery Network (CDN) that stores the lecturer avatar videos and lecture slides.                                                                                                |                                                                                        |
+| **Lecture Content Delivery** | Content Delivery Network (CDN) that stores the lecturer avatar videos and lecture slides.                                                                                                |                                                                                        |
 
 <!--
 TODOS
