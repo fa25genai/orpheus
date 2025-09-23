@@ -67,6 +67,14 @@ JOBS: Dict[UUID, Job] = {}
 # ---------------------------
 # Helpers
 # ---------------------------
+# imports for TTS pipeline
+import os
+import torch
+from openvoice import se_extractor
+from openvoice.api import ToneColorConverter
+import nltk
+from melo.api import TTS
+
 
 CDN_BASE = "https://cdn.example.com/videos"
 
