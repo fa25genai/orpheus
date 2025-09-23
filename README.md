@@ -35,4 +35,44 @@ Open questions:
 -->
 
 ## Getting Started
-Here you can find instructions for installing dependencies on a local development setup: https://confluence.aet.cit.tum.de/spaces/FA205/pages/273853809/Python+Project+Setup
+### Initial Setup
+#### 1. Install Python 3.13.7 using pyenv
+##### Linux (Debian/Ubuntu)
+1. Install system dependencies for building Python (one-time setup)
+    ```bash
+    sudo apt update
+    sudo apt install -y build-essential curl git \
+    libssl-dev zlib1g-dev libncurses5-dev libbz2-dev libreadline-dev \
+    libsqlite3-dev libffi-dev liblzma-dev tk-dev uuid-dev
+    ```
+2. Install pyenv (via the pyenv-installer)
+    ```bash
+    curl https://pyenv.run | bash
+    ```
+3. Add pyenv to your shell and reload it
+   1. For bash
+      ```bash
+      echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.bashrc
+      echo 'command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.bashrc
+      echo 'eval "$(pyenv init -)"' >> ~/.bashrc
+      ```
+   2. For zsh
+      ```bash
+      echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.zshrc
+      echo 'command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.zshrc
+      echo 'eval "$(pyenv init -)"' >> ~/.zshrc
+      ```
+   **Important**: Restart your terminal or run `exec "$SHELL"` for the changes to take effect
+   ```bash
+   exec "$SHELL"
+   ```
+4. Install Python 3.13.7 and set it as the global default version
+```bash
+pyenv install 3.13.7
+pyenv global 3.13.7
+``` 
+5. Verify the installation
+```bash
+python --version
+```
+Expected output: Python 3.13.7
