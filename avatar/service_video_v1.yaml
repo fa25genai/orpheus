@@ -1,0 +1,236 @@
+openapi: 3.1.0
+info:
+  title: Service Video-Generation APIs
+  version: "0.1"
+  description: |
+    API for the Orpheus video generation.
+    From the repository: "The Orpheus System transforms static slides into interactive lecture videos with lifelike professor avatars, combining expressive narration, visual presence, and dynamic content to create engaging, personalized learning experiences."
+  license:
+    name: MIT
+    url: "https://opensource.org/licenses/MIT"
+  termsOfService: "https://github.com/fa25genai/orpheus"
+  contact:
+    name: "Orpheus Project"
+    url: "https://github.com/fa25genai/orpheus/issues/new"
+
+servers:
+  - url: "http://localhost:8080"
+    description: "Local development"
+
+tags:
+  - name: video
+    description: "Endpoints for video generation, retrieval and status"
+
+paths:
+  /v1/video/generate:
+    post:
+      tags:
+        - video
+      summary: "Request generation of a video, given the written text"
+      description: |
+        Accepts an array of messages written in fluent text. They are divided by slides.
+        Accepts a courseId used to identify and pull the correct audio and image samples for generating the requested professor avatar.
+        Accepts a lectureId, a unique identifier for the generated video and slides.
+        Accepts user profile information for adapting the video to the specific user needs.
+      operationId: requestVideoGeneration
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - slideMessages
+                - lectureId
+                - courseId
+                - userProfile
+              properties:
+                slideMessages:
+                  type: array
+                  description: "Per-slide text blocks in order."
+                  minItems: 1
+                  items:
+                    type: string
+                    description: "The spoken/script text for one slide."
+                    minLength: 1
+                lectureId:
+                  type: string
+                  format: uuid
+                  description: >
+                    Unique identifier of the lecture to which the slides will belong.
+                courseId:
+                  type: string
+                  description: "Course ID used to identify the correct professor/avatar resources."
+                userProfile:
+                  $ref: "#/components/schemas/UserProfile"
+      responses:
+        "202":
+          description: "Request accepted — generation started. Returns request metadata and immediate structure summary."
+          headers:
+            Location:
+              description: "URL to query the status of the generation (status endpoint)."
+              schema:
+                type: string
+                format: uri
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenerationAcceptedResponse"
+              examples:
+                accepted:
+                  summary: "Example accepted response"
+                  value:
+                    lectureId: "3a6d2f2e-6b1a-4b0b-9d7e-2f5a2a4c1b9e"
+                    status: "IN_PROGRESS"
+                    createdAt: "2025-09-22T09:12:33Z"
+        "400":
+          description: "Malformed request."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: "Unauthorized"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: "Server error"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /v1/video/{lectureId}/status:
+    get:
+      tags:
+        - video
+      summary: "Wait until video generation finishes and return the final result"
+      operationId: getGenerationResult
+      parameters:
+        - name: lectureId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: "The lectureId returned by /v1/video/generate"
+      responses:
+        "200":
+          description: "Final result of the generation job."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenerationStatusResponse"
+              examples:
+                done:
+                  value:
+                    lectureId: "0f2f9d77-8e67-4c5a-9c5d-0f2b9a3a1e12"
+                    status: "DONE"
+                    lastUpdated: "2025-09-22T09:41:00Z"
+                    resultUrl: "https://cdn.example.com/videos/0f2f9d77.mp4"
+                failed:
+                  value:
+                    lectureId: "0f2f9d77-8e67-4c5a-9c5d-0f2b9a3a1e12"
+                    status: "FAILED"
+                    lastUpdated: "2025-09-22T09:41:00Z"
+                    error:
+                      code: "TTS_ENGINE_ERROR"
+                      message: "Text-to-speech conversion failed."
+        "404":
+          description: "Request not found"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+components:
+  schemas:
+    UserProfile:
+      type: object
+      description: "Information about the user and their preferences."
+      required:
+        - id
+        - role
+        - language
+      properties:
+        id:
+          type: string
+          description: "Unique identifier of the user."
+        role:
+          type: string
+          enum: [ student, instructor ]
+          description: "User's role."
+        language:
+          type: string
+          enum: [ german, english ]
+          description: "Primary language."
+        preferences:
+          type: object
+          description: "Generation/presentation preferences."
+          properties:
+            answerLength:
+              type: string
+              enum: [ short, medium, long ]
+            languageLevel:
+              type: string
+              enum: [ basic, intermediate, advanced ]
+            expertiseLevel:
+              type: string
+              enum: [ beginner, intermediate, advanced, expert ]
+            includePictures:
+              type: string
+              enum: [ none, few, many ]
+        enrolledCourses:
+          type: array
+          description: "Course IDs the user is enrolled in."
+          items:
+            type: string
+
+    GenerationAcceptedResponse:
+      type: object
+      description: "Returned immediately after generation request accepted"
+      properties:
+        lectureId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [ IN_PROGRESS, FAILED, DONE ]
+        createdAt:
+          type: string
+          format: date-time
+
+    GenerationStatusResponse:
+      type: object
+      properties:
+        lectureId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          description: "Job status"
+          enum: [ IN_PROGRESS, FAILED, DONE ]
+        lastUpdated:
+          type: string
+          format: date-time
+        resultUrl:
+          type: string
+          format: uri
+          description: "URL to download or stream the generated video (present only when DONE)."
+        error:
+          $ref: "#/components/schemas/Error"
+
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+
+externalDocs:
+  description: "Project repository and README"
+  url: "https://github.com/fa25genai/orpheus"
+
