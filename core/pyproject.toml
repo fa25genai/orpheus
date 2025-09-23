@@ -14,7 +14,9 @@ requires-python = "^3.13"
 dependencies = [
     "fastapi (==0.117.1)",
     "langchain (==1.0.0a6)",
-    "uvicorn[standard] (>=0.36.0,<0.37.0)"
+    "uvicorn[standard] (>=0.36.0,<0.37.0)",
+    "redis (>=6.4.0,<7.0.0)",
+    "openapi-generator (>=1.0.6,<2.0.0)"
 ]
 
 [dependency-groups]
