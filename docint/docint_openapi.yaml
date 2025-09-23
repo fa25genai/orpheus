@@ -23,87 +23,65 @@ servers:
 tags:
   - name: docint
     description: "Endpoints for document storage and retrieval."
-  
+
 paths:
 
   /v1/upload/{courseId}:
     post:
       tags:
         - docint
-      summary: uploads document
+      summary: uploads a PDF document
       operationId: uploadsDocument
       parameters:
-        - name: courseId
-          in: path
-          required: true
-          schema:
-            type: string
-          description: "The ID of the course to upload the content to."
+        - $ref: "#/components/parameters/CourseId"
       requestBody:
         required: true
         content:
           application/pdf:
             schema:
               type: string
-              format: base64 
+              format: base64
+              description: "PDF file encoded as base64"
       responses:
         "201":
           description: Successfully uploaded. Returns created ID.
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  documentId:
-                    type: string
-                    description: The ID of the stored document.
-        "400":
-          description: Bad Request – missing file or parameters.
-        "404":
-          description: courseId not found.
-        "413":
-          description: Payload Too Large.
-        "415":
-          description: Unsupported Media Type (only PDFs accepted).
-        "500":
-          description: Server error.
-
+                $ref: "#/components/schemas/UploadResponse"
+        "400": 
+          $ref: "#/components/responses/BadRequest"
+        "404": 
+          $ref: "#/components/responses/NotFound"
+        "413": 
+          $ref: "#/components/responses/PayloadTooLarge"
+        "415": 
+          $ref: "#/components/responses/UnsupportedMediaType"
 
   /v1/delete/{documentId}:
     delete:
       tags:
         - docint
-      summary: deletes document
+      summary: Deletes a document
       operationId: deletesDocument
       parameters:
-        - name: documentId
-          in: path
-          required: true
-          schema:
-            type: string
-          description: "The ID of the document to delete."
+        - $ref: "#/components/parameters/DocumentId"
       responses:
-            "200":
-              description: "A successful response confirming deletion."
-            "400":
-              description: "Bad Request - The request is missing a required parameter."
-            "404":
-              description: "Not Found - The documentId was not found."
+        "200":
+          description: "Successful deletion."
+        "400": 
+          $ref: "#/components/responses/BadRequest"
+        "404": 
+          $ref: "#/components/responses/NotFound"
 
-              
   /v1/retrieval/{courseId}:
     get:
-      tags:
-        - docint
-      summary: provides relevant textual content and images
+      tags: 
+      - docint
+      summary: Provides relevant textual content and images
       operationId: retrievesDataForGeneration
       parameters:
-        - name: courseId
-          in: path
-          required: true
-          schema:
-            type: string
-          description: "The ID of the course to retrieve content from."
+        - $ref: "#/components/parameters/CourseId"
         - name: promptQuery
           in: query
           required: true
@@ -111,19 +89,53 @@ paths:
             type: string
           description: "The user's query or prompt."
       responses:
-            "200":
-              description: "A successful response containing relevant content and images."
-              content:
-                application/json:
-                  schema:
-                    $ref: "#/components/schemas/RetrievalResponse"
-            "400":
-              description: "Bad Request - The request is missing a required parameter."
-            "404":
-              description: "Not Found - The courseId was not found."
+        "200":
+          description: "Content and images."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RetrievalResponse"
+        "400": 
+          $ref: "#/components/responses/BadRequest"
+        "404": 
+          $ref: "#/components/responses/NotFound"
 
 components:
+  parameters:
+    CourseId:
+      name: courseId
+      in: path
+      required: true
+      schema: 
+        type: string
+      description: "The course ID."
+    DocumentId:
+      name: documentId
+      in: path
+      required: true
+      schema:
+        type: string
+      description: "The document ID."
+
+  responses:
+    BadRequest:
+      description: Bad Request – missing file or parameters.
+    NotFound:
+      description: Not Found – resource not found.
+    PayloadTooLarge:
+      description: Payload Too Large.
+    UnsupportedMediaType:
+      description: Unsupported Media Type (only PDFs accepted).
+
   schemas:
+    UploadResponse:
+      type: object
+      required: [documentId]
+      properties:
+        documentId:
+          type: string
+          description: The ID of the stored document.
+
     RetrievalResponse:
       type: object
       properties:
@@ -131,12 +143,13 @@ components:
           type: array
           items:
             type: string
-          description: "An array of text snippets."
+          description: "Array of text snippets."
         images:
           type: array
-          items:
+          items: 
             $ref: "#/components/schemas/ImageObject"
-          description: "An array of image objects."
+          description: "Array of image objects."
+
     ImageObject:
       type: object
       properties:
@@ -144,7 +157,7 @@ components:
           type: string
           contentMediaType: image/*
           contentEncoding: base64
-          description: "Image"
+          description: "Base64-encoded image."
         description:
           type: string
-          description: "A short description of the image."
+          description: "Short description of the image."
