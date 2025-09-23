@@ -35,6 +35,27 @@ build-backend = "poetry.core.masonry.api"
 line-length = 100
 target-version = "py313"
 
+[tool.poetry]
+name = "service-core"
+version = "0.1.0"
+description = "Orpheus Core AI Services"
+authors = [
+    {name = "Rifaath Ameen"},
+    {name = "Apoorva M Vaidya"},
+    {name = "Eslam Nasrallah"},
+    {name = "Lukas Bäurle"},
+    {name = "Florian Glombik"},
+]
+readme = "README.md"
+packages = [{include = "service_core", from = "src"}]
+
+[tool.poetry.dependencies]
+python = "^3.13"
+fastapi = "0.117.1"
+langchain = "1.0.0a6"
+redis = "^5.0.0" # Example version
+httpx = "^0.27.0" # Example version
+
 [tool.mypy]
 python_version = "3.13"
 strict = true
