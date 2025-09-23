@@ -1,6 +1,7 @@
 from fastapi import HTTPException
 from uuid import UUID, uuid4
 from typing import Dict
+import httpx
 # Import the base class you are inheriting from
 from ..apis.core_api_base import BaseCoreApi
 # Import the generated Pydantic models
@@ -8,10 +9,18 @@ from ..models.prompt_request import PromptRequest
 from ..models.prompt_response import PromptResponse
 from ..models.data_response import DataResponse
 # Import your custom service layer where the real work happens
+<<<<<<< HEAD
 from ..services import decompose_input, fetch_mock_data, generate_lecture_content
 import json
 import asyncio
 lecture_store: Dict[UUID, Dict] = {}
+=======
+from ..services import decompose_input
+from ..services.client_handler import slidesHandler, videoHandler
+
+SLIDE_API_URL = "https://slides:8000"
+VIDEO_API_URL = "https://videos:8000"
+>>>>>>> cb0c36a03c25a510d9ec4e54d53ac79754a6b216
 
 class CoreApiImpl(BaseCoreApi):
     """
@@ -39,6 +48,7 @@ class CoreApiImpl(BaseCoreApi):
             raise HTTPException(status_code=503, detail=f"Datastore error: {e}")
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {e}")
+    
     async def get_slides_by_lecture_id(
         self,
         lectureId: UUID,
@@ -50,15 +60,13 @@ class CoreApiImpl(BaseCoreApi):
         # Since no data is stored, we return a generic successful response.
         # The URL is generated using the provided lectureId for consistency.
         try:
-            response = ''   # Do a call to slideHandler
+            # The service layer handles the actual HTTP call
+            return slidesHandler.get_slides(str(lectureId))
+        except httpx.RequestError as e:
+            raise HTTPException(status_code=502, detail=f"Failed to connect to the external slide service: {e}")
+        except httpx.HTTPStatusError as e:
+            raise HTTPException(status_code=e.response.status_code, detail=f"External service error: {e.response.text}")
 
-            return DataResponse(
-                slidesUrl=response['url']
-            )
-        except ConnectionError as e:
-            raise HTTPException(status_code=503, detail=f"Datastore error: {e}")
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {e}")
 
     async def get_video_by_lecture_id(
         self,
@@ -68,8 +76,10 @@ class CoreApiImpl(BaseCoreApi):
         Returns a static, dummy response for a video.
         This endpoint is stateless and does not use the lectureId to look up data.
         """
-        # Since no data is stored, we return a generic successful response.
-        # The URL is generated using the provided lectureId for consistency.
-        return DataResponse(
-            videoUrl=f"https://storage.example.com/videos/{lectureId}.mp4"
-        )
+        try:
+            # The service layer handles the actual HTTP call
+            return videoHandler(str(lectureId))
+        except httpx.RequestError as e:
+            raise HTTPException(status_code=502, detail=f"Failed to connect to the external video service: {e}")
+        except httpx.HTTPStatusError as e:
+            raise HTTPException(status_code=e.response.status_code, detail=f"External service error: {e.response.text}")

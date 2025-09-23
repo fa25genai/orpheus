@@ -1,0 +1,12 @@
+pyproject.toml
+poetry.lock
+README.md
+.git/
+
+**/*
+!src/
+!src/service_core/
+!src/service_core/apis/
+!src/service_core/apis/*.py
+!src/service_core/models/
+!src/service_core/models/*.py
