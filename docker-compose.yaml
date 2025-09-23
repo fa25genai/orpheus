@@ -1,0 +1,7 @@
+services:
+  slides-service:
+    build:
+      context: ./slides
+      dockerfile: Dockerfile
+    ports:
+      - "60303:60303"
