@@ -9,18 +9,11 @@ from ..models.prompt_request import PromptRequest
 from ..models.prompt_response import PromptResponse
 from ..models.data_response import DataResponse
 # Import your custom service layer where the real work happens
-<<<<<<< HEAD
-from ..services import decompose_input, fetch_mock_data, generate_lecture_content
-import json
-import asyncio
-lecture_store: Dict[UUID, Dict] = {}
-=======
 from ..services import decompose_input
 from ..services.client_handler import slidesHandler, videoHandler
 
 SLIDE_API_URL = "https://slides:8000"
 VIDEO_API_URL = "https://videos:8000"
->>>>>>> cb0c36a03c25a510d9ec4e54d53ac79754a6b216
 
 class CoreApiImpl(BaseCoreApi):
     """

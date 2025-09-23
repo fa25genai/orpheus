@@ -39,13 +39,7 @@ target-version = "py313"
 name = "service-core"
 version = "0.1.0"
 description = "Orpheus Core AI Services"
-authors = [
-    {name = "Rifaath Ameen"},
-    {name = "Apoorva M Vaidya"},
-    {name = "Eslam Nasrallah"},
-    {name = "Lukas Bäurle"},
-    {name = "Florian Glombik"},
-]
+authors = ["RA"]
 readme = "README.md"
 packages = [{include = "service_core", from = "src"}]
 
