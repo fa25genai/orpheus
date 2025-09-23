@@ -1,4 +1,4 @@
-# voice_transcript_generator.py
+# transcript_generator.py
 # ---------------------------------------------------------
 # FastAPI microservice that generates FRIENDLY narration text per slide by
 # combining:
@@ -16,9 +16,9 @@
 # ▶ Run:
 #   uvicorn voice_transcript_generator:app --reload --port 8082
 #
-# ▶ Slim Output Endpoints:
-#   POST /v1/voice_transcript/ingest_slim   (raw team schemas → slim output)
-#   POST /v1/voice_transcript/slim          (canonical input → slim output)
+# ▶ Transcript Endpoints:
+#   POST /core/getTranscriptFromRaw   (raw team schemas → transcript output)
+#   POST /core/getTranscript          (canonical input → transcript output)
 # ---------------------------------------------------------
 
 from __future__ import annotations
@@ -117,7 +117,7 @@ class Persona(BaseModel):
     style: Literal["friendly-concise", "friendly-detailed", "enthusiastic", "neutral"] = "friendly-concise"
     region: Optional[str] = None
     learning_focus: Optional[Literal["big-picture", "step-by-step", "definitions-first"]] = "step-by-step"
-    pace_wpm: int = Field(145, ge=100, le=220)  # kept for completeness; not used in slim output
+    pace_wpm: int = Field(145, ge=100, le=220)  # kept for completeness; not used in transcript output
 
 class DIImageRef(BaseModel):
     id: str
@@ -150,14 +150,14 @@ class SlideSpec(BaseModel):
 class SlidesTeamData(BaseModel):
     slides: List[SlideSpec]
 
-class VoiceTranscriptSlimRequest(BaseModel):
+class VoiceTranscriptTranscriptRequest(BaseModel):
     user_profile: Persona
     di_data: DIData
     slide_team_data: SlidesTeamData
     lecture_id: Optional[str] = None
 
 # =========================
-# RAW Schemas (as-provided) — for ingest_slim endpoint
+# RAW Schemas (as-provided) — for getTranscriptFromRaw endpoint
 # =========================
 
 class RawUserPreferences(BaseModel):
@@ -206,7 +206,7 @@ class RawSlidesDeck(BaseModel):
     title: Optional[str] = None
     slides: Optional[List[RawSlidesDeckSlide]] = None
 
-class IngestSlimRequest(BaseModel):
+class TranscriptFromRawRequest(BaseModel):
     userProfile: RawUserProfile
     diTeamMeta: Optional[RawDIQuery] = None
     diTeamContent: RawDIContent
@@ -222,10 +222,10 @@ class IngestSlimRequest(BaseModel):
         return v
 
 # =========================
-# Slim Output Model
+# Transcript Output Model
 # =========================
 
-class VoiceTranscriptSlimResponse(BaseModel):
+class VoiceTranscriptTranscriptResponse(BaseModel):
     lectureId: str
     slideMessages: List[str]
     userProfile: Dict[str, Any]
@@ -383,7 +383,7 @@ def map_user_profile_to_persona(up: RawUserProfile) -> Persona:
         language="en" if lang.startswith("english") else "de",
         style=style,
         learning_focus="step-by-step",
-        pace_wpm=145  # not used in slim mode
+    pace_wpm=145  # not used in transcript mode
     )
 
 def map_di_raw_to_canonical(di_content: RawDIContent) -> DIData:
@@ -442,53 +442,6 @@ def generate_slide_messages(
 # FastAPI
 # =========================
 
-app = FastAPI(title="Voice Transcript Generator (Slim Text Only, Local LLM)", version="2.0.0")
-
-@app.post("/v1/voice_transcript/slim", response_model=VoiceTranscriptSlimResponse)
-def voice_transcript_slim(req: VoiceTranscriptSlimRequest):
-    if not req.slide_team_data.slides:
-        raise HTTPException(status_code=400, detail="slide_team_data.slides is required")
-
-    # Build a raw-like profile for the LLM from Persona
-    raw_for_llm = build_raw_profile_for_llm_from_persona(req.user_profile)
-
-    slide_messages = generate_slide_messages(
-        di_data=req.di_data,
-        slides_data=req.slide_team_data,
-        user_profile_raw=raw_for_llm
-    )
-
-    lecture_id = req.lecture_id or f"lec-{uuid.uuid4()}"
-    return VoiceTranscriptSlimResponse(
-        lectureId=lecture_id,
-        slideMessages=slide_messages,
-        userProfile=raw_for_llm
-    )
-
-@app.post("/v1/voice_transcript/ingest_slim", response_model=VoiceTranscriptSlimResponse)
-def voice_transcript_ingest_slim(raw: IngestSlimRequest):
-    # Persona + raw profile
-    persona = map_user_profile_to_persona(raw.userProfile)
-    raw_profile = raw_profile_dict(raw.userProfile)
-
-    # DI + Slides
-    di_data = map_di_raw_to_canonical(raw.diTeamContent)
-    slides = map_slides_raw_to_canonical(raw.slidesTeamDeck)
-    if not slides.slides:
-        raise HTTPException(status_code=400, detail="slidesTeamDeck.slides is empty")
-
-    slide_messages = generate_slide_messages(
-        di_data=di_data,
-        slides_data=slides,
-        user_profile_raw=raw_profile
-    )
-
-    lecture_id = raw.lectureId or (raw.slidesTeamScript.lectureId if raw.slidesTeamScript and raw.slidesTeamScript.lectureId else f"lec-{uuid.uuid4()}")
-    return VoiceTranscriptSlimResponse(
-        lectureId=lecture_id,
-        slideMessages=slide_messages,
-        userProfile=raw_profile
-    )
 
 # =========================
 # Optional: quick demo (python voice_transcript_generator.py)
