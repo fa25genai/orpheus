@@ -1,0 +1,42 @@
+[project]
+name = "service-slides"
+version = "0.1.0"
+description = "Orpheus Slide Service (FastAPI)"
+authors = [
+    {name = "Timo Seyfarth"},
+    {name = "Dominik Remo"},
+    {name = "Kilian Krampf"}
+]
+readme = "README.md"
+requires-python = ">= 3.13"
+dependencies = [
+    "fastapi (==0.117.1)",
+    "langchain (==1.0.0a6)",
+    "langchain-ollama (==0.3.8)",
+    "langchain-openai (>=0.3.0,<1.0.0)",
+    "langchain-google-genai (>=2.1.12,<3.0.0)",
+    "uvicorn[standard] (>=0.36.0,<0.37.0)",
+]
+
+
+[tool.poetry]
+packages = [{ include = "service_slides", from = "src" }]
+
+[tool.poetry.group.dev.dependencies]
+ruff = "0.13.1"
+mypy = "1.18.1"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+
+[tool.mypy]
+python_version = "3.13"
+strict = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+no_implicit_optional = true
