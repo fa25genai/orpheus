@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 
-app = FastAPI(title="your-project")
+app = FastAPI(title="services-core")
 
 @app.get("/")
 async def root():
