@@ -4,6 +4,7 @@ ARG DEBIAN_FRONTEND=noninteractive
 
 # Python, build-essential, and core libs are already in the base image.
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
     ffmpeg \
     libsndfile1 \
     git \
