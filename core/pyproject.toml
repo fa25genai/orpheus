@@ -1,30 +1,31 @@
 [project]
-name = "service-slides"
+name = "service-core"
 version = "0.1.0"
-description = "Orpheus Slide Service (FastAPI)"
+description = "Orpheus Core AI Services"
 authors = [
-    {name = "Timo Seyfarth"},
-    {name = "Dominik Remo"},
-    {name = "Kilian Krampf"}
+    {name = "Rifaath Ameen"},
+    {name = "Apoorva M Vaidya"},
+    {name = "Eslam Nasrallah"},
+    {name = "Lukas Bäurle"},
+    {name = "Florian Glombik"},
 ]
 readme = "README.md"
-requires-python = ">= 3.13"
+requires-python = "^3.13"
 dependencies = [
     "fastapi (==0.117.1)",
     "langchain (==1.0.0a6)",
-    "langchain-ollama (==0.3.8)",
-    "langchain-openai (>=0.3.0,<1.0.0)",
-    "langchain-google-genai (>=2.1.12,<3.0.0)",
     "uvicorn[standard] (>=0.36.0,<0.37.0)",
+    "redis (>=6.4.0,<7.0.0)",
+    "openapi-generator (>=1.0.6,<2.0.0)"
 ]
 
+[dependency-groups]
+dev = [
+    "ruff (==0.13.1)",
+    "mypy (==1.18.1)",
+    "datamodel-code-generator (>=0.33.0,<0.34.0)",
+]
 
-[tool.poetry]
-packages = [{ include = "service_slides", from = "src" }]
-
-[tool.poetry.group.dev.dependencies]
-ruff = "0.13.1"
-mypy = "1.18.1"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
