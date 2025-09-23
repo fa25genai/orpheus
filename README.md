@@ -35,4 +35,5 @@ Open questions:
 * Slide Generation vs folder name?
 * Avatar Generation vs folder name?
 * ai-core vs folder name?
+* format the architecture 16:9
 -->
