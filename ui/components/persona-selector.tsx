@@ -19,18 +19,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  GraduationCap,
-  User,
-  Brain,
-  Settings,
-  ChevronDown,
-} from "lucide-react";
+import {GraduationCap, User, Brain, Settings, ChevronDown} from "lucide-react";
+import {PersonaLevel} from "@/types/uploading";
 
 export interface Persona {
   id: string;
   name: string;
-  level: "beginner" | "intermediate" | "advanced";
+  level: "beginner" | "intermediate" | "expert";
   description: string;
   characteristics: string[];
   icon: React.ReactNode;
@@ -39,7 +34,7 @@ export interface Persona {
 
 const personas: Persona[] = [
   {
-    id: "newbie",
+    id: "beginner",
     name: "Tom",
     level: "beginner",
     description:
@@ -55,7 +50,7 @@ const personas: Persona[] = [
     color: "bg-green-500/10 text-green-500 border-green-500/20",
   },
   {
-    id: "bachelor",
+    id: "intermediate",
     name: "Aurora",
     level: "intermediate",
     description:
@@ -71,9 +66,9 @@ const personas: Persona[] = [
     color: "bg-blue-500/10 text-blue-500 border-blue-500/20",
   },
   {
-    id: "master",
+    id: "expert",
     name: "Linda",
-    level: "advanced",
+    level: "expert",
     description:
       "Linda 30 years old is a Ph.D. candidate in computer science at MIT",
     characteristics: [
@@ -89,8 +84,8 @@ const personas: Persona[] = [
 ];
 
 interface PersonaSelectorProps {
-  selectedPersona: string;
-  onPersonaChange: (persona: string) => void;
+  selectedPersona: PersonaLevel;
+  onPersonaChange: (persona: PersonaLevel) => void;
   className?: string;
 }
 
@@ -141,7 +136,7 @@ export function PersonaSelector({
                   persona.id === selectedPersona ? "ring-2 ring-primary" : ""
                 }`}
                 onClick={() => {
-                  onPersonaChange(persona.id);
+                  onPersonaChange(persona.id as PersonaLevel);
                   setShowDetails(false);
                 }}
               >

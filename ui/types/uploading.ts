@@ -7,3 +7,5 @@ export interface UploadedFile {
   progress: number;
   url?: string;
 }
+
+export type PersonaLevel = "beginner" | "intermediate" | "expert";

@@ -9,10 +9,13 @@ import {useEffect, useRef, useState} from "react";
 import {avatarApi, coreApi} from "@/app/api-clients";
 import {PromptResponse} from "@/generated-api-clients/core";
 import {GenerationStatusResponse} from "@/generated-api-clients/avatar";
+import {guideText} from "@/data/text";
+import GuideCards from "@/components/guide-cards";
+import {PersonaLevel} from "@/types/uploading";
 
 export default function Home() {
   const [prompt, setPrompt] = useState("");
-  const [persona, setPersona] = useState("newbie");
+  const [persona, setPersona] = useState<PersonaLevel>("beginner");
   const [messages, setMessages] = useState<string[]>([]);
 
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -75,7 +78,11 @@ export default function Home() {
             Ask any question about your course material and get personalized
             explanations.
           </p>
-
+          <GuideCards
+            persona={persona}
+            guideText={guideText}
+            onSelect={(question) => setMessages((prev) => [...prev, question])}
+          />
           <form
             onSubmit={handleSubmit}
             className="relative max-w-2xl mx-auto mt-6"
