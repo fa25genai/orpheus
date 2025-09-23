@@ -4,8 +4,8 @@ from typing import Dict, List  # noqa: F401
 import importlib
 import pkgutil
 
-from openapi_server.apis.core_api_base import BaseCoreApi
-import openapi_server.impl
+from service_core.apis.core_api_base import BaseCoreApi
+import service_core.impl
 
 from fastapi import (  # noqa: F401
     APIRouter,
@@ -22,19 +22,19 @@ from fastapi import (  # noqa: F401
     status,
 )
 
-from openapi_server.models.extra_models import TokenModel  # noqa: F401
+from service_core.models.extra_models import TokenModel  # noqa: F401
 from pydantic import Field
 from typing_extensions import Annotated
 from uuid import UUID
-from openapi_server.models.data_response import DataResponse
-from openapi_server.models.error import Error
-from openapi_server.models.prompt_request import PromptRequest
-from openapi_server.models.prompt_response import PromptResponse
+from service_core.models.data_response import DataResponse
+from service_core.models.error import Error
+from service_core.models.prompt_request import PromptRequest
+from service_core.models.prompt_response import PromptResponse
 
 
 router = APIRouter()
 
-ns_pkg = openapi_server.impl
+ns_pkg = service_core.impl
 for _, name, _ in pkgutil.iter_modules(ns_pkg.__path__, ns_pkg.__name__ + "."):
     importlib.import_module(name)
 
