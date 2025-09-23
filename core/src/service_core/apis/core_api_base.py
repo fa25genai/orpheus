@@ -5,10 +5,10 @@ from typing import ClassVar, Dict, List, Tuple  # noqa: F401
 from pydantic import Field
 from typing_extensions import Annotated
 from uuid import UUID
-from openapi_server.models.data_response import DataResponse
-from openapi_server.models.error import Error
-from openapi_server.models.prompt_request import PromptRequest
-from openapi_server.models.prompt_response import PromptResponse
+from service_core.models.data_response import DataResponse
+from service_core.models.error import Error
+from service_core.models.prompt_request import PromptRequest
+from service_core.models.prompt_response import PromptResponse
 
 
 class BaseCoreApi:
