@@ -2,13 +2,9 @@ from langchain_core.language_models import BaseLanguageModel
 from langchain_core.messages import SystemMessage, HumanMessage
 from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.prompts import ChatPromptTemplate, SystemMessagePromptTemplate
-from langgraph_sdk.auth.exceptions import HTTPException
 from pydantic import BaseModel, Field
 from service_slides.impl.manager.layout_manager import LayoutDescription
-from service_slides.llm_chain.shared_llm import invoke_llm
-from service_slides.models.request_slide_generation_request_assets_inner import (
-    RequestSlideGenerationRequestAssetsInner,
-)
+from service_slides.impl.llm_chain.shared_llm import invoke_llm
 from service_slides.models.slide_item import SlideItem
 from service_slides.models.slide_structure import SlideStructure
 from typing import List
@@ -34,20 +30,11 @@ class DetailedSlideStructure(BaseModel):
         )
 
 
-# Example request:
-# {
-#   "courseId": "abcd-efgh",
-#   "lectureId": "d847e33b-f932-498e-a86c-1c895d15f735",
-#   "lectureScript": "The lecture has \"for-loops\" as topic. To explain the concepts of loops, fist a real-life example is used. This example is doing push-ups for exercise, which is a repetitive task. The same concept, where one has to repeat the same action a certain amount of times, is also relevant for computer programs. For example, if an action has to be performed for each user in a system. This is shown with the following example program written in Java: `for (int i = 0; i < 10; i++) {\n    System.out.println(i);\n}`.\nThe students are encouraged to think about what output this program may produce. In the following slide the solution \"0\n1\n2\n3\n4\n5\n6\n7\n8\n9\" is shown. It is pointed out, that it starts at 0 and ends at 9. To explain this behaviour, the elements of a for-loop are then examined individually. First the initialization of the loop variable. This is the value, which is used for the first iteration of the loop. Next is the condition. As long as this condition holds we are repeating the loop. This condition is also checked before the first iteration, so the loop will not be entered, if it is initially false. The last element is the modification. This alters the state of the variable, so we eventually get to a terminating state. To wrap up the lecture, the advantages of for loops and potential uses are explained. The advantages are reduction of code, concise syntax for counting and versatile usages. The potential uses are counting, iterating over an array and periodically performing a specific action.",
-#   "user": {},
-#   "assets": []
-# }
 async def generate_slide_structure(
+        model: BaseLanguageModel,
         lecture_script: str,
-        available_layouts: List[LayoutDescription],
-        llm_model: BaseLanguageModel,
+        available_layouts: List[LayoutDescription]
 ) -> DetailedSlideStructure:
-    parser = PydanticOutputParser(pydantic_object=DetailedSlideStructure)
     prompt = ChatPromptTemplate.from_messages(
         [
             SystemMessagePromptTemplate.from_template(
@@ -68,26 +55,15 @@ async def generate_slide_structure(
                 ))
             )
         ]
-    ).partial(
-        format_instructions=parser.get_format_instructions()
     )
+
+    parser = PydanticOutputParser(pydantic_object=DetailedSlideStructure)
+
     detailed_structure = invoke_llm(
-        model=llm_model,
+        model=model,
         prompt=prompt,
-        input_data={},
+        input_data={"format_instructions": parser.get_format_instructions()},
         parser=parser
     )
+
     return detailed_structure
-
-
-async def generate_slide(
-        llm_model: BaseLanguageModel,
-        lecture_script: str,
-        slide_layout: str,
-        slide_template: str,
-        slide_content: str,
-        structure: DetailedSlideStructure,
-        assets: List[RequestSlideGenerationRequestAssetsInner],
-) -> str:
-    # TODO
-    pass

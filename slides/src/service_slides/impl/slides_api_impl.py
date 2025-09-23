@@ -3,10 +3,11 @@ from datetime import datetime
 
 from concurrent.futures.thread import ThreadPoolExecutor
 
-from fastapi import HTTPException, Depends
+from fastapi import HTTPException
 from langchain_core.language_models import BaseLanguageModel, BaseLanguageModel
 from pydantic import StrictStr, Field
-from service_slides.impl.helper.slide_generator import generate_slide_structure, generate_slide
+from service_slides.impl.llm_chain.slide_structure import generate_slide_structure
+from service_slides.impl.llm_chain.slide_content import generate_single_slide_content
 from service_slides.impl.manager.layout_manager import LayoutManager
 from typing_extensions import Annotated
 
@@ -51,29 +52,30 @@ class SlidesApiImpl(BaseSlidesApi):
             splitting_model: BaseLanguageModel,
             slidesgen_model: BaseLanguageModel,
     ) -> GenerationAcceptedResponse:
+        
+        # 1. Generate the slide structure
         structure = await generate_slide_structure(
+            model=splitting_model,
             lecture_script=request_slide_generation_request.lecture_script,
-            available_layouts=await layout_manager.get_available_layouts(
+            available_layouts = await layout_manager.get_available_layouts(
                 request_slide_generation_request.course_id
-            ),
-            llm_model=splitting_model,
+            )
         )
 
+        # 2. Generate the slide content
         await job_manager.init_job(
             request_slide_generation_request.lecture_id, len(structure.items)
         )
         for item in structure.items:
             async def generate_item():
-                await generate_slide(
-                    llm_model=slidesgen_model,
-                    lecture_script=request_slide_generation_request.lecture_script,
-                    slide_layout=item.layout,
-                    slide_template=await layout_manager.get_layout_template(
+                await generate_single_slide_content(
+                    model = slidesgen_model,
+                    text = item.content,
+                    slide_template = await layout_manager.get_layout_template(
                         request_slide_generation_request.course_id, item.layout
                     ),
-                    slide_content=item.content,
-                    structure=structure,
-                    assets=item.assets,
+                    slide_number = structure.items.index(item) + 1, # Slide numbers start from 1
+                    assets = item.assets,
                 )
                 await job_manager.finish_page(request_slide_generation_request.lecture_id)
 
