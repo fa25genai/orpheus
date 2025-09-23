@@ -1,0 +1,15 @@
+tmp
+scripts
+
+LICENSE
+
+checkpoints/ditto_onnx
+checkpoints/.gitignore
+checkpoints/.gitattributes
+
+*.gitignore
+
+*.mp4
+
+*audio.wav
+*image_krusche.png
