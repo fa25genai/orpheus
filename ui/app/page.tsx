@@ -6,6 +6,8 @@ import {Input} from "@/components/ui/input";
 import {ArrowUp, User} from "lucide-react";
 import Link from "next/link";
 import {useEffect, useRef, useState} from "react";
+import {avatarApi, coreApi} from "@/app/api-clients";
+import {CreateLectureFromPromptRequest, PromptRequest, PromptResponse} from "@/api-clients/core";
 
 export default function Home() {
   const [prompt, setPrompt] = useState("");
@@ -20,13 +22,13 @@ export default function Home() {
       setMessages((prev) => [...prev, prompt]);
       // Call API to get response
       try {
-        const res = await fetch("/api/core", {
-          method: "POST",
-          headers: {"Content-Type": "application/json"},
-          body: JSON.stringify({prompt}), // match your PromptRequest
-        });
+          const res: PromptResponse = await coreApi.createLectureFromPrompt({
+              promptRequest: {
+                  prompt: prompt,
+              },
+          });
 
-        const lectureId = await res.json();
+        const lectureId = res.lectureId;
         console.log("Lecture created:", lectureId);
       } catch (error) {
         console.error("API error:", error);
