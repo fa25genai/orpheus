@@ -29,7 +29,7 @@ def _create_llm_chain(
 def invoke_llm(
     model: BaseLanguageModel,
     prompt: ChatPromptTemplate,
-    input_data: Dict[str, Any],
+    input_data: Dict[str, Any] = {},
     parser: Optional[BaseOutputParser[T]] = None
 ) -> T | str:
     """Executes LLM request and returns parsed result."""
