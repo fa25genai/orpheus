@@ -128,15 +128,11 @@ paths:
                   value:
                     lectureId: "3a6d2f2e-6b1a-4b0b-9d7e-2f5a2a4c1b9e"
                     status: "IN_PROGRESS"
-                    totalPages: 25
-                    generatedPages: 10
                     lastUpdated: "2025-09-22T09:30:00Z"
                 done:
                   value:
                     lectureId: "0f2f9d77-8e67-4c5a-9c5d-0f2b9a3a1e12"
                     status: "DONE"
-                    totalPages: 15
-                    generatedPages: 15
                     lastUpdated: "2025-09-22T09:41:00Z"
         "404":
           description: "Request not found"
