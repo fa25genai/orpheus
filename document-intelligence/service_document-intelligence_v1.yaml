@@ -77,7 +77,7 @@ paths:
   /v1/retrieval/{courseId}:
     get:
       tags: 
-      - docint
+        - docint
       summary: Provides relevant textual content and images
       operationId: retrievesDataForGeneration
       parameters:
