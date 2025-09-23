@@ -1,0 +1,39 @@
+
+version: "3.9"
+
+volumes:
+  video_files: {}
+
+networks:
+  core: {}
+
+services:
+  video-producer:
+    build:
+      context: .
+      dockerfile: ./Dockerfile     # your Python Dockerfile
+    environment:
+      - OUTPUT_DIR=/data/videos
+      - ASSETS_PUBLIC_URL=http://video-assets
+    volumes:
+      - video_files:/data
+    networks: [core]
+    ports:
+      - "9000:9000"                # expose API (optional in dev)
+    depends_on:
+      - video-assets
+
+  video-assets:
+    build:
+      context: ./assets
+      dockerfile: Dockerfile
+    volumes:
+      - video_files:/srv/assets:ro
+    networks: [core]
+    ports:
+      - "8080:80"                  # expose NGINX (only in dev)
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost/healthz || exit 1"]
+      interval: 10s
+      timeout: 2s
+      retries: 3
