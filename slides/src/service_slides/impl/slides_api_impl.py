@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from concurrent.futures.thread import ThreadPoolExecutor
 
 from fastapi import HTTPException, Depends
@@ -49,7 +51,7 @@ class SlidesApiImpl(BaseSlidesApi):
     ) -> GenerationAcceptedResponse:
         structure = await generate_slide_structure(
             lecture_script=request_slide_generation_request.lecture_script,
-            layouts=await layout_manager.get_available_layouts(
+            available_layouts=await layout_manager.get_available_layouts(
                 request_slide_generation_request.course_id
             ),
             llm_model=llm_model,

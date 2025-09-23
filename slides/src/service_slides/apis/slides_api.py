@@ -93,7 +93,7 @@ async def request_slide_generation(
         request_slide_generation_request
     ,
         http_request.app.state.executor,
-        http_request.app.state.layout_manager,
         http_request.app.state.job_manager,
+        http_request.app.state.layout_manager,
         http_request.app.state.model,
     )
