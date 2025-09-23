@@ -14,7 +14,6 @@ Provides chat service and orchestrates efforts by other services
     ```
 
 ## Update generated files
-yaml model generation:
 ### yml model
 ```bash
 datamodel-codegen --input service_core_v1.yaml --output src/service_core/models/model.py --input-file-type openapi
