@@ -21,8 +21,11 @@ Once you edited the diagram, make sure to export it as svg to replace the existi
 | **Avatar Generation**        | Generates short videos of lifelike professor avatars with expressive narration.                                                                                                          |                                                                                        |
 | **Lecture Content Delivery** | Contend Delivery Network (CDN) that stores the lecturer avatar videos and lecture slides.                                                                                                |                                                                                        |
 
+<!--
+TODOS
 Open questions:
+* Migrate to service levels instead
 * Slide Generation vs folder name?
 * Avatar Generation vs folder name?
 * ai-core vs folder name?
-* lectur
+-->
