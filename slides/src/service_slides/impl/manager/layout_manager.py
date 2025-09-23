@@ -16,7 +16,7 @@ class LayoutTemplate:
 
 
 class LayoutManager:
-    def __init__(selfself):
+    def __init__(self):
         self._templates = {
             "default": LayoutTemplate(
                 "default",

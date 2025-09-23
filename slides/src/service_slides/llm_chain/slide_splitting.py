@@ -4,7 +4,7 @@ from service_slides.llm_chain.shared_llm import invoke_llm
 
 def test(model: BaseLanguageModel) -> str:
     system = SystemMessagePromptTemplate.from_template(
-        "You allways answer with 'Hello, AI world!'"
+        "You always answer with 'Hello, AI world!'"
     )
 
     user = ChatPromptTemplate.from_template(

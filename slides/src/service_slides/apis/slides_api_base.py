@@ -3,7 +3,7 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import ClassVar, Dict, List, Tuple  # noqa: F401
 
 from fastapi import Depends
-from langchain_core.language_models import BaseChatModel
+from langchain_core.language_models import BaseLanguageModel, BaseLanguageModel
 from pydantic import Field, StrictStr
 from service_slides.impl.manager.layout_manager import LayoutManager
 from typing_extensions import Annotated
@@ -35,7 +35,8 @@ class BaseSlidesApi:
         executor: ThreadPoolExecutor,
         job_manager: JobManager,
         layout_manager: LayoutManager,
-        llm_model: BaseChatModel,
+        splitting_model: BaseLanguageModel,
+        slidesgen_model: BaseLanguageModel,
     ) -> GenerationAcceptedResponse:
         """Accepts a concept and supporting assets (images, graphs, tables, code listings, equations). The request returns immediately with a request_id and status (typically IN_PROGRESS). Final slide deck (PDF) is produced asynchronously; the client can poll the status endpoint and fetch the resulting deck when complete."""
         ...

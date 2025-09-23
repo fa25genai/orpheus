@@ -5,7 +5,7 @@ from typing import Dict, List  # noqa: F401
 import importlib
 import pkgutil
 
-from langchain_core.language_models import BaseChatModel
+from langchain_core.language_models import BaseLanguageModel
 
 import service_slides.impl
 from service_slides.apis.slides_api_base import BaseSlidesApi
@@ -90,10 +90,10 @@ async def request_slide_generation(
     if not BaseSlidesApi.subclasses:
         raise HTTPException(status_code=500, detail="Not implemented")
     return await BaseSlidesApi.subclasses[0]().request_slide_generation(
-        request_slide_generation_request
-    ,
+        request_slide_generation_request,
         http_request.app.state.executor,
         http_request.app.state.job_manager,
         http_request.app.state.layout_manager,
-        http_request.app.state.model,
+        http_request.app.state.splitting_model,
+        http_request.app.state.slidesgen_model,
     )

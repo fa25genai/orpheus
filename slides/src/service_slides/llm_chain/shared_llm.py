@@ -65,7 +65,7 @@ def create_base_model(
         return ChatGoogleGenerativeAI(**model_kwargs)
     
     # Try Ollama last
-    if "OLLAMA_LLM_HOST" in os.environ and "OLLAMA_LLM_HOST" in os.environ:
+    if "OLLAMA_LLM_HOST" in os.environ and "OLLAMA_LLM_KEY" in os.environ:
         model_kwargs = {
             "model": model_name,
             "base_url": os.environ["OLLAMA_LLM_HOST"],

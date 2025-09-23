@@ -1,4 +1,4 @@
-from langchain_core.language_models import BaseChatModel
+from langchain_core.language_models import BaseLanguageModel
 from langchain_core.messages import SystemMessage, HumanMessage
 from pydantic import BaseModel, Field
 from service_slides.impl.manager.layout_manager import LayoutDescription
@@ -26,7 +26,7 @@ class DetailedSlideStructure(BaseModel):
 
     def as_simple_slide_structure(self) -> SlideStructure:
         return SlideStructure(
-            pages=map(lambda item: SlideItem(content=item.content), self.items),
+            pages=list(map(lambda item: SlideItem(content=item.content), self.items)),
         )
 
 
@@ -41,7 +41,7 @@ class DetailedSlideStructure(BaseModel):
 async def generate_slide_structure(
     lecture_script: str,
     available_layouts: List[LayoutDescription],
-    llm_model: BaseChatModel,
+    llm_model: BaseLanguageModel,
 ) -> DetailedSlideStructure:
     structured_output_model = llm_model.with_structured_output(DetailedSlideStructure)
     detailed_structure = structured_output_model.invoke(
@@ -66,6 +66,7 @@ async def generate_slide_structure(
 
 
 async def generate_slide(
+    llm_model: BaseLanguageModel,
     lecture_script: str,
     slide_layout: str,
     slide_template: str,
