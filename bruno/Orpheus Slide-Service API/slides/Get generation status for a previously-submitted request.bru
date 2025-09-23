@@ -1,0 +1,15 @@
+meta {
+  name: Get generation status for a previously-submitted request
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/v1/slides/:lectureId/status
+  body: none
+  auth: inherit
+}
+
+params:path {
+  lectureId: 
+}

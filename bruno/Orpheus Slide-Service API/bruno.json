@@ -1,0 +1,9 @@
+{
+  "version": "1",
+  "name": "Orpheus Slide-Service API",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ]
+}
