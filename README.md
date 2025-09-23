@@ -20,6 +20,7 @@ Once you edited the diagram, make sure to export it as svg to replace the existi
   <img src="./OrpheusArchitecture.svg" alt="Orpheus System Architecture" style="max-width: 80%; height: auto;">
 </div>
 
+TODO: exchange with actual service descriptions
 | Service                      | Description                                                                                                                                                                              | OpenAPI Specification                                                                  |
 |------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------|
 | **AI Core**                  | Orchestrates lecture generation from user prompts, creating a lecture script, and managing asynchronous jobs for creating interactive slides and videos with lifelike professor avatars. | [AI Core](./core/service_core_v1.yaml)                                                 |
