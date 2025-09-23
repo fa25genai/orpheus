@@ -23,9 +23,7 @@ import {
   GraduationCap,
   User,
   Brain,
-  Zap,
   Settings,
-  Info,
   ChevronDown,
 } from "lucide-react";
 
@@ -101,7 +99,7 @@ export function PersonaSelector({
   onPersonaChange,
   className = "",
 }: PersonaSelectorProps) {
-  const [showDetails, setShowDetails] = useState(false);
+  const [showDetails, setShowDetails] = useState(true);
 
   const currentPersona =
     personas.find((p) => p.id === selectedPersona) || personas[0];

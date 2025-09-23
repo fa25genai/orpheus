@@ -44,7 +44,6 @@ export default function Home() {
       }
 
       setPrompt(""); // clear input after submit
-      // Call function of API to send prompt
     }
   }
 
@@ -71,10 +70,10 @@ export default function Home() {
 
       {messages.length === 0 && (
         <section className="max-w-6xl mx-auto text-center h-screen">
-          <h1 className="text-4xl font-bold">Start with the lecture?</h1>
+          <h1 className="text-4xl font-bold">Whats on your mind?</h1>
           <p className="text-muted-foreground text-lg">
             Ask any question about your course material and get personalized
-            explanations
+            explanations.
           </p>
 
           <form

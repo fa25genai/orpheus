@@ -25,7 +25,7 @@
 1. Generate them for the core
     ```bash
     pnpm exec openapi-generator-cli generate \
-    -i ../avatar/service_video_v1.yaml \
+    -i ../core/service_video_v1.yaml \
     -g typescript-fetch \
     -o ./generated-api-clients/core
     ```
