@@ -33,3 +33,6 @@ Open questions:
 * ai-core vs folder name?
 * format the architecture 16:9
 -->
+
+## Getting Started
+Here you can find instructions for installing dependencies on a local development setup: https://confluence.aet.cit.tum.de/spaces/FA205/pages/273853809/Python+Project+Setup
