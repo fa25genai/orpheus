@@ -8,8 +8,9 @@ from ..models.prompt_request import PromptRequest
 from ..models.prompt_response import PromptResponse
 from ..models.data_response import DataResponse
 # Import your custom service layer where the real work happens
-from ..services import decompose_input
-
+from ..services import decompose_input, fetch_mock_data, generate_lecture_content
+import json
+import asyncio
 lecture_store: Dict[UUID, Dict] = {}
 
 class CoreApiImpl(BaseCoreApi):
@@ -25,8 +26,14 @@ class CoreApiImpl(BaseCoreApi):
         Accepts a user prompt and initiates a job to generate lecture content.
         """
         try:
-            response = decompose_input.decompose_question(prompt_request.prompt)
-            lecture_id = uuid4()  #
+            decomposed_questions = decompose_input.decompose_question(prompt_request.prompt)
+            #print("Decomposed Questions:", decomposed_questions)
+            print("Simulating async processing delay...")
+            await asyncio.sleep(5)
+            refined_output = generate_lecture_content.refine_lecture_content(fetch_mock_data.retrieved_content, fetch_mock_data.demo_user)
+            #print(json.dumps(refined_output, indent=2, ensure_ascii=False))
+            
+            lecture_id = uuid4()
             return PromptResponse(lectureId=lecture_id)
         except ConnectionError as e:
             raise HTTPException(status_code=503, detail=f"Datastore error: {e}")

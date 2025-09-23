@@ -20,7 +20,6 @@ from typing import Dict, Any, List
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from langchain_community.chat_models import ChatOllama
-from demos import RawUserProfile, RawUserPreferences
 
 # Load environment variables from .env file
 load_dotenv()
@@ -95,12 +94,13 @@ def refine_lecture_content(retrieved_content: List[Dict[str, Any]], persona: Dic
         persona_dict = persona.model_dump()
     else:
         persona_dict = persona
+        
+    persona_dict['id'] = str(persona_dict['id'])
     
     prompt = REFINE_PROMPT + "\n\n" + json.dumps({
         "persona": persona_dict,
         "retrieved_content": retrieved_content
     }, ensure_ascii=False)
-
     raw = llm_call(prompt)
     try:
         return json.loads(raw)
