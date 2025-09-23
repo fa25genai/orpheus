@@ -76,3 +76,34 @@ pyenv global 3.13.7
 python --version
 ```
 Expected output: Python 3.13.7
+
+##### macOS
+1. Install Homebrew if you haven't already
+    ```bash
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    ```
+2. Install pyenv
+    ```bash
+    brew install pyenv
+    ```
+3. Add pyenv to your shell and reload it
+   For zsh (the default on modern macOS):
+   ```bash
+   echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.zshrc
+   echo 'command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.zshrc
+   echo 'eval "$(pyenv init -)"' >> ~/.zshrc
+   ```
+   **Important**: Restart your terminal or run `exec "$SHELL"` for the changes to take effect
+   ```bash
+   exec "$SHELL"
+   ```
+4. Install Python 3.13.7 and set it as the global default version
+   ```bash
+   pyenv install 3.13.7
+   pyenv global 3.13.7
+   ```
+5. Verify the installation
+   ```bash
+   python --version
+   ```
+   Expected output: Python 3.13.7
