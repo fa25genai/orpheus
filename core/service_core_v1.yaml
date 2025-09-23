@@ -174,7 +174,7 @@ components:
     DataResponse:
       type: "object"
       properties:
-        slidesUrl:
+        url:
           type: "string"
           format: "uri"
           description: "The URL to the generated slide/video deck. Only present if status is 'completed'."

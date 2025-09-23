@@ -31,8 +31,8 @@ class DataResponse(BaseModel):
     """
     DataResponse
     """ # noqa: E501
-    slides_url: Optional[StrictStr] = Field(default=None, description="The URL to the generated slide/video deck. Only present if status is 'completed'.", alias="slidesUrl")
-    __properties: ClassVar[List[str]] = ["slidesUrl"]
+    url: Optional[StrictStr] = Field(default=None, description="The URL to the generated slide/video deck. Only present if status is 'completed'.")
+    __properties: ClassVar[List[str]] = ["url"]
 
     model_config = {
         "populate_by_name": True,
@@ -83,7 +83,7 @@ class DataResponse(BaseModel):
             return cls.model_validate(obj)
 
         _obj = cls.model_validate({
-            "slidesUrl": obj.get("slidesUrl")
+            "url": obj.get("url")
         })
         return _obj
 
