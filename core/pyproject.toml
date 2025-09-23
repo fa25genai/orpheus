@@ -15,8 +15,8 @@ dependencies = [
     "fastapi (==0.117.1)",
     "langchain (==1.0.0a6)",
     "uvicorn[standard] (>=0.36.0,<0.37.0)",
-    "redis (>=6.4.0,<7.0.0)",
-    "openapi-generator (>=1.0.6,<2.0.0)"
+    "openapi-generator (>=1.0.6,<2.0.0)",
+    "langchain-community (>=0.3.29,<0.4.0)"
 ]
 
 [dependency-groups]
@@ -47,7 +47,6 @@ packages = [{include = "service_core", from = "src"}]
 python = "^3.13"
 fastapi = "0.117.1"
 langchain = "1.0.0a6"
-redis = "^5.0.0" # Example version
 httpx = "^0.27.0" # Example version
 
 [tool.mypy]
