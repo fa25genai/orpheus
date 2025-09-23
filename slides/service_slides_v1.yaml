@@ -44,18 +44,21 @@ paths:
               type: object
               required:
                 - courseId
-                - concept
+                - lectureId
+                - lectureScript
                 - assets
               properties:
                 courseId:
-                  type: integer
+                  type: string
+                  format: uuid
                   description: >
-                    Numerical identification of the course for which slides should be generated
+                    Unique identifier of the course for which slides should be generated
                 lectureId:
-                  type: integer
+                  type: string
+                  format: uuid
                   description: >
-                    Numerical identification of the lecture to which the slides will belong.
-                concept:
+                    Unique identifier of the lecture to which the slides will belong.
+                lectureScript:
                   type: string
                   description: >
                     Plain text containing the details of the lecture (including examples and explanations).
@@ -67,7 +70,7 @@ paths:
                   items:
                     type: object
                     required:
-                      - description
+                      - assetDescription
                       - mimeType
                       - data
                     properties:
@@ -225,7 +228,6 @@ components:
           format: date-time
         error:
           $ref: "#/components/schemas/Error"
-          nullable: true
 
     Error:
       type: object
