@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "name": "Orpheus Slide-Service API",
+  "name": "avatar",
   "type": "collection",
   "ignore": [
     "node_modules",
