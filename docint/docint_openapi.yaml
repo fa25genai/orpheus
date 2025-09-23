@@ -1,6 +1,7 @@
 openapi: 3.1.0
 info:
   title: Document Intelligence API
+  version: "0.1.0"
   description: |-
     API for the Orpheus document intelligence orchestration.
     From the repository: "The Orpheus System transforms static slides into interactive lecture videos with lifelike professor avatars, combining expressive narration, visual presence, and dynamic content to create engaging, personalized learning experiences."
@@ -24,6 +25,7 @@ tags:
     description: "Endpoints for document storage and retrieval."
   
 paths:
+
   /v1/docint/retrieval:
     get:
       tags:
@@ -42,18 +44,18 @@ paths:
           required: true
           schema:
             type: string
-          describing: "The user's query or prompt."
-    responses:
-          "200":
-            description: "A successful response containing relevant content and images."
-            content:
-              application/json:
-                schema:
-                  $ref: "#/components/schemas/RetrievalResponse"
-          "400":
-            description: "Bad Request - The request is missing a required parameter."
-          "404":
-            description: "Not Found - The courseId was not found."
+          description: "The user's query or prompt."
+      responses:
+            "200":
+              description: "A successful response containing relevant content and images."
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/RetrievalResponse"
+            "400":
+              description: "Bad Request - The request is missing a required parameter."
+            "404":
+              description: "Not Found - The courseId was not found."
 
 components:
   schemas:
@@ -73,10 +75,17 @@ components:
     ImageObject:
       type: object
       properties:
-        image/*:
-          schema:
-            type: string
-            format: binary
+        image:
+          oneOf:
+            - type: string
+              format: binary
+              description: "A PNG image."
+            - type: string
+              format: binary
+              description: "A JPEG image."
+            - type: string
+              format: binary
+              description: "A GIF image."
           description: "Image"
         description:
           type: string
