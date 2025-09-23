@@ -82,3 +82,26 @@ class SlidesApiImpl(BaseSlidesApi):
             createdAt=datetime.now(),
             structure=structure.as_simple_slide_structure(),
         )
+
+            async def generate_item():
+                await generate_slide(
+                    lecture_script=request_slide_generation_request.lecture_script,
+                    slide_layout=request_slide_generation_request.slide_layout,
+                    slide_template=layout_manager.get_layout_template(
+                        request_slide_generation_request.course_id, item.layout
+                    ),
+                    slide_content=item.content,
+                    structure=structure,
+                    assets=item.assets,
+                )
+                await job_manager.finish_page(request_slide_generation_request.lecture_id)
+
+            executor.submit(generate_item)
+
+        status = await job_manager.get_status(request_slide_generation_request.lecture_id)
+        return GenerationAcceptedResponse(
+            lectureId=request_slide_generation_request.lecture_id,
+            status="IN_PROGRESS" if status.achieved < status.total else "DONE",
+            createdAt=datetime.now(),
+            structure=structure.as_simple_slide_structure(),
+        )
