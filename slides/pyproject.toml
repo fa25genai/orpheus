@@ -12,7 +12,8 @@ requires-python = ">= 3.13"
 dependencies = [
     "fastapi (==0.117.1)",
     "langchain (==1.0.0a6)",
-    "uvicorn[standard] (>=0.36.0,<0.37.0)"
+    "uvicorn[standard] (>=0.36.0,<0.37.0)",
+    "langchain-google-genai (>=2.1.12,<3.0.0)",
 ]
 
 

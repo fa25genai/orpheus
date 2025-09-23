@@ -34,17 +34,17 @@ class RequestSlideGenerationRequest(BaseModel):
     RequestSlideGenerationRequest
     """  # noqa: E501
 
-    course_id: StrictInt = Field(
-        description="Numerical identification of the course for which slides should be generated ",
+    course_id: StrictStr = Field(
+        description="Unique identifier of the course for which slides should be generated ",
         alias="courseId",
     )
-    lecture_id: Optional[StrictInt] = Field(
-        default=None,
-        description="Numerical identification of the lecture to which the slides will belong. ",
+    lecture_id: StrictStr = Field(
+        description="Unique identifier of the lecture to which the slides will belong. ",
         alias="lectureId",
     )
-    concept: StrictStr = Field(
-        description="Plain text containing the details of the lecture (including examples and explanations). May have any format (i.e. human readable). "
+    lecture_script: StrictStr = Field(
+        description="Plain text containing the details of the lecture (including examples and explanations). May have any format (i.e. human readable). ",
+        alias="lectureScript",
     )
     user: Optional[Dict[str, Any]] = Field(
         default=None,
@@ -53,7 +53,7 @@ class RequestSlideGenerationRequest(BaseModel):
     assets: List[RequestSlideGenerationRequestAssetsInner] = Field(
         description="Additional files: images, PDFs, graphs, tables, listings, equations. Use multiple entries for multiple files. May be empty."
     )
-    __properties: ClassVar[List[str]] = ["courseId", "lectureId", "concept", "user", "assets"]
+    __properties: ClassVar[List[str]] = ["courseId", "lectureId", "lectureScript", "user", "assets"]
 
     model_config = {
         "populate_by_name": True,
@@ -112,7 +112,7 @@ class RequestSlideGenerationRequest(BaseModel):
             {
                 "courseId": obj.get("courseId"),
                 "lectureId": obj.get("lectureId"),
-                "concept": obj.get("concept"),
+                "lectureScript": obj.get("lectureScript"),
                 "user": obj.get("user"),
                 "assets": [
                     RequestSlideGenerationRequestAssetsInner.from_dict(_item)
