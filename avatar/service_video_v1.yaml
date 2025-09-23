@@ -197,7 +197,7 @@ components:
           format: uuid
         status:
           type: string
-          enum: [FAILED, DONE ]
+          enum: [ IN_PROGRESS, FAILED, DONE ]
         createdAt:
           type: string
           format: date-time
