@@ -3,5 +3,7 @@ services:
     build:
       context: ./slides
       dockerfile: Dockerfile
+    env_file:
+      - ./slides/.env
     ports:
       - "60303:60303"

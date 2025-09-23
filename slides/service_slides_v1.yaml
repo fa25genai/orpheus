@@ -131,6 +131,7 @@ paths:
           required: true
           schema:
             type: string
+            format: uuid
           description: "The lectureId returned by /v1/slides/generate"
       responses:
         "200":
@@ -194,7 +195,8 @@ components:
       description: "Returned immediately after generation request accepted"
       properties:
         lectureId:
-          type: integer
+          type: string
+          format: uuid
         status:
           type: string
           enum: [IN_PROGRESS, FAILED, DONE]
@@ -209,7 +211,8 @@ components:
       type: object
       properties:
         lectureId:
-          type: integer
+          type: string
+          format: uuid
         status:
           type: string
           description: "Job status"
