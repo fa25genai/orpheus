@@ -39,12 +39,12 @@ paths:
           schema:
             type: string
           description: "The ID of the course to retrieve content from."
-        - name: query
+        - name: promptQuery
           in: query
           required: true
           schema:
             type: string
-          description: "The user's query or prompt."
+          description: "The user's prompt."
       responses:
             "200":
               description: "A successful response containing relevant content and images."
@@ -90,6 +90,4 @@ components:
         description:
           type: string
           description: "A short description of the image."
-        textualDescription:
-          type: string
-          description: "A more detailed textual description of the image."
+    
