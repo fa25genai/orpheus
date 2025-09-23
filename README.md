@@ -1,6 +1,9 @@
 # Orpheus
 The Orpheus System transforms static slides into interactive lecture videos with lifelike professor avatars, combining expressive narration, visual presence, and dynamic content to create engaging, personalized learning experiences.
 
+## Architecture
+![Architecture Overview](https://github.com/fa25genai/orpheus/blob/develop/architecture.png)
+
 ## API Interface Documentation
 
 | Service | OpenAPI documentation |
