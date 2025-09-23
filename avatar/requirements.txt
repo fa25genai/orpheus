@@ -1,3 +1,5 @@
+# TTS requirements
+
 librosa==0.9.1
 faster-whisper==0.9.0
 pydub==0.25.1
@@ -14,3 +16,24 @@ cn2an==0.5.22
 jieba==0.42.1
 gradio==3.48.0
 langid==1.1.6
+
+# Video generation requirements
+librosa
+tqdm
+filetype
+imageio
+opencv-python-headless
+scikit-image
+cython
+cuda-python
+imageio-ffmpeg
+colored
+polygraphy
+numpy
+onnxruntime
+mediapipe
+einops
+
+# Deployment requirements
+fastapi
+pydantic
