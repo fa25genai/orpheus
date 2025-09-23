@@ -12,19 +12,13 @@
 #                  "Wir können alles. Außer Hochdeutsch."                      #
 #                                                                              #
 ################################################################################
-import sys
-import os
-
-# Add the project root to the Python path to resolve relative imports
-project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
-sys.path.insert(0, project_root)
-
 from langchain_community.chat_models import ChatOllama
 from service_core.models.user_profile import UserProfile
 from service_core.models.user_profile_preferences import UserProfilePreferences
 from services_models.slides import SlidesEnvelope
 import json
 import logging
+import os
 
 logging.basicConfig(
     level=logging.INFO,
@@ -113,10 +107,14 @@ def generate_narrations(lecture_script, example_slides, user_profile):
     Returns:
         str: A JSON string containing the generated slide narrations.
     """
+    llama_api_key = os.environ.get("LLAMA_API_KEY", "")
+    llama_model = os.environ.get("LLAMA_MODEL", "gemma3:27b")  # Default if not set
+    llama_api_url = os.environ.get("LLAMA_API_URL", "https://gpu.aet.cit.tum.de/ollama")  # Default if not set
+    
     llm = ChatOllama(
-            model="gemma3:27b",   # or your deployed model name
-            base_url="https://gpu.aet.cit.tum.de/ollama",  # custom endpoint
-            headers={"Authorization": "Bearer sk-524a9264faa6454aa9248b32aee9bd9b"}   # custom API key
+            model=llama_model,
+            base_url=llama_api_url,
+            headers={"Authorization": f"Bearer {llama_api_key}"} if llama_api_key else {}
     )
 
     slides_data = json.loads(example_slides.model_dump_json())
