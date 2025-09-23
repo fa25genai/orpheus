@@ -1,7 +1,6 @@
 from concurrent.futures.thread import ThreadPoolExecutor
 from os import cpu_count, getenv
 import os
-import typing
 from concurrent.futures.thread import ThreadPoolExecutor
 from os import cpu_count
 
@@ -34,6 +33,9 @@ async def lifespan(app: FastAPI):
     app.state.executor = ThreadPoolExecutor(max_workers=cpu_count())
     app.state.job_manager = JobManager()
     app.state.layout_manager = LayoutManager()
+
+    app.state.executor = ThreadPoolExecutor(max_workers=cpu_count())
+    app.state.job_manager = JobManager()
 
     yield
 

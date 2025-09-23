@@ -33,9 +33,7 @@ class RequestSlideGenerationRequestAssetsInner(BaseModel):
 
     name: Optional[StrictStr] = Field(default=None, description="File name of the asset")
     asset_description: StrictStr = Field(
-
-        description="Plain text description of the asset/it's contents",
-        alias="assetDescription",
+        description="Plain text description of the asset/it's contents", alias="assetDescription"
     )
     mime_type: StrictStr = Field(
         description="MIME-Type name of the file type (e.g. image/png)", alias="mimeType"
