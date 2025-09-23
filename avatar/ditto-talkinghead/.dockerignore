@@ -1,11 +1,8 @@
 tmp
 scripts
+checkpoints
 
 LICENSE
-
-checkpoints/ditto_onnx
-checkpoints/.gitignore
-checkpoints/.gitattributes
 
 *.gitignore
 
