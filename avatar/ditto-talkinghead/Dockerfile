@@ -19,7 +19,6 @@ RUN python3 -m pip install --no-cache-dir \
     tqdm \
     filetype \
     imageio \
-    opencv-python-headless \
     scikit-image \
     cython \
     cuda-python \

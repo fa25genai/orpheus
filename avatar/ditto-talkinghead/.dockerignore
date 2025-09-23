@@ -1,9 +1,6 @@
 tmp
 scripts
 
-stream_pipeline_offline.py
-stream_pipeline_online.py
-
 LICENSE
 
 checkpoints/ditto_onnx
