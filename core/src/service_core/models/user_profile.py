@@ -23,7 +23,7 @@ import json
 from pydantic import BaseModel, ConfigDict, Field, StrictStr, field_validator
 from typing import Any, ClassVar, Dict, List, Optional
 from uuid import UUID
-from openapi_server.models.user_profile_preferences import UserProfilePreferences
+from service_core.models.user_profile_preferences import UserProfilePreferences
 try:
     from typing import Self
 except ImportError:

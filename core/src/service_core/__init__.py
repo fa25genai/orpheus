@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException, status
 import uuid
-from models import PromptResponse, PromptRequest, DataResponse
+from service_core.models import PromptResponse, PromptRequest, DataResponse
 import redis
 from enum import Enum
 import json

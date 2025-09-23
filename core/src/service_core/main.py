@@ -14,7 +14,7 @@
 
 from fastapi import FastAPI
 
-from openapi_server.apis.core_api import router as CoreApiRouter
+from service_core.apis.core_api import router as CoreApiRouter
 
 app = FastAPI(
     title="Orpheus CoreAI-Service API",
