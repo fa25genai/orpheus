@@ -66,10 +66,10 @@ def generate_audio(
     # Define ALL paths relative to the SCRIPT directory
     base_dir = script_dir  # This is the key fix!
     
-    ckpt_converter = os.path.join(base_dir,"OpenVoice", "checkpoints_v2", "converter")
-    output_dir = os.path.join(base_dir,"OpenVoice", "checkpoints_v2", "outputs_v2")
-    base_speakers_dir = os.path.join(base_dir,"OpenVoice", "checkpoints_v2", "base_speakers")
-    reference_speaker_dir = os.path.join(base_dir, "OpenVoice")
+    ckpt_converter = os.path.join(base_dir, "checkpoints_v2", "converter")
+    output_dir = os.path.join(base_dir, "checkpoints_v2", "outputs_v2")
+    base_speakers_dir = os.path.join(base_dir, "checkpoints_v2", "base_speakers")
+    reference_speaker_dir = os.path.join(base_dir)
     ses_dir = os.path.join(base_speakers_dir, "ses")
     
     # Also make the voice file path absolute relative to script directory
@@ -202,9 +202,17 @@ course_id = "course123"
 voice_file = "kursche_voice.mp3" 
 '''
 def main():
-    generate_audio(slide_texts, course_id, voice_file)
+    audio_paths = generate_audio(
+        slide_texts=slide_texts,
+        course_id=course_id,
+        voice_file=voice_file
+        # user_profile is now optional
+    )
+    
+    print("Generated audio files:")
+    for i, path in enumerate(audio_paths):
+        print(f"Slide {i+1}: {path}")
 
-
-if __name__ == 'main':
-    print('here')
+if __name__ == '__main__':
+    print('Starting audio generation...')
     main()
