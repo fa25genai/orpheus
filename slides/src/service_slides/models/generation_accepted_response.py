@@ -33,7 +33,7 @@ class GenerationAcceptedResponse(BaseModel):
     Returned immediately after generation request accepted
     """  # noqa: E501
 
-    lecture_id: Optional[StrictInt] = Field(default=None, alias="lectureId")
+    lecture_id: Optional[StrictStr] = Field(default=None, alias="lectureId")
     status: Optional[StrictStr] = None
     created_at: Optional[datetime] = Field(default=None, alias="createdAt")
     structure: Optional[SlideStructure] = Field(

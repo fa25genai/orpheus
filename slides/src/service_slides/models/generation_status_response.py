@@ -33,7 +33,7 @@ class GenerationStatusResponse(BaseModel):
     GenerationStatusResponse
     """  # noqa: E501
 
-    lecture_id: Optional[StrictInt] = Field(default=None, alias="lectureId")
+    lecture_id: Optional[StrictStr] = Field(default=None, alias="lectureId")
     status: Optional[StrictStr] = Field(default=None, description="Job status")
     total_pages: Optional[StrictInt] = Field(
         default=None,
