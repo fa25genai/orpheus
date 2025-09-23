@@ -91,13 +91,24 @@ def _eta_seconds(job: Job) -> int:
 # Fake pipeline
 # ---------------------------
 
-def generate_audio(slide_texts: List[str], *, course_id: str, user_profile: UserProfile) -> List[str]:
-    # TODO: replace with real TTS
-    return [f"/tmp/{course_id}_slide_{i+1}.wav" for i, _ in enumerate(slide_texts)]
+def generate_audio(slide_texts: List[str], course_id: str, lecture_id: UUID, user_profile: UserProfile) -> List[str]:
+    """
+    Create per-slide audio files from text.
+    Returns a list of file paths (one per slide).
+    """
+    lid = str(lecture_id)
+    audio_paths = [f"/tmp/{lid}_{i}.wav" for i, _ in enumerate(slide_texts)]
+    # TODO: generate real audio in OpenVoice container and save it in the mentioned path
+    return audio_paths
 
-def generate_video(slide_texts: List[str], audio_paths: List[str], *, lecture_id: UUID, course_id: str, user_profile: UserProfile) -> str:
-    # TODO: replace with real compositor + upload
-    return f"/tmp/{lecture_id}_final.mp4"
+def generate_video(audio_paths: List[str], lecture_id: UUID, course_id: str, user_profile: UserProfile) -> str:
+    """
+    Assemble the final video using the audio tracks and slide content.
+    Returns a URI (string) to the rendered video file which consists of one video per slide.
+    """
+    lid = str(lecture_id)
+    # TODO: generate real video in ditto-talkinghead container and save it in the mentioned path
+    return f"file:///tmp/{lid}_final.mp4"
 
 def process_generation(payload: GenerateRequest) -> None:
     try:
