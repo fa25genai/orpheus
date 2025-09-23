@@ -22,10 +22,9 @@ Once you edited the diagram, make sure to export it as svg to replace the existi
   <img src="./OrpheusArchitecture.svg" alt="Orpheus System Architecture" style="max-width: 80%; height: auto;">
 </div>
 
-| Service                   | Description                                                     | OpenAPI Spec                                         |
-|---------------------------|-----------------------------------------------------------------|------------------------------------------------------|
-| **AI Core**               |                                                                 | [OpenAPI Specification](./core/service_core_v1.yaml) |
-| **Document Intelligence** |                                                                 |                                                      |
-| **Slide Service**         | Handles upload, storage, and retrieval of lecture slides.       | [OpenAPI Specification](./core/service_core_v1.yaml) |
-| **Avatar Service**        | Generates lifelike professor avatars with expressive narration. |                                                      |
-
+| Service                   | Description                                                     | OpenAPI Specification                        |
+|---------------------------|-----------------------------------------------------------------|----------------------------------------------|
+| **AI Core**               |                                                                 | [AI Core](./core/service_core_v1.yaml)       |
+| **Document Intelligence** |                                                                 |                                              |
+| **Slide Service**         | Handles upload, storage, and retrieval of lecture slides.       | [Slide Service](./core/service_core_v1.yaml) |
+| **Avatar Service**        | Generates lifelike professor avatars with expressive narration. |                                              |
