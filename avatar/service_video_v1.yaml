@@ -211,6 +211,10 @@ components:
         lastUpdated:
           type: string
           format: date-time
+        resultUrl:
+          type: string
+          format: uri
+          description: "URL to download or stream the generated video (present only when DONE)."
         error:
           $ref: "#/components/schemas/Error"
 
