@@ -1,4 +1,4 @@
-openapi: 3.1.0
+openapi: 3.0.4
 info:
   title: Document Intelligence API
   version: "0.1.0"
@@ -25,16 +25,35 @@ tags:
     description: "Endpoints for document storage and retrieval."
   
 paths:
+  /v1/upload:
+    post:
+      tags:
+        - docint
+      summary: uploads document
+      operationId: uploadsDocument
+      requestBody:
+        description: "uploads documents"
 
-  /v1/docint/retrieval:
+      responses:
+            "200":
+              description: "A successful response containing relevant content and images."
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/RetrievalResponse"
+            "400":
+              description: "Bad Request - The request is missing a required parameter."
+            "404":
+              description: "Not Found - The courseId was not found."
+  /v1/retrieval/{courseId}:
     get:
       tags:
         - docint
-      summary: provides texts and images with the highest confident score
+      summary: provides relevant textual content and images
       operationId: retrievesDataForGeneration
       parameters:
         - name: courseId
-          in: query
+          in: path
           required: true
           schema:
             type: string
@@ -44,7 +63,7 @@ paths:
           required: true
           schema:
             type: string
-          description: "The user's prompt."
+          description: "The user's query or prompt."
       responses:
             "200":
               description: "A successful response containing relevant content and images."
@@ -76,18 +95,10 @@ components:
       type: object
       properties:
         image:
-          oneOf:
-            - type: string
-              format: binary
-              description: "A PNG image."
-            - type: string
-              format: binary
-              description: "A JPEG image."
-            - type: string
-              format: binary
-              description: "A GIF image."
+          type: string
+          contentMediaType: image/*
+          contentEncoding: base64
           description: "Image"
         description:
           type: string
           description: "A short description of the image."
-    
