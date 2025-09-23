@@ -138,6 +138,7 @@ components:
 
     RetrievalResponse:
       type: object
+      required: [content, images]
       properties:
         content:
           type: array
