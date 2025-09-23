@@ -12,7 +12,17 @@
 #                  "Wir können alles. Außer Hochdeutsch."                      #
 #                                                                              #
 ################################################################################
+import sys
+import os
+
+# Add the project root to the Python path to resolve relative imports
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+sys.path.insert(0, project_root)
+
 from langchain_community.chat_models import ChatOllama
+from service_core.models.user_profile import UserProfile
+from service_core.models.user_profile_preferences import UserProfilePreferences
+from services_models.slides import SlidesEnvelope
 import json
 import logging
 
@@ -23,7 +33,7 @@ logging.basicConfig(
 )
 
 lecture_script = """The lecture has \"for-loops\" as topic. To explain the concepts of loops, fist a real-life example is used. This example is doing push-ups for exercise, which is a repetitive task. The same concept, where one has to repeat the same action a certain amount of times, is also relevant for computer programs. For example, if an action has to be performed for each user in a system. This is shown with the following example program written in Java: `for (int i = 0; i < 10; i++) {\n    System.out.println(i);\n}`.\nThe students are encouraged to think about what output this program may produce. In the following slide the solution \"0\n1\n2\n3\n4\n5\n6\n7\n8\n9\" is shown. It is pointed out, that it starts at 0 and ends at 9. To explain this behaviour, the elements of a for-loop are then examined individually. First the initialization of the loop variable. This is the value, which is used for the first iteration of the loop. Next is the condition. As long as this condition holds we are repeating the loop. This condition is also checked before the first iteration, so the loop will not be entered, if it is initially false. The last element is the modification. This alters the state of the variable, so we eventually get to a terminating state. To wrap up the lecture, the advantages of for loops and potential uses are explained. The advantages are reduction of code, concise syntax for counting and versatile usages. The potential uses are counting, iterating over an array and periodically performing a specific action."""
-example_slides = """
+example_slides_data = """
 {
     "lectureId": "d847e33b-f932-498e-a86c-1c895d15f735",
     "status": "IN_PROGRESS",
@@ -76,26 +86,29 @@ example_slides = """
     }
 }
 """
-user_profile = {
-    "id": "user123",
-    "role": "student",
-    "language": "schwäbisch",
-    "preferences": {
-        "answerLength": "short",
-        "languageLevel": "intermediate",
-        "expertiseLevel": "expert",
-        "includePictures": "many"
-    },
-    "enrolledCourses": ["CS101", "PHY201"]
-    }
+example_slides = SlidesEnvelope.parse_obj_or_json(example_slides_data)
+
+
+user_profile = UserProfile(
+    id="f0a1b2c3-d4e5-f6a7-b8c9-d0e1f2a3b4c5",
+    role="student",
+    language="german",
+    preferences=UserProfilePreferences(
+        answerLength="short",
+        languageLevel="intermediate",
+        expertiseLevel="expert",
+        includePictures="many"
+    ),
+    enrolledCourses=["CS101", "PHY201"]
+)
 def generate_narrations(lecture_script, example_slides, user_profile):
     """
     Generates narrations for lecture slides based on a script and user profile.
 
     Args:
         lecture_script (str): The script for the entire lecture.
-        example_slides (str): A JSON string representing the slide structure.
-        user_profile (dict): A dictionary containing the user's profile.
+        example_slides (SlidesEnvelope): An object representing the slide structure.
+        user_profile (UserProfile): An object containing the user's profile.
 
     Returns:
         str: A JSON string containing the generated slide narrations.
@@ -106,7 +119,7 @@ def generate_narrations(lecture_script, example_slides, user_profile):
             headers={"Authorization": "Bearer sk-524a9264faa6454aa9248b32aee9bd9b"}   # custom API key
     )
 
-    slides_data = json.loads(example_slides)
+    slides_data = json.loads(example_slides.model_dump_json())
     pages = slides_data['structure']['pages']
     narration_history = ""
     slide_messages = []
@@ -118,7 +131,7 @@ def generate_narrations(lecture_script, example_slides, user_profile):
 
         You are an AI assistant creating texts for narrations for lecture slides.
         Your target audience is the following user with the following profile:
-        {json.dumps(user_profile)}
+        {user_profile.model_dump_json()}
 
         Please tailor the narration to be suitable for this user. For example, consider their language level, expertise, and role.
         The narration should be engaging for a student and easy to understand for a beginner.
