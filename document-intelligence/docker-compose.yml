@@ -1,0 +1,34 @@
+version: "3.8"
+
+services:
+  weaviate:
+    image: cr.weaviate.io/semitechnologies/weaviate:1.32.9
+    command:
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8080"
+      - --scheme
+      - http
+    environment:
+      # Core
+      AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: "true"
+      PERSISTENCE_DATA_PATH: "/var/lib/weaviate"
+      QUERY_DEFAULTS_LIMIT: "25"
+      CLUSTER_HOSTNAME: "node1"
+
+      # BYO vectors: disable built-in vectorizers/modules
+      DEFAULT_VECTORIZER_MODULE: "none"
+      ENABLE_API_BASED_MODULES: "false"
+      ENABLE_MODULES: ""          # We use our own embedding models
+      DISABLE_TELEMETRY: "true"
+
+    ports:
+      - "8080:8080"   # REST/GraphQL
+      - "50051:50051" # gRPC
+    volumes:
+      - weaviate_data:/var/lib/weaviate
+    restart: unless-stopped
+
+volumes:
+  weaviate_data:
