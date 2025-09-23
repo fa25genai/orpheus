@@ -1,4 +1,4 @@
-openapi: 3.1.0
+openapi: 3.0.0
 info:
   title: Orpheus CoreAI-Service API
   version: "0.1.0"
@@ -15,9 +15,9 @@ info:
     url: "https://opensource.org/licenses/MIT"
 
 servers:
-  - url: "http://localhost:30606"
-    description: "Local development (random port chosen: 30606)"
-  - url: "http://orpheus-service-slidegen:8080"
+  - url: "http://localhost:8000"
+    description: "Local development"
+  - url: "http://orpheus-service-core:8080"
     description: "DNS service name for in-cluster service"
 
 tags:
@@ -25,14 +25,193 @@ tags:
     description: "Endpoints for core AI"
 
 paths:
-  
+  /core/prompt:
+    post:
+      tags: 
+        - core
+      summary: "Submit a prompt to generate a lecture"
+      description: "Accepts a user prompt and initiates an asynchronous job to generate lecture content. Returns a unique lecture ID to track the job."
+      operationId: "createLectureFromPrompt"
+      requestBody:
+        description: "The user prompt to generate content from."
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PromptRequest'
+      responses:
+        '202':
+          description: "Accepted. The generation job has been successfully created."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PromptResponse'
+        '400':
+          description: "Bad Request. The request body is invalid."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /core/getSlides/{lectureId}:
+    get:
+      tags:
+        - core
+      summary: "Get the generated slides"
+      description: "Retrieves the status or result of a slide generation job using the lecture ID."
+      operationId: "getSlidesByLectureId"
+      parameters:
+        - name: "lectureId"
+          in: "path"
+          required: true
+          description: "The unique identifier for the lecture generation job."
+          schema:
+            type: "string"
+            format: "uuid"
+      responses:
+        '200':
+          description: "Success. Returns the status and URL of the generated slides."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SlideResponse'
+        '404':
+          description: "Not Found. No lecture job found with the provided ID."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /core/getVideo/{lectureId}:
+    get:
+      tags:
+        - core
+      summary: "Get the generated video"
+      description: "Retrieves the status or result of a video generation job using the lecture ID."
+      operationId: "getVideoByLectureId"
+      parameters:
+        - name: "lectureId"
+          in: "path"
+          required: true
+          description: "The unique identifier for the lecture generation job."
+          schema:
+            type: "string"
+            format: "uuid"
+      responses:
+        '200':
+          description: "Success. Returns the status and URL of the generated video."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VideoResponse'
+        '404':
+          description: "Not Found. No lecture job found with the provided ID."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
 components:
   schemas:
+    # Component provided in the prompt
     UserProfile:
-      type: object
-      description: "Schemaless additional information about the user (e.g. preferences regarding slide style, difficulty level etc.)."
+      type: "object"
+      properties:
+        id:
+          type: "string"
+          format: "uuid"
+          description: "Unique identifier for the user."
+          example: "a1b2c3d4-e5f6-7890-1234-567890abcdef"
+        role:
+          type: "string"
+          enum: ["student", "instructor"]
+        language:
+          type: "string"
+          enum: ["german", "english"]
+        preferences:
+          type: "object"
+          properties:
+            answerLength:
+              type: "string"
+              enum: ["short", "medium", "long"]
+            languageLevel:
+              type: "string"
+              enum: ["basic", "intermediate", "advanced"]
+            expertiseLevel:
+              type: "string"
+              enum: ["beginner", "intermediate", "advanced", "expert"]
+            includePictures:
+              type: "string"
+              enum: ["none", "few", "many"]
+        enrolledCourses:
+          type: "array"
+          items:
+            type: "string"
+            example: "courseId1"
 
+    # Schemas for Path Operations
+    PromptRequest:
+      type: "object"
+      properties:
+        prompt:
+          type: "string"
+          description: "The user's educational prompt."
+          example: "Explain the theory of relativity in simple terms."
+      required:
+        - "prompt"
+
+    PromptResponse:
+      type: "object"
+      properties:
+        lectureId:
+          type: "string"
+          format: "uuid"
+          description: "The unique ID assigned to the generation job."
+          example: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+      required:
+        - "lectureId"
+
+    SlideResponse:
+      type: "object"
+      properties:
+        status:
+          type: "string"
+          enum: ["processing", "completed", "failed"]
+          example: "completed"
+        slidesUrl:
+          type: "string"
+          format: "uri"
+          description: "The URL to the generated slide deck. Only present if status is 'completed'."
+          example: "https://storage.example.com/slides/f47ac10b-58cc-4372-a567-0e02b2c3d479.pptx"
+
+    VideoResponse:
+      type: "object"
+      properties:
+        status:
+          type: "string"
+          enum: ["processing", "completed", "failed"]
+          example: "processing"
+        videoUrl:
+          type: "string"
+          format: "uri"
+          description: "The URL to the generated video. Only present if status is 'completed'."
+          example: "https://storage.example.com/videos/f47ac10b-58cc-4372-a567-0e02b2c3d479.mp4"
+          
+    # Standard Error Schema
+    Error:
+      type: "object"
+      properties:
+        code:
+          type: "integer"
+          description: "The HTTP status code."
+          example: 404
+        message:
+          type: "string"
+          description: "A human-readable error message."
+          example: "Resource not found"
+      required:
+        - "code"
+        - "message"
 
 externalDocs:
   description: "Project repository and README"
