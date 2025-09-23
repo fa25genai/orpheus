@@ -9,7 +9,9 @@ from ..models.prompt_request import PromptRequest
 from ..models.prompt_response import PromptResponse
 from ..models.data_response import DataResponse
 # Import your custom service layer where the real work happens
-from ..services import decompose_input
+from ..services import decompose_input, generate_lecture_content, fetch_mock_data
+import asyncio
+import json
 from ..services.client_handler import slidesHandler, videoHandler
 
 SLIDE_API_URL = "https://slides:8000"
@@ -29,11 +31,11 @@ class CoreApiImpl(BaseCoreApi):
         """
         try:
             decomposed_questions = decompose_input.decompose_question(prompt_request.prompt)
-            #print("Decomposed Questions:", decomposed_questions)
+            print("Decomposed Questions:", decomposed_questions)
             print("Simulating async processing delay...")
-            await asyncio.sleep(5)
+            #await asyncio.sleep(5)
             refined_output = generate_lecture_content.refine_lecture_content(fetch_mock_data.retrieved_content, fetch_mock_data.demo_user)
-            #print(json.dumps(refined_output, indent=2, ensure_ascii=False))
+            print(json.dumps(refined_output, indent=2, ensure_ascii=False))
             
             lecture_id = uuid4()
             return PromptResponse(lectureId=lecture_id)

@@ -94,7 +94,7 @@ def refine_lecture_content(retrieved_content: List[Dict[str, Any]], persona: Dic
         persona_dict = persona.model_dump()
     else:
         persona_dict = persona
-        
+
     persona_dict['id'] = str(persona_dict['id'])
     
     prompt = REFINE_PROMPT + "\n\n" + json.dumps({
