@@ -7,6 +7,7 @@ from langchain.chat_models import init_chat_model
 
 from service_slides.apis.slides_api import router as SlidesApiRouter
 from service_slides.impl.manager.job_manager import JobManager
+from service_slides.impl.manager.layout_manager import LayoutManager
 
 
 async def lifespan(app: FastAPI):
@@ -21,6 +22,7 @@ async def lifespan(app: FastAPI):
 
     app.state.executor = ThreadPoolExecutor(max_workers=cpu_count())
     app.state.job_manager = JobManager()
+    app.state.layout_manager = LayoutManager()
 
     yield
 

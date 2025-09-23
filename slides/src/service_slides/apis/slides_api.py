@@ -52,14 +52,16 @@ for _, name, _ in pkgutil.iter_modules(ns_pkg.__path__, ns_pkg.__name__ + "."):
     response_model_by_alias=True,
 )
 async def get_generation_status(
-        http_request: Request,
-        lectureId: Annotated[
-            StrictStr, Field(description="The lectureId returned by /v1/slides/generate")
-        ] = Path(..., description="The lectureId returned by /v1/slides/generate"),
+    http_request: Request,
+    lectureId: Annotated[
+        StrictStr, Field(description="The lectureId returned by /v1/slides/generate")
+    ] = Path(..., description="The lectureId returned by /v1/slides/generate"),
 ) -> GenerationStatusResponse:
     if not BaseSlidesApi.subclasses:
         raise HTTPException(status_code=500, detail="Not implemented")
-    return await BaseSlidesApi.subclasses[0]().get_generation_status(lectureId, http_request.app.state.job_manager)
+    return await BaseSlidesApi.subclasses[0]().get_generation_status(
+        lectureId, http_request.app.state.job_manager
+    )
 
 
 @router.post(
@@ -81,8 +83,8 @@ async def get_generation_status(
     response_model_by_alias=True,
 )
 async def request_slide_generation(
-        http_request: Request,
-        request_slide_generation_request: RequestSlideGenerationRequest = Body(None, description=""),
+    http_request: Request,
+    request_slide_generation_request: RequestSlideGenerationRequest = Body(None, description=""),
 ) -> GenerationAcceptedResponse:
     """Accepts a concept and supporting assets (images, graphs, tables, code listings, equations). The request returns immediately with a request_id and status (typically IN_PROGRESS). Final slide deck (PDF) is produced asynchronously; the client can poll the status endpoint and fetch the resulting deck when complete."""
     if not BaseSlidesApi.subclasses:
@@ -90,6 +92,7 @@ async def request_slide_generation(
     return await BaseSlidesApi.subclasses[0]().request_slide_generation(
         request_slide_generation_request,
         http_request.app.state.executor,
+        http_request.app.state.layout_manager,
         http_request.app.state.job_manager,
-        http_request.app.state.model
+        http_request.app.state.model,
     )
