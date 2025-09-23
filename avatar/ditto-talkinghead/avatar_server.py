@@ -37,13 +37,13 @@ class InferParams(BaseModel):
 @app.get("/health")
 async def health():
     import torch, platform, sys
-    #import onnxruntime as ort
+    import onnxruntime as ort
     return {
         "python": sys.version.split()[0],
         "device": "cuda" if torch.cuda.is_available() else ("mps" if torch.backends.mps.is_available() else "cpu"),
         "torch_mps": torch.backends.mps.is_available(),
         "torch_cuda": torch.cuda.is_available(),
-        #"ort_providers": ort.get_available_providers(),
+        "ort_providers": ort.get_available_providers(),
         "platform": platform.platform(),
         "data_root": str(DITTO_DATA_ROOT),
         "cfg_pkl": str(DITTO_CFG_PKL),
