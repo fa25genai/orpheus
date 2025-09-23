@@ -12,7 +12,7 @@ FROM poetry-base
 
 WORKDIR /app
 COPY src src
-COPY poetry.lock pyproject.toml README.md ./
+COPY pyproject.toml README.md ./
 
 RUN poetry install
 
