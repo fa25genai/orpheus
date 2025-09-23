@@ -201,27 +201,16 @@ components:
         createdAt:
           type: string
           format: date-time
-
+          
     GenerationStatusResponse:
       type: object
       properties:
-        lectureId:
-          type: string
-          format: uuid
-        status:
-          type: string
-          description: "Job status"
-          enum: [ IN_PROGRESS, FAILED, DONE ]
-        lastUpdated:
-          type: string
-          format: date-time
-        resultUrl:
-          type: string
-          format: uri
-          description: "URL to download or stream the generated video (present only when DONE)."
-        error:
-          $ref: "#/components/schemas/Error"
-
+        lectureId: { type: string, format: uuid }
+        status: { type: string, enum: [ IN_PROGRESS, FAILED, DONE ] }
+        lastUpdated: { type: string, format: date-time }
+        resultUrl: { type: string, format: uri, description: "URL even if not ready" }
+        estimatedSecondsLeft: { type: integer, minimum: 0, description: "0 when DONE/FAILED" }
+        error: { $ref: "#/components/schemas/Error" }
     Error:
       type: object
       properties:
