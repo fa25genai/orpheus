@@ -20,7 +20,8 @@ dependencies = [
 [dependency-groups]
 dev = [
     "ruff (==0.13.1)",
-    "mypy (==1.18.1)"
+    "mypy (==1.18.1)",
+    "datamodel-code-generator (>=0.33.0,<0.34.0)",
 ]
 
 
