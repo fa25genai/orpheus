@@ -5,9 +5,11 @@ This service is the core backend component responsible for orchestrating the AI-
 
 # Prerequisites
 
-``` 
-cd core
-poetry install
+- Python 3.13.7
+- [openapi-generator](https://formulae.brew.sh/formula/openapi-generator) 7.15.0
+
+```bash 
+cd core && poetry install
 ```
 
 # Development Workflow
