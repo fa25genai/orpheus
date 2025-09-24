@@ -28,12 +28,20 @@ async def process_prompt(prompt_id: str, prompt_request: str):
         di_response.raise_for_status()
         di_data = di_response.json()
         print("Decompose Input API response:", di_data)
+        
+        entry = {
+            "Question": subquery,
+            "retrieved_content": di_data.get("content", []),
+            "retrieved_images_descriptions": [img.get("description", "") for img in di_data.get("images", [])],
+        }
 
-        retrieved_content.append(di_data)
+        retrieved_content.append(entry)
+    
+    print("\nAll retrieved content:", retrieved_content)
 
     #print("Simulating async processing delay...")
     #await asyncio.sleep(5)
-    refined_output = script_generation.generate_script(str(fetch_mock_data.create_demoretrieved_content()), fetch_mock_data.create_demo_user())
+    refined_output = script_generation.generate_script(str(retrieved_content), fetch_mock_data.create_demo_user())
     #print(refined_output)
     #lecture_script = refined_output.get("lectureScript", "")
     #print("\n\nGenerated Lecture Script:", lecture_script)
