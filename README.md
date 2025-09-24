@@ -13,6 +13,13 @@ Once you edited the diagram, make sure to export it as svg to replace the existi
   <img src="./OrpheusArchitecture.png" alt="Orpheus System Architecture" style="max-width: 95%; height: auto;">
 </div>
 
+<!--
+TODOS
+Open questions:
+* Migrate ymls to service levels instead
+* "Answer Generation Service" is not an optimal name yet, "Orchestration" might be better but harder to understand what it actually does if you do not know the project at all?
+-->
+
 ## API Interface Documentation
 
 | Service                       | Description                                                                                              | OpenAPI Specification                                                                  |
@@ -25,16 +32,6 @@ Once you edited the diagram, make sure to export it as svg to replace the existi
 | **Video Push Service**        | Uploads generated videos to the Lecture Content Service (which is a CDN)                                 |                                                                                        |
 | **Lecture Storage Service**   | Stores lecture materials, voice samples and lecturer pictures that are used for avatar generation.       |                                                                                        |
 | **Lecture Content Service**   | Content Delivery Network (CDN) that stores the lecturer avatar videos and lecture slides.                |                                                                                        |
-
-<!--
-TODOS
-Open questions:
-* Migrate to service levels instead
-* Slide Generation vs folder name?
-* Avatar Generation vs folder name?
-* ai-core vs folder name?
-* format the architecture 16:9
--->
 
 ## Getting Started
 ### Initial Setup
