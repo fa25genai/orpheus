@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field, constr
 
 app = FastAPI(title="Service Video-Generation APIs", version="0.1")
 
+
 # ---------------------------
 # Models
 # ---------------------------
@@ -18,6 +19,7 @@ class Preferences(BaseModel):
     expertiseLevel: Optional[Literal["beginner", "intermediate", "advanced", "expert"]] = None
     includePictures: Optional[Literal["none", "few", "many"]] = None
 
+
 class UserProfile(BaseModel):
     id: str
     role: Literal["student", "instructor"]
@@ -25,28 +27,33 @@ class UserProfile(BaseModel):
     preferences: Optional[Preferences] = None
     enrolledCourses: Optional[List[str]] = None
 
+
 class GenerateRequest(BaseModel):
     slideMessages: List[constr(min_length=1)] = Field(..., min_items=1)
     lectureId: UUID
     courseId: str
     userProfile: UserProfile
 
+
 class ErrorModel(BaseModel):
     code: Optional[str] = None
     message: Optional[str] = None
+
 
 class GenerationAcceptedResponse(BaseModel):
     lectureId: UUID
     createdAt: datetime
     # status omitted on purpose to match your earlier schema (202 body minimal)
 
+
 class GenerationStatusResponse(BaseModel):
     lectureId: UUID
     status: Literal["IN_PROGRESS", "FAILED", "DONE"]
     lastUpdated: datetime
-    resultUrl: str                      # always present now
-    estimatedSecondsLeft: int           # 0 when DONE/FAILED
+    resultUrl: str  # always present now
+    estimatedSecondsLeft: int  # 0 when DONE/FAILED
     error: Optional[ErrorModel] = None
+
 
 # ---------------------------
 # In-memory job store
@@ -62,31 +69,24 @@ class Job(BaseModel):
     expectedDurationSec: int
     error: Optional[ErrorModel] = None
 
+
 JOBS: Dict[UUID, Job] = {}
 
-# ---------------------------
-# Helpers
-# ---------------------------
-# imports for TTS pipeline
-import os
-import torch
-from openvoice import se_extractor
-from openvoice.api import ToneColorConverter
-import nltk
-from melo.api import TTS
-
-
 CDN_BASE = "https://cdn.example.com/videos"
+
 
 def _utcnow() -> datetime:
     return datetime.now(timezone.utc)
 
+
 def _result_url(lecture_id: UUID) -> str:
     return f"{CDN_BASE}/{lecture_id}.mp4"
+
 
 def _estimate_total_seconds(slide_count: int) -> int:
     # Heuristic: 8s overhead + 6s per slide (tweak as you learn)
     return 8 + 6 * slide_count
+
 
 def _eta_seconds(job: Job) -> int:
     if job.status in ("DONE", "FAILED"):
@@ -94,6 +94,7 @@ def _eta_seconds(job: Job) -> int:
     elapsed = int((_utcnow() - job.startedAt).total_seconds())
     remaining = job.expectedDurationSec - elapsed
     return max(0, remaining)
+
 
 # ---------------------------
 # Fake pipeline
@@ -109,6 +110,7 @@ def generate_audio(slide_texts: List[str], course_id: str, lecture_id: UUID, use
     # TODO: generate real audio in OpenVoice container and save it in the mentioned path
     return audio_paths
 
+
 def generate_video(audio_paths: List[str], lecture_id: UUID, course_id: str, user_profile: UserProfile) -> str:
     """
     Assemble the final video using the audio tracks and slide content.
@@ -117,6 +119,7 @@ def generate_video(audio_paths: List[str], lecture_id: UUID, course_id: str, use
     lid = str(lecture_id)
     # TODO: generate real video in ditto-talkinghead container and save it in the mentioned path
     return f"file:///tmp/{lid}_final.mp4"
+
 
 def process_generation(payload: GenerateRequest) -> None:
     try:
@@ -133,6 +136,7 @@ def process_generation(payload: GenerateRequest) -> None:
         job.lastUpdated = _utcnow()
         job.error = ErrorModel(code="GENERATION_FAILED", message=str(exc))
         JOBS[payload.lectureId] = job
+
 
 # ---------------------------
 # Routes
@@ -164,6 +168,7 @@ def request_video_generation(payload: GenerateRequest, background: BackgroundTas
     base = str(request.base_url).rstrip("/")
     response.headers["Location"] = f"{base}/v1/video/{payload.lectureId}/status"
     return GenerationAcceptedResponse(lectureId=payload.lectureId, createdAt=now)
+
 
 @app.get(
     "/v1/video/{lectureId}/status",
