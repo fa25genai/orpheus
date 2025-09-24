@@ -6,7 +6,7 @@ services:
     env_file:
       - ./slides/.env
     ports:
-      - "60303:60303"
+      - "30606:30606"
     networks:
       - orpheus
 
