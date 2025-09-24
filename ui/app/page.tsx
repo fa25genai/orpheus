@@ -34,12 +34,12 @@ export default function Home() {
             },
           });
 
-        const lectureId = coreResponse.lectureId;
-        console.log("Lecture created:", lectureId);
+        const promptId = coreResponse.promptId;
+        console.log("Lecture created:", promptId);
 
         const avatarResponse: GenerationStatusResponse =
           await avatarApi.getGenerationResult({
-            lectureId: prompt,
+            promptId: promptId,
           });
 
         console.log("Avatar generation status:", avatarResponse.status);
