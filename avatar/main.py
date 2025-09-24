@@ -123,8 +123,11 @@ def generate_video(audio_paths: List[str], lecture_id: UUID, course_id: str, use
 
 def process_generation(payload: GenerateRequest) -> None:
     try:
+        # -------------------------
+        # Todo: queue audio and video handling -> With fallback
         audio_paths = generate_audio(payload.slideMessages, course_id=payload.courseId, user_profile=payload.userProfile)
         _ = generate_video(payload.slideMessages, audio_paths, lecture_id=payload.lectureId, course_id=payload.courseId, user_profile=payload.userProfile)
+        # -------------------------
         # Mark done
         job = JOBS[payload.lectureId]
         job.status = "DONE"
