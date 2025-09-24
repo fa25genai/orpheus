@@ -29,6 +29,25 @@ for _, name, _ in pkgutil.iter_modules(ns_pkg.__path__, ns_pkg.__name__ + "."): 
 
 
 @router.get(
+    "/v1/slides/{promptId}/getContentUrl",
+    responses={
+        200: {"model": GenerationStatusResponse, "description": "Status of the generation job"},
+        404: {"model": Error, "description": "Request not found"},
+    },
+    tags=["slides"],
+    summary="Get content URLs for a previously-submitted request. Blocks until generation is finished",
+    response_model_by_alias=True,
+)
+async def get_content_url(
+        http_request: Request,
+        promptId: Annotated[StrictStr, Field(description="The promptId returned by /v1/slides/generate")] = Path(..., description="The promptId returned by /v1/slides/generate"),
+) -> GenerationStatusResponse:
+    if not BaseSlidesApi.subclasses:
+        raise HTTPException(status_code=500, detail="Not implemented")
+    return await BaseSlidesApi.subclasses[0]().get_content_url(promptId, http_request.app.state.job_manager)
+
+
+@router.get(
     "/v1/slides/{promptId}/status",
     responses={
         200: {"model": GenerationStatusResponse, "description": "Status of the generation job"},

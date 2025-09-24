@@ -45,15 +45,10 @@ class GenerationStatusResponse(BaseModel):
         alias="generatedPages",
     )
     last_updated: Optional[datetime] = Field(default=None, alias="lastUpdated")
+    web_url: Optional[StrictStr] = Field(default=None, alias="webUrl")
+    pdf_url: Optional[StrictStr] = Field(default=None, alias="pdfUrl")
     error: Optional[Error] = None
-    __properties: ClassVar[List[str]] = [
-        "promptId",
-        "status",
-        "totalPages",
-        "generatedPages",
-        "lastUpdated",
-        "error",
-    ]
+    __properties: ClassVar[List[str]] = ["promptId", "status", "totalPages", "generatedPages", "lastUpdated", "webUrl", "pdfUrl", "error"]
 
     @field_validator("status")
     def status_validate_enum(cls, value) -> Any:  # type: ignore
@@ -118,16 +113,14 @@ class GenerationStatusResponse(BaseModel):
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
 
-        _obj = cls.model_validate(
-            {
-                "promptId": obj.get("promptId"),
-                "status": obj.get("status"),
-                "totalPages": obj.get("totalPages"),
-                "generatedPages": obj.get("generatedPages"),
-                "lastUpdated": obj.get("lastUpdated"),
-                "error": Error.from_dict(error_data)
-                if (error_data := obj.get("error")) is not None
-                else None,
-            }
-        )
+        _obj = cls.model_validate({
+            "promptId": obj.get("promptId"),
+            "status": obj.get("status"),
+            "totalPages": obj.get("totalPages"),
+            "generatedPages": obj.get("generatedPages"),
+            "lastUpdated": obj.get("lastUpdated"),
+            "webUrl": obj.get("webUrl"),
+            "pdfUrl": obj.get("pdfUrl"),
+            "error": Error.from_dict(obj.get("error")) if obj.get("error") is not None else None
+        })
         return _obj
