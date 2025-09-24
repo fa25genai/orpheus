@@ -25,6 +25,21 @@ export default function Home() {
 
   const bottomRef = useRef<HTMLDivElement>(null);
 
+  // TODO: API calls without polling
+  // async function fetchAvatar(promptId: string) {
+  //   const avatarResponse: AvatarGenerationStatusReponse =
+  //     await avatarApi.getGenerationResult({promptId});
+  //   setAvatarData(avatarResponse);
+  // }
+
+  // async function fetchSlides(promptId: string) {
+  //   const slidesResponse: SlidesGenerationStatusResponse =
+  //     await slidesApi.getGenerationStatus({
+  //       promptId: promptId,
+  //     });
+  //   setSlides(slidesResponse);
+  // }
+
   async function pollAvatar(promptId: string, maxRetries: number) {
     for (let i = 0; i < maxRetries; i++) {
       const avatarResponse: AvatarGenerationStatusReponse =
@@ -67,31 +82,34 @@ export default function Home() {
     }
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (prompt.trim()) {
-      setMessages((prev) => [...prev, prompt]);
-      // Call API to get response
-      try {
-        // 1. call the core API to get the promptId
-        const coreResponse: PromptResponse =
-          await coreApi.createLectureFromPrompt({
-            promptRequest: {
-              prompt: prompt,
-            },
-          });
+  async function handleSubmit(input?: string, e?: React.FormEvent) {
+    if (e) e.preventDefault();
 
-        const promptId = coreResponse.promptId;
-        console.log("Lecture created:", promptId);
+    const finalPrompt = input ?? prompt;
+    if (!finalPrompt.trim()) return;
 
-        pollAvatar(promptId, 20); // poll for avatar generation status, max 20 retries
-        pollSlides(promptId, 20); // poll for slides generation status, max 20 retries
-      } catch (error) {
-        console.error("API error:", error);
-      }
+    // add to messages
+    setMessages((prev) => [...prev, finalPrompt]);
 
-      setPrompt(""); // clear input after submit
+    try {
+      console.log("Creating lecture with prompt:", finalPrompt);
+
+      // 1. Call core API
+      const coreResponse: PromptResponse =
+        await coreApi.createLectureFromPrompt({
+          promptRequest: {prompt: finalPrompt},
+        });
+      const promptId = coreResponse.promptId;
+      console.log("Lecture created:", promptId);
+
+      // 2. Poll APIs in parallel
+      pollAvatar(promptId, 20);
+      pollSlides(promptId, 20);
+    } catch (error) {
+      console.error("API error:", error);
     }
+
+    setPrompt(""); // reset input
   }
 
   useEffect(() => {
@@ -180,10 +198,10 @@ export default function Home() {
           <GuideCards
             persona={personaLevel}
             guideText={guideText}
-            onSelect={(question) => setMessages((prev) => [...prev, question])}
+            onSelect={(question) => handleSubmit(question)}
           />
           <form
-            onSubmit={handleSubmit}
+            onSubmit={(e) => handleSubmit(undefined, e)}
             className="relative max-w-2xl mx-auto mt-6"
           >
             <Input
@@ -230,7 +248,7 @@ export default function Home() {
           )}
           {avatarData?.status === "DONE" && (
             <form
-              onSubmit={handleSubmit}
+              onSubmit={(e) => handleSubmit(undefined, e)}
               className="fixed bottom-4 right-0 left-0 mx-auto max-w-6xl"
             >
               <Input

@@ -5,12 +5,12 @@ import {Card} from "@/components/ui/card";
 import {Button} from "@/components/ui/button";
 import {Progress} from "@/components/ui/progress";
 import {Badge} from "@/components/ui/badge";
+import {docintApi} from "@/app/api-clients";
 
 interface FileUploadProps {
   acceptedTypes: string[];
   maxSize: number; // in MB
   multiple?: boolean;
-  onFilesUploaded: (files: UploadedFile[]) => void;
   icon?: React.ReactNode;
   title: string;
   description: string;
@@ -21,7 +21,6 @@ export function FileUpload({
   acceptedTypes,
   maxSize,
   multiple = false,
-  onFilesUploaded,
   icon,
   title,
   description,
@@ -29,6 +28,26 @@ export function FileUpload({
 }: FileUploadProps) {
   const [dragOver, setDragOver] = useState(false);
   const [files, setFiles] = useState<UploadedFile[]>([]);
+
+  async function uploadSlides(file: File, fileId: string) {
+    try {
+      await docintApi.uploadsDocument({
+        courseId: "1",
+        body: file, // ✅ actual Blob/File
+      });
+
+      setFiles((prev) =>
+        prev.map((f) =>
+          f.id === fileId ? {...f, status: "completed", progress: 100} : f
+        )
+      );
+    } catch (err) {
+      console.error("Upload failed:", err);
+      setFiles((prev) =>
+        prev.map((f) => (f.id === fileId ? {...f, status: "error"} : f))
+      );
+    }
+  }
 
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return "0 Bytes";
@@ -50,28 +69,6 @@ export function FileUpload({
     return null;
   };
 
-  const simulateUpload = (fileId: string) => {
-    let progress = 0;
-    const interval = setInterval(() => {
-      progress += Math.random() * 30;
-      if (progress >= 100) {
-        progress = 100;
-        clearInterval(interval);
-        setFiles((prev) =>
-          prev.map((f) =>
-            f.id === fileId
-              ? {...f, status: "completed" as const, progress: 100}
-              : f
-          )
-        );
-      } else {
-        setFiles((prev) =>
-          prev.map((f) => (f.id === fileId ? {...f, progress} : f))
-        );
-      }
-    }, 200);
-  };
-
   const handleFiles = useCallback(
     (fileList: FileList) => {
       const newFiles: UploadedFile[] = [];
@@ -79,13 +76,12 @@ export function FileUpload({
       Array.from(fileList).forEach((file) => {
         const error = validateFile(file);
         if (error) {
-          // Handle error - could show toast notification
           console.error(error);
           return;
         }
 
         const uploadedFile: UploadedFile = {
-          id: Math.random().toString(36).substr(2, 9),
+          id: Math.random().toString(36).slice(2),
           name: file.name,
           size: file.size,
           type: file.type,
@@ -94,40 +90,15 @@ export function FileUpload({
         };
 
         newFiles.push(uploadedFile);
+        uploadSlides(file, uploadedFile.id); // ✅ pass the actual File + id
       });
 
       if (newFiles.length > 0) {
         setFiles((prev) => (multiple ? [...prev, ...newFiles] : newFiles));
-        newFiles.forEach((file) => simulateUpload(file.id));
-        onFilesUploaded(newFiles);
       }
     },
-    [acceptedTypes, maxSize, multiple, onFilesUploaded]
+    [acceptedTypes, maxSize, multiple]
   );
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setDragOver(true);
-  };
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    setDragOver(false);
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setDragOver(false);
-    if (e.dataTransfer.files) {
-      handleFiles(e.dataTransfer.files);
-    }
-  };
-
-  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      handleFiles(e.target.files);
-    }
-  };
 
   const removeFile = (fileId: string) => {
     setFiles((prev) => prev.filter((f) => f.id !== fileId));
@@ -154,9 +125,21 @@ export function FileUpload({
             ? "border-primary bg-primary/5"
             : "border-border hover:border-primary/50"
         }`}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
+        onDragOver={(e) => {
+          e.preventDefault();
+          setDragOver(true);
+        }}
+        onDragLeave={(e) => {
+          e.preventDefault();
+          setDragOver(false);
+        }}
+        onDrop={(e) => {
+          e.preventDefault();
+          setDragOver(false);
+          if (e.dataTransfer.files) {
+            handleFiles(e.dataTransfer.files);
+          }
+        }}
         onClick={() => document.getElementById(`file-input-${title}`)?.click()}
       >
         <div className="flex flex-col items-center space-y-4">
@@ -177,12 +160,11 @@ export function FileUpload({
           type="file"
           accept={acceptedTypes.join(",")}
           multiple={multiple}
-          onChange={handleFileInput}
+          onChange={(e) => e.target.files && handleFiles(e.target.files)}
           className="hidden"
         />
       </Card>
 
-      {/* File List */}
       {files.length > 0 && (
         <div className="space-y-2">
           {files.map((file) => (

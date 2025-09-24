@@ -32,6 +32,6 @@ export const slidesApi = new SlidesApi(
 
 export const docintApi = new DocintApi(
   new DocintConfiguration({
-    basePath: "http://localhost:30606", //TODO: duplicate port with slides, needs to be fixed
+    basePath: "http://localhost:25565", //TODO: duplicate port with slides, needs to be fixed
   })
 );
