@@ -24,11 +24,17 @@ and open your browser at `http://localhost:8080/docs/` to see the docs.
 
 ## Running with Docker
 
-To run the server on a Docker container, please execute the following from the root directory:
+To build and run the service using Docker, execute the following commands from the root of the `core` directory:
 
-```bash
-docker compose up --build
+```sh
+# Build the Docker image
+docker build -t service-core .
+
+# Run the Docker container (mapping container port 8000 to host port 8000)
+docker run -it --rm -p 8000:8000 service-core
 ```
+
+This will build the image and start the service on port 8000.
 
 ## Tests
 
