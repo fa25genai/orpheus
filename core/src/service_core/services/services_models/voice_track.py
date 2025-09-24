@@ -5,7 +5,7 @@ from pydantic import BaseModel
 
 
 class VoiceTrackResponse(BaseModel):
-    lectureId: str
+    promptId: str
     courseId: Optional[str] = None
     slideMessages: List[str]
     # In your code you put a string; keeping it flexible:
