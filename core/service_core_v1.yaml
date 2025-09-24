@@ -74,7 +74,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SlideResponse'
+                $ref: '#/components/schemas/DataResponse'
         '404':
           description: "Not Found. No lecture job found with the provided ID."
           content:
@@ -103,7 +103,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/VideoResponse'
+                $ref: '#/components/schemas/DataResponse'
         '404':
           description: "Not Found. No lecture job found with the provided ID."
           content:
@@ -171,7 +171,7 @@ components:
       required:
         - "lectureId"
 
-    SlideResponse:
+    DataResponse:
       type: "object"
       properties:
         status:
@@ -181,21 +181,8 @@ components:
         slidesUrl:
           type: "string"
           format: "uri"
-          description: "The URL to the generated slide deck. Only present if status is 'completed'."
+          description: "The URL to the generated slide/video deck. Only present if status is 'completed'."
           example: "https://storage.example.com/slides/f47ac10b-58cc-4372-a567-0e02b2c3d479.pptx"
-
-    VideoResponse:
-      type: "object"
-      properties:
-        status:
-          type: "string"
-          enum: ["processing", "completed", "failed"]
-          example: "processing"
-        videoUrl:
-          type: "string"
-          format: "uri"
-          description: "The URL to the generated video. Only present if status is 'completed'."
-          example: "https://storage.example.com/videos/f47ac10b-58cc-4372-a567-0e02b2c3d479.mp4"
           
     # Standard Error Schema
     Error:
