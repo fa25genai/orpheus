@@ -5,7 +5,7 @@ from ..models.prompt_request import PromptRequest
 from ..models.prompt_response import PromptResponse
 
 from service_core.services.client_handler import process_prompt
-from ..main import app
+from service_core.main import app
 
 class CoreApiImpl(BaseCoreApi):
     """
