@@ -1,0 +1,6 @@
+{
+    "mypy-type-checker.ignorePatterns": [
+        "**/src/docint_app/apis/**",
+        "**/src/docint_app/models/**"
+    ]
+}
