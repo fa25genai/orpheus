@@ -1,8 +1,10 @@
 pyproject.toml
 poetry.lock
 README.md
+Dockerfile
+docker-compose.yaml
 
-src/service_core/main.py
+main.py
 
 **/*
 !src/
