@@ -1,8 +1,8 @@
-from docint_app.models.retrieval_response import RetrievalResponse
 from docint_app.models.image_object import ImageObject
+from docint_app.models.retrieval_response import RetrievalResponse
 
 
-class RetrievalService:
+class MockRetrievalService:
     
     async def get_content(self, course_id: str, query: str) -> RetrievalResponse:
         return RetrievalResponse(
@@ -16,5 +16,5 @@ class RetrievalService:
         )
 
 
-def get_retrieval_service() -> RetrievalService:
-    return RetrievalService()
+def get_retrieval_service() -> MockRetrievalService:
+    return MockRetrievalService()
