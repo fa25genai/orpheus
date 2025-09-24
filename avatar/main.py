@@ -1,13 +1,31 @@
 import asyncio
 from datetime import datetime, timezone
 from typing import List, Optional, Literal, Dict, Tuple, Union
+import os
+import shutil
+import uuid
 from uuid import UUID
+from pathlib import Path
 
 from fastapi import FastAPI, BackgroundTasks, Response, Request
+from fastapi import UploadFile, File, Depends, HTTPException, status
 from fastapi.responses import JSONResponse
+from sqlalchemy import create_engine, String, DateTime, Text, Integer, func, ForeignKey
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship, sessionmaker, Session
 from pydantic import BaseModel, Field, constr
 
+
+
+
 app = FastAPI(title="Service Video-Generation APIs", version="0.1")
+
+
+# ---------------------------
+# Config (env-driven)
+# ---------------------------
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./app.db")
+IMAGES_OUTPUT_DIR = Path(os.getenv("IMAGES_OUTPUT_DIR", "data/avatars")).resolve()
+IMAGES_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 
 # ---------------------------
@@ -56,6 +74,163 @@ class GenerationStatusResponse(BaseModel):
     error: Optional[ErrorModel] = None
 
 
+
+# ---------------------------
+# DB layer (SQLAlchemy 2.x)
+# ---------------------------
+
+class Base(DeclarativeBase):
+    pass
+
+engine = create_engine(DATABASE_URL, future=True)
+SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, future=True)
+
+def get_db() -> Session:
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
+class Avatar(Base):
+    __tablename__ = "avatars"
+    avatar_id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    images: Mapped[list["AvatarImage"]] = relationship(back_populates="avatar", cascade="all, delete-orphan")
+
+
+class AvatarImage(Base):
+    __tablename__ = "avatar_images"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    avatar_id: Mapped[str] = mapped_column(String(36), ForeignKey("avatars.avatar_id", ondelete="CASCADE"), index=True)
+    file_path: Mapped[str] = mapped_column(Text, nullable=False)  # absolute path on disk
+    mime_type: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    size_bytes: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)  # 👈 add Integer
+    original_filename: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    avatar: Mapped["Avatar"] = relationship(back_populates="images")
+
+
+@app.on_event("startup")
+def _startup_create_tables() -> None:
+    Base.metadata.create_all(engine)
+
+
+# ---------------------------
+# Avatars API 
+# ---------------------------
+
+ALLOWED_IMAGE_MIMES = {"image/png", "image/jpeg", "image/webp"}
+
+class AvatarCreatedResponse(BaseModel):
+    avatarId: UUID
+    image: Optional[Dict] = None  # { id, filePath, mimeType, sizeBytes, createdAt }
+
+class AvatarImageResponse(BaseModel):
+    id: UUID
+    avatarId: UUID
+    filePath: str
+    mimeType: Optional[str] = None
+    sizeBytes: Optional[int] = None
+    createdAt: datetime
+
+def _ext_from_mime(mime: str) -> str:
+    return {"image/png": "png", "image/jpeg": "jpg", "image/webp": "webp"}.get(mime, "bin")
+
+def _save_upload_to_disk(avatar_id: UUID, upload: UploadFile) -> Path:
+    if upload.content_type not in ALLOWED_IMAGE_MIMES:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Unsupported image type: {upload.content_type}",
+        )
+    image_id = uuid.uuid4()
+    avatar_dir = IMAGES_OUTPUT_DIR / str(avatar_id)
+    avatar_dir.mkdir(parents=True, exist_ok=True)
+    ext = _ext_from_mime(upload.content_type or "")
+    target = avatar_dir / f"{image_id}.{ext}"
+    # stream copy to avoid loading entire file in memory
+    with target.open("wb") as out:
+        shutil.copyfileobj(upload.file, out)
+    return target
+
+@app.post(
+    "/v1/avatars",
+    status_code=201,
+    response_model=AvatarCreatedResponse,
+)
+def create_avatar(
+    file: Optional[UploadFile] = File(default=None),
+    db: Session = Depends(get_db),
+):
+    # Create avatar id and persist
+    avatar_id = uuid.uuid4()
+    db_avatar = Avatar(avatar_id=str(avatar_id))
+    db.add(db_avatar)
+
+    image_payload = None
+    if file is not None:
+        saved_path = _save_upload_to_disk(avatar_id, file)
+        size = saved_path.stat().st_size
+        db_img = AvatarImage(
+            id=str(uuid.uuid4()),
+            avatar_id=str(avatar_id),
+            file_path=str(saved_path),
+            mime_type=file.content_type,
+            size_bytes=size,
+            original_filename=file.filename,
+        )
+        db.add(db_img)
+        db.flush()  # populate server defaults like created_at
+        image_payload = {
+            "id": db_img.id,
+            "filePath": db_img.file_path,
+            "mimeType": db_img.mime_type,
+            "sizeBytes": db_img.size_bytes,
+            "createdAt": db_img.created_at or datetime.now(timezone.utc),
+        }
+
+    db.commit()
+    return AvatarCreatedResponse(avatarId=avatar_id, image=image_payload)
+
+
+@app.post(
+    "/v1/avatars/{avatarId}/images",
+    status_code=201,
+    response_model=AvatarImageResponse,
+)
+def add_avatar_image(
+    avatarId: UUID,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+):
+    # Strict: avatar must exist
+    avatar = db.get(Avatar, str(avatarId))
+    if not avatar:
+        raise HTTPException(status_code=404, detail="Avatar not found")
+
+    saved_path = _save_upload_to_disk(avatarId, file)
+    size = saved_path.stat().st_size
+    db_img = AvatarImage(
+        id=str(uuid.uuid4()),
+        avatar_id=str(avatarId),
+        file_path=str(saved_path),
+        mime_type=file.content_type,
+        size_bytes=size,
+        original_filename=file.filename,
+    )
+    db.add(db_img)
+    db.commit()
+    db.refresh(db_img)
+
+    return AvatarImageResponse(
+        id=UUID(db_img.id),
+        avatarId=avatarId,
+        filePath=db_img.file_path,
+        mimeType=db_img.mime_type,
+        sizeBytes=db_img.size_bytes,
+        createdAt=db_img.created_at,
+    )
 # ---------------------------
 # In-memory job store
 # ---------------------------
@@ -123,6 +298,8 @@ async def generate_video(audio_path: str, lecture_id: UUID, course_id: str, user
     # TODO: generate real video in ditto-talkinghead container and save it in the mentioned path
     # use slide_text, course_id, lecture_id and user_profil for this
     return video_path
+
+
 
 async def process_generation(payload: GenerateRequest) -> Dict[str, Union[List[Optional[str]], Dict[int, str], None]]:
     # set job to in progress
@@ -198,6 +375,9 @@ async def process_generation(payload: GenerateRequest) -> Dict[str, Union[List[O
 # ---------------------------
 # Routes
 # ---------------------------
+def _run_process_generation(payload: "GenerateRequest") -> None:
+    # Runs the async coroutine in a fresh event loop, safe for BackgroundTasks
+    asyncio.run(process_generation(payload))
 
 @app.post(
     "/v1/video/generate",
@@ -220,8 +400,7 @@ async def request_video_generation(payload: GenerateRequest, background: Backgro
         error=None,
     )
     # fire-and-forget
-    background.add_task(process_generation, payload)
-    # absolute Location per spec
+    background.add_task(_run_process_generation, payload)    # absolute Location per spec
     base = str(request.base_url).rstrip("/")
     response.headers["Location"] = f"{base}/v1/video/{payload.promptId}/status"
     return GenerationAcceptedResponse(promptId=payload.promptId, createdAt=now)
