@@ -27,15 +27,8 @@ tmp*
 
 log/*
 *.mp4
-*.png
-*.jpg
-*.wav
 *.pth
 *.pyc
 *.jpeg
-
-example*
-!example/audio.wav
-!example/image.png
 
 *idea

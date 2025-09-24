@@ -206,5 +206,11 @@ marimo/_static/
 marimo/_lsp/
 __marimo__/
 
+# Jetbrains setup
 .idea/
-.DS_Store
+
+# ignore generated ui files
+ui/.next
+ui/node_modules
+ui/next-env.d.ts
+
