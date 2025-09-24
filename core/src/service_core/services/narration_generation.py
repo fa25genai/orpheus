@@ -16,7 +16,6 @@ from ..models.user_profile import UserProfile
 from ..models.user_profile_preferences import UserProfilePreferences
 from services_models.slides import SlidesEnvelope
 import json
-import logging
 from helpers.llm import getLLM
 from helpers.debug import enable_debug, debug_print
 from helpers.loaders import load_prompt
