@@ -13,12 +13,11 @@ Do not edit the class manually.
 
 from __future__ import annotations
 import pprint
-import re  # noqa: F401
 import json
 
 
 from datetime import datetime
-from pydantic import BaseModel, Field, StrictInt, StrictStr, field_validator
+from pydantic import BaseModel, Field, StrictStr, field_validator
 from typing import Any, ClassVar, Dict, List, Optional
 from service_slides.models.slide_structure import SlideStructure
 
@@ -33,16 +32,16 @@ class GenerationAcceptedResponse(BaseModel):
     Returned immediately after generation request accepted
     """  # noqa: E501
 
-    lecture_id: Optional[StrictStr] = Field(default=None, alias="lectureId")
+    prompt_id: Optional[StrictStr] = Field(default=None, alias="promptId")
     status: Optional[StrictStr] = None
     created_at: Optional[datetime] = Field(default=None, alias="createdAt")
     structure: Optional[SlideStructure] = Field(
         default=None, description="Structure preview for progressing other generation steps"
     )
-    __properties: ClassVar[List[str]] = ["lectureId", "status", "createdAt", "structure"]
+    __properties: ClassVar[List[str]] = ["promptId", "status", "createdAt", "structure"]
 
     @field_validator("status")
-    def status_validate_enum(cls, value):
+    def status_validate_enum(cls, value) -> Any:  # type: ignore
         """Validates the enum"""
         if value is None:
             return value
@@ -96,7 +95,7 @@ class GenerationAcceptedResponse(BaseModel):
         return _dict
 
     @classmethod
-    def from_dict(cls, obj: Dict) -> Self:
+    def from_dict(cls, obj: Dict[str, Any]) -> Self:
         """Create an instance of GenerationAcceptedResponse from a dict"""
         if obj is None:
             return None
@@ -106,11 +105,11 @@ class GenerationAcceptedResponse(BaseModel):
 
         _obj = cls.model_validate(
             {
-                "lectureId": obj.get("lectureId"),
+                "promptId": obj.get("promptId"),
                 "status": obj.get("status"),
                 "createdAt": obj.get("createdAt"),
-                "structure": SlideStructure.from_dict(obj.get("structure"))
-                if obj.get("structure") is not None
+                "structure": SlideStructure.from_dict(structure_data)
+                if (structure_data := obj.get("structure")) is not None
                 else None,
             }
         )

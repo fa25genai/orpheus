@@ -40,3 +40,6 @@ strict = true
 warn_unused_ignores = true
 warn_redundant_casts = true
 no_implicit_optional = true
+mypy_path = "src"
+namespace_packages = true
+explicit_package_bases = true
