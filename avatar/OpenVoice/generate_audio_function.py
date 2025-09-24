@@ -213,6 +213,28 @@ def main():
     for i, path in enumerate(audio_paths):
         print(f"Slide {i+1}: {path}")
 
-if __name__ == '__main__':
-    print('Starting audio generation...')
-    main()
+# ---------------------------
+# API endpoint to expose generate_audio
+# ---------------------------
+
+class GenerateAudioRequest(BaseModel):
+    slide_texts: List[str]
+    course_id: str
+    voice_file: str
+    user_profile: Optional[UserProfile] = None  # optional, same as in the function
+
+class GenerateAudioResponse(BaseModel):
+    audio_paths: List[str]
+
+@app.post("/v1/audio/generate", response_model=GenerateAudioResponse)
+def generate_audio_endpoint(req: GenerateAudioRequest):
+    try:
+        paths = generate_audio(
+            slide_texts=req.slide_texts,
+            course_id=req.course_id,
+            user_profile=req.user_profile,
+            voice_file=req.voice_file,
+        )
+        return GenerateAudioResponse(audio_paths=paths)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
