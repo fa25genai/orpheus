@@ -111,5 +111,5 @@ voice_track_response = VoiceTrackResponse(
         "Vielen Dank für Ihre Aufmerksamkeit!"
     ],
     userProfile=demo_user.to_dict(),
-    metadata="{}"
+    metadata=""
 )
