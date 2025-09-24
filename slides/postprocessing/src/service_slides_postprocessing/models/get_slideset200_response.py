@@ -19,7 +19,7 @@ import json
 
 from pydantic import BaseModel, Field, StrictStr
 from typing import Any, ClassVar, Dict, List, Optional
-from openapi_server.models.slideset_with_id import SlidesetWithId
+from service_slides_postprocessing.models.slideset_with_id import SlidesetWithId
 
 try:
     from typing import Self
