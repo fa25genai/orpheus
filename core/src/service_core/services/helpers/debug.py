@@ -1,7 +1,7 @@
 import datetime
 
 # Global flag to control debug printing
-DEBUG_ENABLED
+DEBUG_ENABLED = True
 
 def enable_debug():
     global DEBUG_ENABLED
