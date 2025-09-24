@@ -22,8 +22,8 @@ class BaseSlidesApi:
 
     async def get_generation_status(
         self,
-        lectureId: Annotated[
-            StrictStr, Field(description="The lectureId returned by /v1/slides/generate")
+        promptId: Annotated[
+            StrictStr, Field(description="The promptId returned by /v1/slides/generate")
         ],
         job_manager: JobManager,
     ) -> GenerationStatusResponse:

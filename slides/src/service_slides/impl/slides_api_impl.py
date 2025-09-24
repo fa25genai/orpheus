@@ -26,18 +26,18 @@ class SlidesApiImpl(BaseSlidesApi):
 
     async def get_generation_status(
         self,
-        lectureId: Annotated[
-            StrictStr, Field(description="The lectureId returned by /v1/slides/generate")
+        promptId: Annotated[
+            StrictStr, Field(description="The promptId returned by /v1/slides/generate")
         ],
         job_manager: JobManager,
     ) -> GenerationStatusResponse:
-        status = await job_manager.get_status(lectureId)
+        status = await job_manager.get_status(promptId)
         if status is None:
             raise HTTPException(
                 status_code=404
             )  # TODO: Check if lecture is present on CDN and then we have to return done
         return GenerationStatusResponse(
-            lectureId=lectureId,
+            promptId=promptId,
             status="IN_PROGRESS" if status.achieved < status.total else "DONE",
             totalPages=status.total,
             generatedPages=status.achieved,
@@ -64,7 +64,7 @@ class SlidesApiImpl(BaseSlidesApi):
 
         # 2. Initialize job for tracking progress
         await job_manager.init_job(
-            request_slide_generation_request.lecture_id, len(structure.items)
+            request_slide_generation_request.prompt_id, len(structure.items)
         )
 
         # 3. Start background slide generation (don't wait for completion)
@@ -120,7 +120,7 @@ class SlidesApiImpl(BaseSlidesApi):
 
         executor.submit(finalize_slides, slide_futures, request_slide_generation_request.lecture_id)
 
-        status = await job_manager.get_status(request_slide_generation_request.lecture_id)
+        status = await job_manager.get_status(request_slide_generation_request.prompt_id)
         return GenerationAcceptedResponse(
             lectureId=request_slide_generation_request.lecture_id,
             status="IN_PROGRESS" if status and status.achieved < status.total else "DONE",

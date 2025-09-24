@@ -22,27 +22,27 @@ class JobManager:
         self.job_achieved_counts: Dict[str, int] = dict()
         self.job_update_timestamps: Dict[str, datetime.datetime] = dict()
 
-    async def init_job(self, lectureId: str, required_page_count: int) -> None:
+    async def init_job(self, promptId: str, required_page_count: int) -> None:
         await self.cleanup()
         async with self.mutex:
-            self.jobs.add(lectureId)
-            self.job_required_counts[lectureId] = required_page_count
-            self.job_achieved_counts[lectureId] = 0
-            self.job_update_timestamps[lectureId] = datetime.datetime.now()
+            self.jobs.add(promptId)
+            self.job_required_counts[promptId] = required_page_count
+            self.job_achieved_counts[promptId] = 0
+            self.job_update_timestamps[promptId] = datetime.datetime.now()
 
-    async def finish_page(self, lectureId: str) -> None:
+    async def finish_page(self, promptId: str) -> None:
         await self.cleanup()
         async with self.mutex:
-            self.job_achieved_counts[lectureId] += 1
-            self.job_update_timestamps[lectureId] = datetime.datetime.now()
+            self.job_achieved_counts[promptId] += 1
+            self.job_update_timestamps[promptId] = datetime.datetime.now()
 
-    async def get_status(self, lectureId: str) -> JobStatus | None:
+    async def get_status(self, promptId: str) -> JobStatus | None:
         await self.cleanup()
         async with self.mutex:
-            if lectureId in self.job_achieved_counts:
-                achieved = self.job_achieved_counts[lectureId]
-                total = self.job_required_counts[lectureId]
-                updated_at = self.job_update_timestamps[lectureId]
+            if promptId in self.job_achieved_counts:
+                achieved = self.job_achieved_counts[promptId]
+                total = self.job_required_counts[promptId]
+                updated_at = self.job_update_timestamps[promptId]
                 return JobStatus(total, achieved, updated_at)
             return None
 

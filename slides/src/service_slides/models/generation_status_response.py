@@ -32,7 +32,7 @@ class GenerationStatusResponse(BaseModel):
     GenerationStatusResponse
     """  # noqa: E501
 
-    lecture_id: Optional[StrictStr] = Field(default=None, alias="lectureId")
+    prompt_id: Optional[StrictStr] = Field(default=None, alias="promptId")
     status: Optional[StrictStr] = Field(default=None, description="Job status")
     total_pages: Optional[StrictInt] = Field(
         default=None,
@@ -47,7 +47,7 @@ class GenerationStatusResponse(BaseModel):
     last_updated: Optional[datetime] = Field(default=None, alias="lastUpdated")
     error: Optional[Error] = None
     __properties: ClassVar[List[str]] = [
-        "lectureId",
+        "promptId",
         "status",
         "totalPages",
         "generatedPages",
@@ -120,7 +120,7 @@ class GenerationStatusResponse(BaseModel):
 
         _obj = cls.model_validate(
             {
-                "lectureId": obj.get("lectureId"),
+                "promptId": obj.get("promptId"),
                 "status": obj.get("status"),
                 "totalPages": obj.get("totalPages"),
                 "generatedPages": obj.get("generatedPages"),
