@@ -71,6 +71,7 @@ class Job(BaseModel):
     error: Optional[ErrorModel] = None
 
 # TODO: check usefullness of this
+#to be stored in a db
 JOBS: Dict[UUID, Job] = {}
 
 CDN_BASE = "https://cdn.example.com/videos"
