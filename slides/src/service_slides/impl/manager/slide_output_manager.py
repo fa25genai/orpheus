@@ -2,7 +2,7 @@ import os
 from typing import List
 
 
-def save_slides_to_file(lecture_id: str, slides: List[str], output_dir: str = "data") -> str:
+def save_slides_to_file(prompt_id: str, slides: List[str], output_dir: str = "data") -> str:
     """Simple function to save slides to markdown file."""
     # Ensure output directory exists
     os.makedirs(output_dir, exist_ok=True)
@@ -11,7 +11,7 @@ def save_slides_to_file(lecture_id: str, slides: List[str], output_dir: str = "d
     combined_content = "\n\n\n".join(slides)
 
     # Save to file
-    filename = f"{lecture_id}.md"
+    filename = f"{prompt_id}.md"
     filepath = os.path.join(output_dir, filename)
 
     with open(filepath, "w", encoding="utf-8") as f:

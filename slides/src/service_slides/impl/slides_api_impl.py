@@ -72,7 +72,7 @@ class SlidesApiImpl(BaseSlidesApi):
         slide_futures = []
         for i, item in enumerate(structure.items):
 
-            def generate_item(item_content: str, item_layout: str, slide_num: int, course_id: str, lecture_id: str) -> str:
+            def generate_item(item_content: str, item_layout: str, slide_num: int, course_id: str, prompt_id: str) -> str:
                 import asyncio
 
                 # Get layout template synchronously within the executor
@@ -92,7 +92,7 @@ class SlidesApiImpl(BaseSlidesApi):
 
                 # Update job manager for this completed slide
                 async def update_job() -> None:
-                    await job_manager.finish_page(lecture_id)
+                    await job_manager.finish_page(prompt_id)
 
                 asyncio.run(update_job())
 
@@ -104,25 +104,25 @@ class SlidesApiImpl(BaseSlidesApi):
                 item.layout,
                 i + 1,
                 request_slide_generation_request.course_id,
-                request_slide_generation_request.lecture_id,
+                request_slide_generation_request.prompt_id,
             )
             slide_futures.append(future)
 
         # Submit a final task to collect all results and save to file
-        def finalize_slides(futures: Any, lecture_id: str) -> None:
+        def finalize_slides(futures: Any, prompt_id: str) -> None:
             slide_contents = []
             for future in futures:
                 slide_content = future.result()
                 slide_contents.append(slide_content)
 
             # Save all slides to markdown file
-            save_slides_to_file(lecture_id, slide_contents)
+            save_slides_to_file(prompt_id, slide_contents)
 
-        executor.submit(finalize_slides, slide_futures, request_slide_generation_request.lecture_id)
+        executor.submit(finalize_slides, slide_futures, request_slide_generation_request.prompt_id)
 
         status = await job_manager.get_status(request_slide_generation_request.prompt_id)
         return GenerationAcceptedResponse(
-            lectureId=request_slide_generation_request.lecture_id,
+            promptId=request_slide_generation_request.prompt_id,
             status="IN_PROGRESS" if status and status.achieved < status.total else "DONE",
             createdAt=datetime.now(),
             structure=structure.as_simple_slide_structure(),
