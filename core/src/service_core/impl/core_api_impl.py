@@ -18,13 +18,7 @@ def get_executor() -> ThreadPoolExecutor:
     return app_state.executor
 
 class CoreApiImpl(BaseCoreApi):
-    async def create_lecture_from_prompt(
-        self,
-        prompt_request: PromptRequest,
-    ) -> PromptResponse:
-        """
-        Accepts a user prompt and initiates a job to generate lecture content.
-        """
+    async def create_lecture_from_prompt(self, prompt_request: PromptRequest) -> PromptResponse:
         try:
             prompt_id = uuid4()
             # with ThreadPoolExecutor(max_workers=3) as executor:
