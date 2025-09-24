@@ -26,30 +26,29 @@ class CoreApiImpl(BaseCoreApi):
     """
     async def create_lecture_from_prompt(
         self,
-        request: Request,
         prompt_request: PromptRequest,
     ) -> PromptResponse:
         """
         Accepts a user prompt and initiates a job to generate lecture content.
         """
         try:
-            #decomposed_questions = decompose_input.decompose_question(prompt_request.prompt)
-            #print("Decomposed Questions:", decomposed_questions)
+            decomposed_questions = decompose_input.decompose_question(prompt_request.prompt)
+            print("Decomposed Questions:", decomposed_questions)
             #print("Simulating async processing delay...")
             #await asyncio.sleep(5)
-            #refined_output = generate_lecture_content.refine_lecture_content(fetch_mock_data.retrieved_content, fetch_mock_data.demo_user)
+            refined_output = generate_lecture_content.refine_lecture_content(str(fetch_mock_data.create_demoretrieved_content()), fetch_mock_data.create_demo_user())
             #print(refined_output)
-            #lecture_script = refined_output.get("lectureScript", "")
-            #print("\n\nGenerated Lecture Script:", lecture_script)
-            example_slides = fetch_mock_data.slide_bullets
+            lecture_script = refined_output.get("lectureScript", "")
+            print("\n\nGenerated Lecture Script:", lecture_script)
+            example_slides = fetch_mock_data.create_demo_slides()
             #print("\nExample Slides:", example_slides)
-            voice_track = narration_generation.generate_narrations(lecture_script, example_slides, fetch_mock_data.demo_user)
-            print("\voice_track:", voice_track)
+            voice_track = narration_generation.generate_narrations(lecture_script, example_slides, fetch_mock_data.create_demo_user())
+            print("\nvoice_track:", voice_track)
 
             prompt_id = uuid4()
 
-            executor = request.app.state.executor
-            executor.submit(process_prompt, prompt_id, prompt_request.prompt)
+            #executor = request.app.state.executor
+            #executor.submit(process_prompt, prompt_id, prompt_request.prompt)
         
             return PromptResponse(promptId=prompt_id)
         except ConnectionError as e:

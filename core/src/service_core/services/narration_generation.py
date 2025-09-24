@@ -78,7 +78,7 @@ def generate_narrations(lecture_script, example_slides, user_profile, debug=Fals
         slide_messages.append(narration)
     # Prepare output data with actual user profile
     output_data = {
-        "lectureId": example_slides.lectureId,
+        "promptId": example_slides.promptId,
         "courseId": user_profile.enrolled_courses[0] if user_profile.enrolled_courses else None,
         "slideMessages": slide_messages,
         "userProfile": json.loads(user_profile.model_dump_json()),
