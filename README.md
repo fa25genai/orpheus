@@ -24,7 +24,7 @@ Once you edited the diagram, make sure to export it as svg to replace the existi
 | **Avatar Generation Service** | Generates short videos of lifelike professor avatars with expressive narration.                          |                                                                                        |
 | **Video Push Service**        | Uploads generated videos to the Lecture Content Service (which is a CDN)                                 |                                                                                        |
 | **Lecture Storage Service**   | Stores lecture materials, voice samples and lecturer pictures that are used for avatar generation.       |                                                                                        |
-| **Lecture Content Service**   | Content Delivery Network (CDN) that stores the lecturer avatar videos and lecture slides.                |                                                                                        |                                                                                      |                                                                                        |
+| **Lecture Content Service**   | Content Delivery Network (CDN) that stores the lecturer avatar videos and lecture slides.                |                                                                                        |
 
 <!--
 TODOS
