@@ -12,8 +12,8 @@
 #                  "Wir können alles. Außer Hochdeutsch."                      #
 #                                                                              #
 ################################################################################
-from core.src.service_core.models.user_profile import UserProfile
-from core.src.service_core.models.user_profile_preferences import UserProfilePreferences
+from ..models.user_profile import UserProfile
+from ..models.user_profile_preferences import UserProfilePreferences
 from services_models.slides import SlidesEnvelope
 import json
 import logging
