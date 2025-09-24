@@ -15,14 +15,16 @@ Once you edited the diagram, make sure to export it as svg to replace the existi
 
 ## API Interface Documentation
 
-TODO: exchange with actual service descriptions
-| Service                      | Description                                                                                                                                                                              | OpenAPI Specification                                                                  |
-|------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------|
-| **AI Core**                  | Orchestrates lecture generation from user prompts, creating a lecture script, and managing asynchronous jobs for creating interactive slides and videos with lifelike professor avatars. | [AI Core](./core/service_core_v1.yaml)                                                 |
-| **Document Intelligence**    | Retrieves content related to the student question from instructor provided lecture slides and materials.                                                                                 | [Document Intelligence](./document-intelligence/service_document-intelligence_v1.yaml) |
-| **Slide Generation**         | Generates lecture slides from a lecture script, stores generated slides and provides their generation status and download URL.                                                           | [Slide Service](./slides/service_slides_v1.yaml)                                       |
-| **Avatar Generation**        | Generates short videos of lifelike professor avatars with expressive narration.                                                                                                          |                                                                                        |
-| **Lecture Content Delivery** | Content Delivery Network (CDN) that stores the lecturer avatar videos and lecture slides.                                                                                                |                                                                                        |
+| Service                       | Description                                                                                              | OpenAPI Specification                                                                  |
+|-------------------------------|----------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------|
+| **Chat Service**              | Returns a lectureId based on user prompts and returns generated slides and avatar video.                 | [AI Core](./core/service_core_v1.yaml)                                                 |
+| **Content Retrieval Service** | Retrieves content related to the student question from instructor provided lecture slides and materials. | [Document Intelligence](./document-intelligence/service_document-intelligence_v1.yaml) |
+| **Slide Generation Service**  | Generates lecture slides from a lecture script, and provides their generation status and download URL.   | [Slide Service](./slides/service_slides_v1.yaml)                                       |
+| **Slide Push Service**        | Stores generated slides                                                                                  |                                                                                        |
+| **Avatar Generation Service** | Generates short videos of lifelike professor avatars with expressive narration.                          |                                                                                        |
+| **Video Push Service**        | Uploads generated videos to the Lecture Content Service (which is a CDN)                                 |                                                                                        |
+| **Lecture Storage Service**   | Stores lecture materials, voice samples and lecturer pictures that are used for avatar generation.       |                                                                                        |
+| **Lecture Content Service**   | Content Delivery Network (CDN) that stores the lecturer avatar videos and lecture slides.                |                                                                                        |                                                                                      |                                                                                        |
 
 <!--
 TODOS
