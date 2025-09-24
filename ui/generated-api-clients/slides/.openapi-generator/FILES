@@ -1,0 +1,13 @@
+.openapi-generator-ignore
+apis/SlidesApi.ts
+apis/index.ts
+index.ts
+models/GenerationAcceptedResponse.ts
+models/GenerationStatusResponse.ts
+models/ModelError.ts
+models/RequestSlideGenerationRequest.ts
+models/RequestSlideGenerationRequestAssetsInner.ts
+models/SlideItem.ts
+models/SlideStructure.ts
+models/index.ts
+runtime.ts
