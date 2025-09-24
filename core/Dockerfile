@@ -15,7 +15,7 @@ COPY pyproject.toml poetry.lock ./
 COPY README.md ./
 COPY ./src ./src
 
-RUN poetry install
+RUN poetry install --no-root --without dev
 
 
 EXPOSE 8000
