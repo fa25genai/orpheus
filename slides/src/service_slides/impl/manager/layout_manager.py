@@ -21,7 +21,7 @@ class LayoutManager:
             "default": LayoutTemplate(
                 "default",
                 Template(
-"""---
+                    """---
 layout: default
 ---
 
@@ -38,7 +38,7 @@ ${content}
             "center": LayoutTemplate(
                 "center",
                 Template(
-"""---
+                    """---
 layout: center
 ---
 
@@ -55,7 +55,7 @@ ${content}
             "cover": LayoutTemplate(
                 "cover",
                 Template(
-"""---
+                    """---
 layout: cover
 ---
 
@@ -72,7 +72,7 @@ ${subtitle}
             "end": LayoutTemplate(
                 "end",
                 Template(
-"""---
+                    """---
 layout: end
 ---
 
@@ -84,7 +84,7 @@ layout: end
             "fact": LayoutTemplate(
                 "fact",
                 Template(
-"""---
+                    """---
 layout: fact
 ---
 
@@ -96,7 +96,7 @@ layout: fact
             "full": LayoutTemplate(
                 "full",
                 Template(
-"""---
+                    """---
 layout: full
 ---
 
@@ -108,7 +108,7 @@ ${content}
             "image-left": LayoutTemplate(
                 "image-left",
                 Template(
-"""---
+                    """---
 layout: image-left
 image: ${image}
 class: ${class_name}
@@ -126,7 +126,7 @@ ${content}
             "image-right": LayoutTemplate(
                 "image-right",
                 Template(
-"""---
+                    """---
 layout: image-right
 image: ${image}
 class: ${class_name}
@@ -144,7 +144,7 @@ ${content}
             "image": LayoutTemplate(
                 "image",
                 Template(
-"""---
+                    """---
 layout: image
 image: ${image}
 backgroundSize: ${background_size}
@@ -159,7 +159,7 @@ backgroundSize: ${background_size}
             "iframe-left": LayoutTemplate(
                 "iframe-left",
                 Template(
-"""---
+                    """---
 layout: iframe-left
 url: ${url}
 class: ${class_name}
@@ -177,7 +177,7 @@ ${content}
             "iframe-right": LayoutTemplate(
                 "iframe-right",
                 Template(
-"""---
+                    """---
 layout: iframe-right
 url: ${url}
 class: ${class_name}
@@ -195,7 +195,7 @@ ${content}
             "iframe": LayoutTemplate(
                 "iframe",
                 Template(
-"""---
+                    """---
 layout: iframe
 url: ${url}
 ---
@@ -206,7 +206,7 @@ url: ${url}
             "intro": LayoutTemplate(
                 "intro",
                 Template(
-"""---
+                    """---
 layout: intro
 ---
 
@@ -226,7 +226,7 @@ _Author: ${author}_
             "none": LayoutTemplate(
                 "none",
                 Template(
-"""---
+                    """---
 layout: none
 ---
 
@@ -238,7 +238,7 @@ ${content}
             "quote": LayoutTemplate(
                 "quote",
                 Template(
-"""---
+                    """---
 layout: quote
 ---
 
@@ -252,7 +252,7 @@ layout: quote
             "section": LayoutTemplate(
                 "section",
                 Template(
-"""---
+                    """---
 layout: section
 ---
 
@@ -264,7 +264,7 @@ layout: section
             "statement": LayoutTemplate(
                 "statement",
                 Template(
-"""---
+                    """---
 layout: statement
 ---
 
@@ -276,7 +276,7 @@ layout: statement
             "two-cols": LayoutTemplate(
                 "two-cols",
                 Template(
-"""---
+                    """---
 layout: two-cols
 ---
 
@@ -301,7 +301,7 @@ ${right}
             "two-cols-header": LayoutTemplate(
                 "two-cols-header",
                 Template(
-"""---
+                    """---
 layout: two-cols-header
 ---
 

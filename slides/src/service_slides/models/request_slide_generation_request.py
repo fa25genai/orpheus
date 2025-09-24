@@ -17,7 +17,7 @@ import re  # noqa: F401
 import json
 
 
-from pydantic import BaseModel, Field, StrictInt, StrictStr
+from pydantic import BaseModel, Field, StrictStr
 from typing import Any, ClassVar, Dict, List, Optional
 from service_slides.models.request_slide_generation_request_assets_inner import (
     RequestSlideGenerationRequestAssetsInner,

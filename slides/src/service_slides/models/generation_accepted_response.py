@@ -18,7 +18,7 @@ import json
 
 
 from datetime import datetime
-from pydantic import BaseModel, Field, StrictInt, StrictStr, field_validator
+from pydantic import BaseModel, Field, StrictStr, field_validator
 from typing import Any, ClassVar, Dict, List, Optional
 from service_slides.models.slide_structure import SlideStructure
 

@@ -31,9 +31,7 @@ class DetailedSlideStructure(BaseModel):
 
 
 async def generate_slide_structure(
-        model: BaseLanguageModel,
-        lecture_script: str,
-        available_layouts: List[LayoutDescription]
+    model: BaseLanguageModel, lecture_script: str, available_layouts: List[LayoutDescription]
 ) -> DetailedSlideStructure:
     prompt = ChatPromptTemplate.from_messages(
         [
@@ -49,11 +47,13 @@ async def generate_slide_structure(
             ),
             SystemMessage("The available slide layouts are as follows: "),
             SystemMessage(
-                list(map(
-                    lambda layout: f"Name: {layout.name} ; description: {layout.description}",
-                    available_layouts,
-                ))
-            )
+                list(
+                    map(
+                        lambda layout: f"Name: {layout.name} ; description: {layout.description}",
+                        available_layouts,
+                    )
+                )
+            ),
         ]
     )
 
@@ -63,7 +63,7 @@ async def generate_slide_structure(
         model=model,
         prompt=prompt,
         input_data={"format_instructions": parser.get_format_instructions()},
-        parser=parser
+        parser=parser,
     )
 
     return detailed_structure

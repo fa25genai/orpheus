@@ -1,11 +1,9 @@
 # coding: utf-8
-from concurrent.futures import ThreadPoolExecutor
 from fastapi import Request
 from typing import Dict, List  # noqa: F401
 import importlib
 import pkgutil
 
-from langchain_core.language_models import BaseLanguageModel
 
 import service_slides.impl
 from service_slides.apis.slides_api_base import BaseSlidesApi
@@ -25,7 +23,6 @@ from fastapi import (  # noqa: F401
     status,
 )
 
-from service_slides.impl.manager.job_manager import JobManager
 from service_slides.models.extra_models import TokenModel  # noqa: F401
 from pydantic import Field, StrictStr
 from typing_extensions import Annotated

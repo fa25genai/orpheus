@@ -2,8 +2,7 @@
 from concurrent.futures import ThreadPoolExecutor
 from typing import ClassVar, Dict, List, Tuple  # noqa: F401
 
-from fastapi import Depends
-from langchain_core.language_models import BaseLanguageModel, BaseLanguageModel
+from langchain_core.language_models import BaseLanguageModel
 from pydantic import Field, StrictStr
 from service_slides.impl.manager.layout_manager import LayoutManager
 from typing_extensions import Annotated
