@@ -3,7 +3,7 @@ import {PersonaSelector} from "@/components/persona-selector";
 import {Button} from "@/components/ui/button";
 import {Card} from "@/components/ui/card";
 import {Input} from "@/components/ui/input";
-import {ArrowUp, User} from "lucide-react";
+import {ArrowUp, Loader2Icon, User} from "lucide-react";
 import Link from "next/link";
 import {useEffect, useRef, useState} from "react";
 import {avatarApi, coreApi} from "@/app/api-clients";
@@ -13,41 +13,45 @@ import {guideText} from "@/data/text";
 import GuideCards from "@/components/guide-cards";
 import {PersonaLevel} from "@/types/uploading";
 import VideoPlayer from "@/components/video-player";
+import {Skeleton} from "@/components/ui/skeleton";
 
 export default function Home() {
   const [prompt, setPrompt] = useState("");
   const [personaLevel, setPersonaLevel] = useState<PersonaLevel>("beginner");
   const [messages, setMessages] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   const bottomRef = useRef<HTMLDivElement>(null);
 
   async function handleSubmit(e: React.FormEvent) {
+    setIsLoading(true);
     e.preventDefault();
     if (prompt.trim()) {
       setMessages((prev) => [...prev, prompt]);
       // Call API to get response
-      try {
-        const coreResponse: PromptResponse =
-          await coreApi.createLectureFromPrompt({
-            promptRequest: {
-              prompt: prompt,
-            },
-          });
+      // try {
+      //   const coreResponse: PromptResponse =
+      //     await coreApi.createLectureFromPrompt({
+      //       promptRequest: {
+      //         prompt: prompt,
+      //       },
+      //     });
 
-        const promptId = coreResponse.promptId;
-        console.log("Lecture created:", promptId);
+      //   const promptId = coreResponse.promptId;
+      //   console.log("Lecture created:", promptId);
 
-        const avatarResponse: GenerationStatusResponse =
-          await avatarApi.getGenerationResult({
-            promptId: promptId,
-          });
+      //   const avatarResponse: GenerationStatusResponse =
+      //     await avatarApi.getGenerationResult({
+      //       promptId: promptId,
+      //     });
 
-        console.log("Avatar generation status:", avatarResponse.status);
-      } catch (error) {
-        console.error("API error:", error);
-      }
+      //   console.log("Avatar generation status:", avatarResponse.status);
+      // } catch (error) {
+      //   console.error("API error:", error);
+      // }
 
       setPrompt(""); // clear input after submit
+      setIsLoading(false);
     }
   }
 
@@ -117,42 +121,74 @@ export default function Home() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <VideoPlayer src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" />
+                {isLoading && (
+                  <Card className="relative p-0 bg-card border-border overflow-hidden rounded-2xl">
+                    {/* Video skeleton */}
+                    <Skeleton className="w-full rounded-2xl" />
+                    {/* Controls skeleton */}
+                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-4 items-center bg-black/30 backdrop-blur-sm p-2 rounded-xl">
+                      <Skeleton className="w-8 h-8 rounded-md" />{" "}
+                      {/* play/pause button */}
+                      <Skeleton className="w-6 h-6 rounded-md" />{" "}
+                      {/* volume icon */}
+                      <Skeleton className="w-32 h-2 rounded-full" />{" "}
+                      {/* volume slider */}
+                    </div>
+                  </Card>
+                )}
+                {!isLoading && (
+                  <VideoPlayer src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" />
+                )}
 
-                <Card className="p-8 bg-card border-border md:col-span-2">
-                  <iframe
-                    width="100%"
-                    height="100%"
-                    src="http://localhost:3030"
-                    className="w-full h-98"
-                    title="Generated Slides"
-                    loading="lazy"
-                  />
-                </Card>
+                {isLoading && (
+                  <Card className="p-8 bg-card border-border md:col-span-2 rounded-2xl">
+                    {/* Slides preview skeleton */}
+                    <Skeleton className="w-full h-98 rounded-2xl" />
+                  </Card>
+                )}
+                {!isLoading && (
+                  <Card className="p-8 bg-card border-border md:col-span-2">
+                    <iframe
+                      width="100%"
+                      height="100%"
+                      src="http://localhost:3030"
+                      className="w-full h-98"
+                      title="Generated Slides"
+                      loading="lazy"
+                    />
+                  </Card>
+                )}
               </div>
             </div>
           ))}
           <div ref={bottomRef}></div>
-
-          <form
-            onSubmit={handleSubmit}
-            className="fixed bottom-4 right-0 left-0 mx-auto max-w-6xl"
-          >
-            <Input
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              placeholder="Type in your question"
-              className="w-full h-14 pr-14 text-lg bg-card border-border rounded-full"
-            />
-            <Button
-              type="submit"
-              size="sm"
-              className="absolute right-2 top-2 h-10 w-10 rounded-full"
-              disabled={!prompt.trim()}
+          {isLoading && (
+            <div className="fixed bottom-6 right-0 left-0 mx-auto max-w-6xl flex items-center justify-center">
+              <Loader2Icon className="animate-spin mr-2" />
+              <p>Please wait, your lecture is being generated...</p>
+            </div>
+          )}
+          {!isLoading && (
+            <form
+              onSubmit={handleSubmit}
+              className="fixed bottom-4 right-0 left-0 mx-auto max-w-6xl"
             >
-              <ArrowUp className="w-4 h-4" />
-            </Button>
-          </form>
+              <Input
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                placeholder="Type in your question"
+                className="w-full h-14 pr-14 text-lg bg-card border-border rounded-full"
+              />
+              <Button
+                type="submit"
+                size="sm"
+                className="absolute right-2 top-2 h-10 w-10 rounded-full"
+                disabled={!prompt.trim()}
+              >
+                <ArrowUp className="w-4 h-4" />
+              </Button>
+            </form>
+          )}
         </section>
       )}
     </main>
