@@ -172,3 +172,30 @@ Expected output: Python 3.13.7
     ```bash
     poetry --version
     ```
+
+##### Windows (PowerShell)
+##### Windows (PowerShell)
+1. Install Poetry using the official installer script
+    ```powershell
+    (Invoke-WebRequest -Uri https://install.python-poetry.org -UseBasicParsing).Content | python -
+    ```
+   Poetry is typically installed under:
+    ```
+    $env:APPDATA\Python\Scripts
+    ```
+2. Update Poetry to version 2.2.1
+    ```powershell
+    poetry self update 2.2.1
+    ```
+3. Ensure Poetry is on PATH for the current PowerShell session
+    ```powershell
+    $env:Path += ";$env:APPDATA\Python\Scripts"
+    ```
+4. Persist Poetry on PATH for future sessions
+    ```powershell
+    setx PATH "$($env:PATH)"
+    ```
+5. Verify Poetry installation
+    ```powershell
+    poetry --version
+    ```
