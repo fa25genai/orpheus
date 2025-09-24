@@ -112,7 +112,9 @@ Expected output: Python 3.13.7
 
 ##### Windows (PowerShell, run as Administrator)
 1. Install pyenv-win via PowerShell 
+    ```powershell
     Invoke-WebRequest -UseBasicParsing -Uri "https://raw.githubusercontent.com/pyenv-win/pyenv-win/master/pyenv-win/install-pyenv-win.ps1" -OutFile "./install-pyenv-win.ps1"; &"./install-pyenv-win.ps1"; Remove-Item "./install-pyenv-win.ps1"
+    ```
 2. Add pyenv to your PowerShell session
     The following lines are automatically added to your $PROFILE.
     You may need to run them manually for the current session or restart your terminal.
