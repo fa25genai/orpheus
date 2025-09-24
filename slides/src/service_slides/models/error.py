@@ -13,7 +13,6 @@ Do not edit the class manually.
 
 from __future__ import annotations
 import pprint
-import re  # noqa: F401
 import json
 
 
@@ -73,7 +72,7 @@ class Error(BaseModel):
         return _dict
 
     @classmethod
-    def from_dict(cls, obj: Dict) -> Self:
+    def from_dict(cls, obj: Dict[str, Any]) -> Self:
         """Create an instance of Error from a dict"""
         if obj is None:
             return None

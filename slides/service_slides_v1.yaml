@@ -44,7 +44,7 @@ paths:
               type: object
               required:
                 - courseId
-                - lectureId
+                - promptId
                 - lectureScript
                 - assets
               properties:
@@ -53,11 +53,11 @@ paths:
                   format: uuid
                   description: >
                     Unique identifier of the course for which slides should be generated
-                lectureId:
+                promptId:
                   type: string
                   format: uuid
                   description: >
-                    Unique identifier of the lecture to which the slides will belong.
+                    Unique identifier of the prompt to which the slides will belong.
                 lectureScript:
                   type: string
                   description: >
@@ -104,7 +104,7 @@ paths:
                 accepted:
                   summary: "Example accepted response"
                   value:
-                    lectureId: 51
+                    promptId: 51
                     status: "IN_PROGRESS"
                     created_at: "2025-09-22T09:12:33Z"
                     structure:
@@ -119,20 +119,20 @@ paths:
           description: "Unauthorized"
         "500":
           description: "Server error"
-  /v1/slides/{lectureId}/status:
+  /v1/slides/{promptId}/status:
     get:
       tags:
         - slides
       summary: "Get generation status for a previously-submitted request"
       operationId: getGenerationStatus
       parameters:
-        - name: lectureId
+        - name: promptId
           in: path
           required: true
           schema:
             type: string
             format: uuid
-          description: "The lectureId returned by /v1/slides/generate"
+          description: "The promptId returned by /v1/slides/generate"
       responses:
         "200":
           description: "Status of the generation job"
@@ -143,14 +143,14 @@ paths:
               examples:
                 in_progress:
                   value:
-                    lectureId: 42
+                    promptId: 42
                     status: "IN_PROGRESS"
                     totalPages: 25
                     generatedPages: 10
                     lastUpdated: "2025-09-22T09:30:00Z"
                 done:
                   value:
-                    lectureId: 43
+                    promptId: 43
                     status: "DONE"
                     totalPages: 15
                     generatedPages: 15
@@ -194,7 +194,7 @@ components:
       type: object
       description: "Returned immediately after generation request accepted"
       properties:
-        lectureId:
+        promptId:
           type: string
           format: uuid
         status:
@@ -210,7 +210,7 @@ components:
     GenerationStatusResponse:
       type: object
       properties:
-        lectureId:
+        promptId:
           type: string
           format: uuid
         status:
