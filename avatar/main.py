@@ -1,4 +1,5 @@
 import asyncio
+import requests
 from datetime import datetime, timezone
 from typing import List, Optional, Literal, Dict, Tuple, Union
 from uuid import UUID
@@ -70,6 +71,7 @@ class Job(BaseModel):
     expectedDurationSec: int
     error: Optional[ErrorModel] = None
 
+
 # TODO: check usefullness of this
 JOBS: Dict[UUID, Job] = {}
 
@@ -112,16 +114,40 @@ async def generate_audio(slide_text: str, course_id: str, prompt_id: UUID, user_
     # use slide_text, course_id, prompt_id and user_profil for this
     return audio_path
 
-async def generate_video(audio_path: str, prompt_id: UUID, course_id: str, user_profile: UserProfile, video_counter: int) -> str:
+
+async def generate_video(audio_path: str = None, prompt_id: UUID = None, course_id: str = None, user_profile: UserProfile = None,
+                         video_counter: int = None) -> str:
     """
     Assemble the final video using the audio tracks and slide content.
     Returns a URI (string) to the rendered video file which consists of one video per slide.
     """
     pid = str(prompt_id)
-    out_path = f"file:///tmp/{pid}_{video_counter}.mp4"
-    # TODO: generate real video in ditto-talkinghead container and save it in the mentioned path
-    # use slide_text, course_id, prompt_id and user_profil for this
-    return out_path
+    out_path = f"avatar/ditto-talkinghead/tmp/{pid}_{video_counter}.mp4"
+    audio_path = f"avatar/ditto-talkinghead/example/krusche_voice.wav" if audio_path is None else audio_path
+    source_path = f"avatar/ditto-talkinghead/example/image_michal.png" if course_id is None else f"avatar/ditto-talkinghead/example/image_michal.png"
+
+    # Call to API
+    api_url = "http://localhost:8000/infer"
+
+    payload = {
+        "audio_path": audio_path,
+        "source_path": source_path,
+        "output_path": out_path
+    }
+
+    print(f"Sending request to {api_url} with payload: {payload}")
+
+    try:
+        response = requests.post(api_url, json=payload)
+        response.raise_for_status()
+        response_data = response.json()
+        print("Successfully received response:", response_data)
+        return response_data.get("output_path")
+
+    except requests.exceptions.RequestException as e:
+        print(f"An error occurred while calling the API: {e}")
+        return None
+
 
 async def process_generation(payload: GenerateRequest) -> Dict[str, Union[List[Optional[str]], Dict[int, str], None]]:
     # set job to in progress
@@ -134,8 +160,9 @@ async def process_generation(payload: GenerateRequest) -> Dict[str, Union[List[O
         slides_amount = len(payload.slideMessages)
         audio_urls: List[Optional[str]] = [None] * slides_amount
         video_urls: List[Optional[str]] = [None] * slides_amount
-        errors: Dict[int, str] = {} # Dict {slide index: error}
-        audio_done_q: asyncio.Queue[Tuple[int, str]] = asyncio.Queue() # consumer for finished audios
+        errors: Dict[int, str] = {}  # Dict {slide index: error}
+        audio_done_q: asyncio.Queue[Tuple[int, str]] = asyncio.Queue()  # consumer for finished audios
+
         async def audio_producer():
             for i, text in enumerate(payload.slideMessages):
                 try:
@@ -151,13 +178,14 @@ async def process_generation(payload: GenerateRequest) -> Dict[str, Union[List[O
                 except Exception as e:
                     errors[i] = f"audio_error: {e!r}"
                     await audio_done_q.put((i, ""))  # consumer diesnt block in case there is no audio
+
         async def video_consumer():
             processed = 0
             while processed < slides_amount:
                 idx, aurl = await audio_done_q.get()
                 processed += 1
                 if not aurl:
-                    continue # audio "" oder not excisting -> no video
+                    continue  # audio "" oder not excisting -> no video
                 try:
                     vurl = await generate_video(
                         audio_path=aurl,
@@ -169,6 +197,7 @@ async def process_generation(payload: GenerateRequest) -> Dict[str, Union[List[O
                     video_urls[idx] = vurl
                 except Exception as e:
                     errors[idx] = f"video_error: {e!r}"
+
         prod = asyncio.create_task(audio_producer())
         cons = asyncio.create_task(video_consumer())
         await asyncio.gather(prod, cons)
@@ -193,6 +222,7 @@ async def process_generation(payload: GenerateRequest) -> Dict[str, Union[List[O
             JOBS[payload.promptId] = job
         # forward error
         raise
+
 
 # ---------------------------
 # Routes
