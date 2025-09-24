@@ -10,7 +10,7 @@ from service_slides.models.request_slide_generation_request_assets_inner import 
 )
 
 
-def create_layout_parser(layout_template: LayoutTemplate) -> PydanticOutputParser:
+def create_layout_parser(layout_template: LayoutTemplate) -> PydanticOutputParser[Any]:
     """Create a dynamic Pydantic parser for a specific layout template."""
     # Create fields for the Pydantic model based on the template schema
     fields = {}
@@ -18,13 +18,13 @@ def create_layout_parser(layout_template: LayoutTemplate) -> PydanticOutputParse
         fields[field_name] = (str, Field(description=field_description))
 
     # Dynamically create the Pydantic model
-    DynamicSlideModel = create_model(f"{layout_template.name.title()}SlideModel", **fields)
+    DynamicSlideModel = create_model(f"{layout_template.name.title()}SlideModel", **fields)  # type: ignore
 
     return PydanticOutputParser(pydantic_object=DynamicSlideModel)
 
 
 def generate_single_slide_content(
-    model: BaseLanguageModel,
+    model: BaseLanguageModel[Any],
     text: str,
     layout_template: LayoutTemplate,
     slide_number: int,
@@ -88,16 +88,16 @@ def generate_single_slide_content(
     # Since the parser was successful, we can assume it's a valid model
     template_vars: Dict[str, Any] = {}
 
-    # Use model_dump() for Pydantic v2 or dict() for v1
+        # Use model_dump() for Pydantic v2 or dict() for v1
     if hasattr(structured_data, "model_dump"):
         # Pydantic v2
-        template_vars = structured_data.model_dump()  # type: ignore
+        template_vars = structured_data.model_dump()
     elif hasattr(structured_data, "dict"):
         # Pydantic v1
-        template_vars = structured_data.dict()  # type: ignore
+        template_vars = structured_data.dict()
     else:
         # Fallback for dynamic models - use __dict__
-        template_vars = structured_data.__dict__  # type: ignore
+        template_vars = structured_data.__dict__
 
     # Generate the final slide using the template
     try:
@@ -106,4 +106,4 @@ def generate_single_slide_content(
         # Try with safe_substitute for missing variables
         final_slide = layout_template.template.safe_substitute(**template_vars)
 
-    return final_slide
+    return str(final_slide)

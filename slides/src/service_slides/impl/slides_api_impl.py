@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from concurrent.futures.thread import ThreadPoolExecutor
+from typing import Any
 
 from fastapi import HTTPException
 from langchain_core.language_models import BaseLanguageModel
@@ -19,8 +20,8 @@ from service_slides.models.generation_status_response import GenerationStatusRes
 from service_slides.models.request_slide_generation_request import RequestSlideGenerationRequest
 
 
-class SlidesApiImpl(BaseSlidesApi):
-    def __init_subclass__(cls, **kwargs):
+class SlidesApiImpl(BaseSlidesApi):  # type: ignore
+    def __init_subclass__(cls: Any, **kwargs) -> None:  # type: ignore
         super().__init_subclass__(**kwargs)
 
     async def get_generation_status(
@@ -49,8 +50,8 @@ class SlidesApiImpl(BaseSlidesApi):
         executor: ThreadPoolExecutor,
         job_manager: JobManager,
         layout_manager: LayoutManager,
-        splitting_model: BaseLanguageModel,
-        slidesgen_model: BaseLanguageModel,
+        splitting_model: BaseLanguageModel[Any],
+        slidesgen_model: BaseLanguageModel[Any],
     ) -> GenerationAcceptedResponse:
         # 1. Generate the slide structure
         structure = await generate_slide_structure(
@@ -71,11 +72,11 @@ class SlidesApiImpl(BaseSlidesApi):
         slide_futures = []
         for i, item in enumerate(structure.items):
 
-            def generate_item(item_content, item_layout, slide_num, course_id, lecture_id):
+            def generate_item(item_content: str, item_layout: str, slide_num: int, course_id: str, lecture_id: str) -> str:
                 import asyncio
 
                 # Get layout template synchronously within the executor
-                async def get_template():
+                async def get_template() -> Any:
                     return await layout_manager.get_layout_template(course_id, item_layout)
 
                 layout_template = asyncio.run(get_template())
@@ -90,12 +91,12 @@ class SlidesApiImpl(BaseSlidesApi):
                 )
 
                 # Update job manager for this completed slide
-                async def update_job():
+                async def update_job() -> None:
                     await job_manager.finish_page(lecture_id)
 
                 asyncio.run(update_job())
 
-                return slide_content
+                return str(slide_content)
 
             future = executor.submit(
                 generate_item,
@@ -108,7 +109,7 @@ class SlidesApiImpl(BaseSlidesApi):
             slide_futures.append(future)
 
         # Submit a final task to collect all results and save to file
-        def finalize_slides(futures, lecture_id):
+        def finalize_slides(futures: Any, lecture_id: str) -> None:
             slide_contents = []
             for future in futures:
                 slide_content = future.result()

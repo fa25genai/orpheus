@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Dict
 from string import Template
 
 
@@ -9,14 +9,14 @@ class LayoutDescription:
 
 
 class LayoutTemplate:
-    def __init__(self, name: str, template: Template, schema: dict):
+    def __init__(self, name: str, template: Template, schema: Dict[str, str]):
         self.name = name
         self.template = template
         self.schema = schema
 
 
 class LayoutManager:
-    def __init__(self):
+    def __init__(self) -> None:
         self._templates = {
             "default": LayoutTemplate(
                 "default",

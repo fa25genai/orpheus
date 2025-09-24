@@ -13,7 +13,6 @@ Do not edit the class manually.
 
 from __future__ import annotations
 import pprint
-import re  # noqa: F401
 import json
 
 
@@ -57,7 +56,7 @@ class GenerationStatusResponse(BaseModel):
     ]
 
     @field_validator("status")
-    def status_validate_enum(cls, value):
+    def status_validate_enum(cls, value) -> Any:  # type: ignore
         """Validates the enum"""
         if value is None:
             return value
@@ -111,7 +110,7 @@ class GenerationStatusResponse(BaseModel):
         return _dict
 
     @classmethod
-    def from_dict(cls, obj: Dict) -> Self:
+    def from_dict(cls, obj: Dict[str, Any]) -> Self:
         """Create an instance of GenerationStatusResponse from a dict"""
         if obj is None:
             return None
@@ -126,8 +125,8 @@ class GenerationStatusResponse(BaseModel):
                 "totalPages": obj.get("totalPages"),
                 "generatedPages": obj.get("generatedPages"),
                 "lastUpdated": obj.get("lastUpdated"),
-                "error": Error.from_dict(obj.get("error"))
-                if obj.get("error") is not None
+                "error": Error.from_dict(error_data)
+                if (error_data := obj.get("error")) is not None
                 else None,
             }
         )

@@ -13,7 +13,6 @@ Do not edit the class manually.
 
 from __future__ import annotations
 import pprint
-import re  # noqa: F401
 import json
 
 
@@ -100,7 +99,7 @@ class RequestSlideGenerationRequest(BaseModel):
         return _dict
 
     @classmethod
-    def from_dict(cls, obj: Dict) -> Self:
+    def from_dict(cls, obj: Dict[str, Any]) -> Self:
         """Create an instance of RequestSlideGenerationRequest from a dict"""
         if obj is None:
             return None
@@ -116,9 +115,9 @@ class RequestSlideGenerationRequest(BaseModel):
                 "user": obj.get("user"),
                 "assets": [
                     RequestSlideGenerationRequestAssetsInner.from_dict(_item)
-                    for _item in obj.get("assets")
+                    for _item in assets_data
                 ]
-                if obj.get("assets") is not None
+                if (assets_data := obj.get("assets")) is not None
                 else None,
             }
         )

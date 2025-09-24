@@ -1,5 +1,5 @@
 import os
-from typing import Optional, Any, TypeVar, Dict
+from typing import Optional, Any, TypeVar, Dict, cast
 
 from langchain_core.output_parsers import BaseOutputParser, StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
@@ -15,10 +15,10 @@ T = TypeVar("T")
 
 
 def _create_llm_chain(
-    model: BaseLanguageModel,
+    model: BaseLanguageModel[Any],
     prompt: ChatPromptTemplate,
-    parser: Optional[BaseOutputParser[T]] = None,
-) -> Runnable:
+    parser: Optional[BaseOutputParser[Any]] = None,
+) -> Runnable[Any, Any]:
     """Creates LLM chain from model, prompt and optional parser."""
     if parser is None:
         parser = StrOutputParser()
@@ -27,19 +27,19 @@ def _create_llm_chain(
 
 
 def invoke_llm(
-    model: BaseLanguageModel,
+    model: BaseLanguageModel[Any],
     prompt: ChatPromptTemplate,
     input_data: Dict[str, Any] = {},
-    parser: Optional[BaseOutputParser[T]] = None,
-) -> T | str:
+    parser: Optional[BaseOutputParser[Any]] = None,
+) -> Any:
     """Executes LLM request and returns parsed result."""
     chain = _create_llm_chain(model, prompt, parser)
-    return chain.invoke(input_data)
+    return cast(Any, chain.invoke(input_data))
 
 
 def create_base_model(
     model_name: str, temperature: float = 0.0, max_tokens: Optional[int] = None
-) -> BaseLanguageModel:
+) -> BaseLanguageModel[Any]:
     """Creates the best available model based on environment variables."""
 
     # Try OpenAI first
@@ -50,7 +50,7 @@ def create_base_model(
         }
         if max_tokens:
             model_kwargs["max_tokens"] = max_tokens
-        return ChatOpenAI(**model_kwargs)
+        return ChatOpenAI(**model_kwargs)  # type: ignore
 
     # Try Google GenAI second
     if "GOOGLE_API_KEY" in os.environ:
@@ -76,7 +76,7 @@ def create_base_model(
             model_kwargs["client_kwargs"] = {
                 "headers": {"Authorization": f"Bearer {os.environ['OLLAMA_LLM_KEY']}"}
             }
-        return OllamaLLM(**model_kwargs)
+        return OllamaLLM(**model_kwargs)  # type: ignore
 
     raise RuntimeError(
         "No LLM providers available. Please set one of: "

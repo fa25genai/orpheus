@@ -7,7 +7,7 @@ from service_slides.impl.manager.layout_manager import LayoutDescription
 from service_slides.impl.llm_chain.shared_llm import invoke_llm
 from service_slides.models.slide_item import SlideItem
 from service_slides.models.slide_structure import SlideStructure
-from typing import List
+from typing import List, Any, cast
 
 
 class DetailedSlideStructureItem(BaseModel):
@@ -31,7 +31,7 @@ class DetailedSlideStructure(BaseModel):
 
 
 async def generate_slide_structure(
-    model: BaseLanguageModel, lecture_script: str, available_layouts: List[LayoutDescription]
+    model: BaseLanguageModel[Any], lecture_script: str, available_layouts: List[LayoutDescription]
 ) -> DetailedSlideStructure:
     prompt = ChatPromptTemplate.from_messages(
         [
@@ -66,4 +66,4 @@ async def generate_slide_structure(
         parser=parser,
     )
 
-    return detailed_structure
+    return cast(DetailedSlideStructure, detailed_structure)

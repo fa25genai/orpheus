@@ -1,6 +1,5 @@
 # coding: utf-8
 from fastapi import Request
-from typing import Dict, List  # noqa: F401
 import importlib
 import pkgutil
 
@@ -11,19 +10,10 @@ from service_slides.apis.slides_api_base import BaseSlidesApi
 from fastapi import (  # noqa: F401
     APIRouter,
     Body,
-    Cookie,
-    Depends,
-    Form,
-    Header,
     HTTPException,
     Path,
-    Query,
-    Response,
-    Security,
-    status,
 )
 
-from service_slides.models.extra_models import TokenModel  # noqa: F401
 from pydantic import Field, StrictStr
 from typing_extensions import Annotated
 from service_slides.models.error import Error
@@ -34,7 +24,7 @@ from service_slides.models.request_slide_generation_request import RequestSlideG
 router = APIRouter()
 
 ns_pkg = service_slides.impl
-for _, name, _ in pkgutil.iter_modules(ns_pkg.__path__, ns_pkg.__name__ + "."):
+for _, name, _ in pkgutil.iter_modules(ns_pkg.__path__, ns_pkg.__name__ + "."):  # type: ignore
     importlib.import_module(name)
 
 

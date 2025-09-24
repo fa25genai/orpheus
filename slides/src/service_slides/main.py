@@ -1,5 +1,6 @@
 from concurrent.futures.thread import ThreadPoolExecutor
 from os import cpu_count, getenv
+from typing import Any
 
 from fastapi import FastAPI
 
@@ -9,7 +10,7 @@ from service_slides.impl.manager.layout_manager import LayoutManager
 from service_slides.impl.llm_chain.shared_llm import create_base_model
 
 
-async def lifespan(app: FastAPI):
+async def lifespan(app: FastAPI) -> Any:
     splitting_model_name = getenv("SPLITTING_MODEL")
     if splitting_model_name is None:
         raise ValueError("SPLITTING_MODEL environment variable is not set")

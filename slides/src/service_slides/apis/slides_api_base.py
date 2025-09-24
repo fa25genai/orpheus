@@ -1,6 +1,6 @@
 # coding: utf-8
 from concurrent.futures import ThreadPoolExecutor
-from typing import ClassVar, Dict, List, Tuple  # noqa: F401
+from typing import Any, ClassVar, Tuple  # noqa: F401
 
 from langchain_core.language_models import BaseLanguageModel
 from pydantic import Field, StrictStr
@@ -14,9 +14,9 @@ from service_slides.models.request_slide_generation_request import RequestSlideG
 
 
 class BaseSlidesApi:
-    subclasses: ClassVar[Tuple] = ()
+    subclasses: ClassVar[Tuple[type, ...]] = ()
 
-    def __init_subclass__(cls, **kwargs):
+    def __init_subclass__(cls: Any, **kwargs) -> None:  # type: ignore
         super().__init_subclass__(**kwargs)
         BaseSlidesApi.subclasses = BaseSlidesApi.subclasses + (cls,)
 
@@ -34,8 +34,8 @@ class BaseSlidesApi:
         executor: ThreadPoolExecutor,
         job_manager: JobManager,
         layout_manager: LayoutManager,
-        splitting_model: BaseLanguageModel,
-        slidesgen_model: BaseLanguageModel,
+        splitting_model: BaseLanguageModel[Any],
+        slidesgen_model: BaseLanguageModel[Any],
     ) -> GenerationAcceptedResponse:
         """Accepts a concept and supporting assets (images, graphs, tables, code listings, equations). The request returns immediately with a request_id and status (typically IN_PROGRESS). Final slide deck (PDF) is produced asynchronously; the client can poll the status endpoint and fetch the resulting deck when complete."""
         ...
