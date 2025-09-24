@@ -21,18 +21,18 @@ class SlidesApiImpl(BaseSlidesApi):
 
     async def get_generation_status(
         self,
-        lectureId: Annotated[
-            StrictStr, Field(description="The lectureId returned by /v1/slides/generate")
+        promptId: Annotated[
+            StrictStr, Field(description="The promptId returned by /v1/slides/generate")
         ],
         job_manager: JobManager,
     ) -> GenerationStatusResponse:
-        status = await job_manager.get_status(lectureId)
+        status = await job_manager.get_status(promptId)
         if status is None:
             raise HTTPException(
                 status_code=404
             )  # TODO: Check if lecture is present on CDN and then we have to return done
         return GenerationStatusResponse(
-            lectureId=lectureId,
+            promptId=promptId,
             status="IN_PROGRESS" if status.achieved < status.total else "DONE",
             totalPages=status.total,
             generatedPages=status.achieved,
@@ -56,7 +56,7 @@ class SlidesApiImpl(BaseSlidesApi):
         )
 
         await job_manager.init_job(
-            request_slide_generation_request.lecture_id, len(structure.items)
+            request_slide_generation_request.prompt_id, len(structure.items)
         )
         for item in structure.items:
 
@@ -71,13 +71,13 @@ class SlidesApiImpl(BaseSlidesApi):
                     structure=structure,
                     assets=item.assets,
                 )
-                await job_manager.finish_page(request_slide_generation_request.lecture_id)
+                await job_manager.finish_page(request_slide_generation_request.prompt_id)
 
             executor.submit(generate_item)
 
-        status = await job_manager.get_status(request_slide_generation_request.lecture_id)
+        status = await job_manager.get_status(request_slide_generation_request.prompt_id)
         return GenerationAcceptedResponse(
-            lectureId=request_slide_generation_request.lecture_id,
+            promptId=request_slide_generation_request.prompt_id,
             status="IN_PROGRESS" if status.achieved < status.total else "DONE",
             createdAt=datetime.now(),
             structure=structure.as_simple_slide_structure(),

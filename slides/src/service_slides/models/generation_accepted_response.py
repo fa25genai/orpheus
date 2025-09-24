@@ -33,13 +33,13 @@ class GenerationAcceptedResponse(BaseModel):
     Returned immediately after generation request accepted
     """  # noqa: E501
 
-    lecture_id: Optional[StrictStr] = Field(default=None, alias="lectureId")
+    prompt_id: Optional[StrictStr] = Field(default=None, alias="promptId")
     status: Optional[StrictStr] = None
     created_at: Optional[datetime] = Field(default=None, alias="createdAt")
     structure: Optional[SlideStructure] = Field(
         default=None, description="Structure preview for progressing other generation steps"
     )
-    __properties: ClassVar[List[str]] = ["lectureId", "status", "createdAt", "structure"]
+    __properties: ClassVar[List[str]] = ["promptId", "status", "createdAt", "structure"]
 
     @field_validator("status")
     def status_validate_enum(cls, value):
@@ -106,7 +106,7 @@ class GenerationAcceptedResponse(BaseModel):
 
         _obj = cls.model_validate(
             {
-                "lectureId": obj.get("lectureId"),
+                "promptId": obj.get("promptId"),
                 "status": obj.get("status"),
                 "createdAt": obj.get("createdAt"),
                 "structure": SlideStructure.from_dict(obj.get("structure"))
