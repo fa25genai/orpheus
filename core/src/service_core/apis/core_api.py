@@ -25,8 +25,6 @@ from fastapi import (  # noqa: F401
 from service_core.models.extra_models import TokenModel  # noqa: F401
 from pydantic import Field
 from typing_extensions import Annotated
-from uuid import UUID
-from service_core.models.data_response import DataResponse
 from service_core.models.error import Error
 from service_core.models.prompt_request import PromptRequest
 from service_core.models.prompt_response import PromptResponse
@@ -52,45 +50,7 @@ for _, name, _ in pkgutil.iter_modules(ns_pkg.__path__, ns_pkg.__name__ + "."):
 async def create_lecture_from_prompt(
     prompt_request: Annotated[PromptRequest, Field(description="The user prompt to generate content from.")] = Body(None, description="The user prompt to generate content from."),
 ) -> PromptResponse:
-    """Accepts a user prompt and initiates an asynchronous job to generate lecture content. Returns a unique lecture ID to track the job."""
+    """Accepts a user prompt and initiates an asynchronous job to generate lecture content. Returns a unique prompt ID to track the job."""
     if not BaseCoreApi.subclasses:
         raise HTTPException(status_code=500, detail="Not implemented")
     return await BaseCoreApi.subclasses[0]().create_lecture_from_prompt(prompt_request)
-
-
-@router.get(
-    "/core/getSlides/{lectureId}",
-    responses={
-        200: {"model": DataResponse, "description": "Success. Returns the status and URL of the generated slides."},
-        404: {"model": Error, "description": "Not Found. No lecture job found with the provided ID."},
-    },
-    tags=["core"],
-    summary="Get the generated slides",
-    response_model_by_alias=True,
-)
-async def get_slides_by_lecture_id(
-    lectureId: Annotated[UUID, Field(description="The unique identifier for the lecture generation job.")] = Path(..., description="The unique identifier for the lecture generation job."),
-) -> DataResponse:
-    """Retrieves the status or result of a slide generation job using the lecture ID."""
-    if not BaseCoreApi.subclasses:
-        raise HTTPException(status_code=500, detail="Not implemented")
-    return await BaseCoreApi.subclasses[0]().get_slides_by_lecture_id(lectureId)
-
-
-@router.get(
-    "/core/getVideo/{lectureId}",
-    responses={
-        200: {"model": DataResponse, "description": "Success. Returns the status and URL of the generated video."},
-        404: {"model": Error, "description": "Not Found. No lecture job found with the provided ID."},
-    },
-    tags=["core"],
-    summary="Get the generated video",
-    response_model_by_alias=True,
-)
-async def get_video_by_lecture_id(
-    lectureId: Annotated[UUID, Field(description="The unique identifier for the lecture generation job.")] = Path(..., description="The unique identifier for the lecture generation job."),
-) -> DataResponse:
-    """Retrieves the status or result of a video generation job using the lecture ID."""
-    if not BaseCoreApi.subclasses:
-        raise HTTPException(status_code=500, detail="Not implemented")
-    return await BaseCoreApi.subclasses[0]().get_video_by_lecture_id(lectureId)

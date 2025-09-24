@@ -20,7 +20,6 @@ from typing import Dict, Any, List
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from langchain_community.chat_models import ChatOllama
-from demos import RawUserProfile, RawUserPreferences
 
 # Load environment variables from .env file
 load_dotenv()
@@ -64,6 +63,18 @@ def llm_call(prompt: str) -> str:
     raise RuntimeError("No valid LLM API key available (Llama)")
 
 # -----------------------------
+# JSON helpers
+# -----------------------------
+def try_parse_json(raw_response: str) -> tuple[bool, dict]:
+    """Try to parse JSON response, return (success, result)"""
+    try:
+        result = json.loads(raw_response)
+        return True, result
+    except json.JSONDecodeError:
+        return False, None
+
+
+# -----------------------------
 # Refine lecture content
 # -----------------------------
 REFINE_PROMPT = textwrap.dedent("""
@@ -78,14 +89,19 @@ Task:
 - Adapt the content difficulty and explanation based on the student's persona.
 - Make the script formal.
 - Reference images inline where appropriate (e.g., "see image: <description>").
-- Respond in strict JSON format:
+- Respond in strict JSON format with properly escaped strings:
 
 {
-  "lectureScript": "...",
-  "Images": [{"image": "...", "description": "..."}]
+  "lectureScript": "Your complete lecture script here as a single string with no line breaks",
+  "Images": [{"image": "filename.jpg", "description": "Description text"}]
 }
 
-Do NOT produce slides or voice scripts at this stage.
+IMPORTANT: 
+- The JSON must be valid and parseable
+- Do NOT include actual line breaks in the lectureScript string value
+- Use \\n for line breaks within the text if needed
+- Start the lectureScript content immediately after the opening quote
+- Do NOT produce slides or voice scripts at this stage
 """)
 
 def refine_lecture_content(retrieved_content: List[Dict[str, Any]], persona: Dict[str, Any]) -> Dict[str, Any]:
@@ -95,19 +111,34 @@ def refine_lecture_content(retrieved_content: List[Dict[str, Any]], persona: Dic
         persona_dict = persona.model_dump()
     else:
         persona_dict = persona
-    
+
+    persona_dict['id'] = str(persona_dict['id'])
+    print("Refining lecture content for persona:")
+
     prompt = REFINE_PROMPT + "\n\n" + json.dumps({
         "persona": persona_dict,
         "retrieved_content": retrieved_content
     }, ensure_ascii=False)
-
-    raw = llm_call(prompt)
-    try:
-        return json.loads(raw)
-    except Exception:
-        # Fallback: try extracting JSON substring
-        start, end = raw.find("{"), raw.rfind("}")
-        if start != -1 and end != -1:
-            return json.loads(raw[start:end+1])
-        raise RuntimeError("Failed to parse JSON from LLM output: " + raw)
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            raw = llm_call(prompt)       
+            print(f"\nBreak point (attempt {attempt + 1}): {raw}")
+            
+            # Try to parse JSON directly first
+            success, result = try_parse_json(raw)
+            if success:
+                return result
+            
+            # If it didn't work, this will raise JSONDecodeError and trigger retry
+            json.loads(raw)
+                
+        except json.JSONDecodeError as e:
+            print(f"JSON parsing error on attempt {attempt + 1}: {e}")
+            continue
+        except Exception as e:
+            print(f"Unexpected error on attempt {attempt + 1}: {e}")
+            if attempt == max_retries - 1:
+                raise RuntimeError(f"Failed to get valid response from LLM after {max_retries} attempts: {e}")
+            continue
 
