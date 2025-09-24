@@ -39,6 +39,9 @@ Open questions:
 ## Getting Started
 ### Initial Setup
 #### 1. Install Python 3.13.7 using pyenv
+The project is based on python 3.13.7.
+We recommend using [pyenv](https://github.com/pyenv/pyenv) to manage your python versions.
+
 ##### Linux (Debian/Ubuntu)
 1. Install system dependencies for building Python (one-time setup)
     ```bash
@@ -147,6 +150,8 @@ Expected output: Python 3.13.7
     Expected output: 3.13.7 (set by C:\Users\YourUser\.pyenv\pyenv-win\version)
 
 #### 2. Install Poetry 2.2.1
+We use [Poetry](https://python-poetry.org/) as our dependency and environment management tool.
+
 ##### Linux / macOS
 1. Install Poetry using the official installer script
     ```bash
