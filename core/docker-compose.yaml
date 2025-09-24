@@ -1,9 +1,14 @@
-version: '3.6'
+# docker-compose.yml
+
+version: '3.8'
+
 services:
-  service:
-    build:
-      context: .
-      target: service
+  api:
+    build: .
     ports:
-      - "8080:8080"
-    command: uvicorn service_core.main:app --host 0.0.0.0 --port 8080
+      - "8000:8000"
+    volumes:
+      # This is the key line: it mounts your local 'src' folder
+      # into the '/app/src' folder inside the container.
+      - ./src:/app/src
+    command: poetry run uvicorn src.service_core.main:app --host 0.0.0.0 --port 8000
