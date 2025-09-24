@@ -21,14 +21,14 @@ class LayoutManager:
             "default": LayoutTemplate(
                 "default",
                 Template(
-                    """---
-    layout: default
-    ---
-    
-    # {headline}
-    
-    {content}
-    """
+"""---
+layout: default
+---
+
+# ${headline}
+
+${content}
+"""
                 ),
                 {
                     "headline": "Title/headline of this slide",
@@ -38,14 +38,14 @@ class LayoutManager:
             "center": LayoutTemplate(
                 "center",
                 Template(
-                    """---
-    layout: center
-    ---
-    
-    # {headline}
-    
-    {content}
-    """
+"""---
+layout: center
+---
+
+# ${headline}
+
+${content}
+"""
                 ),
                 {
                     "headline": "Title centered on the slide",
@@ -55,14 +55,14 @@ class LayoutManager:
             "cover": LayoutTemplate(
                 "cover",
                 Template(
-                    """---
-    layout: cover
-    ---
-    
-    # {title}
-    
-    {subtitle}
-    """
+"""---
+layout: cover
+---
+
+# ${title}
+
+${subtitle}
+"""
                 ),
                 {
                     "title": "Main presentation title",
@@ -72,50 +72,50 @@ class LayoutManager:
             "end": LayoutTemplate(
                 "end",
                 Template(
-                    """---
-    layout: end
-    ---
-    
-    # {message}
-    """
+"""---
+layout: end
+---
+
+# ${message}
+"""
                 ),
                 {"message": "Closing message for the final slide"},
             ),
             "fact": LayoutTemplate(
                 "fact",
                 Template(
-                    """---
-    layout: fact
-    ---
-    
-    # {fact}
-    """
+"""---
+layout: fact
+---
+
+# ${fact}
+"""
                 ),
                 {"fact": "A single fact or data point to highlight prominently"},
             ),
             "full": LayoutTemplate(
                 "full",
                 Template(
-                    """---
-    layout: full
-    ---
-    
-    {content}
-    """
+"""---
+layout: full
+---
+
+${content}
+"""
                 ),
                 {"content": "Full-screen content (text, image, or code)"},
             ),
             "image-left": LayoutTemplate(
                 "image-left",
                 Template(
-                    """---
-    layout: image-left
-    image: {image}
-    class: {class_name}
-    ---
-    
-    {content}
-    """
+"""---
+layout: image-left
+image: ${image}
+class: ${class_name}
+---
+
+${content}
+"""
                 ),
                 {
                     "image": "Path or URL to the image",
@@ -126,14 +126,14 @@ class LayoutManager:
             "image-right": LayoutTemplate(
                 "image-right",
                 Template(
-                    """---
-    layout: image-right
-    image: {image}
-    class: {class_name}
-    ---
-    
-    {content}
-    """
+"""---
+layout: image-right
+image: ${image}
+class: ${class_name}
+---
+
+${content}
+"""
                 ),
                 {
                     "image": "Path or URL to the image",
@@ -144,12 +144,12 @@ class LayoutManager:
             "image": LayoutTemplate(
                 "image",
                 Template(
-                    """---
-    layout: image
-    image: {image}
-    backgroundSize: {background_size}
-    ---
-    """
+"""---
+layout: image
+image: ${image}
+backgroundSize: ${background_size}
+---
+"""
                 ),
                 {
                     "image": "Path or URL to the image",
@@ -159,14 +159,14 @@ class LayoutManager:
             "iframe-left": LayoutTemplate(
                 "iframe-left",
                 Template(
-                    """---
-    layout: iframe-left
-    url: {url}
-    class: {class_name}
-    ---
-    
-    {content}
-    """
+"""---
+layout: iframe-left
+url: ${url}
+class: ${class_name}
+---
+
+${content}
+"""
                 ),
                 {
                     "url": "Web page to embed",
@@ -177,14 +177,14 @@ class LayoutManager:
             "iframe-right": LayoutTemplate(
                 "iframe-right",
                 Template(
-                    """---
-    layout: iframe-right
-    url: {url}
-    class: {class_name}
-    ---
-    
-    {content}
-    """
+"""---
+layout: iframe-right
+url: ${url}
+class: ${class_name}
+---
+
+${content}
+"""
                 ),
                 {
                     "url": "Web page to embed",
@@ -195,27 +195,27 @@ class LayoutManager:
             "iframe": LayoutTemplate(
                 "iframe",
                 Template(
-                    """---
-    layout: iframe
-    url: {url}
-    ---
-    """
+"""---
+layout: iframe
+url: ${url}
+---
+"""
                 ),
                 {"url": "Web page to embed as the main content"},
             ),
             "intro": LayoutTemplate(
                 "intro",
                 Template(
-                    """---
-    layout: intro
-    ---
-    
-    # {title}
-    
-    {description}
-    
-    _Author: {author}_
-    """
+"""---
+layout: intro
+---
+
+# ${title}
+
+${description}
+
+_Author: ${author}_
+"""
                 ),
                 {
                     "title": "Presentation title",
@@ -226,70 +226,70 @@ class LayoutManager:
             "none": LayoutTemplate(
                 "none",
                 Template(
-                    """---
-    layout: none
-    ---
-    
-    {content}
-    """
+"""---
+layout: none
+---
+
+${content}
+"""
                 ),
                 {"content": "Raw content without styling"},
             ),
             "quote": LayoutTemplate(
                 "quote",
                 Template(
-                    """---
-    layout: quote
-    ---
-    
-    > {quote}
-    
-    — {author}
-    """
+"""---
+layout: quote
+---
+
+> ${quote}
+
+— ${author}
+"""
                 ),
                 {"quote": "Quotation text", "author": "Source or author"},
             ),
             "section": LayoutTemplate(
                 "section",
                 Template(
-                    """---
-    layout: section
-    ---
-    
-    # {section_title}
-    """
+"""---
+layout: section
+---
+
+# ${section_title}
+"""
                 ),
                 {"section_title": "Section heading"},
             ),
             "statement": LayoutTemplate(
                 "statement",
                 Template(
-                    """---
-    layout: statement
-    ---
-    
-    # {statement}
-    """
+"""---
+layout: statement
+---
+
+# ${statement}
+"""
                 ),
                 {"statement": "Main affirmation or statement"},
             ),
             "two-cols": LayoutTemplate(
                 "two-cols",
                 Template(
-                    """---
-    layout: two-cols
-    ---
-    
-    # {title_left}
-    
-    {left}
-    
-    ::right::
-    
-    # {title_right}
-    
-    {right}
-    """
+"""---
+layout: two-cols
+---
+
+# ${title_left}
+
+${left}
+
+::right::
+
+# ${title_right}
+
+${right}
+"""
                 ),
                 {
                     "title_left": "Heading for the left column",
@@ -301,24 +301,24 @@ class LayoutManager:
             "two-cols-header": LayoutTemplate(
                 "two-cols-header",
                 Template(
-                    """---
-    layout: two-cols-header
-    ---
-    
-    {header}
-    
-    ::left::
-    
-    # {title_left}
-    
-    {left}
-    
-    ::right::
-    
-    # {title_right}
-    
-    {right}
-    """
+"""---
+layout: two-cols-header
+---
+
+${header}
+
+::left::
+
+# ${title_left}
+
+${left}
+
+::right::
+
+# ${title_right}
+
+${right}
+"""
                 ),
                 {
                     "header": "Header spanning the top",
@@ -380,7 +380,7 @@ class LayoutManager:
             ),
         ]
 
-    async def get_layout_template(self, courseId: str, layoutName: str) -> str:
+    async def get_layout_template(self, courseId: str, layoutName: str) -> LayoutTemplate:
         try:
             return self._templates[layoutName]
         except KeyError:
