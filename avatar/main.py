@@ -288,7 +288,11 @@ async def generate_audio(slide_text: str, course_id: str, prompt_id: UUID, user_
     audio_path = f"/tmp/{pid}_{audio_counter}.wav"
     # TODO: generate real audio in OpenVoice container and save it in the mentioned path
     # use slide_text, course_id, prompt_id and user_profil for this
-    return audio_path
+
+    # hard_code
+    return f"/data/example/krusche_voice.wav"
+
+    # return audio_path
 
 
 async def generate_video(audio_path: str = None, prompt_id: UUID = None, course_id: str = None, user_profile: UserProfile = None,
@@ -298,9 +302,12 @@ async def generate_video(audio_path: str = None, prompt_id: UUID = None, course_
     Returns a URI (string) to the rendered video file which consists of one video per slide.
     """
     pid = str(prompt_id)
-    out_path = f"avatar/ditto-talkinghead/tmp/{pid}_{video_counter}.mp4"
-    audio_path = f"avatar/ditto-talkinghead/example/krusche_voice.wav" if audio_path is None else audio_path
-    source_path = f"avatar/ditto-talkinghead/example/image_michal.png" if course_id is None else f"avatar/ditto-talkinghead/example/image_michal.png"
+    # out_path = f"avatar/ditto-talkinghead/tmp/{pid}_{video_counter}.mp4"
+    out_path = f"/data/{pid}_{video_counter}.mp4"
+    # audio_path = f"avatar/ditto-talkinghead/example/krusche_voice.wav" if audio_path is None else audio_path
+    audio_path = f"/data/example/krusche_voice.wav" if audio_path is None else audio_path
+    # source_path = f"avatar/ditto-talkinghead/example/image_michal.png" if course_id is None else f"avatar/ditto-talkinghead/example/image_michal.png"
+    source_path = f"/data/example/image_michal.png" if course_id is None else f"/data/example/image_michal.png"
 
     # Call to API
     api_url = "http://localhost:8000/infer"
