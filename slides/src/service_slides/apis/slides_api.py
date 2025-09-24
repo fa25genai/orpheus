@@ -46,9 +46,10 @@ async def get_generation_status(
 ) -> GenerationStatusResponse:
     if not BaseSlidesApi.subclasses:
         raise HTTPException(status_code=500, detail="Not implemented")
-    return await BaseSlidesApi.subclasses[0]().get_generation_status(
+    result = await BaseSlidesApi.subclasses[0]().get_generation_status(
         lectureId, http_request.app.state.job_manager
     )
+    return result  # type: ignore
 
 
 @router.post(
@@ -76,7 +77,7 @@ async def request_slide_generation(
     """Accepts a concept and supporting assets (images, graphs, tables, code listings, equations). The request returns immediately with a request_id and status (typically IN_PROGRESS). Final slide deck (PDF) is produced asynchronously; the client can poll the status endpoint and fetch the resulting deck when complete."""
     if not BaseSlidesApi.subclasses:
         raise HTTPException(status_code=500, detail="Not implemented")
-    return await BaseSlidesApi.subclasses[0]().request_slide_generation(
+    result = await BaseSlidesApi.subclasses[0]().request_slide_generation(
         request_slide_generation_request,
         http_request.app.state.executor,
         http_request.app.state.job_manager,
@@ -84,3 +85,4 @@ async def request_slide_generation(
         http_request.app.state.splitting_model,
         http_request.app.state.slidesgen_model,
     )
+    return result  # type: ignore

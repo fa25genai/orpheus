@@ -26,7 +26,8 @@ class BaseSlidesApi:
             StrictStr, Field(description="The lectureId returned by /v1/slides/generate")
         ],
         job_manager: JobManager,
-    ) -> GenerationStatusResponse: ...
+    ) -> GenerationStatusResponse:
+        raise NotImplementedError
 
     async def request_slide_generation(
         self,
@@ -38,4 +39,4 @@ class BaseSlidesApi:
         slidesgen_model: BaseLanguageModel[Any],
     ) -> GenerationAcceptedResponse:
         """Accepts a concept and supporting assets (images, graphs, tables, code listings, equations). The request returns immediately with a request_id and status (typically IN_PROGRESS). Final slide deck (PDF) is produced asynchronously; the client can poll the status endpoint and fetch the resulting deck when complete."""
-        ...
+        raise NotImplementedError

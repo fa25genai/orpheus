@@ -20,8 +20,8 @@ from service_slides.models.generation_status_response import GenerationStatusRes
 from service_slides.models.request_slide_generation_request import RequestSlideGenerationRequest
 
 
-class SlidesApiImpl(BaseSlidesApi):  # type: ignore
-    def __init_subclass__(cls: Any, **kwargs) -> None:  # type: ignore
+class SlidesApiImpl(BaseSlidesApi):
+    def __init_subclass__(cls: Any, **kwargs: Any) -> None:
         super().__init_subclass__(**kwargs)
 
     async def get_generation_status(
