@@ -10,7 +10,7 @@ We recommend using [VsCode](https://code.visualstudio.com/) with the [Apollon Ex
 Once you edited the diagram, make sure to export it as svg to replace the existing [OrpheusArchitecture.png](./OrpheusArchitecture.png).
 -->
 <div style="text-align: center;">
-  <img src="./OrpheusArchitecture.png" alt="Orpheus System Architecture" style="max-width: 80%; height: auto;">
+  <img src="./OrpheusArchitecture.png" alt="Orpheus System Architecture" style="max-width: 95%; height: auto;">
 </div>
 
 ## API Interface Documentation
