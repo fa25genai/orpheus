@@ -30,7 +30,7 @@ class UserProfile(BaseModel):
 
 class GenerateRequest(BaseModel):
     slideMessages: List[constr(min_length=1)] = Field(..., min_items=1)
-    lectureId: UUID
+    promptId: UUID
     courseId: str
     userProfile: UserProfile
 
@@ -41,13 +41,13 @@ class ErrorModel(BaseModel):
 
 
 class GenerationAcceptedResponse(BaseModel):
-    lectureId: UUID
+    promptId: UUID
     createdAt: datetime
     # status omitted on purpose to match your earlier schema (202 body minimal)
 
 
 class GenerationStatusResponse(BaseModel):
-    lectureId: UUID
+    promptId: UUID
     status: Literal["IN_PROGRESS", "FAILED", "DONE"]
     lastUpdated: datetime
     resultUrl: str  # always present now
@@ -60,7 +60,7 @@ class GenerationStatusResponse(BaseModel):
 # ---------------------------
 
 class Job(BaseModel):
-    lectureId: UUID
+    promptId: UUID
     status: Literal["IN_PROGRESS", "FAILED", "DONE"]
     lastUpdated: datetime
     resultUrl: str
@@ -126,19 +126,19 @@ def process_generation(payload: GenerateRequest) -> None:
         # -------------------------
         # Todo: queue audio and video handling -> With fallback
         audio_paths = generate_audio(payload.slideMessages, course_id=payload.courseId, user_profile=payload.userProfile)
-        _ = generate_video(payload.slideMessages, audio_paths, lecture_id=payload.lectureId, course_id=payload.courseId, user_profile=payload.userProfile)
+        _ = generate_video(payload.slideMessages, audio_paths, lecture_id=payload.promptId, course_id=payload.courseId, user_profile=payload.userProfile)
         # -------------------------
         # Mark done
-        job = JOBS[payload.lectureId]
+        job = JOBS[payload.promptId]
         job.status = "DONE"
         job.lastUpdated = _utcnow()
-        JOBS[payload.lectureId] = job
+        JOBS[payload.promptId] = job
     except Exception as exc:
-        job = JOBS[payload.lectureId]
+        job = JOBS[payload.promptId]
         job.status = "FAILED"
         job.lastUpdated = _utcnow()
         job.error = ErrorModel(code="GENERATION_FAILED", message=str(exc))
-        JOBS[payload.lectureId] = job
+        JOBS[payload.promptId] = job
 
 
 # ---------------------------
@@ -154,10 +154,10 @@ def process_generation(payload: GenerateRequest) -> None:
 def request_video_generation(payload: GenerateRequest, background: BackgroundTasks, response: Response, request: Request):
     now = _utcnow()
     # pre-compute where the file will live
-    url = _result_url(payload.lectureId)
+    url = _result_url(payload.promptId)
     expected = _estimate_total_seconds(len(payload.slideMessages))
-    JOBS[payload.lectureId] = Job(
-        lectureId=payload.lectureId,
+    JOBS[payload.promptId] = Job(
+        promptId=payload.promptId,
         status="IN_PROGRESS",
         lastUpdated=now,
         resultUrl=url,
@@ -169,21 +169,21 @@ def request_video_generation(payload: GenerateRequest, background: BackgroundTas
     background.add_task(process_generation, payload)
     # absolute Location per spec
     base = str(request.base_url).rstrip("/")
-    response.headers["Location"] = f"{base}/v1/video/{payload.lectureId}/status"
-    return GenerationAcceptedResponse(lectureId=payload.lectureId, createdAt=now)
+    response.headers["Location"] = f"{base}/v1/video/{payload.promptId}/status"
+    return GenerationAcceptedResponse(promptId=payload.promptId, createdAt=now)
 
 
 @app.get(
-    "/v1/video/{lectureId}/status",
+    "/v1/video/{promptId}/status",
     response_model=GenerationStatusResponse,
     responses={404: {"model": ErrorModel}},
 )
-def get_generation_status(lectureId: UUID):
-    job = JOBS.get(lectureId)
+def get_generation_status(promptId: UUID):
+    job = JOBS.get(promptId)
     if not job:
         return JSONResponse(status_code=404, content={"code": "NOT_FOUND", "message": "Request not found"})
     return GenerationStatusResponse(
-        lectureId=job.lectureId,
+        promptId=job.promptId,
         status=job.status,
         lastUpdated=job.lastUpdated,
         resultUrl=job.resultUrl,
