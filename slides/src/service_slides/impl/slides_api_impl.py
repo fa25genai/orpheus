@@ -59,7 +59,7 @@ class SlidesApiImpl(BaseSlidesApi):
             lecture_script=request_slide_generation_request.lecture_script,
             available_layouts = await layout_manager.get_available_layouts(
                 request_slide_generation_request.course_id
-            ),
+            )
         )
 
         # 2. Initialize job for tracking progress
