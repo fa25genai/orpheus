@@ -46,6 +46,3 @@ strict = true
 warn_unused_ignores = true
 warn_redundant_casts = true
 no_implicit_optional = true
-exclude = [
-    'src'
-]
