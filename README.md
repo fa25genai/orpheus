@@ -34,7 +34,10 @@ Open questions:
 | **Lecture Content Service**   | Content Delivery Network (CDN) that stores the lecturer avatar videos and lecture slides.                |                                                                                        |
 
 ## Getting Started
-### Initial Setup
+### Deployment
+TODO - add docker startup commands and instructions
+
+### Development Setup
 #### 1. Install Python 3.13.7 using pyenv
 The project is based on python 3.13.7.
 We recommend using [pyenv](https://github.com/pyenv/pyenv) to manage your python versions.
