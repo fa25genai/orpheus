@@ -1,4 +1,3 @@
-import asyncio
 from datetime import datetime
 
 from concurrent.futures.thread import ThreadPoolExecutor
@@ -9,6 +8,7 @@ from pydantic import StrictStr, Field
 from service_slides.impl.llm_chain.slide_structure import generate_slide_structure
 from service_slides.impl.llm_chain.slide_content import generate_single_slide_content
 from service_slides.impl.manager.layout_manager import LayoutManager
+from service_slides.impl.manager.slide_output_manager import save_slides_to_file
 from typing_extensions import Annotated
 
 from service_slides.apis.slides_api import router as router
@@ -62,29 +62,67 @@ class SlidesApiImpl(BaseSlidesApi):
             )
         )
 
-        # 2. Generate the slide content
+        # 2. Initialize job for tracking progress
         await job_manager.init_job(
             request_slide_generation_request.lecture_id, len(structure.items)
         )
-        for item in structure.items:
-            async def generate_item():
-                await generate_single_slide_content(
-                    model = slidesgen_model,
-                    text = item.content,
-                    slide_template = await layout_manager.get_layout_template(
-                        request_slide_generation_request.course_id, item.layout
-                    ),
-                    slide_number = structure.items.index(item) + 1, # Slide numbers start from 1
-                    assets = item.assets,
+        
+        # 3. Start background slide generation (don't wait for completion)
+        # Submit individual slide generation tasks directly to the executor
+        slide_futures = []
+        for i, item in enumerate(structure.items):
+            def generate_item(item_content, item_layout, slide_num, course_id, lecture_id):
+                import asyncio
+                
+                # Get layout template synchronously within the executor
+                async def get_template():
+                    return await layout_manager.get_layout_template(course_id, item_layout)
+                
+                layout_template = asyncio.run(get_template())
+                
+                # Generate slide content
+                slide_content = generate_single_slide_content(
+                    model=slidesgen_model,
+                    text=item_content,
+                    layout_template=layout_template,
+                    slide_number=slide_num,
+                    assets=getattr(item, 'assets', []),
                 )
-                await job_manager.finish_page(request_slide_generation_request.lecture_id)
-
-            executor.submit(lambda : asyncio.run(generate_item()))
+                
+                # Update job manager for this completed slide
+                async def update_job():
+                    await job_manager.finish_page(lecture_id)
+                
+                asyncio.run(update_job())
+                
+                return slide_content
+            
+            future = executor.submit(
+                generate_item, 
+                item.content, 
+                item.layout, 
+                i + 1,
+                request_slide_generation_request.course_id,
+                request_slide_generation_request.lecture_id
+            )
+            slide_futures.append(future)
+        
+        # Submit a final task to collect all results and save to file
+        def finalize_slides(futures, lecture_id):
+            slide_contents = []
+            for future in futures:
+                slide_content = future.result()
+                slide_contents.append(slide_content)
+            
+            # Save all slides to markdown file
+            save_slides_to_file(lecture_id, slide_contents)
+        
+        executor.submit(finalize_slides, slide_futures, request_slide_generation_request.lecture_id)
 
         status = await job_manager.get_status(request_slide_generation_request.lecture_id)
         return GenerationAcceptedResponse(
             lectureId=request_slide_generation_request.lecture_id,
-            status="IN_PROGRESS" if status.achieved < status.total else "DONE",
+            status="IN_PROGRESS" if status and status.achieved < status.total else "DONE",
             createdAt=datetime.now(),
             structure=structure.as_simple_slide_structure(),
         )
