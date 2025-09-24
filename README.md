@@ -22,16 +22,18 @@ Open questions:
 
 ## API Interface Documentation
 
-| Service                       | Description                                                                                              | OpenAPI Specification                                                                  |
-|-------------------------------|----------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------|
-| **Chat Service**              | Returns a lectureId based on user prompts and returns generated slides and avatar video.                 | [AI Core](./core/service_core_v1.yaml)                                                 |
-| **Content Retrieval Service** | Retrieves content related to the student question from instructor provided lecture slides and materials. | [Document Intelligence](./document-intelligence/service_document-intelligence_v1.yaml) |
-| **Slide Generation Service**  | Generates lecture slides from a lecture script, and provides their generation status and download URL.   | [Slide Service](./slides/service_slides_v1.yaml)                                       |
-| **Slide Push Service**        | Stores generated slides                                                                                  |                                                                                        |
-| **Avatar Generation Service** | Generates short videos of lifelike professor avatars with expressive narration.                          |                                                                                        |
-| **Video Push Service**        | Uploads generated videos to the Lecture Content Service (which is a CDN)                                 |                                                                                        |
-| **Lecture Storage Service**   | Stores lecture materials, voice samples and lecturer pictures that are used for avatar generation.       |                                                                                        |
-| **Lecture Content Service**   | Content Delivery Network (CDN) that stores the lecturer avatar videos and lecture slides.                |                                                                                        |
+| Service                       | Description                                                                                                              | OpenAPI Specification                                                                  |
+|-------------------------------|--------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------|
+| **Answer Generation Service** | Handles user prompts, creates lecture generation jobs, and returns a lectureId                                           | [AI Core](./core/service_core_v1.yaml)                                                 |
+| **Content Retrieval Service** | Extracts and retrieves relevant content from instructor-provided slides and materials to support question answering.     | [Document Intelligence](./document-intelligence/service_document-intelligence_v1.yaml) |
+| **Lecture Ingestion Service** | Loads received lectures into vector database and allows deleting information related to already uploaded lecture slides. |                                                                                        |
+| **Slide Generation Service**  | Generates lecture slides that conform to the layout of the respective course from a detailed lecture script.             | [Slide Service](./slides/service_slides_v1.yaml)                                       |
+| **Slide Push Service**        | Uploads generated slides to the `Generated Avatar Delivery` (CDN) for distribution.                                      |                                                                                        |
+| **Avatar Generation Service** | Produces short videos of lifelike professor avatars from a given text for the voice track with expressive narration.     |                                                                                        |
+| **Video Push Service**        | Uploads generated avatar videos to the `Generated Slide Delivery` (CDN) for distribution.                                |                                                                                        |
+| **Content Location Service**  | Returns the CDN location of a slide / avatar video of a related `promptId`.                                              |                                                                                        |
+| **Generated Avatar Service**  | Provides the generated avatar videos, retrieved by related `promptId`.                                                   |                                                                                        |
+| **Generated Slide Service**   | Provides the generated slides, retrieved by related `promptId`.                                                          |                                                                                        |
 
 ## Getting Started
 ### Deployment
