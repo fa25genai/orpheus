@@ -1,3 +1,14 @@
+# Openapi Generated Files
+.flake8
+.openapi-generator
+openapi.yaml
+setup.cfg
+requirements.txt
+src/
+app/
+src/service_core/apis/
+src/service_core/models/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
