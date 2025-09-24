@@ -145,3 +145,30 @@ Expected output: Python 3.13.7
     pyenv version
     ```
     Expected output: 3.13.7 (set by C:\Users\YourUser\.pyenv\pyenv-win\version)
+
+#### 2. Install Poetry 2.2.1
+##### Linux / macOS
+1. Install Poetry using the official installer script
+    ```bash
+    curl -sSL https://install.python-poetry.org | python3 -
+    ```
+2. Update Poetry to version 2.2.1
+    ```bash
+    ~/.local/bin/poetry self update 2.2.1
+    ```
+3. Ensure Poetry is on PATH for the current shell session
+    ```bash
+    export PATH="$HOME/.local/bin:$PATH"
+    ```
+    1. Persist Poetry on PATH for **bash**
+        ```bash
+        echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
+        ```
+    2. Persist Poetry on PATH for **zsh**
+        ```bash
+        echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
+        ```
+4. Verify Poetry installation
+    ```bash
+    poetry --version
+    ```
