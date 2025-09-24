@@ -88,7 +88,7 @@ def generate_single_slide_content(
     # Since the parser was successful, we can assume it's a valid model
     template_vars: Dict[str, Any] = {}
 
-        # Use model_dump() for Pydantic v2 or dict() for v1
+    # Use model_dump() for Pydantic v2 or dict() for v1
     if hasattr(structured_data, "model_dump"):
         # Pydantic v2
         template_vars = structured_data.model_dump()

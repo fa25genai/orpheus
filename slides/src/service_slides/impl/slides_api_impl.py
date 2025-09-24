@@ -63,16 +63,16 @@ class SlidesApiImpl(BaseSlidesApi):
         )
 
         # 2. Initialize job for tracking progress
-        await job_manager.init_job(
-            request_slide_generation_request.prompt_id, len(structure.items)
-        )
+        await job_manager.init_job(request_slide_generation_request.prompt_id, len(structure.items))
 
         # 3. Start background slide generation (don't wait for completion)
         # Submit individual slide generation tasks directly to the executor
         slide_futures = []
         for i, item in enumerate(structure.items):
 
-            def generate_item(item_content: str, item_layout: str, slide_num: int, course_id: str, prompt_id: str) -> str:
+            def generate_item(
+                item_content: str, item_layout: str, slide_num: int, course_id: str, prompt_id: str
+            ) -> str:
                 import asyncio
 
                 # Get layout template synchronously within the executor
