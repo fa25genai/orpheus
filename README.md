@@ -179,7 +179,6 @@ We use [Poetry](https://python-poetry.org/) as our dependency and environment ma
     ```
 
 ##### Windows (PowerShell)
-##### Windows (PowerShell)
 1. Install Poetry using the official installer script
     ```powershell
     (Invoke-WebRequest -Uri https://install.python-poetry.org -UseBasicParsing).Content | python -
