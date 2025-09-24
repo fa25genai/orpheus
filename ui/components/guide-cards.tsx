@@ -33,7 +33,7 @@ export default function GuideCards({
           {Object.entries(item.subcategories).map(([timeKey, subitem]) => (
             <div
               key={`${index}-${timeKey}`}
-              onClick={() => onSelect(subitem)}
+              onClick={() => onSelect(`${item.topic}: ${subitem}`)}
               className="cursor-pointer rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition hover:shadow-md hover:border-blue-400"
             >
               <div className="flex items-center justify-between mb-2">

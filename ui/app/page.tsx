@@ -12,10 +12,11 @@ import {GenerationStatusResponse} from "@/generated-api-clients/avatar";
 import {guideText} from "@/data/text";
 import GuideCards from "@/components/guide-cards";
 import {PersonaLevel} from "@/types/uploading";
+import VideoPlayer from "@/components/video-player";
 
 export default function Home() {
   const [prompt, setPrompt] = useState("");
-  const [persona, setPersona] = useState<PersonaLevel>("beginner");
+  const [personaLevel, setPersonaLevel] = useState<PersonaLevel>("beginner");
   const [messages, setMessages] = useState<string[]>([]);
 
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -59,8 +60,8 @@ export default function Home() {
       <header className="p-4 border-b border-border mb-6">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <PersonaSelector
-            selectedPersona={persona}
-            onPersonaChange={setPersona}
+            selectedPersona={personaLevel}
+            onPersonaChange={setPersonaLevel}
           />
           <Link href="/admin">
             <Button>
@@ -79,7 +80,7 @@ export default function Home() {
             explanations.
           </p>
           <GuideCards
-            persona={persona}
+            persona={personaLevel}
             guideText={guideText}
             onSelect={(question) => setMessages((prev) => [...prev, question])}
           />
@@ -116,31 +117,17 @@ export default function Home() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <Card className="p-8 bg-card border-border md:col-span-1">
-                  <div className="flex flex-col items-center justify-center space-y-4">
-                    <div className="w-24 h-24 bg-muted rounded-full flex items-center justify-center">
-                      <User className="w-12 h-12 text-muted-foreground" />
-                    </div>
-                    <div className="text-center">
-                      <h3 className="text-xl font-semibold mb-2">
-                        Professor Avatar
-                      </h3>
-                      <p className="text-muted-foreground text-sm leading-relaxed">
-                        Explanation of the concept
-                      </p>
-                    </div>
-                  </div>
-                </Card>
+                <VideoPlayer src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" />
 
                 <Card className="p-8 bg-card border-border md:col-span-2">
-                    <iframe
-                        width="100%"
-                        height="100%"
-                        src="http://localhost:3030"
-                        className="w-full h-98"
-                        title="Generated Lecture Video"
-                        loading="lazy"
-                    />
+                  <iframe
+                    width="100%"
+                    height="100%"
+                    src="http://localhost:3030"
+                    className="w-full h-98"
+                    title="Generated Slides"
+                    loading="lazy"
+                  />
                 </Card>
               </div>
             </div>

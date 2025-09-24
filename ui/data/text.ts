@@ -4,31 +4,33 @@ export const guideText = {
       topic: "Programs",
       subcategories: {
         "1min":
-          "Give a one-sentence definition of a program in your own words.",
+          "Explain in one or two sentences what a program is, using simple everyday language.",
         "2min":
-          "List three examples of everyday tasks that could be automated by a program.",
+          "Give three everyday examples of tasks that could be automated with a program, and briefly explain why.",
         "4min":
-          "Explain how a program you already use (e.g., a calculator or a messaging app) saves effort compared to doing it manually.",
+          "Pick a program people already use (like a calculator or messaging app) and explain how it saves time or effort compared to doing the task manually.",
       },
     },
     {
       topic: "Variables",
       subcategories: {
-        "1min": "Write down what the word 'variable' means in plain English.",
+        "1min":
+          "Explain what the word 'variable' means in plain English, as if teaching someone new to coding.",
         "2min":
-          "Give an example of a variable in code and describe what value it holds.",
+          "Show an example of a variable in code, explain what value it holds, and how that value can change.",
         "4min":
-          "Create a small program that defines three variables (a number, a word, and a boolean) and prints them.",
+          "Demonstrate a simple program that defines three variables (a number, a word, and a true/false value) and explain what each represents.",
       },
     },
     {
       topic: "Printing",
       subcategories: {
-        "1min": "Look up and write the command that prints 'Hello World'.",
+        "1min":
+          "Explain the basic command used to print 'Hello World' in code and why printing is useful.",
         "2min":
-          "Write a program that prints your name and age on separate lines.",
+          "Show how to write a short program that prints your name and age on separate lines, and explain how it works.",
         "4min":
-          "Write a short program that asks the user for input and prints it back in a sentence.",
+          "Demonstrate a short program that asks the user for input, then prints it back inside a sentence, explaining each step.",
       },
     },
   ],
@@ -37,32 +39,34 @@ export const guideText = {
     {
       topic: "Functions",
       subcategories: {
-        "1min": "Write a one-line explanation of what a function is.",
-        "2min": "Write a function that prints a greeting and call it twice.",
+        "1min":
+          "Explain what a function is in programming, using one or two simple sentences.",
+        "2min":
+          "Demonstrate a small function that prints a greeting, call it twice, and explain why functions are reusable.",
         "4min":
-          "Write a function that takes a name as input and returns a personalized message.",
+          "Show a function that takes a name as input and returns a personalized message, and explain how it works.",
       },
     },
     {
       topic: "Scope",
       subcategories: {
         "1min":
-          "Define 'local variable' and 'global variable' in a sentence each.",
+          "Explain the difference between a local variable and a global variable in one or two sentences.",
         "2min":
-          "Give an example of a local variable inside a function and a global variable outside.",
+          "Show an example with a local variable inside a function and a global variable outside, and explain how they differ.",
         "4min":
-          "Write a program where a function changes a global variable and explain what happens.",
+          "Demonstrate a program where a function changes a global variable, then explain what happens step by step.",
       },
     },
     {
       topic: "Input",
       subcategories: {
         "1min":
-          "Explain what could go wrong if a program expects a number but gets text.",
+          "Explain why it’s a problem if a program expects a number but the user types text instead.",
         "2min":
-          "Write a program that asks for a number and crashes if the user types letters.",
+          "Show a program that asks for a number but crashes if the user types letters, and explain why the error happens.",
         "4min":
-          "Improve the program so it keeps asking until the user gives a valid number.",
+          "Improve the same program so it keeps asking until the user gives a valid number, and explain how the fix works.",
       },
     },
   ],
@@ -72,31 +76,33 @@ export const guideText = {
       topic: "Decomposition",
       subcategories: {
         "1min":
-          "Choose a simple task (like making tea) and list the steps in order.",
+          "Take a simple everyday task, like making tea, and explain the steps in order as if teaching decomposition.",
         "2min":
-          "Pick a programming task (like a calculator) and write down its main parts.",
+          "Pick a programming task, such as a calculator, and break it down into its main parts while explaining why decomposition helps.",
         "4min":
-          "Take a larger project (like a to-do list app) and break it into smaller functions/modules.",
+          "Take a bigger project, like a to-do list app, and show how it can be broken into smaller functions or modules, explaining each piece briefly.",
       },
     },
     {
       topic: "Algorithms",
       subcategories: {
-        "1min": "Write a one-sentence definition of an algorithm.",
+        "1min":
+          "Explain in one or two sentences what an algorithm is, using an everyday comparison.",
         "2min":
-          "Describe the steps of an algorithm you use in daily life (like tying shoes or searching for a book).",
+          "Describe the steps of an algorithm people use in daily life, like tying shoes or searching for a book, and explain why it counts as an algorithm.",
         "4min":
-          "Write pseudocode for a simple algorithm, such as finding the largest number in a list.",
+          "Present pseudocode for a simple algorithm, such as finding the largest number in a list, and explain each step clearly.",
       },
     },
     {
       topic: "Iteration/Recursion",
       subcategories: {
-        "1min": "Define iteration and recursion in one sentence each.",
+        "1min":
+          "Define iteration and recursion in one sentence each, and explain how they differ.",
         "2min":
-          "Give an example of iteration (like a loop) and recursion (like factorial).",
+          "Show one example of iteration (like a loop) and one example of recursion (like factorial), explaining both briefly.",
         "4min":
-          "Write both an iterative and recursive version of a function that sums numbers from 1 to N.",
+          "Demonstrate both an iterative and recursive version of a program that sums numbers from 1 to N, and explain how each one works.",
       },
     },
   ],
