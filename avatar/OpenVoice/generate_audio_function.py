@@ -401,3 +401,22 @@ def generate_audio_endpoint(req: GenerateAudioRequest):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
+if __name__ == "__main__":
+    # Example usage: python generate_audio_function.py "Hello world" course123 kursche_voice.mp3
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("text", nargs="+", help="Slide texts")
+    parser.add_argument("course_id", help="Course ID")
+    parser.add_argument("voice_file", help="Path to voice file")
+    args = parser.parse_args()
+
+    audio_paths = generate_audio(
+        text=args.text,
+        course_id=args.course_id,
+        voice_file=args.voice_file
+    )
+
+    print("Generated audio files:")
+    for path in audio_paths:
+        print(path)

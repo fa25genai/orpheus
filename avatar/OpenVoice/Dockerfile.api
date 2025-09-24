@@ -22,12 +22,12 @@ WORKDIR /app/OpenVoice
 
 # Install OpenVoice in editable mode
 RUN pip install -e .
-
-# Install MeloTTS
 RUN pip install git+https://github.com/myshell-ai/MeloTTS.git
-
-# Download unidic dictionary for MeCab
+RUN pip install fastapi uvicorn orjson
 RUN python -m unidic download
+
+# Copy your script into the container
+COPY generate_audio_function.py /app/OpenVoice/generate_audio_function.py
 
 # Expose a port if you want to run API/server
 EXPOSE 8000
