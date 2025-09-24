@@ -16,6 +16,6 @@ COPY pyproject.toml README.md ./
 
 RUN poetry install --only main
 
-EXPOSE 60303
+EXPOSE 30606
 
-CMD ["poetry", "run", "uvicorn", "service_slides.main:app", "--host", "0.0.0.0", "--port", "60303"]
+CMD ["poetry", "run", "uvicorn", "service_slides.main:app", "--host", "0.0.0.0", "--port", "30606"]

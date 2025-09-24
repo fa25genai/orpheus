@@ -1,11 +1,8 @@
 # coding: utf-8
-from concurrent.futures import ThreadPoolExecutor
 from fastapi import Request
-from typing import Dict, List  # noqa: F401
 import importlib
 import pkgutil
 
-from langchain_core.language_models import BaseChatModel
 
 import service_slides.impl
 from service_slides.apis.slides_api_base import BaseSlidesApi
@@ -13,20 +10,10 @@ from service_slides.apis.slides_api_base import BaseSlidesApi
 from fastapi import (  # noqa: F401
     APIRouter,
     Body,
-    Cookie,
-    Depends,
-    Form,
-    Header,
     HTTPException,
     Path,
-    Query,
-    Response,
-    Security,
-    status,
 )
 
-from service_slides.impl.manager.job_manager import JobManager
-from service_slides.models.extra_models import TokenModel  # noqa: F401
 from pydantic import Field, StrictStr
 from typing_extensions import Annotated
 from service_slides.models.error import Error
@@ -37,12 +24,12 @@ from service_slides.models.request_slide_generation_request import RequestSlideG
 router = APIRouter()
 
 ns_pkg = service_slides.impl
-for _, name, _ in pkgutil.iter_modules(ns_pkg.__path__, ns_pkg.__name__ + "."):
+for _, name, _ in pkgutil.iter_modules(ns_pkg.__path__, ns_pkg.__name__ + "."):  # type: ignore
     importlib.import_module(name)
 
 
 @router.get(
-    "/v1/slides/{lectureId}/status",
+    "/v1/slides/{promptId}/status",
     responses={
         200: {"model": GenerationStatusResponse, "description": "Status of the generation job"},
         404: {"model": Error, "description": "Request not found"},
@@ -53,15 +40,16 @@ for _, name, _ in pkgutil.iter_modules(ns_pkg.__path__, ns_pkg.__name__ + "."):
 )
 async def get_generation_status(
     http_request: Request,
-    lectureId: Annotated[
-        StrictStr, Field(description="The lectureId returned by /v1/slides/generate")
-    ] = Path(..., description="The lectureId returned by /v1/slides/generate"),
+    promptId: Annotated[
+        StrictStr, Field(description="The promptId returned by /v1/slides/generate")
+    ] = Path(..., description="The promptId returned by /v1/slides/generate"),
 ) -> GenerationStatusResponse:
     if not BaseSlidesApi.subclasses:
         raise HTTPException(status_code=500, detail="Not implemented")
-    return await BaseSlidesApi.subclasses[0]().get_generation_status(
-        lectureId, http_request.app.state.job_manager
+    result = await BaseSlidesApi.subclasses[0]().get_generation_status(
+        promptId, http_request.app.state.job_manager
     )
+    return result  # type: ignore
 
 
 @router.post(
@@ -89,10 +77,12 @@ async def request_slide_generation(
     """Accepts a concept and supporting assets (images, graphs, tables, code listings, equations). The request returns immediately with a request_id and status (typically IN_PROGRESS). Final slide deck (PDF) is produced asynchronously; the client can poll the status endpoint and fetch the resulting deck when complete."""
     if not BaseSlidesApi.subclasses:
         raise HTTPException(status_code=500, detail="Not implemented")
-    return await BaseSlidesApi.subclasses[0]().request_slide_generation(
+    result = await BaseSlidesApi.subclasses[0]().request_slide_generation(
         request_slide_generation_request,
         http_request.app.state.executor,
-        http_request.app.state.layout_manager,
         http_request.app.state.job_manager,
-        http_request.app.state.model,
+        http_request.app.state.layout_manager,
+        http_request.app.state.splitting_model,
+        http_request.app.state.slidesgen_model,
     )
+    return result  # type: ignore
