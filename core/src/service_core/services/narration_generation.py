@@ -12,21 +12,12 @@
 #                  "Wir können alles. Außer Hochdeutsch."                      #
 #                                                                              #
 ################################################################################
-from src.service_core.models.user_profile import UserProfile
-from src.service_core.models.user_profile_preferences import UserProfilePreferences
-from src.service_core.services.services_models.slides import SlidesEnvelope
 import json
-import logging
-from uuid import uuid4
+from service_core.services.helpers.llm import getLLM
+from service_core.services.helpers.debug import enable_debug, debug_print
+from service_core.services.helpers.loaders import load_prompt
 
-from src.service_core.services.helpers.llm import getLLM
-from src.service_core.services.helpers.debug import enable_debug, debug_print
-from src.service_core.services.helpers.loaders import load_prompt
-
-enable_debug()
-
-
-def generate_narrations(lecture_script, example_slides, user_profile):
+def generate_narrations(lecture_script, example_slides, user_profile, debug=False):
     """
     Generates narrations for lecture slides based on a script and user profile.
 
@@ -34,10 +25,15 @@ def generate_narrations(lecture_script, example_slides, user_profile):
         lecture_script (str): The script for the entire lecture.
         example_slides (SlidesEnvelope): An object representing the slide structure.
         user_profile (UserProfile): An object containing the user's profile.
+        debug (bool): If True, enables debug output.
 
     Returns:
         str: A JSON string containing the generated slide narrations.
     """
+
+    if debug:
+        enable_debug()
+
     llm = getLLM()
 
     #slides_data = json.loads(example_slides.model_dump_json())
@@ -82,7 +78,7 @@ def generate_narrations(lecture_script, example_slides, user_profile):
         slide_messages.append(narration)
     # Prepare output data with actual user profile
     output_data = {
-        "lectureId": example_slides.lectureId,
+        "promptId": example_slides.promptId,
         "courseId": user_profile.enrolled_courses[0] if user_profile.enrolled_courses else None,
         "slideMessages": slide_messages,
         "userProfile": json.loads(user_profile.model_dump_json()),

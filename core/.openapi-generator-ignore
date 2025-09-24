@@ -1,14 +1,15 @@
-pyproject.toml
-poetry.lock
-README.md
+# Ignore everything by default
+**
 
-src/service_core/main.py
-
-**/*
-!src/
-!src/service_core/
-!src/service_core/__init__.py
+# Keep the generated API and models
 !src/service_core/apis/
 !src/service_core/apis/*.py
 !src/service_core/models/
 !src/service_core/models/*.py
+
+# Keep your init files
+!src/service_core/__init__.py
+
+# Keep your implementation folder safe
+!src/service_core/impl/
+!src/service_core/impl/**

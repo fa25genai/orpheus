@@ -13,6 +13,19 @@
 
 
 from fastapi import FastAPI
+from contextlib import asynccontextmanager
+from concurrent.futures import ProcessPoolExecutor
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # On startup, create the executor and store it in the app's state
+    print("Starting up and creating CoreProcessPoolExecutor...")
+    executor = ProcessPoolExecutor()
+    app.state.executor = executor
+    yield
+    # On shutdown, gracefully shut down the executor
+    print("Shutting down the CoreProcessPoolExecutor...")
+    app.state.executor.shutdown(wait=True)
 
 from service_core.apis.core_api import router as CoreApiRouter
 
@@ -20,6 +33,7 @@ app = FastAPI(
     title="Orpheus CoreAI-Service API",
     description="API for the Orpheus core orchestration. From the repository: \&quot;The Orpheus System transforms static slides into interactive prompt videos with lifelike professor avatars, combining expressive narration, visual presence, and dynamic content to create engaging, personalized learning experiences.\&quot; License: MIT (see repository). ",
     version="0.1.0",
+    lifespan=lifespan
 )
 
 app.include_router(CoreApiRouter)

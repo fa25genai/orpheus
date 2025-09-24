@@ -114,7 +114,7 @@ def create_demo_voice_track():
             "For-Loops können für verschiedene Zwecke verwendet werden: zum Zählen, zum Durchlaufen eines Arrays oder zum periodischen Ausführen einer bestimmten Aktion.",
             "Vielen Dank für Ihre Aufmerksamkeit!"
         ],
-        userProfile=create_demo_user.to_dict(),
+        userProfile=create_demo_user().to_dict(),
         metadata=""
     )
     return voice_track_response
