@@ -19,12 +19,12 @@ from concurrent.futures import ProcessPoolExecutor
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # On startup, create the executor and store it in the app's state
-    print("Starting up and creating ProcessPoolExecutor...")
+    print("Starting up and creating CoreProcessPoolExecutor...")
     executor = ProcessPoolExecutor()
     app.state.executor = executor
     yield
     # On shutdown, gracefully shut down the executor
-    print("Shutting down the ProcessPoolExecutor...")
+    print("Shutting down the CoreProcessPoolExecutor...")
     app.state.executor.shutdown(wait=True)
 
 from service_core.apis.core_api import router as CoreApiRouter
