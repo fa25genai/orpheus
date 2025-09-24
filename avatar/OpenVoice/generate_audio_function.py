@@ -1,34 +1,161 @@
 import os
+import sys
+from pathlib import Path
+from typing import List, Optional, Literal, Dict
+
 import torch
+import nltk
+from fastapi import FastAPI, HTTPException
+from fastapi.responses import ORJSONResponse
+from pydantic import BaseModel
+
+from melo.api import TTS
 from openvoice import se_extractor
 from openvoice.api import ToneColorConverter
-import nltk
-from melo.api import TTS
-from datetime import datetime, timezone
-from typing import List, Optional, Literal, Dict
-from uuid import UUID
 
-from fastapi import FastAPI, BackgroundTasks, HTTPException, Response
-from pydantic import BaseModel, Field, UUID4, constr
+def _env_or(conf: dict, dotted_key: str, default):
+    """
+    Environment overrides for docker-compose convenience.
+    """
+    env_map = {
+        "runtime.device": "AUDIO_DEVICE",
+        "runtime.language": "AUDIO_LANGUAGE",
+        "paths.ckpt_converter": "AUDIO_CKPT_CONVERTER",
+        "paths.output_dir": "AUDIO_OUTPUT_DIR",
+        "paths.base_speakers_dir": "AUDIO_BASE_SPEAKERS_DIR",
+        "paths.ses_subdir": "AUDIO_SES_SUBDIR",
+        "paths.reference_speaker_dir": "AUDIO_REF_DIR",
+        "tts.speed": "AUDIO_TTS_SPEED",
+        "tts.noise_scale": "AUDIO_TTS_NOISE_SCALE",
+        "tts.noise_scale_w": "AUDIO_TTS_NOISE_SCALE_W",
+        "tts.sdp_ratio": "AUDIO_TTS_SDP_RATIO",
+        "nlp.nltk_auto_download": "AUDIO_NLTK_AUTO",
+        "deps.auto_install_silero_vad": "AUDIO_AUTO_SILERO_VAD"
+        # (defaults.* are not env-overridden by design; keep them in file)
+    }
+    env_name = env_map.get(dotted_key, "")
+    env = os.getenv(env_name, None)
 
-app = FastAPI(
-    title="Service Video-Generation APIs",
-    version="0.1",
-    description=(
-        "API for the Orpheus video generation. Transforms fluent texts into "
-        "interactive lecture videos with lifelike professor avatars."
-    ),
-)
+    if env is None:
+        node = conf
+        for k in dotted_key.split("."):
+            if not isinstance(node, dict) or k not in node:
+                return default
+            node = node[k]
+        return node if node is not None else default
 
-# ---------------------------
-# Pydantic models (from spec)
-# ---------------------------
+    if isinstance(default, bool):
+        return env.lower() in ("1", "true", "yes", "on")
+    if isinstance(default, float):
+        try:
+            return float(env)
+        except Exception:
+            return default
+    if isinstance(default, int):
+        try:
+            return int(env)
+        except Exception:
+            return default
+    return env
+
+
+def _resolve(base: Path, p: str) -> Path:
+    pp = Path(p)
+    return pp if pp.is_absolute() else (base / pp)
+
+
+def load_config() -> dict:
+    """
+    Loads JSON config from AUDIO_CONFIG (or ./audio_config.json),
+    applies env overrides, resolves relative paths against the config dir
+    (or this script's dir if config missing).
+    """
+    import json
+
+    cfg_path = Path(os.getenv("AUDIO_CONFIG", "./audio_config.json")).resolve()
+    if cfg_path.exists():
+        with cfg_path.open("r", encoding="utf-8") as f:
+            raw = json.load(f) or {}
+        base_dir = cfg_path.parent
+    else:
+        raw = {}
+        base_dir = Path(__file__).resolve().parent
+
+    cfg = {
+        "paths": {
+            "project_root": _env_or(raw, "paths.project_root", ""),
+            "ckpt_converter": _resolve(base_dir, _env_or(raw, "paths.ckpt_converter", "./checkpoints_v2/converter")),
+            "output_dir": _resolve(base_dir, _env_or(raw, "paths.output_dir", "./checkpoints_v2/outputs_v2")),
+            "base_speakers_dir": _resolve(base_dir, _env_or(raw, "paths.base_speakers_dir", "./checkpoints_v2/base_speakers")),
+            "ses_subdir": _env_or(raw, "paths.ses_subdir", "ses"),
+            "reference_speaker_dir": _resolve(base_dir, _env_or(raw, "paths.reference_speaker_dir", ".")),
+        },
+        "runtime": {
+            "device": _env_or(raw, "runtime.device", "auto"),       # auto|cuda|mps|cpu
+            "language": _env_or(raw, "runtime.language", "EN_NEWEST"),
+        },
+        "tts": {
+            "speed": _env_or(raw, "tts.speed", 1.0),
+            "noise_scale": _env_or(raw, "tts.noise_scale", 0.667),
+            "noise_scale_w": _env_or(raw, "tts.noise_scale_w", 0.8),
+            "sdp_ratio": _env_or(raw, "tts.sdp_ratio", 0.5),
+        },
+        "nlp": {
+            "nltk_auto_download": _env_or(raw, "nlp.nltk_auto_download", True),
+        },
+        "deps": {
+            "auto_install_silero_vad": _env_or(raw, "deps.auto_install_silero_vad", True),
+        },
+        "server": {
+            "title": (raw.get("server") or {}).get("title", "Service Video-Generation APIs"),
+            "version": (raw.get("server") or {}).get("version", "0.1"),
+            "description": (raw.get("server") or {}).get("description", "API for the Orpheus audio generation."),
+        },
+        "defaults": {
+            "slide_texts": (raw.get("defaults") or {}).get("slide_texts", []),
+            "course_id": (raw.get("defaults") or {}).get("course_id", ""),
+            "voice_file": (raw.get("defaults") or {}).get("voice_file", "")
+        }
+    }
+
+    pr = cfg["paths"]["project_root"]
+    if pr:
+        root = _resolve(base_dir, pr)
+        for k in ("ckpt_converter", "output_dir", "base_speakers_dir", "reference_speaker_dir"):
+            p = cfg["paths"][k]
+            cfg["paths"][k] = p if p.is_absolute() else (root / p)
+
+    return cfg
+
+
+CFG = load_config()
+
+
+def _pick_device(pref: str) -> str:
+    pref = (pref or "auto").lower()
+    if pref == "cuda" and torch.cuda.is_available():
+        return "cuda"
+    if pref == "mps" and torch.backends.mps.is_available():
+        return "mps"
+    if pref == "cpu":
+        return "cpu"
+    if torch.cuda.is_available():
+        return "cuda"
+    if torch.backends.mps.is_available():
+        return "mps"
+    return "cpu"
+
+
+# =========================
+# Pydantic models
+# =========================
 
 class Preferences(BaseModel):
     answerLength: Optional[Literal["short", "medium", "long"]] = None
     languageLevel: Optional[Literal["basic", "intermediate", "advanced"]] = None
     expertiseLevel: Optional[Literal["beginner", "intermediate", "advanced", "expert"]] = None
     includePictures: Optional[Literal["none", "few", "many"]] = None
+
 
 class UserProfile(BaseModel):
     id: str
@@ -38,181 +165,239 @@ class UserProfile(BaseModel):
     enrolledCourses: Optional[List[str]] = None
 
 
-slide_texts = ["Welcome to the course on AI.", "In this slide, we will discuss machine learning."]
-course_id = "course123"
-voice_file = "kursche_voice.mp3"  # Path to a default voice file
+class GenerateAudioRequest(BaseModel):
+    slide_texts: Optional[List[str]] = None
+    course_id: Optional[str] = None
+    voice_file: Optional[str] = None
+    user_profile: Optional[UserProfile] = None
+
+
+class GenerateAudioResponse(BaseModel):
+    audio_paths: List[str]
+
+app = FastAPI(
+    title=CFG["server"]["title"],
+    version=CFG["server"]["version"],
+    description=CFG["server"]["description"],
+    default_response_class=ORJSONResponse,
+)
+
+def _ensure_nltk(auto: bool):
+    if not auto:
+        return
+    try:
+        nltk.data.find("tokenizers/punkt")
+    except LookupError:
+        nltk.download("punkt", quiet=True)
+    try:
+        nltk.data.find("taggers/averaged_perceptron_tagger")
+    except LookupError:
+        nltk.download("averaged_perceptron_tagger", quiet=True)
+
+
+def _maybe_install_silero_vad(auto: bool):
+    if not auto:
+        return
+    try:
+        #import silero_vad
+        print("✓ silero_vad already installed")
+    except ImportError:
+        print("Installing silero_vad...")
+        import subprocess
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "silero-vad"])
+        print("✓ silero_vad installed")
+
+
+def _resolve_reference_voice(voice_file: str, ref_dir: Path) -> Path:
+    vf = Path(voice_file)
+    return vf if vf.is_absolute() else (ref_dir / vf)
+
+
+def _speaker_embeddings_dir(base_speakers_dir: Path, ses_subdir: str) -> Path:
+    return base_speakers_dir / ses_subdir
+
+
+def _iter_ses_files(ses_dir: Path):
+    if not ses_dir.exists():
+        return []
+    return sorted(ses_dir.glob("*.pth"))
+
+
+def _load_tts(language: str, device: str) -> TTS:
+    return TTS(language=language, device=device)
+
+
+def _load_converter(ckpt_dir: Path, device: str) -> ToneColorConverter:
+    cfg_json = ckpt_dir / "config.json"
+    pth = ckpt_dir / "checkpoint.pth"
+    if not cfg_json.exists() or not pth.exists():
+        raise RuntimeError(f"Converter files missing in {ckpt_dir} (need config.json & checkpoint.pth)")
+    conv = ToneColorConverter(str(cfg_json), device=device)
+    conv.load_ckpt(str(pth))
+    return conv
+
 
 def generate_audio(
     slide_texts: List[str],
     *,
-    course_id: str, # 
-    user_profile: UserProfile = None,
-    voice_file: str
+    course_id: str,
+    user_profile: Optional[UserProfile] = None,
+    voice_file: str,
 ) -> List[str]:
     """
-    Create per-slide audio files from text.
-
-    Returns a list of file paths (one per slide).
-    Replace the body with your TTS pipeline (e.g., Coqui, ElevenLabs, local TTS).
+    Create per-slide audio files from text using:
+      1) Melo TTS (synthesis)
+      2) OpenVoice ToneColorConverter (timbre transfer)
+    Returns: list of output .wav file paths (empty string for slides that failed)
     """
-    # TODO: implement real TTS.
-    # For now, pretend we produced audio files:
-    # Defining paths
-   # Get the directory where THIS SCRIPT is located (not the current working directory)
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    print(f"Script directory: {script_dir}")
-    print(f"Current working directory: {os.getcwd()}")
-    
-    # Define ALL paths relative to the SCRIPT directory
-    base_dir = script_dir  # This is the key fix!
-    
-    ckpt_converter = os.path.join(base_dir, "checkpoints_v2", "converter")
-    output_dir = os.path.join(base_dir, "checkpoints_v2", "outputs_v2")
-    base_speakers_dir = os.path.join(base_dir, "checkpoints_v2", "base_speakers")
-    reference_speaker_dir = os.path.join(base_dir)
-    ses_dir = os.path.join(base_speakers_dir, "ses")
-    
-    # Also make the voice file path absolute relative to script directory
-    reference_speaker = os.path.join(reference_speaker_dir, voice_file)
-    
-    print(f"Looking for config at: {os.path.join(ckpt_converter, 'config.json')}")
-    print(f"Config exists: {os.path.exists(os.path.join(ckpt_converter, 'config.json'))}")
-    print(f"Voice file exists: {os.path.exists(reference_speaker)}")
+    paths = CFG["paths"]
+    runtime = CFG["runtime"]
+    tts_cfg = CFG["tts"]
+    nlp_cfg = CFG["nlp"]
+    deps_cfg = CFG["deps"]
 
-    # Create output directory if it doesn't exist
-    os.makedirs(output_dir, exist_ok=True)
+    ckpt_converter = Path(paths["ckpt_converter"]).resolve()
+    output_dir = Path(paths["output_dir"]).resolve()
+    base_speakers_dir = Path(paths["base_speakers_dir"]).resolve()
+    ses_dir = _speaker_embeddings_dir(base_speakers_dir, paths["ses_subdir"])
+    ref_dir = Path(paths["reference_speaker_dir"]).resolve()
 
-    # Download required NLTK data
-    try:
-        nltk.data.find('tokenizers/punkt')
-    except LookupError:
-        nltk.download('punkt', quiet=True)
+    output_dir.mkdir(parents=True, exist_ok=True)
 
-    try:
-        nltk.data.find('taggers/averaged_perceptron_tagger')
-    except LookupError:
-        nltk.download('averaged_perceptron_tagger', quiet=True)
+    _ensure_nltk(nlp_cfg["nltk_auto_download"])
+    _maybe_install_silero_vad(deps_cfg["auto_install_silero_vad"])
 
-    # Set device
-    device = "cuda:0" if torch.cuda.is_available() else "cpu"
+    device = _pick_device(runtime["device"])
+    language = runtime["language"]
 
-    # Initialize ToneColorConverter
-    tone_color_converter = ToneColorConverter(os.path.join(ckpt_converter, "config.json"), device=device)
-    tone_color_converter.load_ckpt(os.path.join(ckpt_converter, "checkpoint.pth"))
+    tone_color_converter = _load_converter(ckpt_converter, device)
 
-    try:
-        import silero_vad
-        print("✓ silero_vad is already installed")
-    except ImportError:
-        print("Installing silero_vad...")
-        import subprocess
-        import sys
-        subprocess.check_call([sys.executable, "-m", "pip", "install", "silero-vad"])
-        print("✓ silero_vad installed successfully")
-        
-    # Extract speaker embedding
-    target_se, audio_name = se_extractor.get_se(reference_speaker, tone_color_converter, vad=True)
+    reference_speaker = _resolve_reference_voice(voice_file, ref_dir)
+    if not reference_speaker.exists():
+        raise HTTPException(status_code=400, detail=f"voice_file not found: {reference_speaker}")
 
-    # TTS parameters
-    speed = 1.0
-    noise_scale = 0.667
-    noise_scale_w = 0.8
-    sdp_ratio = 0.5
+    target_se, _ = se_extractor.get_se(str(reference_speaker), tone_color_converter, vad=True)
 
-    audio_paths = []
-    
-    # Process each slide text
+    model = _load_tts(language=language, device=device)
+    speaker_ids = model.hps.data.spk2id
+
+    speed = float(tts_cfg["speed"])
+    noise_scale = float(tts_cfg["noise_scale"])
+    noise_scale_w = float(tts_cfg["noise_scale_w"])
+    sdp_ratio = float(tts_cfg["sdp_ratio"])
+
+    available_ses: Dict[str, Path] = {}
+    for p in _iter_ses_files(ses_dir):
+        key = p.stem.lower().replace("_", "-")
+        available_ses[key] = p
+
+    audio_paths: List[str] = []
+
     for i, text in enumerate(slide_texts):
-        if not text.strip():  # Skip empty texts
+        if not text or not text.strip():
             audio_paths.append("")
             continue
-            
-        # Generate audio for this slide
-        # Choosing a language/model based on user profile could be added here
-        language = 'EN_NEWEST'
-        model = TTS(language=language, device=device)
-        speaker_ids = model.hps.data.spk2id
-        
-        src_path = os.path.join(output_dir, f"tmp_{i}.wav")
+
+        tmp_src = output_dir / f"tmp_{i}.wav"
+        save_path = output_dir / f"{course_id}_slide_{i + 1}.wav"
         success = False
-        
-        # Try different speakers until one works
-        for speaker_key in speaker_ids.keys():
-            speaker_id = speaker_ids[speaker_key]
-            normalized_speaker_key = speaker_key.lower().replace('_', '-')
-            # Adjust the path as necessary
-            ses_file_path = os.path.join(ses_dir, f"{normalized_speaker_key}.pth")
-            
-            if not os.path.exists(ses_file_path):
+
+
+        for speaker_key, speaker_id in speaker_ids.items():
+            norm_key = str(speaker_key).lower().replace("_", "-")
+            ses_path = available_ses.get(norm_key)
+            if ses_path is None:
                 continue
-                
             try:
-                source_se = torch.load(ses_file_path, map_location=device)
-                
-                # Generate base audio with given parameters
+                source_se = torch.load(ses_path, map_location=device)
+
+
                 model.tts_to_file(
-                    text, 
-                    speaker_id, 
-                    src_path, 
+                    text,
+                    speaker_id,
+                    str(tmp_src),
                     speed=speed,
                     noise_scale=noise_scale,
                     noise_scale_w=noise_scale_w,
-                    sdp_ratio=sdp_ratio
+                    sdp_ratio=sdp_ratio,
                 )
+
                 
-                # Generate final output filename
-                output_filename = f"{course_id}_slide_{i+1}.wav"
-                save_path = os.path.join(output_dir, output_filename)
-                
-                # Convert voice
                 tone_color_converter.convert(
-                    audio_src_path=src_path, 
-                    src_se=source_se, 
-                    tgt_se=target_se, 
-                    output_path=save_path,
-                    message="@MyShell"
+                    audio_src_path=str(tmp_src),
+                    src_se=source_se,
+                    tgt_se=target_se,
+                    output_path=str(save_path),
+                    message="@MyShell",
                 )
-                
-                audio_paths.append(save_path)
+
+                audio_paths.append(str(save_path))
                 success = True
-                print(f"✓ Generated audio for slide {i+1}: {save_path}")
-                break  # Success, move to next slide
-                
+                print(f"✓ slide {i + 1}: {save_path}")
+                break
+
             except Exception as e:
-                print(f"Error with speaker {speaker_key} for slide {i+1}: {e}")
+                print(f"[slide {i + 1}] speaker={speaker_key} failed: {e}")
                 continue
-        
+
         if not success:
-            print(f"Failed to generate audio for slide {i+1}")
-            audio_paths.append("")  # Add empty string for failed generation
-            
-        # Clean up temporary file
+            print(f"✗ slide {i + 1}: generation failed")
+            audio_paths.append("")
+
+
         try:
-            if os.path.exists(src_path):
-                os.remove(src_path)
-        except:
+            if tmp_src.exists():
+                tmp_src.unlink()
+        except Exception:
             pass
 
     return audio_paths
 
 
-'''
-slide_texts = ["Welcome to the course on AI.", "In this slide, we will discuss machine learning."]
-course_id = "course123"
-voice_file = "kursche_voice.mp3" 
-'''
-def main():
-    audio_paths = generate_audio(
-        slide_texts=slide_texts,
-        course_id=course_id,
-        voice_file=voice_file
-        # user_profile is now optional
-    )
-    
-    print("Generated audio files:")
-    for i, path in enumerate(audio_paths):
-        print(f"Slide {i+1}: {path}")
 
-if __name__ == '__main__':
-    print('Starting audio generation...')
-    main()
+@app.get("/health")
+def health():
+    return {
+        "ok": True,
+        "device": _pick_device(CFG["runtime"]["device"]),
+        "language": CFG["runtime"]["language"],
+        "paths": {
+            "ckpt_converter": str(CFG["paths"]["ckpt_converter"]),
+            "output_dir": str(CFG["paths"]["output_dir"]),
+            "base_speakers_dir": str(CFG["paths"]["base_speakers_dir"]),
+            "reference_speaker_dir": str(CFG["paths"]["reference_speaker_dir"]),
+            "ses_subdir": CFG["paths"]["ses_subdir"],
+        },
+        "defaults_present": {
+            "slide_texts": bool(CFG["defaults"].get("slide_texts")),
+            "course_id": bool(CFG["defaults"].get("course_id")),
+            "voice_file": bool(CFG["defaults"].get("voice_file"))
+        }
+    }
+
+
+@app.post("/v1/audio/generate", response_model=GenerateAudioResponse)
+def generate_audio_endpoint(req: GenerateAudioRequest):
+    slide_texts = req.slide_texts if req.slide_texts is not None else CFG["defaults"].get("slide_texts", [])
+    course_id = req.course_id if req.course_id is not None else CFG["defaults"].get("course_id", "")
+    voice_file = req.voice_file if req.voice_file is not None else CFG["defaults"].get("voice_file", "")
+
+    if not isinstance(slide_texts, list) or not all(isinstance(x, str) for x in slide_texts):
+        raise HTTPException(status_code=400, detail="slide_texts must be a list of strings (or set defaults in config).")
+    if not course_id:
+        raise HTTPException(status_code=400, detail="course_id is required (provide in request or config defaults).")
+    if not voice_file:
+        raise HTTPException(status_code=400, detail="voice_file is required (provide in request or config defaults).")
+
+    try:
+        paths = generate_audio(
+            slide_texts=slide_texts,
+            course_id=course_id,
+            user_profile=req.user_profile,
+            voice_file=voice_file,
+        )
+        return GenerateAudioResponse(audio_paths=paths)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
