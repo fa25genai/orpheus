@@ -10,8 +10,15 @@ We recommend using [VsCode](https://code.visualstudio.com/) with the [Apollon Ex
 Once you edited the diagram, make sure to export it as svg to replace the existing [OrpheusArchitecture.png](./OrpheusArchitecture.png).
 -->
 <div style="text-align: center;">
-  <img src="./OrpheusArchitecture.png" alt="Orpheus System Architecture" style="max-width: 80%; height: auto;">
+  <img src="./OrpheusArchitecture.png" alt="Orpheus System Architecture" style="max-width: 95%; height: auto;">
 </div>
+
+<!--
+TODOS
+Open questions:
+* Migrate ymls to service levels instead
+* "Answer Generation Service" is not an optimal name yet, "Orchestration" might be better but harder to understand what it actually does if you do not know the project at all?
+-->
 
 ## API Interface Documentation
 
@@ -26,19 +33,15 @@ Once you edited the diagram, make sure to export it as svg to replace the existi
 | **Lecture Storage Service**   | Stores lecture materials, voice samples and lecturer pictures that are used for avatar generation.       |                                                                                        |
 | **Lecture Content Service**   | Content Delivery Network (CDN) that stores the lecturer avatar videos and lecture slides.                |                                                                                        |
 
-<!--
-TODOS
-Open questions:
-* Migrate to service levels instead
-* Slide Generation vs folder name?
-* Avatar Generation vs folder name?
-* ai-core vs folder name?
-* format the architecture 16:9
--->
-
 ## Getting Started
-### Initial Setup
+### Deployment
+TODO - add docker startup commands and instructions
+
+### Development Setup
 #### 1. Install Python 3.13.7 using pyenv
+The project is based on python 3.13.7.
+We recommend using [pyenv](https://github.com/pyenv/pyenv) to manage your python versions.
+
 ##### Linux (Debian/Ubuntu)
 1. Install system dependencies for building Python (one-time setup)
     ```bash
@@ -145,3 +148,58 @@ Expected output: Python 3.13.7
     pyenv version
     ```
     Expected output: 3.13.7 (set by C:\Users\YourUser\.pyenv\pyenv-win\version)
+
+#### 2. Install Poetry 2.2.1
+We use [Poetry](https://python-poetry.org/) as our dependency and environment management tool.
+
+##### Linux / macOS
+1. Install Poetry using the official installer script
+    ```bash
+    curl -sSL https://install.python-poetry.org | python3 -
+    ```
+2. Update Poetry to version 2.2.1
+    ```bash
+    ~/.local/bin/poetry self update 2.2.1
+    ```
+3. Ensure Poetry is on PATH for the current shell session
+    ```bash
+    export PATH="$HOME/.local/bin:$PATH"
+    ```
+    1. Persist Poetry on PATH for **bash**
+        ```bash
+        echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
+        ```
+    2. Persist Poetry on PATH for **zsh**
+        ```bash
+        echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
+        ```
+4. Verify Poetry installation
+    ```bash
+    poetry --version
+    ```
+
+##### Windows (PowerShell)
+1. Install Poetry using the official installer script
+    ```powershell
+    (Invoke-WebRequest -Uri https://install.python-poetry.org -UseBasicParsing).Content | python -
+    ```
+   Poetry is typically installed under:
+    ```
+    $env:APPDATA\Python\Scripts
+    ```
+2. Update Poetry to version 2.2.1
+    ```powershell
+    poetry self update 2.2.1
+    ```
+3. Ensure Poetry is on PATH for the current PowerShell session
+    ```powershell
+    $env:Path += ";$env:APPDATA\Python\Scripts"
+    ```
+4. Persist Poetry on PATH for future sessions
+    ```powershell
+    setx PATH "$($env:PATH)"
+    ```
+5. Verify Poetry installation
+    ```powershell
+    poetry --version
+    ```
