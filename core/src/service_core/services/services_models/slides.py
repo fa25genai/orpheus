@@ -10,7 +10,7 @@ class SlideStructure(BaseModel):
     pages: List[SlideItem]
 
 class SlidesEnvelope(BaseModel):
-    lectureId: str
+    promptId: str
     status: Literal["IN_PROGRESS", "FAILED", "DONE"]
     createdAt: str
     structure: SlideStructure

@@ -4,7 +4,7 @@ info:
   version: "0.1.0"
   description: |
     API for the Orpheus core orchestration.
-    From the repository: "The Orpheus System transforms static slides into interactive lecture videos with lifelike professor avatars, combining expressive narration, visual presence, and dynamic content to create engaging, personalized learning experiences."
+    From the repository: "The Orpheus System transforms static slides into interactive prompt videos with lifelike professor avatars, combining expressive narration, visual presence, and dynamic content to create engaging, personalized learning experiences."
     License: MIT (see repository).
   termsOfService: "https://github.com/fa25genai/orpheus"
   contact:
@@ -30,7 +30,7 @@ paths:
       tags: 
         - core
       summary: "Submit a prompt to generate a lecture"
-      description: "Accepts a user prompt and initiates an asynchronous job to generate lecture content. Returns a unique lecture ID to track the job."
+      description: "Accepts a user prompt and initiates an asynchronous job to generate lecture content. Returns a unique prompt ID to track the job."
       operationId: "createLectureFromPrompt"
       requestBody:
         description: "The user prompt to generate content from."
@@ -48,64 +48,6 @@ paths:
                 $ref: '#/components/schemas/PromptResponse'
         '400':
           description: "Bad Request. The request body is invalid."
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-
-  /core/getSlides/{lectureId}:
-    get:
-      tags:
-        - core
-      summary: "Get the generated slides"
-      description: "Retrieves the status or result of a slide generation job using the lecture ID."
-      operationId: "getSlidesByLectureId"
-      parameters:
-        - name: "lectureId"
-          in: "path"
-          required: true
-          description: "The unique identifier for the lecture generation job."
-          schema:
-            type: "string"
-            format: "uuid"
-      responses:
-        '200':
-          description: "Success. Returns the status and URL of the generated slides."
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DataResponse'
-        '404':
-          description: "Not Found. No lecture job found with the provided ID."
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-
-  /core/getVideo/{lectureId}:
-    get:
-      tags:
-        - core
-      summary: "Get the generated video"
-      description: "Retrieves the status or result of a video generation job using the lecture ID."
-      operationId: "getVideoByLectureId"
-      parameters:
-        - name: "lectureId"
-          in: "path"
-          required: true
-          description: "The unique identifier for the lecture generation job."
-          schema:
-            type: "string"
-            format: "uuid"
-      responses:
-        '200':
-          description: "Success. Returns the status and URL of the generated video."
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DataResponse'
-        '404':
-          description: "Not Found. No lecture job found with the provided ID."
           content:
             application/json:
               schema:
@@ -163,22 +105,13 @@ components:
     PromptResponse:
       type: "object"
       properties:
-        lectureId:
+        promptId:
           type: "string"
           format: "uuid"
           description: "The unique ID assigned to the generation job."
           example: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
       required:
-        - "lectureId"
-
-    DataResponse:
-      type: "object"
-      properties:
-        url:
-          type: "string"
-          format: "uri"
-          description: "The URL to the generated slide/video deck. Only present if status is 'completed'."
-          example: "https://storage.example.com/slides/f47ac10b-58cc-4372-a567-0e02b2c3d479.pptx"
+        - "promptId"
           
     # Standard Error Schema
     Error:
