@@ -116,7 +116,7 @@ Expected output: Python 3.13.7
 2. Add pyenv to your PowerShell session
     The following lines are automatically added to your $PROFILE.
     You may need to run them manually for the current session or restart your terminal.
-    ```bash
+    ```powershell
     $env:PYENV = [System.Environment]::GetEnvironmentVariable('PYENV','User')
     $env:PYENV_HOME = [System.Environment]::GetEnvironmentVariable('PYENV_HOME','User')
     $env:PYENV_ROOT = [System.Environment]::GetEnvironmentVariable('PYENV_ROOT','User')
@@ -124,22 +124,22 @@ Expected output: Python 3.13.7
     ```
     **Important**: Restart your PowerShell window to ensure the PATH changes are active.
 3. Update pyenv-win to get the latest list of available versions
-    ```bash
+    ```powershell
     pyenv update
     ``` 
 4. Install Python 3.13.7 and set it as the global default version
-    ```bash
+    ```powershell
     pyenv install 3.13.7
     pyenv global 3.13.7
     ```
 5. Verify the installation
-    ```bash
+    ```powershell
     python --version
     ```
     Expected output: Python 3.13.7
 
     (Optional) Check which version pyenv is managing
-    ```bash
+    ```powershell
     pyenv version
     ```
     Expected output: 3.13.7 (set by C:\Users\YourUser\.pyenv\pyenv-win\version)
