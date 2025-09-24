@@ -1,8 +1,8 @@
 /* tslint:disable */
 /* eslint-disable */
 /**
- * Orpheus CoreAI-Service API
- * API for the Orpheus core orchestration. From the repository: \"The Orpheus System transforms static slides into interactive prompt videos with lifelike professor avatars, combining expressive narration, visual presence, and dynamic content to create engaging, personalized learning experiences.\" License: MIT (see repository). 
+ * Document Intelligence API
+ * API for the Orpheus document intelligence orchestration. From the repository: \"The Orpheus System transforms static slides into interactive lecture videos with lifelike professor avatars, combining expressive narration, visual presence, and dynamic content to create engaging, personalized learning experiences.\" License: MIT (see repository).
  *
  * The version of the OpenAPI document: 0.1.0
  * 
@@ -13,7 +13,7 @@
  */
 
 
-export const BASE_PATH = "http://localhost:8000".replace(/\/+$/, "");
+export const BASE_PATH = "http://localhost:30606".replace(/\/+$/, "");
 
 export interface ConfigurationParameters {
     basePath?: string; // override base path

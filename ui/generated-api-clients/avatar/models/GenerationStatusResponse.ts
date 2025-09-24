@@ -24,9 +24,9 @@ export interface GenerationStatusResponse {
      * @type {string}
      * @memberof GenerationStatusResponse
      */
-    lectureId?: string;
+    promptId?: string;
     /**
-     * Job status
+     * 
      * @type {string}
      * @memberof GenerationStatusResponse
      */
@@ -38,11 +38,17 @@ export interface GenerationStatusResponse {
      */
     lastUpdated?: Date;
     /**
-     * URL to download or stream the generated video (present only when DONE).
+     * URL even if not ready
      * @type {string}
      * @memberof GenerationStatusResponse
      */
     resultUrl?: string;
+    /**
+     * 0 when DONE/FAILED
+     * @type {number}
+     * @memberof GenerationStatusResponse
+     */
+    estimatedSecondsLeft?: number;
     /**
      * 
      * @type {Error}
@@ -80,10 +86,11 @@ export function GenerationStatusResponseFromJSONTyped(json: any, ignoreDiscrimin
     }
     return {
         
-        'lectureId': json['lectureId'] == null ? undefined : json['lectureId'],
+        'promptId': json['promptId'] == null ? undefined : json['promptId'],
         'status': json['status'] == null ? undefined : json['status'],
         'lastUpdated': json['lastUpdated'] == null ? undefined : (new Date(json['lastUpdated'])),
         'resultUrl': json['resultUrl'] == null ? undefined : json['resultUrl'],
+        'estimatedSecondsLeft': json['estimatedSecondsLeft'] == null ? undefined : json['estimatedSecondsLeft'],
         'error': json['error'] == null ? undefined : json['error'],
     };
 }
@@ -99,10 +106,11 @@ export function GenerationStatusResponseToJSONTyped(value?: GenerationStatusResp
 
     return {
         
-        'lectureId': value['lectureId'],
+        'promptId': value['promptId'],
         'status': value['status'],
         'lastUpdated': value['lastUpdated'] == null ? undefined : ((value['lastUpdated']).toISOString()),
         'resultUrl': value['resultUrl'],
+        'estimatedSecondsLeft': value['estimatedSecondsLeft'],
         'error': value['error'],
     };
 }
