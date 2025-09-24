@@ -326,7 +326,7 @@ async def generate_video(audio_path: str = None, prompt_id: UUID = None, course_
 
 
 
-
+# TODO: maybe remove return
 async def process_generation(payload: GenerateRequest) -> Dict[str, Union[List[Optional[str]], Dict[int, str], None]]:
     # set job to in progress
     job = JOBS.get(payload.promptId)
@@ -355,7 +355,7 @@ async def process_generation(payload: GenerateRequest) -> Dict[str, Union[List[O
                     await audio_done_q.put((i, aurl))
                 except Exception as e:
                     errors[i] = f"audio_error: {e!r}"
-                    await audio_done_q.put((i, ""))  # consumer diesnt block in case there is no audio
+                    await audio_done_q.put((i, ""))  # consumer doesnt block in case there is no audio
 
         async def video_consumer():
             processed = 0
