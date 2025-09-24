@@ -57,7 +57,7 @@ class SlidesApiImpl(BaseSlidesApi):
         structure = await generate_slide_structure(
             model=splitting_model,
             lecture_script=request_slide_generation_request.lecture_script,
-            available_layouts=await layout_manager.get_available_layouts(
+            available_layouts = await layout_manager.get_available_layouts(
                 request_slide_generation_request.course_id
             ),
         )

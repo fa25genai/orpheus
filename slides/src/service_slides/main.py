@@ -31,10 +31,6 @@ async def lifespan(app: FastAPI) -> Any:
     app.state.job_manager = JobManager()
     app.state.layout_manager = LayoutManager()
 
-    app.state.executor = ThreadPoolExecutor(max_workers=cpu_count())
-    app.state.job_manager = JobManager()
-    app.state.layout_manager = LayoutManager()
-
     yield
 
     # Teardown code goes here
