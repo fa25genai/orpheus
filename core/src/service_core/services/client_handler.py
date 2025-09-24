@@ -1,27 +1,14 @@
 import httpx
-from ..models.data_response import DataResponse
+from service_core.models.data_response import DataResponse
 
-SLIDE_API = "https://slides:8050"
-VIDEO_API = "https://videos:8050"
+client = httpx.AsyncClient()
+
+DI_API_URL = "https://slides:8050"
+SLIDES_API_URL = "https://videos:8050"
 
 
-
-def slidesHandler(lecture_id: str) -> DataResponse:
-    """Calls the external API to get the final slide result."""
-    response = httpx.get(
-        f"{SLIDE_API}/slides/{lecture_id}/result",
-        timeout=10.0
-    )
-    response.raise_for_status()
-    data = response.json()
-    return DataResponse(url=data.get("url"))
-
-def videoHandler(lecture_id: str) -> DataResponse:
-    """Calls the external API to get the final video result."""
-    response = httpx.get(
-        f"{VIDEO_API}/videos/{lecture_id}/result",
-        timeout=10.0
-    )
-    response.raise_for_status()
-    data = response.json()
-    return DataResponse(url=data.get("url"))
+async def process_prompt(prompt_id: str) -> DataResponse:
+    """
+    Asynchronously calls the appropriate external API to get the final result.
+    """
+    pass
