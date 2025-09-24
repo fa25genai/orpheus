@@ -7,3 +7,19 @@ services:
       - ./slides/.env
     ports:
       - "60303:60303"
+    networks:
+      - orpheus
+
+  ui-service:
+    build:
+      context: ./ui
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    networks:
+      - orpheus
+    depends_on:
+      - slides-service
+
+networks:
+  orpheus:

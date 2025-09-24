@@ -34,5 +34,15 @@
     pnpm exec openapi-generator-cli generate \
     -i ../avatar/service_video_v1.yaml \
     -g typescript-fetch \
-    -o ./generated-api-clients/avatar
+    -o ./generaÌted-api-clients/avatar
+    ```
+
+### Docker setup
+1. How to create the docker image
+    ```bash
+    docker build -t nextjs-docker .
+    ```
+2. How to run the docker container
+    ```bash
+    docker run -p 3000:3000 nextjs-docker
     ```
