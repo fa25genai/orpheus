@@ -148,14 +148,14 @@ export default function Home() {
                 )}
                 {!isLoading && (
                   <Card className="p-8 bg-card border-border md:col-span-2">
-                    <iframe
-                      width="100%"
-                      height="100%"
-                      src="http://localhost:3030"
-                      className="w-full h-98"
-                      title="Generated Slides"
-                      loading="lazy"
-                    />
+                      <iframe
+                          width="100%"
+                          height="100%"
+                          src="http://localhost:3030"
+                          className="w-full h-98 pointer-events-none pointer-none"
+                          title="Generated Slides"
+                          loading="lazy"
+                      />
                   </Card>
                 )}
               </div>
