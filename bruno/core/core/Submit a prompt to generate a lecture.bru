@@ -1,0 +1,17 @@
+meta {
+  name: Submit a prompt to generate a lecture
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/core/prompt
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "prompt": ""
+  }
+}
