@@ -118,10 +118,10 @@ async def generate_video(audio_path: str, prompt_id: UUID, course_id: str, user_
     Returns a URI (string) to the rendered video file which consists of one video per slide.
     """
     pid = str(prompt_id)
-    video_path = f"file:///tmp/{pid}_{video_counter}.mp4"
+    out_path = f"file:///tmp/{pid}_{video_counter}.mp4"
     # TODO: generate real video in ditto-talkinghead container and save it in the mentioned path
     # use slide_text, course_id, prompt_id and user_profil for this
-    return video_path
+    return out_path
 
 async def process_generation(payload: GenerateRequest) -> Dict[str, Union[List[Optional[str]], Dict[int, str], None]]:
     # set job to in progress
