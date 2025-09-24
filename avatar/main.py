@@ -1,5 +1,6 @@
+import asyncio
 from datetime import datetime, timezone
-from typing import List, Optional, Literal, Dict
+from typing import List, Optional, Literal, Dict, Tuple, Union
 from uuid import UUID
 
 from fastapi import FastAPI, BackgroundTasks, Response, Request
@@ -69,7 +70,7 @@ class Job(BaseModel):
     expectedDurationSec: int
     error: Optional[ErrorModel] = None
 
-
+# TODO: check usefullness of this
 JOBS: Dict[UUID, Job] = {}
 
 CDN_BASE = "https://cdn.example.com/videos"
@@ -100,46 +101,98 @@ def _eta_seconds(job: Job) -> int:
 # Fake pipeline
 # ---------------------------
 
-def generate_audio(slide_texts: List[str], course_id: str, lecture_id: UUID, user_profile: UserProfile) -> List[str]:
+async def generate_audio(slide_text: str, course_id: str, lecture_id: UUID, user_profile: UserProfile, audio_counter: int) -> str:
     """
     Create per-slide audio files from text.
     Returns a list of file paths (one per slide).
     """
     lid = str(lecture_id)
-    audio_paths = [f"/tmp/{lid}_{i}.wav" for i, _ in enumerate(slide_texts)]
+    audio_path = f"/tmp/{lid}_{audio_counter}.wav"
     # TODO: generate real audio in OpenVoice container and save it in the mentioned path
-    return audio_paths
+    # use slide_text, course_id, lecture_id and user_profil for this
+    return audio_path
 
-
-def generate_video(audio_paths: List[str], lecture_id: UUID, course_id: str, user_profile: UserProfile) -> str:
+async def generate_video(audio_path: str, lecture_id: UUID, course_id: str, user_profile: UserProfile, video_counter: int) -> str:
     """
     Assemble the final video using the audio tracks and slide content.
     Returns a URI (string) to the rendered video file which consists of one video per slide.
     """
     lid = str(lecture_id)
+    video_path = f"file:///tmp/{lid}_{video_counter}.mp4"
     # TODO: generate real video in ditto-talkinghead container and save it in the mentioned path
-    return f"file:///tmp/{lid}_final.mp4"
+    # use slide_text, course_id, lecture_id and user_profil for this
+    return video_path
 
-
-def process_generation(payload: GenerateRequest) -> None:
+async def process_generation(payload: GenerateRequest) -> Dict[str, Union[List[Optional[str]], Dict[int, str], None]]:
+    # set job to in progress
+    job = JOBS.get(payload.promtId)
+    if job:
+        job.status = "IN_PROGRESS"
+        job.lastUpdated = _utcnow()
+        JOBS[payload.promtId] = job
     try:
-        # -------------------------
-        # Todo: queue audio and video handling -> With fallback
-        audio_paths = generate_audio(payload.slideMessages, course_id=payload.courseId, user_profile=payload.userProfile)
-        _ = generate_video(payload.slideMessages, audio_paths, lecture_id=payload.promptId, course_id=payload.courseId, user_profile=payload.userProfile)
-        # -------------------------
-        # Mark done
-        job = JOBS[payload.promptId]
-        job.status = "DONE"
-        job.lastUpdated = _utcnow()
-        JOBS[payload.promptId] = job
+        slides_amount = len(payload.slideMessages)
+        audio_urls: List[Optional[str]] = [None] * slides_amount
+        video_urls: List[Optional[str]] = [None] * slides_amount
+        errors: Dict[int, str] = {} # Dict {slide index: error}
+        audio_done_q: asyncio.Queue[Tuple[int, str]] = asyncio.Queue() # consumer for finished audios
+        async def audio_producer():
+            for i, text in enumerate(payload.slideMessages):
+                try:
+                    aurl = await generate_audio(
+                        slide_text=text,
+                        course_id=payload.courseId,
+                        lecture_id=payload.promtId,
+                        user_profile=payload.userProfile,
+                        audio_counter=i,
+                    )
+                    audio_urls[i] = aurl
+                    await audio_done_q.put((i, aurl))
+                except Exception as e:
+                    errors[i] = f"audio_error: {e!r}"
+                    await audio_done_q.put((i, ""))  # consumer diesnt block in case there is no audio
+        async def video_consumer():
+            processed = 0
+            while processed < slides_amount:
+                idx, aurl = await audio_done_q.get()
+                processed += 1
+                if not aurl:
+                    continue # audio "" oder not excisting -> no video
+                try:
+                    vurl = await generate_video(
+                        audio_path=aurl,
+                        lecture_id=payload.promtId,
+                        course_id=payload.courseId,
+                        user_profile=payload.userProfile,
+                        video_counter=idx,
+                    )
+                    video_urls[idx] = vurl
+                except Exception as e:
+                    errors[idx] = f"video_error: {e!r}"
+        prod = asyncio.create_task(audio_producer())
+        cons = asyncio.create_task(video_consumer())
+        await asyncio.gather(prod, cons)
+        # set job to done
+        if job:
+            job.status = "DONE"
+            job.lastUpdated = _utcnow()
+            JOBS[payload.promtId] = job
+        # return results
+        return {
+            "audioUrls": audio_urls,
+            "videoUrls": video_urls,
+            "errors": errors or None,
+        }
     except Exception as exc:
-        job = JOBS[payload.promptId]
-        job.status = "FAILED"
-        job.lastUpdated = _utcnow()
-        job.error = ErrorModel(code="GENERATION_FAILED", message=str(exc))
-        JOBS[payload.promptId] = job
-
+        # set job to failed
+        job = JOBS.get(payload.promtId, None)
+        if job:
+            job.status = "FAILED"
+            job.lastUpdated = _utcnow()
+            job.error = ErrorModel(code="GENERATION_FAILED", message=str(exc))
+            JOBS[payload.promtId] = job
+        # forward error
+        raise
 
 # ---------------------------
 # Routes
@@ -151,7 +204,7 @@ def process_generation(payload: GenerateRequest) -> None:
     status_code=202,
     responses={400: {"model": ErrorModel}, 401: {"model": ErrorModel}, 500: {"model": ErrorModel}},
 )
-def request_video_generation(payload: GenerateRequest, background: BackgroundTasks, response: Response, request: Request):
+async def request_video_generation(payload: GenerateRequest, background: BackgroundTasks, response: Response, request: Request):
     now = _utcnow()
     # pre-compute where the file will live
     url = _result_url(payload.promptId)
