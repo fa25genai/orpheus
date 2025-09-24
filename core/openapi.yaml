@@ -1,0 +1,162 @@
+openapi: 3.0.0
+info:
+  contact:
+    name: Orpheus Project
+    url: https://github.com/fa25genai/orpheus/issues/new
+  description: |
+    API for the Orpheus core orchestration.
+    From the repository: "The Orpheus System transforms static slides into interactive prompt videos with lifelike professor avatars, combining expressive narration, visual presence, and dynamic content to create engaging, personalized learning experiences."
+    License: MIT (see repository).
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  termsOfService: https://github.com/fa25genai/orpheus
+  title: Orpheus CoreAI-Service API
+  version: 0.1.0
+externalDocs:
+  description: Project repository and README
+  url: https://github.com/fa25genai/orpheus
+servers:
+- description: Local development
+  url: http://localhost:8000
+- description: DNS service name for in-cluster service
+  url: http://orpheus-service-core:8080
+tags:
+- description: Endpoints for core AI
+  name: core
+paths:
+  /core/prompt:
+    post:
+      description: Accepts a user prompt and initiates an asynchronous job to generate
+        lecture content. Returns a unique prompt ID to track the job.
+      operationId: createLectureFromPrompt
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PromptRequest"
+        description: The user prompt to generate content from.
+        required: true
+      responses:
+        "202":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PromptResponse"
+          description: Accepted. The generation job has been successfully created.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Bad Request. The request body is invalid.
+      summary: Submit a prompt to generate a lecture
+      tags:
+      - core
+components:
+  schemas:
+    UserProfile:
+      properties:
+        id:
+          description: Unique identifier for the user.
+          example: a1b2c3d4-e5f6-7890-1234-567890abcdef
+          format: uuid
+          type: string
+        role:
+          enum:
+          - student
+          - instructor
+          type: string
+        language:
+          enum:
+          - german
+          - english
+          type: string
+        preferences:
+          $ref: "#/components/schemas/UserProfile_preferences"
+        enrolledCourses:
+          items:
+            example: courseId1
+            type: string
+          type: array
+      type: object
+    PromptRequest:
+      example:
+        prompt: Explain the theory of relativity in simple terms.
+      properties:
+        prompt:
+          description: The user's educational prompt.
+          example: Explain the theory of relativity in simple terms.
+          title: prompt
+          type: string
+      required:
+      - prompt
+      title: PromptRequest
+      type: object
+    PromptResponse:
+      example:
+        promptId: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      properties:
+        promptId:
+          description: The unique ID assigned to the generation job.
+          example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+          format: uuid
+          title: promptId
+          type: string
+      required:
+      - promptId
+      title: PromptResponse
+      type: object
+    Error:
+      example:
+        code: 404
+        message: Resource not found
+      properties:
+        code:
+          description: The HTTP status code.
+          example: 404
+          title: code
+          type: integer
+        message:
+          description: A human-readable error message.
+          example: Resource not found
+          title: message
+          type: string
+      required:
+      - code
+      - message
+      title: Error
+      type: object
+    UserProfile_preferences:
+      properties:
+        answerLength:
+          enum:
+          - short
+          - medium
+          - long
+          title: answerLength
+          type: string
+        languageLevel:
+          enum:
+          - basic
+          - intermediate
+          - advanced
+          title: languageLevel
+          type: string
+        expertiseLevel:
+          enum:
+          - beginner
+          - intermediate
+          - advanced
+          - expert
+          title: expertiseLevel
+          type: string
+        includePictures:
+          enum:
+          - none
+          - few
+          - many
+          title: includePictures
+          type: string
+      title: UserProfile_preferences
+      type: object
