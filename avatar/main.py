@@ -80,8 +80,8 @@ def _utcnow() -> datetime:
     return datetime.now(timezone.utc)
 
 
-def _result_url(lecture_id: UUID) -> str:
-    return f"{CDN_BASE}/{lecture_id}.mp4"
+def _result_url(prompt_id: UUID) -> str:
+    return f"{CDN_BASE}/{prompt_id}.mp4"
 
 
 def _estimate_total_seconds(slide_count: int) -> int:
@@ -101,35 +101,35 @@ def _eta_seconds(job: Job) -> int:
 # Fake pipeline
 # ---------------------------
 
-async def generate_audio(slide_text: str, course_id: str, lecture_id: UUID, user_profile: UserProfile, audio_counter: int) -> str:
+async def generate_audio(slide_text: str, course_id: str, prompt_id: UUID, user_profile: UserProfile, audio_counter: int) -> str:
     """
     Create per-slide audio files from text.
     Returns a list of file paths (one per slide).
     """
-    lid = str(lecture_id)
-    audio_path = f"/tmp/{lid}_{audio_counter}.wav"
+    pid = str(prompt_id)
+    audio_path = f"/tmp/{pid}_{audio_counter}.wav"
     # TODO: generate real audio in OpenVoice container and save it in the mentioned path
-    # use slide_text, course_id, lecture_id and user_profil for this
+    # use slide_text, course_id, prompt_id and user_profil for this
     return audio_path
 
-async def generate_video(audio_path: str, lecture_id: UUID, course_id: str, user_profile: UserProfile, video_counter: int) -> str:
+async def generate_video(audio_path: str, prompt_id: UUID, course_id: str, user_profile: UserProfile, video_counter: int) -> str:
     """
     Assemble the final video using the audio tracks and slide content.
     Returns a URI (string) to the rendered video file which consists of one video per slide.
     """
-    lid = str(lecture_id)
-    video_path = f"file:///tmp/{lid}_{video_counter}.mp4"
+    pid = str(prompt_id)
+    video_path = f"file:///tmp/{pid}_{video_counter}.mp4"
     # TODO: generate real video in ditto-talkinghead container and save it in the mentioned path
-    # use slide_text, course_id, lecture_id and user_profil for this
+    # use slide_text, course_id, prompt_id and user_profil for this
     return video_path
 
 async def process_generation(payload: GenerateRequest) -> Dict[str, Union[List[Optional[str]], Dict[int, str], None]]:
     # set job to in progress
-    job = JOBS.get(payload.promtId)
+    job = JOBS.get(payload.promptId)
     if job:
         job.status = "IN_PROGRESS"
         job.lastUpdated = _utcnow()
-        JOBS[payload.promtId] = job
+        JOBS[payload.promptId] = job
     try:
         slides_amount = len(payload.slideMessages)
         audio_urls: List[Optional[str]] = [None] * slides_amount
@@ -142,7 +142,7 @@ async def process_generation(payload: GenerateRequest) -> Dict[str, Union[List[O
                     aurl = await generate_audio(
                         slide_text=text,
                         course_id=payload.courseId,
-                        lecture_id=payload.promtId,
+                        prompt_id=payload.promptId,
                         user_profile=payload.userProfile,
                         audio_counter=i,
                     )
@@ -161,7 +161,7 @@ async def process_generation(payload: GenerateRequest) -> Dict[str, Union[List[O
                 try:
                     vurl = await generate_video(
                         audio_path=aurl,
-                        lecture_id=payload.promtId,
+                        prompt_id=payload.promptId,
                         course_id=payload.courseId,
                         user_profile=payload.userProfile,
                         video_counter=idx,
@@ -176,7 +176,7 @@ async def process_generation(payload: GenerateRequest) -> Dict[str, Union[List[O
         if job:
             job.status = "DONE"
             job.lastUpdated = _utcnow()
-            JOBS[payload.promtId] = job
+            JOBS[payload.promptId] = job
         # return results
         return {
             "audioUrls": audio_urls,
@@ -185,12 +185,12 @@ async def process_generation(payload: GenerateRequest) -> Dict[str, Union[List[O
         }
     except Exception as exc:
         # set job to failed
-        job = JOBS.get(payload.promtId, None)
+        job = JOBS.get(payload.promptId, None)
         if job:
             job.status = "FAILED"
             job.lastUpdated = _utcnow()
             job.error = ErrorModel(code="GENERATION_FAILED", message=str(exc))
-            JOBS[payload.promtId] = job
+            JOBS[payload.promptId] = job
         # forward error
         raise
 
