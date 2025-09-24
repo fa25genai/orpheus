@@ -104,7 +104,7 @@ IMPORTANT:
 - Do NOT produce slides or voice scripts at this stage
 """)
 
-def refine_lecture_content(retrieved_content: List[Dict[str, Any]], persona: Dict[str, Any]) -> Dict[str, Any]:
+def generate_script(retrieved_content: List[Dict[str, Any]], persona: Dict[str, Any]) -> Dict[str, Any]:
     if hasattr(persona, 'dict'):
         persona_dict = persona.dict()
     elif hasattr(persona, 'model_dump'):
