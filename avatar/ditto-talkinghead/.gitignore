@@ -1,0 +1,34 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*__pycache__
+**/__pycache__/
+*.py[cod]
+**/*.py[cod]
+*$py.class
+
+# Model weights
+checkpoints
+**/*.pth
+**/*.onnx
+**/*.pt
+**/*.pth.tar
+
+.idea
+.vscode
+.DS_Store
+*.DS_Store
+
+*.swp
+tmp*
+
+*build
+*.egg-info/
+*.mp4
+
+log/*
+*.mp4
+*.pth
+*.pyc
+*.jpeg
+
+*idea
