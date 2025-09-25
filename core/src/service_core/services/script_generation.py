@@ -12,10 +12,10 @@ Output format:
   "Images": [{"image": "...", "description": "..."}]
 }
 """
-from helpers.llm import getLLM  
+from service_core.services.helpers.llm import getLLM  
 import json
 from typing import Dict, Any, List
-from helpers.handle_retrieved import convert_json_structure
+from service_core.services.helpers.handle_retrieved import convert_json_structure
 import copy
 # -----------------------------
 # JSON helpers
