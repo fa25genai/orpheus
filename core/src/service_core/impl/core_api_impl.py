@@ -13,9 +13,11 @@ from ..app_state import app_state
 def get_executor(prompt_id: UUID) -> ThreadPoolExecutor:
     with app_state.lock:
         if app_state.executor is None:
-            print(f"Initializing CoreThreadPoolExecutor for {prompt_id}")
+            # print(f"")
             app_state.executor = ThreadPoolExecutor()
     return app_state.executor
+
+from .tracker import tracker
 
 class CoreApiImpl(BaseCoreApi):
     async def create_lecture_from_prompt(self, prompt_request: PromptRequest) -> PromptResponse:
@@ -29,6 +31,7 @@ class CoreApiImpl(BaseCoreApi):
             #     executor.submit(process_prompt_handler, prompt_id, prompt_request)
             #     print(prompt_id)
             executor = get_executor(prompt_id)
+            tracker.log(f"Initializing CoreThreadPoolExecutor for {prompt_id}")
             executor.submit(process_prompt_handler, prompt_id, prompt_request)
 
             return PromptResponse(promptId=str(prompt_id))
@@ -41,5 +44,6 @@ class CoreApiImpl(BaseCoreApi):
 def process_prompt_handler(prompt_id: UUID, prompt_request: PromptRequest):
     try:
         asyncio.run(process_prompt(prompt_id, prompt_request))
+        tracker.log(f"SUCCESS: Closing CoreThreadPoolExecutor for {prompt_id}", flush=True)
     except Exception as e:
         print(f"A critical error occurred for prompt [{prompt_id}]: {e}")
