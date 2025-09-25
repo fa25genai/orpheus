@@ -1,74 +1,97 @@
 version: "3.9"
 
 volumes:
-  video_files: {}
+  file_storage: {}
+  # /data in all containers
+  # /data/examples is a copy of example folder
 
 networks:
   core: {}
 
 services:
-  video-producer:  # running the main application
-    build:
-      context: ..
-      dockerfile: Dockerfile
+  example:
+    image: busybox
     volumes:
-      - video_files:/data
+      - file_storage:/data
+      - ../ditto-talkinghead/example:/seed:ro
+    command: >
+      sh -c 'set -e;
+      if [ ! -f /data/.seed_done ]; then
+        mkdir -p /data/example &&
+        cp -a /seed/. /data/example &&
+        echo done > /data/.seed_done;
+      fi'
+    restart: "no"
     networks: [core]
-    ports:
-      - "9000:9000"  # expose API (optional in dev)
-    depends_on:
-      - video-assets
 
-  video-assets:  # running NGINX
+  video-assets:
     build:
       context: ../assets
       dockerfile: Dockerfile
     volumes:
-      - video_files:/srv/assets:ro
+      - file_storage:/data
     networks: [core]
     ports:
-      - "8080:80"  # expose NGINX (only in dev)
+      - "8080:80"
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost/healthz || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://localhost/health || exit 1"]
       interval: 10s
       timeout: 2s
       retries: 3
+      start_period: 20s
 
-  voice-generation:  # running TTS
+  voice-generation:
     build:
       context: ../OpenVoice
       dockerfile: Dockerfile
-    environment:
-      - PORT=7000  # check in docker desktop
     volumes:
-      - video_files:/data
-    networks: [ core ]
+      - file_storage:/data
+    networks: [core]
     expose:
-      - "7000"  # check in docker desktop
+      - "7000"
     healthcheck:
-      test: [ "CMD-SHELL", "wget -qO- http://localhost:7000/healthz || exit 1" ]
+      test: ["CMD-SHELL", "wget -qO- http://localhost:7000/health || exit 1"]
       interval: 10s
       timeout: 3s
       retries: 5
+      start_period: 20s
     restart: on-failure
+    depends_on:
+      example:
+        condition: service_completed_successfully
 
   avatar-generation:
     build:
       context: ../ditto-talkinghead
       dockerfile: Dockerfile
-    environment:
-      - PORT=7002  # check in docker desktop
-      - NVIDIA_VISIBLE_DEVICES=all
-      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
     volumes:
-      - video_files:/data
-    networks: [ core ]
+      - file_storage:/data
+    networks: [core]
     expose:
-      - "7002"  # check in Docker Desktop
+      - "8000"  # see docker file in ditto-talkinghead
     healthcheck:
-      test: [ "CMD-SHELL", "wget -qO- http://localhost:7002/healthz || exit 1" ]
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8000/health || exit 1"]
       interval: 10s
       timeout: 3s
       retries: 5
+      start_period: 30s
     restart: on-failure
-    runtime: nvidia
+    gpus: all
+    depends_on:
+      example:
+        condition: service_completed_successfully
+
+  video-producer:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    volumes:
+      - file_storage:/data
+    networks: [core]
+    ports:
+      - "9000:9000"
+    depends_on:
+      example:
+        condition: service_completed_successfully
+      video-assets:
+        condition: service_healthy
