@@ -10,7 +10,7 @@ services:
       dockerfile: Dockerfile
     networks: [gpu-core]
     expose:
-      - "7000"
+      - "7000:8000"
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:7000/health || exit 1"]
       interval: 10s
@@ -27,7 +27,7 @@ services:
     volumes:
       - ../ditto-talkinghead/checkpoints:/app/checkpoints
     expose:
-      - "8000"  # see docker file in ditto-talkinghead
+      - "8000:8000"  # see docker file in ditto-talkinghead
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:8000/health || exit 1"]
       interval: 10s
