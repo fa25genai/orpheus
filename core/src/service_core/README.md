@@ -16,14 +16,12 @@ cd core && poetry install
 This project uses a schema-first approach. The single source of truth for the API's structure is the OpenAPI specification file.
 
 1. Modifying the API
-NOTE: right now you have to update the service_core_v1.yaml, the generation command needs to be updated first.
- 
 If you need to add, remove, or change an endpoint, you must edit the [answer_generation_service.yaml](../../../api/answer_generation_service.yaml) file first.
 
 2. Generating API Code
-After modifying the YAML schema, you must regenerate the server's boilerplate code. Run the following command from the project root:
+After modifying the YAML schema, you must regenerate the server's boilerplate code. Run the following command from the `core` directory:
 ```bash
-openapi-generator generate -i service_core_v1.yaml -g python-fastapi -o . --package-name service_core --additional-properties=sourceFolder=src --ignore-file-override ./.openapi-generator-ignore --global-property apiTests=false,modelTests=false,apiDocs=false,modelDocs=false
+openapi-generator generate -i ../api/answer_generation_service.yaml -g python-fastapi -o . --package-name service_core --additional-properties=sourceFolder=src --ignore-file-override ./.openapi-generator-ignore --global-property apiTests=false,modelTests=false,apiDocs=false,modelDocs=false
 ```
 
 3. Implementing Logic
