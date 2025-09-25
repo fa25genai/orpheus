@@ -30,7 +30,7 @@ paths:
       description: |
         Accepts an array of messages written in fluent text. They are divided by slides.
         Accepts a courseId used to identify and pull the correct audio and image samples for generating the requested professor avatar.
-        Accepts a lectureId, a unique identifier for the generated video and slides.
+        Accepts a promptId, a unique identifier for the generated video and slides.
         Accepts user profile information for adapting the video to the specific user needs.
       operationId: requestVideoGeneration
       requestBody:
@@ -41,7 +41,7 @@ paths:
               type: object
               required:
                 - slideMessages
-                - lectureId
+                - promptId
                 - courseId
                 - userProfile
               properties:
@@ -53,7 +53,7 @@ paths:
                     type: string
                     description: "The spoken/script text for one slide."
                     minLength: 1
-                lectureId:
+                promptId:
                   type: string
                   format: uuid
                   description: >
@@ -80,7 +80,7 @@ paths:
                 accepted:
                   summary: "Example accepted response"
                   value:
-                    lectureId: "3a6d2f2e-6b1a-4b0b-9d7e-2f5a2a4c1b9e"
+                    promptId: "3a6d2f2e-6b1a-4b0b-9d7e-2f5a2a4c1b9e"
                     status: "IN_PROGRESS"
                     createdAt: "2025-09-22T09:12:33Z"
         "400":
@@ -102,20 +102,20 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
-  /v1/video/{lectureId}/status:
+  /v1/video/{promptId}/status:
     get:
       tags:
         - video
       summary: "Wait until video generation finishes and return the final result"
       operationId: getGenerationResult
       parameters:
-        - name: lectureId
+        - name: promptId
           in: path
           required: true
           schema:
             type: string
             format: uuid
-          description: "The lectureId returned by /v1/video/generate"
+          description: "The promptId returned by /v1/video/generate"
       responses:
         "200":
           description: "Final result of the generation job."
@@ -126,13 +126,13 @@ paths:
               examples:
                 done:
                   value:
-                    lectureId: "0f2f9d77-8e67-4c5a-9c5d-0f2b9a3a1e12"
+                    promptId: "0f2f9d77-8e67-4c5a-9c5d-0f2b9a3a1e12"
                     status: "DONE"
                     lastUpdated: "2025-09-22T09:41:00Z"
                     resultUrl: "https://cdn.example.com/videos/0f2f9d77.mp4"
                 failed:
                   value:
-                    lectureId: "0f2f9d77-8e67-4c5a-9c5d-0f2b9a3a1e12"
+                    promptId: "0f2f9d77-8e67-4c5a-9c5d-0f2b9a3a1e12"
                     status: "FAILED"
                     lastUpdated: "2025-09-22T09:41:00Z"
                     error:
@@ -192,7 +192,7 @@ components:
       type: object
       description: "Returned immediately after generation request accepted"
       properties:
-        lectureId:
+        promptId:
           type: string
           format: uuid
         status:
@@ -205,7 +205,7 @@ components:
     GenerationStatusResponse:
       type: object
       properties:
-        lectureId: { type: string, format: uuid }
+        promptId: { type: string, format: uuid }
         status: { type: string, enum: [ IN_PROGRESS, FAILED, DONE ] }
         lastUpdated: { type: string, format: date-time }
         resultUrl: { type: string, format: uri, description: "URL even if not ready" }
