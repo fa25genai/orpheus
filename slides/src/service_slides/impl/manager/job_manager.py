@@ -1,4 +1,5 @@
 import datetime
+import logging
 from asyncio import Lock
 from asyncio import Condition
 from typing import Dict, Set
@@ -31,6 +32,16 @@ class JobStatus:
         self.web_url = web_url
         self.pdf_url = pdf_url
 
+    def get_status_text(self) -> str:
+        if self.error:
+            return "ERROR"
+        if self.uploaded and self.achieved <= self.total:
+            return "DONE"
+        return "IN_PROGRESS"
+
+
+_log = logging.getLogger("job_manager")
+
 
 class JobManager:
     def __init__(self) -> None:
@@ -48,6 +59,7 @@ class JobManager:
     async def init_job(self, promptId: str, required_page_count: int) -> None:
         await self.cleanup()
         async with self.mutex:
+            _log.debug("Initializing job %s", promptId)
             self.jobs.add(promptId)
             self.job_required_counts[promptId] = required_page_count
             self.job_achieved_counts[promptId] = 0
@@ -58,23 +70,29 @@ class JobManager:
     async def fail(self, promptId: str) -> None:
         await self.cleanup()
         async with self.mutex:
+            _log.debug("Failing job %s", promptId)
             self.job_error[promptId] = True
             self.job_update_timestamps[promptId] = datetime.datetime.now()
+            async with self.condition_variable:
+                self.condition_variable.notify_all()
 
     async def finish_page(self, promptId: str) -> None:
         await self.cleanup()
         async with self.mutex:
+            _log.debug("Incrementing finished pages for %s", promptId)
             self.job_achieved_counts[promptId] += 1
             self.job_update_timestamps[promptId] = datetime.datetime.now()
 
     async def finish_upload(self, promptId: str, webUrl: str | None, pdfUrl: str | None) -> None:
         await self.cleanup()
         async with self.mutex:
+            _log.debug("Finished upload for %s", promptId)
             self.job_uploaded[promptId] = True
             self.job_web_urls[promptId] = webUrl
             self.job_pdf_urls[promptId] = pdfUrl
             self.job_update_timestamps[promptId] = datetime.datetime.now()
-            self.condition_variable.notify_all()
+            async with self.condition_variable:
+                self.condition_variable.notify_all()
 
     async def get_status(self, promptId: str) -> JobStatus | None:
         await self.cleanup()
@@ -91,6 +109,7 @@ class JobManager:
             return None
 
     async def cleanup(self) -> None:
+        _log.debug("Cleaning up jobs")
         to_remove = set()
         async with self.mutex:
             # Remove jobs with update timestamps older than 4 hours
@@ -101,6 +120,7 @@ class JobManager:
                 ) < datetime.datetime.now():
                     to_remove.add(job)
             for job in to_remove:
+                _log.debug("Removing job %s (Last modified: %s)", job)
                 self.jobs.remove(job)
                 del self.job_required_counts[job]
                 del self.job_achieved_counts[job]
