@@ -16,18 +16,21 @@ import math
 import pickle
 import random
 import threading
+import json
 import numpy as np
 import torch
 import librosa
 from typing import Any, Dict, Optional
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
 # -----------------------------
 # Your SDK import
 # -----------------------------
 from stream_pipeline_offline import StreamSDK
+
 
 def seed_everything(seed: int) -> None:
     os.environ["PYTHONHASHSEED"] = str(seed)
@@ -45,11 +48,11 @@ def load_pkl(pkl_path: str):
 
 
 def run_inference(
-    SDK: StreamSDK,
-    audio_path: str,
-    source_path: str,
-    output_path: str,
-    more_kwargs: Dict[str, Any] | str | None = None,
+        SDK: StreamSDK,
+        audio_path: str,
+        source_path: str,
+        output_path: str,
+        more_kwargs: Dict[str, Any] | str | None = None,
 ) -> str:
     """Wraps original `run` with minor safety checks and returns the output path."""
     if more_kwargs is None:
@@ -87,7 +90,7 @@ def run_inference(
         audio = np.concatenate([np.zeros((chunksize[0] * 640,), dtype=np.float32), audio], 0)
         split_len = int(sum(chunksize) * 0.04 * 16000) + 80  # 6480
         for i in range(0, len(audio), chunksize[1] * 640):
-            audio_chunk = audio[i : i + split_len]
+            audio_chunk = audio[i: i + split_len]
             if len(audio_chunk) < split_len:
                 audio_chunk = np.pad(audio_chunk, (0, split_len - len(audio_chunk)), mode="constant")
             SDK.run_chunk(audio_chunk, chunksize)
@@ -166,41 +169,113 @@ def health():
     return {"status": "ok"}
 
 
-@app.post("/infer", response_model=InferenceResponse)
-def infer(req: InferenceRequest):
+@app.post("/infer")
+async def infer(
+        audio: UploadFile = File(..., description="WAV audio file"),
+        source: UploadFile = File(..., description="Source image or video"),
+        output_path: str = Form(..., description="Desired output .mp4 path"),
+        setup_kwargs: Optional[str] = Form(None, description="JSON string for SDK.setup kwargs"),
+        run_kwargs: Optional[str] = Form(None, description="JSON string for run kwargs (fade_in, chunksize, etc.)"),
+        seed: Optional[int] = Form(None),
+        return_file: Optional[bool] = Form(True, description="If true, return MP4 file; otherwise JSON with output_path"),
+):
+    """
+    Multipart variant:
+    - Files: `audio` (wav), `source` (image/video)
+    - Form fields: `output_path` (string), optional `setup_kwargs`, `run_kwargs` (JSON strings), `seed`, `return_file`
+    Returns:
+      - MP4 file (default), or
+      - JSON {status, output_path}
+    """
     global _SDK
     if _SDK is None:
         raise HTTPException(status_code=500, detail="SDK not initialized")
 
-    # Optional seeding per request
-    if req.seed is not None:
-        seed_everything(req.seed)
+    # Optional per-request seeding
+    if seed is not None:
+        seed_everything(seed)
 
-    # Build more_kwargs the way your run() expects
+    # Parse kwargs if provided as JSON strings
+    try:
+        setup_kw = json.loads(setup_kwargs) if setup_kwargs else {}
+        run_kw = json.loads(run_kwargs) if run_kwargs else {}
+    except json.JSONDecodeError as e:
+        raise HTTPException(status_code=400, detail=f"Invalid JSON in setup_kwargs/run_kwargs: {e}")
+
     more_kwargs: Dict[str, Any] = {
-        "setup_kwargs": req.setup_kwargs or {},
-        "run_kwargs": req.run_kwargs or {},
+        "setup_kwargs": setup_kw,
+        "run_kwargs": run_kw,
     }
 
-    # Ensure exclusive access to GPU/SDK
-    with _sdk_lock:
-        try:
-            output_path = run_inference(
-                _SDK,
-                audio_path=req.audio_path,
-                source_path=req.source_path,
-                output_path=req.output_path,
-                more_kwargs=more_kwargs,
-            )
-        except FileNotFoundError as e:
-            raise HTTPException(status_code=400, detail=str(e))
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Inference failed: {e}")
+    # Ensure output directory exists
+    os.makedirs(os.path.dirname(os.path.abspath(output_path)) or ".", exist_ok=True)
 
-    return InferenceResponse(status="success", output_path=output_path)
+    # Persist uploaded files to disk (so the existing run_inference can use paths)
+    tmp_dir = os.getenv("DITTO_UPLOAD_TMP", "/tmp/ditto_uploads")
+    os.makedirs(tmp_dir, exist_ok=True)
+
+    # Build deterministic temp names under tmp_dir
+    audio_tmp = os.path.join(tmp_dir, f"audio_{random.getrandbits(32)}.wav")
+    source_ext = os.path.splitext(source.filename or "source.png")[1] or ".png"
+    source_tmp = os.path.join(tmp_dir, f"source_{random.getrandbits(32)}{source_ext}")
+
+    try:
+        # Save audio
+        with open(audio_tmp, "wb") as f:
+            while True:
+                chunk = await audio.read(1024 * 1024)
+                if not chunk:
+                    break
+                f.write(chunk)
+
+        # Save source
+        with open(source_tmp, "wb") as f:
+            while True:
+                chunk = await source.read(1024 * 1024)
+                if not chunk:
+                    break
+                f.write(chunk)
+
+        # Run inference with lock (single-GPU safety)
+        with _sdk_lock:
+            try:
+                final_path = run_inference(
+                    _SDK,
+                    audio_path=audio_tmp,
+                    source_path=source_tmp,
+                    output_path=output_path,
+                    more_kwargs=more_kwargs,
+                )
+            except FileNotFoundError as e:
+                raise HTTPException(status_code=400, detail=str(e))
+            except Exception as e:
+                raise HTTPException(status_code=500, detail=f"Inference failed: {e}")
+
+        # Return the full video file (default) or JSON summary
+        if return_file:
+            filename = os.path.basename(final_path)
+            # FastAPI will stream the file efficiently
+            return FileResponse(
+                path=final_path,
+                media_type="video/mp4",
+                filename=filename,
+                headers={"Cache-Control": "no-store"},
+            )
+        else:
+            return InferenceResponse(status="success", output_path=final_path)
+
+    finally:
+        # Best-effort cleanup of temp uploads
+        for p in (audio_tmp, source_tmp):
+            try:
+                if os.path.exists(p):
+                    os.remove(p)
+            except Exception:
+                pass
 
 
 # For local testing: `python app.py`
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(app, host="0.0.0.0", port=8000, reload=False, workers=1)

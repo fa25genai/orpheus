@@ -319,61 +319,48 @@ async def generate_audio(slide_text: str, course_id: str, prompt_id: UUID, user_
 
 async def generate_video(
     audio_path: Optional[str] = None,
-    prompt_id: Optional[UUID] = None,
+    prompt_id: UUID = None,
     course_id: Optional[str] = None,
     user_profile: Optional[UserProfile] = None,
-    video_counter: Optional[int] = None,
+    video_counter: Optional[int] = None
 ) -> Optional[str]:
     """
-    Assemble the final video using the audio track and a source image.
-    Returns the path/URL of the rendered video, or None on failure.
+    Assemble the final video using the audio tracks and slide content.
+    Returns a URI (string) to the rendered video file which consists of one video per slide.
     """
-    if prompt_id is None or video_counter is None:
-        print("generate_video: prompt_id and video_counter are required.")
-        return None
-
     pid = str(prompt_id)
-
-    # Defaults for your MVP; swap with course-specific assets later
     out_path = f"/data/{pid}_{video_counter}.mp4"
-    resolved_audio = audio_path or "/data/example/krusche_voice.wav"
-    source_path = "/data/example/image_michal.png"  # could be derived from course_id/user_profile
 
-    # Call to API
-    video_api_url = os.getenv("GEN_VIDEO", "http://localhost:8000/video/infer")
+    # Default audio & source if not provided
+    audio_path = audio_path or "/data/example/krusche_voice.wav"
+    source_path = "/data/example/image_michal.png"
 
-    payload = {
-        "audio_path": resolved_audio,
-        "source_path": source_path,
-        "output_path": out_path,
-    }
+    # API endpoint
+    video_api_url = os.getenv("GEN_VIDEO", "http://localhost:8000/infer")
 
+    # Send out_path explicitly as string
+    payload = {"output_path": out_path}
 
-    print(f"[generate_video] POST {api_url} payload={payload}")
-
-    # Reasonable timeouts for an internal service call
-    timeout = httpx.Timeout(connect=5.0, read=120.0, write=30.0, pool=5.0)
+    print(f"Sending request to {video_api_url} with payload: {payload}")
 
     try:
-        async with httpx.AsyncClient(timeout=timeout) as client:
-            resp = await client.post(video_api_url, json=payload)
-            resp.raise_for_status()
+        with open(audio_path, "rb") as audio_file, open(source_path, "rb") as image_file:
+            files = {
+                "audio": ("audio.wav", audio_file, "audio/wav"),
+                "source": ("image.png", image_file, "image/png"),
+            }
 
-        # The infer API is expected to return JSON with "output_path"
-        data = resp.json()
-        result = data.get("output_path") or out_path
-        print(f"[generate_video] OK -> {result}")
-        return result
+            response = requests.post(video_api_url, data=payload, files=files)
+            response.raise_for_status()
 
-    except httpx.HTTPStatusError as e:
-        # Server returned non-2xx
-        body = e.response.text[:500]
-        print(f"[generate_video] HTTP {e.response.status_code}: {body}")
+        response_data = response.json()
+        print("Successfully received response:", response_data)
+        return response_data.get("output_path")
+
+    except requests.exceptions.RequestException as e:
+        print(f"An error occurred while calling the API: {e}")
         return None
-    except (httpx.RequestError, ValueError) as e:
-        # Network error or JSON parse issue
-        print(f"[generate_video] request/json error: {e!r}")
-        return None
+
 
 
 
