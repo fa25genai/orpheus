@@ -67,7 +67,7 @@ async def process_prompt(prompt_id: str, prompt_request: str): # TODO: type prom
         "user": json.loads(fetch_mock_data.create_demo_user().model_dump_json(by_alias=True, exclude_unset=True)),
         "assets": refined_output.get("assets", "")
     }
-    # print("Slides context: ", slides_context, flush=True)
+    print("Slides context: ", slides_context, flush=True)
     # context_mock = create_context_mock(prompt_request.course_id, prompt_id, lecture_script, fetch_mock_data.create_demo_user())
     # print(context_mock)
     slides_response = await client.post(

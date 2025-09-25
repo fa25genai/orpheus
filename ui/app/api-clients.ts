@@ -20,7 +20,7 @@ export const coreApi = new CoreApi(
 
 export const avatarApi = new VideoApi(
   new AvatarConfiguration({
-    basePath: "http://localhost:8080",
+    basePath: "http://localhost:9000",
   })
 );
 

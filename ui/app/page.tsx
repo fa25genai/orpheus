@@ -14,7 +14,7 @@ import GuideCards from "@/components/guide-cards";
 import {PersonaLevel} from "@/types/uploading";
 import VideoPlayer from "@/components/video-player";
 import {Skeleton} from "@/components/ui/skeleton";
-import SlidevEmbed, { SlidevEmbedHandle } from "@/components/slidev-embed";
+import SlidevEmbed, {SlidevEmbedHandle} from "@/components/slidev-embed";
 import {GenerationStatusResponse as SlidesGenerationStatusResponse} from "@/generated-api-clients/slides";
 import {toast} from "sonner";
 
@@ -72,18 +72,17 @@ export default function Home() {
 
       return slidesResponse;
     } catch (error) {
-
       if (error instanceof Error && error.message.includes("404")) {
         // If 404, it means the slides are not yet created. We can ignore this error.
         return;
       }
       console.error("Slides polling failed:", error);
-      toast.error("An error occurred while fetching the slides.", {
-        action: {
-          label: "Close",
-          onClick: () => toast.dismiss(),
-        },
-      });
+      // toast.error("An error occurred while fetching the slides.", {
+      //   action: {
+      //     label: "Close",
+      //     onClick: () => toast.dismiss(),
+      //   },
+      // });
     }
   }
 
@@ -113,14 +112,14 @@ export default function Home() {
     if (!finalPrompt.trim()) return;
 
     setMessages((prev) => [...prev, finalPrompt]);
-    const promptId = await getPromptId(finalPrompt)
+    const promptId = await getPromptId(finalPrompt);
 
     if (!promptId) {
       toast.error("No prompt ID received.", {
         action: {
           label: "Close",
           onClick: () => toast.dismiss(),
-        }
+        },
       });
       return;
     }
@@ -204,8 +203,12 @@ export default function Home() {
     if (slides.status === "DONE") {
       return (
         <Card className="p-8 bg-card border-border md:col-span-2">
-            {/* URL is for now hardcoded. It will be replaced with the actual URL when the nginx server is integrated. */}
-            <SlidevEmbed baseUrl="http://172.16.9.217:8080" className="h-98" ref={slidevRef} />
+          {/* URL is for now hardcoded. It will be replaced with the actual URL when the nginx server is integrated. */}
+          <SlidevEmbed
+            baseUrl={slides.webUrl ?? ""}
+            className="h-98"
+            ref={slidevRef}
+          />
         </Card>
       );
     }
@@ -282,11 +285,11 @@ export default function Home() {
                 <AvatarSection avatarData={avatarData} />
                 <SlidesSection slides={slides} />
               </div>
-                {/* For testing purposes of the slide change */}
-                {/*<div className="flex gap-2">*/}
-                {/*    <Button onClick={() => slidevRef.current?.next()}>Next</Button>*/}
-                {/*    <Button onClick={() => slidevRef.current?.prev()}>Prev</Button>*/}
-                {/*</div>*/}
+              {/* For testing purposes of the slide change */}
+              {/*<div className="flex gap-2">*/}
+              {/*    <Button onClick={() => slidevRef.current?.next()}>Next</Button>*/}
+              {/*    <Button onClick={() => slidevRef.current?.prev()}>Prev</Button>*/}
+              {/*</div>*/}
             </div>
           ))}
           <div ref={bottomRef}></div>
