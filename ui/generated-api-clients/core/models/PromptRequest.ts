@@ -26,7 +26,7 @@ export interface PromptRequest {
      */
     prompt: string;
     /**
-     * The unique identifier of the course.
+     * The identifier of the course for which the prompt is being generated.
      * @type {string}
      * @memberof PromptRequest
      */
