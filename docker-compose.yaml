@@ -5,7 +5,7 @@ services:
       context: ./slides
       dockerfile: Dockerfile
     env_file:
-      - ./slides/.env
+      - ./slides/.env # ask Krasi
     ports:
       - "30606:30606"
     networks:
@@ -15,7 +15,7 @@ services:
       context: ./slides/postprocessing
       dockerfile: Dockerfile
     env_file:
-      - ./slides/postprocessing/.env
+      - ./slides/postprocessing/.env # ask Krasi
     ports:
       - "30607:30607"
     networks:
@@ -51,7 +51,7 @@ services:
       context: ./document-intelligence
       dockerfile: Dockerfile
     env_file:
-      - ./document-intelligence/.env
+      - ./document-intelligence/.env # ask Krasi
     ports:
       - "25565:25565"
     networks:
@@ -93,7 +93,7 @@ services:
       context: ./core
       dockerfile: Dockerfile
     env_file:
-      - ./core/.env
+      - ./core/.env # ask Krasi
     ports:
       - "8000:8000"
     networks:
