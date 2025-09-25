@@ -39,7 +39,7 @@ export function FileUpload({
   async function uploadSlides(file: File, fileId: string) {
     try {
       const response = await docintApi.uploadsDocument({
-        courseId: "1",
+        courseId: "IN001",
         body: file,
       });
 
