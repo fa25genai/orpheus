@@ -157,12 +157,11 @@ export default function Home() {
 }
 
 useEffect(() => {
-      if (!avatarData?.resultUrl) return; // wait until we have a URL
-    console.log("Fetching video list...");
+      if (!avatarData?.resultUrl) return;
     async function loadVideos() {
-        // setSources(await fetchVideoList(avatarData?.resultUrl ?? ""));
-        // http://192.168.137.1:8080/videos
-         const list = await fetchVideoList(avatarData?.resultUrl + "/");
+        const baseUrl = "http://localhost:8080/"
+        const builtUrl = baseUrl + avatarData?.resultUrl + "/"
+         const list = await fetchVideoList(builtUrl);
     setSources(list);
     }
     loadVideos();
