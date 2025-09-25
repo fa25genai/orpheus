@@ -84,6 +84,16 @@ class GenerationStatusResponse(BaseModel):
     estimatedSecondsLeft: int  # 0 when DONE/FAILED
     error: Optional[ErrorModel] = None
 
+class AvatarImagePayload(BaseModel):
+    id: UUID
+    filePath: str
+    mimeType: Optional[str] = None
+    sizeBytes: Optional[int] = None
+    createdAt: datetime
+class AvatarCreatedResponse(BaseModel):
+    avatarId: UUID
+    image: Optional[AvatarImagePayload] = None
+
 
 
 # ---------------------------
