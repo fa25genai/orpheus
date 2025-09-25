@@ -20,6 +20,15 @@ class BaseSlidesApi:
         super().__init_subclass__(**kwargs)
         BaseSlidesApi.subclasses = BaseSlidesApi.subclasses + (cls,)
 
+    async def get_content_url(
+        self,
+        promptId: Annotated[
+            StrictStr, Field(description="The promptId returned by /v1/slides/generate")
+        ],
+        job_manager: JobManager,
+    ) -> GenerationStatusResponse:
+        raise NotImplementedError
+
     async def get_generation_status(
         self,
         promptId: Annotated[

@@ -161,6 +161,48 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+  /v1/slides/{promptId}/getContentUrl:
+    get:
+      tags:
+        - slides
+      summary: "Get content URLs for a previously-submitted request. Blocks until generation is finished"
+      operationId: getContentUrl
+      parameters:
+        - name: promptId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: "The promptId returned by /v1/slides/generate"
+      responses:
+        "200":
+          description: "Status of the generation job"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenerationStatusResponse"
+              examples:
+                in_progress:
+                  value:
+                    promptId: 42
+                    status: "IN_PROGRESS"
+                    totalPages: 25
+                    generatedPages: 10
+                    lastUpdated: "2025-09-22T09:30:00Z"
+                done:
+                  value:
+                    promptId: 43
+                    status: "DONE"
+                    totalPages: 15
+                    generatedPages: 15
+                    lastUpdated: "2025-09-22T09:41:00Z"
+        "404":
+          description: "Request not found"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 
 components:
   schemas:
@@ -229,6 +271,12 @@ components:
         lastUpdated:
           type: string
           format: date-time
+        webUrl:
+          type: string
+          format: url
+        pdfUrl:
+          type: string
+          format: url
         error:
           $ref: "#/components/schemas/Error"
 

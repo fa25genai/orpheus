@@ -1,4 +1,5 @@
 # coding: utf-8
+# Do not check generated files:
 
 """
 Orpheus Slide-Service API
@@ -45,6 +46,8 @@ class GenerationStatusResponse(BaseModel):
         alias="generatedPages",
     )
     last_updated: Optional[datetime] = Field(default=None, alias="lastUpdated")
+    web_url: Optional[StrictStr] = Field(default=None, alias="webUrl")
+    pdf_url: Optional[StrictStr] = Field(default=None, alias="pdfUrl")
     error: Optional[Error] = None
     __properties: ClassVar[List[str]] = [
         "promptId",
@@ -52,6 +55,8 @@ class GenerationStatusResponse(BaseModel):
         "totalPages",
         "generatedPages",
         "lastUpdated",
+        "webUrl",
+        "pdfUrl",
         "error",
     ]
 
@@ -125,8 +130,10 @@ class GenerationStatusResponse(BaseModel):
                 "totalPages": obj.get("totalPages"),
                 "generatedPages": obj.get("generatedPages"),
                 "lastUpdated": obj.get("lastUpdated"),
-                "error": Error.from_dict(error_data)
-                if (error_data := obj.get("error")) is not None
+                "webUrl": obj.get("webUrl"),
+                "pdfUrl": obj.get("pdfUrl"),
+                "error": Error.from_dict(obj.get("error"))  # type: ignore
+                if obj.get("error") is not None
                 else None,
             }
         )
