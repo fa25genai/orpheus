@@ -17,7 +17,7 @@ info:
 servers:
   - url: "http://localhost:30607"
     description: "Local development"
-  - url: "http://orpheus-service-slidestore:8000"
+  - url: "http://slides-postprocessing:30607"
     description: "DNS service name for in-cluster service"
 
 tags:
