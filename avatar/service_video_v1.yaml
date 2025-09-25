@@ -20,6 +20,8 @@ servers:
 tags:
   - name: video
     description: "Endpoints for video generation, retrieval and status"
+  - name: avatar
+    description: "Endpoints for creating avatars and uploading avatar images"
 
 paths:
   /v1/video/generate:
@@ -81,7 +83,6 @@ paths:
                   summary: "Example accepted response"
                   value:
                     promptId: "3a6d2f2e-6b1a-4b0b-9d7e-2f5a2a4c1b9e"
-                    status: "IN_PROGRESS"
                     createdAt: "2025-09-22T09:12:33Z"
         "400":
           description: "Malformed request."
@@ -106,7 +107,7 @@ paths:
     get:
       tags:
         - video
-      summary: "Wait until video generation finishes and return the final result"
+      summary: "Return current generation status (polling)"
       operationId: getGenerationResult
       parameters:
         - name: promptId
@@ -118,7 +119,7 @@ paths:
           description: "The promptId returned by /v1/video/generate"
       responses:
         "200":
-          description: "Final result of the generation job."
+          description: "Current generation status (may be IN_PROGRESS, DONE, or FAILED)."
           content:
             application/json:
               schema:
@@ -144,6 +145,67 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+  /v1/avatars:
+    post:
+      tags:
+        - avatar
+      summary: "Create a new avatar"
+      description: |
+        Creates a new avatar record. Optionally, an image file can be uploaded at the same time.
+      requestBody:
+        required: false
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "201":
+          description: "Avatar created successfully"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AvatarCreatedResponse"
+
+  /v1/avatars/{avatarId}/images:
+    post:
+      tags:
+        - avatar
+      summary: "Add an image to an existing avatar"
+      parameters:
+        - name: avatarId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "201":
+          description: "Image added successfully"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AvatarImageResponse"
+        "404":
+          description: "Avatar not found"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
 
 components:
   schemas:
@@ -195,9 +257,6 @@ components:
         promptId:
           type: string
           format: uuid
-        status:
-          type: string
-          enum: [ IN_PROGRESS, FAILED, DONE ]
         createdAt:
           type: string
           format: date-time
@@ -211,6 +270,49 @@ components:
         resultUrl: { type: string, format: uri, description: "URL even if not ready" }
         estimatedSecondsLeft: { type: integer, minimum: 0, description: "0 when DONE/FAILED" }
         error: { $ref: "#/components/schemas/Error" }
+
+    AvatarCreatedResponse:
+      type: object
+      properties:
+        avatarId:
+          type: string
+          format: uuid
+        image:
+          type: object
+          nullable: true
+          properties:
+            id:
+              type: string
+              format: uuid
+            filePath:
+              type: string
+            mimeType:
+              type: string
+            sizeBytes:
+              type: integer
+            createdAt:
+              type: string
+              format: date-time
+
+    AvatarImageResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        avatarId:
+          type: string
+          format: uuid
+        filePath:
+          type: string
+        mimeType:
+          type: string
+        sizeBytes:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+
     Error:
       type: object
       properties:
