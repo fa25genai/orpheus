@@ -99,6 +99,10 @@ components:
           type: "string"
           description: "The user's educational prompt."
           example: "Explain the theory of relativity in simple terms."
+        courseId:
+          type: "string"
+          description: "The course id."
+          example: "CS001"
       required:
         - "prompt"
 
