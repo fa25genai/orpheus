@@ -2,7 +2,7 @@
   "paths": {
     "project_root": "",
     "ckpt_converter": "./checkpoints_v2/converter",
-    "output_dir": "./checkpoints_v2/outputs_v2",
+    "output_dir": "./output",
     "base_speakers_dir": "./checkpoints_v2/base_speakers",
     "ses_subdir": "ses",
     "reference_speaker_dir": "."
