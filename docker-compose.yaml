@@ -1,25 +1,55 @@
 services:
-  slides-service:
+  # slides-service:
+  #   container_name: slides
+  #   build:
+  #     context: ./slides
+  #     dockerfile: Dockerfile
+  #   env_file:
+  #     - ./slides/.env
+  #   ports:
+  #     - "30606:30606"
+  #   networks:
+  #     - orpheus
+
+  # ui-service:
+  #   container_name: ui
+  #   build:
+  #     context: ./ui
+  #     dockerfile: Dockerfile
+  #   ports:
+  #     - "3000:3000"
+  #   networks:
+  #     - orpheus
+  #   depends_on:
+  #     - slides-service
+
+  docint-app:
+    container_name: ${DOCINT_CONTAINER_NAME}
     build:
-      context: ./slides
+      context: ./document-intelligence
       dockerfile: Dockerfile
     env_file:
-      - ./slides/.env
+      - ./document-intelligence/.env
     ports:
-      - "30606:30606"
+      - "25565:25565"
     networks:
       - orpheus
 
-  ui-service:
-    build:
-      context: ./ui
+
+  service-core:
+    container_name: core
+    build: 
+      context: ./core
       dockerfile: Dockerfile
+    env_file:
+      - ./core/.env
     ports:
-      - "3000:3000"
+      - "8000:8000"
     networks:
       - orpheus
     depends_on:
-      - slides-service
+      - docint-app
+
 
 networks:
   orpheus:
