@@ -25,6 +25,12 @@ export interface PromptRequest {
      * @memberof PromptRequest
      */
     prompt: string;
+    /**
+     * The unique identifier of the course.
+     * @type {string}
+     * @memberof PromptRequest
+     */
+    courseId: string;
 }
 
 /**
@@ -32,6 +38,7 @@ export interface PromptRequest {
  */
 export function instanceOfPromptRequest(value: object): value is PromptRequest {
     if (!('prompt' in value) || value['prompt'] === undefined) return false;
+    if (!('courseId' in value) || value['courseId'] === undefined) return false;
     return true;
 }
 
@@ -46,6 +53,7 @@ export function PromptRequestFromJSONTyped(json: any, ignoreDiscriminator: boole
     return {
         
         'prompt': json['prompt'],
+        'courseId': json['courseId'],
     };
 }
 
@@ -61,6 +69,7 @@ export function PromptRequestToJSONTyped(value?: PromptRequest | null, ignoreDis
     return {
         
         'prompt': value['prompt'],
+        'courseId': value['courseId'],
     };
 }
 

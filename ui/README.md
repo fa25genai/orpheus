@@ -22,7 +22,7 @@
 
 ### Generate the api clients with the openapi yaml specifications
 
-Run the following commands from the `ui` directory:
+Run the following command from the `ui` directory:
 
 1. Generate them for the core
     ```bash
