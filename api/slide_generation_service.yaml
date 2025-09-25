@@ -17,7 +17,7 @@ info:
 servers:
   - url: "http://localhost:30606"
     description: "Local development (random port chosen: 30606)"
-  - url: "http://slides-service:30606"
+  - url: "http://orpheus-service-slidegen:8080"
     description: "DNS service name for in-cluster service"
 
 tags:

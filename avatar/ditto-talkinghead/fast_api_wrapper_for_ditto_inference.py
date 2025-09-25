@@ -21,13 +21,15 @@ import torch
 import librosa
 from typing import Any, Dict, Optional
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, UploadFile, File, BackgroundTasks
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
 # -----------------------------
 # Your SDK import
 # -----------------------------
 from stream_pipeline_offline import StreamSDK
+
 
 def seed_everything(seed: int) -> None:
     os.environ["PYTHONHASHSEED"] = str(seed)
@@ -45,11 +47,11 @@ def load_pkl(pkl_path: str):
 
 
 def run_inference(
-    SDK: StreamSDK,
-    audio_path: str,
-    source_path: str,
-    output_path: str,
-    more_kwargs: Dict[str, Any] | str | None = None,
+        SDK: StreamSDK,
+        audio_path: str,
+        source_path: str,
+        output_path: str,
+        more_kwargs: Dict[str, Any] | str | None = None,
 ) -> str:
     """Wraps original `run` with minor safety checks and returns the output path."""
     if more_kwargs is None:
@@ -87,7 +89,7 @@ def run_inference(
         audio = np.concatenate([np.zeros((chunksize[0] * 640,), dtype=np.float32), audio], 0)
         split_len = int(sum(chunksize) * 0.04 * 16000) + 80  # 6480
         for i in range(0, len(audio), chunksize[1] * 640):
-            audio_chunk = audio[i : i + split_len]
+            audio_chunk = audio[i: i + split_len]
             if len(audio_chunk) < split_len:
                 audio_chunk = np.pad(audio_chunk, (0, split_len - len(audio_chunk)), mode="constant")
             SDK.run_chunk(audio_chunk, chunksize)
@@ -166,41 +168,78 @@ def health():
     return {"status": "ok"}
 
 
-@app.post("/infer", response_model=InferenceResponse)
-def infer(req: InferenceRequest):
+@app.post("/infer")
+async def infer(
+    audio: UploadFile = File(..., description="WAV audio file"),
+    source: UploadFile = File(..., description="Source image or video"),
+    background_tasks: BackgroundTasks = BackgroundTasks()
+):
     global _SDK
     if _SDK is None:
         raise HTTPException(status_code=500, detail="SDK not initialized")
 
-    # Optional seeding per request
-    if req.seed is not None:
-        seed_everything(req.seed)
+    tmp_dir = os.getenv("DITTO_UPLOAD_TMP", "/tmp/ditto_uploads")
+    os.makedirs(tmp_dir, exist_ok=True)
 
-    # Build more_kwargs the way your run() expects
-    more_kwargs: Dict[str, Any] = {
-        "setup_kwargs": req.setup_kwargs or {},
-        "run_kwargs": req.run_kwargs or {},
-    }
+    audio_tmp = os.path.join(tmp_dir, f"audio_{random.getrandbits(32)}.wav")
+    source_ext = os.path.splitext(source.filename or "source.png")[1] or ".png"
+    source_tmp = os.path.join(tmp_dir, f"source_{random.getrandbits(32)}{source_ext}")
+    output_tmp = os.path.join(tmp_dir, f"output_{random.getrandbits(32)}.mp4")
 
-    # Ensure exclusive access to GPU/SDK
-    with _sdk_lock:
-        try:
-            output_path = run_inference(
+    try:
+        # Save audio
+        with open(audio_tmp, "wb") as f:
+            while chunk := await audio.read(1024 * 1024):
+                f.write(chunk)
+
+        # Save source
+        with open(source_tmp, "wb") as f:
+            while chunk := await source.read(1024 * 1024):
+                f.write(chunk)
+
+        # Run inference
+        with _sdk_lock:
+            final_path = run_inference(
                 _SDK,
-                audio_path=req.audio_path,
-                source_path=req.source_path,
-                output_path=req.output_path,
-                more_kwargs=more_kwargs,
+                audio_path=audio_tmp,
+                source_path=source_tmp,
+                output_path=output_tmp,
+                more_kwargs={"setup_kwargs": {}, "run_kwargs": {}},
             )
-        except FileNotFoundError as e:
-            raise HTTPException(status_code=400, detail=str(e))
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Inference failed: {e}")
 
-    return InferenceResponse(status="success", output_path=output_path)
+        # schedule cleanup AFTER response is sent
+        def cleanup_files():
+            for p in (audio_tmp, source_tmp, final_path):
+                try:
+                    if os.path.exists(p):
+                        os.remove(p)
+                except Exception:
+                    pass
+
+        background_tasks.add_task(cleanup_files)
+
+        # Return the MP4 file
+        return FileResponse(
+            path=final_path,
+            media_type="video/mp4",
+            filename=os.path.basename(final_path),
+            headers={"Cache-Control": "no-store"},
+            background=background_tasks,
+        )
+
+    except Exception as e:
+        # If something fails, try to cleanup temp inputs but we don’t delete output (likely not created)
+        for p in (audio_tmp, source_tmp):
+            try:
+                if os.path.exists(p):
+                    os.remove(p)
+            except Exception:
+                pass
+        raise HTTPException(status_code=500, detail=f"Inference failed: {e}")
 
 
 # For local testing: `python app.py`
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(app, host="0.0.0.0", port=8000, reload=False, workers=1)
