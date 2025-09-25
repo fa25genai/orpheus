@@ -15,6 +15,7 @@ dependencies = [
     "langchain-ollama (==0.3.8)",
     "langchain-openai (>=0.3.0,<1.0.0)",
     "langchain-google-genai (>=2.1.12,<3.0.0)",
+    "langchain-aws (==0.2.33)",
     "uvicorn[standard] (>=0.36.0,<0.37.0)",
     "python-dateutil (>=2.9.0.post0,<3.0.0)",
     "types-python-dateutil (>=2.9.0.20250822,<3.0.0.0)",
