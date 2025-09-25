@@ -102,6 +102,7 @@ components:
         courseId:
           type: "string"
           format: "string"
+          description: "The identifier of the course for which the prompt is being generated."
           example: "IN001"
       required:
         - "prompt"
