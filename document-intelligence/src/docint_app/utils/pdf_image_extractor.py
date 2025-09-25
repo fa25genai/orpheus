@@ -17,7 +17,7 @@ EXT_TO_MIME = {
 }
 
 def is_black_square(img_bytes, darkness_threshold=30, variance_threshold=15):
-    """Heuristik zum Erkennen von schwarzen Kästchen (z. B. Codeblock-Placeholder)."""
+    """Heuristic for detecting black squares (e.g., code block placeholders)."""
     image = Image.open(BytesIO(img_bytes)).convert("L")
     stat = ImageStat.Stat(image)
     return stat.mean[0] < darkness_threshold and stat.stddev[0] < variance_threshold
