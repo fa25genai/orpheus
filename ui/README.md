@@ -34,7 +34,7 @@ Run the following command from the `ui` directory:
 2. Generate them for the avatar
     ```bash
     pnpm exec openapi-generator-cli generate \
-    -i ../avatar/service_video_v1.yaml \
+    -i ../api/avatar_generation_service.yaml \
     -g typescript-fetch \
     -o ./generated-api-clients/avatar
     ```
