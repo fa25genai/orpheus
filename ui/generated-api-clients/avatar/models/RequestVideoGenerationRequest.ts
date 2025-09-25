@@ -1,7 +1,7 @@
 /* tslint:disable */
 /* eslint-disable */
 /**
- * Service Video-Generation APIs
+ * Avatar Generation Service API
  * API for the Orpheus video generation. From the repository: \"The Orpheus System transforms static slides into interactive lecture videos with lifelike professor avatars, combining expressive narration, visual presence, and dynamic content to create engaging, personalized learning experiences.\" 
  *
  * The version of the OpenAPI document: 0.1
@@ -39,7 +39,7 @@ export interface RequestVideoGenerationRequest {
      * @type {string}
      * @memberof RequestVideoGenerationRequest
      */
-    lectureId: string;
+    promptId: string;
     /**
      * Course ID used to identify the correct professor/avatar resources.
      * @type {string}
@@ -59,7 +59,7 @@ export interface RequestVideoGenerationRequest {
  */
 export function instanceOfRequestVideoGenerationRequest(value: object): value is RequestVideoGenerationRequest {
     if (!('slideMessages' in value) || value['slideMessages'] === undefined) return false;
-    if (!('lectureId' in value) || value['lectureId'] === undefined) return false;
+    if (!('promptId' in value) || value['promptId'] === undefined) return false;
     if (!('courseId' in value) || value['courseId'] === undefined) return false;
     if (!('userProfile' in value) || value['userProfile'] === undefined) return false;
     return true;
@@ -76,7 +76,7 @@ export function RequestVideoGenerationRequestFromJSONTyped(json: any, ignoreDisc
     return {
         
         'slideMessages': json['slideMessages'],
-        'lectureId': json['lectureId'],
+        'promptId': json['promptId'],
         'courseId': json['courseId'],
         'userProfile': UserProfileFromJSON(json['userProfile']),
     };
@@ -94,7 +94,7 @@ export function RequestVideoGenerationRequestToJSONTyped(value?: RequestVideoGen
     return {
         
         'slideMessages': value['slideMessages'],
-        'lectureId': value['lectureId'],
+        'promptId': value['promptId'],
         'courseId': value['courseId'],
         'userProfile': UserProfileToJSON(value['userProfile']),
     };

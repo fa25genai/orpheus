@@ -1,0 +1,35 @@
+meta {
+  name: Request generation of a video, given the written text
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/v1/video/generate
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "slideMessages": [
+      "string"
+    ],
+    "promptId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    "courseId": "string",
+    "userProfile": {
+      "id": "string",
+      "role": "student",
+      "language": "english",
+      "preferences": {
+        "answerLength": "short",
+        "languageLevel": "basic",
+        "expertiseLevel": "beginner",
+        "includePictures": "none"
+      },
+      "enrolledCourses": [
+        "string"
+      ]
+    }
+  }
+}

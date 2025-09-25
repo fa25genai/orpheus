@@ -1,0 +1,9 @@
+{
+  "version": "1",
+  "name": "Slide Generation Service API",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ]
+}

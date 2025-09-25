@@ -1,0 +1,35 @@
+version: "3.9"
+
+volumes:
+  file_storage: {}
+
+networks:
+  local-core: {}
+
+services:
+  video-assets:
+    build:
+      context: ../assets
+      dockerfile: Dockerfile
+    volumes:
+      - file_storage:/data
+    networks: [local-core]
+    ports:
+      - "8080:80"
+
+  video-producer:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    environment:
+      VIDEO_ROOT: "/data/jobs"
+      PUBLIC_VIDEOS_BASE: "/videos/jobs"
+      GEN_AUDIO: "http://localhost:8000/infer"
+      GEN_VIDEO: "http://localhost:8000/infer"
+    volumes:
+      - file_storage:/data
+    networks: [local-core]
+    ports:
+      - "9000:9000"
+    depends_on:
+      - video-assets

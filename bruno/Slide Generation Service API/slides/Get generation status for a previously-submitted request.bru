@@ -1,0 +1,15 @@
+meta {
+  name: Get generation status for a previously-submitted request
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/v1/slides/:promptId/status
+  body: none
+  auth: inherit
+}
+
+params:path {
+  promptId: d80eeac1-3387-4a77-a46b-af677f0c39b0
+}

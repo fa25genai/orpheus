@@ -1,7 +1,10 @@
-.openapi-generator-ignore
+apis/AvatarApi.ts
 apis/VideoApi.ts
 apis/index.ts
 index.ts
+models/AvatarCreatedResponse.ts
+models/AvatarCreatedResponseImage.ts
+models/AvatarImageResponse.ts
 models/GenerationAcceptedResponse.ts
 models/GenerationStatusResponse.ts
 models/ModelError.ts

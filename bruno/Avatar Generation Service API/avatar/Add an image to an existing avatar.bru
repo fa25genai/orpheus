@@ -1,0 +1,19 @@
+meta {
+  name: Add an image to an existing avatar
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/v1/avatars/:avatarId/images
+  body: multipartForm
+  auth: inherit
+}
+
+params:path {
+  avatarId: 
+}
+
+body:multipart-form {
+  file: 
+}

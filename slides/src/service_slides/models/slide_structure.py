@@ -13,7 +13,6 @@ Do not edit the class manually.
 
 from __future__ import annotations
 import pprint
-import re  # noqa: F401
 import json
 
 
@@ -80,7 +79,7 @@ class SlideStructure(BaseModel):
         return _dict
 
     @classmethod
-    def from_dict(cls, obj: Dict) -> Self:
+    def from_dict(cls, obj: Dict[str, Any]) -> Self:
         """Create an instance of SlideStructure from a dict"""
         if obj is None:
             return None
@@ -90,8 +89,8 @@ class SlideStructure(BaseModel):
 
         _obj = cls.model_validate(
             {
-                "pages": [SlideItem.from_dict(_item) for _item in obj.get("pages")]
-                if obj.get("pages") is not None
+                "pages": [SlideItem.from_dict(_item) for _item in pages_data]
+                if (pages_data := obj.get("pages")) is not None
                 else None
             }
         )

@@ -6,6 +6,7 @@ export interface UploadedFile {
   status: "uploading" | "completed" | "error";
   progress: number;
   url?: string;
+  documentId?: string;
 }
 
 export type PersonaLevel = "beginner" | "intermediate" | "expert";
