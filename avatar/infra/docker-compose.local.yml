@@ -24,7 +24,7 @@ services:
     environment:
       VIDEO_ROOT: "/data/jobs"
       PUBLIC_VIDEOS_BASE: "/videos/jobs"
-      GEN_AUDIO: "http://localhost:8000/infer"
+      GEN_AUDIO: "http://localhost:7000/v1/audio/generate"
       GEN_VIDEO: "http://localhost:8000/infer"
     volumes:
       - file_storage:/data

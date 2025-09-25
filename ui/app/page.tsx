@@ -24,6 +24,7 @@ export default function Home() {
   const [messages, setMessages] = useState<string[]>([]);
   const [slides, setSlides] = useState<SlidesGenerationStatusResponse>();
   const [avatarData, setAvatarData] = useState<AvatarGenerationStatusReponse>();
+  const [sources, setSources] = useState<string[]>([]);
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const slidevRef = useRef<SlidevEmbedHandle>(null);
@@ -149,6 +150,36 @@ export default function Home() {
     setPrompt("");
   }
 
+  async function fetchVideoList(baseUrl: string): Promise<string[]> {
+  const sources: string[] = [];
+  let index = 1;
+
+  while (true) {
+    const url = `${baseUrl}${index}.mp4`;
+    try {
+      const res = await fetch(url, { method: "HEAD" });
+      if (!res.ok) break;
+      sources.push(url);
+      index++;
+    } catch {
+      break;
+    }
+  }
+
+  return sources;
+}
+
+useEffect(() => {
+      if (!avatarData?.resultUrl) return;
+    async function loadVideos() {
+        const baseUrl = "http://localhost:8080/"
+        const builtUrl = baseUrl + avatarData?.resultUrl + "/"
+         const list = await fetchVideoList(builtUrl);
+    setSources(list);
+    }
+    loadVideos();
+}, [avatarData]);
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({behavior: "smooth"});
   }, [messages, avatarData, slides]);
@@ -178,7 +209,13 @@ export default function Home() {
       );
 
     if (avatarData.status === "DONE") {
-      return <VideoPlayer src={avatarData.resultUrl ?? ""} />;
+      return <VideoPlayer
+          sources={sources}
+          onBeforeNext={() => {
+              console.log("next slide")
+              slidevRef.current?.next()
+          }}
+      />;
     }
 
     return (

@@ -9,7 +9,7 @@ client = httpx.AsyncClient()
 
 DI_API_URL = "http://docint:25565"
 SLIDES_API_URL = "http://slides:30606"
-AVATAR_API_URL = "http://avatar:0000"
+AVATAR_API_URL = "http://video-producer:9000"
 
 
 async def process_prompt(prompt_id: str, prompt_request: str): # TODO: type prompt_request
@@ -85,6 +85,12 @@ async def process_prompt(prompt_id: str, prompt_request: str): # TODO: type prom
     #print("\nExample Slides:", example_slides)
     try:
         voice_track = narration_generation.generate_narrations(lecture_script, slides_data, fetch_mock_data.create_demo_user())
-        print("\nvoice_track:", voice_track, flush=True)
+        avatar_response = await client.post(
+            f"{AVATAR_API_URL}/v1/video/generate",
+            json=voice_track,
+            timeout=300.0,
+        )
+        print("Avatar API response:", avatar_response, flush=True)
+        #print("\nvoice_track:", voice_track, flush=True)
     except Exception as e:
         print("Error generating voice track:", e, flush=True)

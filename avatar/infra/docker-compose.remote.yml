@@ -1,25 +1,25 @@
 version: "3.9"
 
 volumes:
-  file_storage: {}
+  avatar_file_storage: {}
 
 networks:
-  local-core: {}
+  avatar_network: {}
 
 services:
   # Responsibility: nginx
-  video-assets:
+  avatar-video-assets:
     build:
       context: ../assets
       dockerfile: Dockerfile
     volumes:
-      - file_storage:/data
-    networks: [local-core]
+      - avatar_file_storage:/data
+    networks: [avatar_network]
     ports:
       - "8080:80"
 
   # Responsibility: main.py
-  video-producer:
+  avatar-video-producer:
     build:
       context: ..
       dockerfile: Dockerfile
@@ -29,9 +29,9 @@ services:
       GEN_AUDIO: "https://gpu.aet.cit.tum.de/avatar/audio/v1/audio/generate"
       GEN_VIDEO: "https://gpu.aet.cit.tum.de/avatar/video/infer"
     volumes:
-      - file_storage:/data
-    networks: [local-core]
+      - avatar_file_storage:/data
+    networks: [avatar_network]
     ports:
       - "9000:9000"
     depends_on:
-      - video-assets
+      - avatar-video-assets
