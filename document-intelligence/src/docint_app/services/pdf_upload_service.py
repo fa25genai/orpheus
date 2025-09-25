@@ -21,7 +21,7 @@ logger.setLevel(logging.INFO)
 
 
 class PDFUploadService:
-    def __init__(self, base_url: str = "http://localhost:28947", storage_dir: str = "uploaded_pdfs"):
+    def __init__(self, base_url: str = "http://docint-weaviate:28947", storage_dir: str = "uploaded_pdfs"):
         """
         Initialize the PDF upload service with all required components.
         
