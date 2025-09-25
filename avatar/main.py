@@ -339,12 +339,15 @@ async def generate_video(
     resolved_audio = audio_path or "/data/example/krusche_voice.wav"
     source_path = "/data/example/image_michal.png"  # could be derived from course_id/user_profile
 
-    api_url = "http://localhost:8000/infer"
+    # Call to API
+    video_api_url = os.getenv("GEN_VIDEO", "http://localhost:8000/video/infer")
+
     payload = {
         "audio_path": resolved_audio,
         "source_path": source_path,
         "output_path": out_path,
     }
+
 
     print(f"[generate_video] POST {api_url} payload={payload}")
 
@@ -353,7 +356,7 @@ async def generate_video(
 
     try:
         async with httpx.AsyncClient(timeout=timeout) as client:
-            resp = await client.post(api_url, json=payload)
+            resp = await client.post(video_api_url, json=payload)
             resp.raise_for_status()
 
         # The infer API is expected to return JSON with "output_path"
