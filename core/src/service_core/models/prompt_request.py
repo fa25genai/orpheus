@@ -21,7 +21,7 @@ import json
 
 
 from pydantic import BaseModel, ConfigDict, Field, StrictStr
-from typing import Any, ClassVar, Dict, List
+from typing import Any, ClassVar, Dict, List, Optional
 try:
     from typing import Self
 except ImportError:
@@ -32,7 +32,8 @@ class PromptRequest(BaseModel):
     PromptRequest
     """ # noqa: E501
     prompt: StrictStr = Field(description="The user's educational prompt.")
-    __properties: ClassVar[List[str]] = ["prompt"]
+    course_id: Optional[StrictStr] = Field(default=None, description="The course id.", alias="courseId")
+    __properties: ClassVar[List[str]] = ["prompt", "courseId"]
 
     model_config = {
         "populate_by_name": True,
@@ -83,7 +84,8 @@ class PromptRequest(BaseModel):
             return cls.model_validate(obj)
 
         _obj = cls.model_validate({
-            "prompt": obj.get("prompt")
+            "prompt": obj.get("prompt"),
+            "courseId": obj.get("courseId")
         })
         return _obj
 

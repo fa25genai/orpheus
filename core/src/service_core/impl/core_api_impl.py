@@ -10,10 +10,10 @@ import asyncio
 
 from ..app_state import app_state
 
-def get_executor() -> ThreadPoolExecutor:
+def get_executor(prompt_id: UUID) -> ThreadPoolExecutor:
     with app_state.lock:
         if app_state.executor is None:
-            print("✅ Initializing CoreThreadPoolExecutor for this worker process...")
+            print(f"Initializing CoreThreadPoolExecutor for {prompt_id}")
             app_state.executor = ThreadPoolExecutor()
     return app_state.executor
 
@@ -28,7 +28,7 @@ class CoreApiImpl(BaseCoreApi):
             #     # loop = asyncio.get_event_loop()
             #     executor.submit(process_prompt_handler, prompt_id, prompt_request)
             #     print(prompt_id)
-            executor = get_executor()
+            executor = get_executor(prompt_id)
             executor.submit(process_prompt_handler, prompt_id, prompt_request)
 
             return PromptResponse(promptId=str(prompt_id))

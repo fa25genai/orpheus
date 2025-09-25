@@ -3,7 +3,7 @@ from service_core.services import decompose_input, fetch_mock_data, script_gener
 
 client = httpx.AsyncClient()
 
-DI_API_URL = "http://localhost:25565"
+DI_API_URL = "http://docint:25565"
 SLIDES_API_URL = "https://videos:8050"
 
 
