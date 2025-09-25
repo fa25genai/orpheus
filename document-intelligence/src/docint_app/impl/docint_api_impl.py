@@ -18,8 +18,8 @@ class DocintApiImpl(BaseDocintApi):
         prompt_query: Annotated[StrictStr, Field(description="The user's query or prompt.")],
     ) -> RetrievalResponse:
         service = get_retrieval_service()
-
-        return await service.search(prompt_query, courseId)
+        result = await service.search_simple(prompt_query, courseId)
+        return RetrievalResponse.from_dict(result)
     
     async def uploads_document(
         self,

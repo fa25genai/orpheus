@@ -34,6 +34,7 @@ Notes:
 from __future__ import annotations
 
 import json
+import os
 import time
 import uuid
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
@@ -48,7 +49,7 @@ class WeaviateError(RuntimeError):
 class WeaviateGraphStore:
     def __init__(
         self,
-        base_url: str = "http://localhost:28947",
+        base_url: str = "http://docint-weaviate:28947",
         api_key: Optional[str] = None,
         timeout_s: int = 15,
     ):
@@ -57,6 +58,7 @@ class WeaviateGraphStore:
         :param api_key:  Optional API key (if we enable auth later)
         :param timeout_s: Default request timeout
         """
+        base_url = os.getenv("WEAVIATE_URL", base_url)
         self.base_url = base_url.rstrip("/")
         self.timeout_s = timeout_s
         self.session = requests.Session()
@@ -563,6 +565,61 @@ class WeaviateGraphStore:
             )
 
         return out
+
+    # Test/Debug functions
+    def get_all_data_for_course(self, course_id: str) -> Dict[str, Any]:
+        """
+        Test function: Get all slides and images for a courseId (no vector search).
+        Returns all data for debugging purposes.
+        """
+        # Get all slides for the course
+        gql_slides = f"""
+        {{
+          Get {{
+            Slide(
+              where: {{ operator: Equal, path: ["courseId"], valueText: "{course_id}" }}
+              limit: 100
+            ) {{
+              courseId
+              documentId
+              slideNo
+              slideDescription
+              _additional {{ id }}
+            }}
+          }}
+        }}
+        """
+        res_slides = self._post("/v1/graphql", {"query": gql_slides})
+        slides = res_slides.get("data", {}).get("Get", {}).get("Slide", []) or []
+
+        # Get all images for the course
+        gql_images = f"""
+        {{
+          Get {{
+            SlideImage(
+              where: {{ operator: Equal, path: ["courseId"], valueText: "{course_id}" }}
+              limit: 500
+            ) {{
+              courseId
+              documentId
+              slideNo
+              description
+              imageBase64
+              _additional {{ id }}
+            }}
+          }}
+        }}
+        """
+        res_images = self._post("/v1/graphql", {"query": gql_images})
+        images = res_images.get("data", {}).get("Get", {}).get("SlideImage", []) or []
+
+        return {
+            "courseId": course_id,
+            "totalSlides": len(slides),
+            "totalImages": len(images),
+            "slides": slides,
+            "images": images
+        }
 
     # Mapping to OpenAPI response shape
     @staticmethod

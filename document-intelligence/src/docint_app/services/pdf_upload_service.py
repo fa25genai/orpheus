@@ -29,6 +29,8 @@ class PDFUploadService:
             base_url: Weaviate database URL
             storage_dir: Directory to store uploaded PDFs
         """
+
+        base_url = os.getenv("WEAVIATE_URL", base_url)
         logger.info(f"Initializing PDFUploadService with base_url: {base_url}")
         try:
             self.text_extractor = get_extract_text_service()

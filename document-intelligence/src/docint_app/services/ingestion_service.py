@@ -5,6 +5,7 @@ Takes parsed slides (text + images), generates embeddings, and stores them in We
 
 import asyncio
 import logging
+import os
 from typing import List, Dict, Any, Optional
 
 from docint_app.services.embedding_service import get_embedding_service
@@ -16,8 +17,9 @@ logger.setLevel(logging.INFO)
 
 
 class IngestionService:
-    def __init__(self, base_url: str = "http://localhost:28947"):
+    def __init__(self, base_url: str = "http://docint-weaviate:28947"):
         """Initialize the ingestion service with Weaviate store and embedding service."""
+        base_url = os.getenv("WEAVIATE_URL", base_url)
         logger.info(f"Initializing IngestionService with base_url: {base_url}")
         try:
             self.store = WeaviateGraphStore(base_url=base_url)

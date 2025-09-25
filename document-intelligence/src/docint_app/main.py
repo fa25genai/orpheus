@@ -14,6 +14,10 @@
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from dotenv import load_dotenv
+
+# Load environment variables once at startup
+load_dotenv()
 
 from docint_app.apis.docint_api import router as DocintApiRouter
 
