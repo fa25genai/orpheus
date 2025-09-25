@@ -32,7 +32,8 @@ class PromptRequest(BaseModel):
     PromptRequest
     """ # noqa: E501
     prompt: StrictStr = Field(description="The user's educational prompt.")
-    __properties: ClassVar[List[str]] = ["prompt"]
+    course_id: StrictStr = Field(alias="courseId")
+    __properties: ClassVar[List[str]] = ["prompt", "courseId"]
 
     model_config = {
         "populate_by_name": True,
@@ -83,7 +84,8 @@ class PromptRequest(BaseModel):
             return cls.model_validate(obj)
 
         _obj = cls.model_validate({
-            "prompt": obj.get("prompt")
+            "prompt": obj.get("prompt"),
+            "courseId": obj.get("courseId")
         })
         return _obj
 
