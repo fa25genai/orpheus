@@ -55,8 +55,6 @@ def generate_single_slide_content(
         Create slide content based on the following text:
         {text}
         
-        This is slide number {slide_number}.
-        
         Layout: {layout_name}
         Layout description: Each field in the output should contain appropriate content for a {layout_name} slide.
         
@@ -74,7 +72,6 @@ def generate_single_slide_content(
 
     input_data = {
         "text": text,
-        "slide_number": slide_number,
         "layout_name": layout_template.name,
         "schema_explanation": schema_explanation,
         "format_instructions": parser.get_format_instructions(),
