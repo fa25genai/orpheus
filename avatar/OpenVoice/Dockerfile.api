@@ -1,0 +1,36 @@
+# Use an official Python base image (3.9, since you used that in conda)
+FROM python:3.9-slim
+
+# Set environment vars
+ENV PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PATH=/root/.local/bin:$PATH
+
+# Install dependencies (git, wget, build tools for pip packages)
+RUN apt-get update && apt-get install -y \
+    git \
+    wget \
+    ffmpeg\
+    curl \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Clone OpenVoice repo
+WORKDIR /app
+RUN git clone https://github.com/myshell-ai/OpenVoice.git
+WORKDIR /app/OpenVoice
+
+# Install OpenVoice in editable mode
+RUN pip install -e .
+RUN pip install git+https://github.com/myshell-ai/MeloTTS.git
+RUN pip install fastapi uvicorn orjson
+RUN python -m unidic download
+
+# Copy your script into the container
+COPY generate_audio_function.py /app/OpenVoice/generate_audio_function.py
+
+# Expose a port if you want to run API/server
+EXPOSE 8000
+
+# Default entrypoint
+CMD ["uvicorn", "generate_audio_function:app", "--host", "0.0.0.0", "--port", "8000"]
