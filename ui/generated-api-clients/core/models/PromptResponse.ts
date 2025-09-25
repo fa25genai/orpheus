@@ -2,7 +2,7 @@
 /* eslint-disable */
 /**
  * Orpheus CoreAI-Service API
- * API for the Orpheus core orchestration. From the repository: \"The Orpheus System transforms static slides into interactive lecture videos with lifelike professor avatars, combining expressive narration, visual presence, and dynamic content to create engaging, personalized learning experiences.\" License: MIT (see repository). 
+ * API for the Orpheus core orchestration. From the repository: \"The Orpheus System transforms static slides into interactive prompt videos with lifelike professor avatars, combining expressive narration, visual presence, and dynamic content to create engaging, personalized learning experiences.\" License: MIT (see repository). 
  *
  * The version of the OpenAPI document: 0.1.0
  * 
@@ -24,14 +24,14 @@ export interface PromptResponse {
      * @type {string}
      * @memberof PromptResponse
      */
-    lectureId: string;
+    promptId: string;
 }
 
 /**
  * Check if a given object implements the PromptResponse interface.
  */
 export function instanceOfPromptResponse(value: object): value is PromptResponse {
-    if (!('lectureId' in value) || value['lectureId'] === undefined) return false;
+    if (!('promptId' in value) || value['promptId'] === undefined) return false;
     return true;
 }
 
@@ -45,7 +45,7 @@ export function PromptResponseFromJSONTyped(json: any, ignoreDiscriminator: bool
     }
     return {
         
-        'lectureId': json['lectureId'],
+        'promptId': json['promptId'],
     };
 }
 
@@ -60,7 +60,7 @@ export function PromptResponseToJSONTyped(value?: PromptResponse | null, ignoreD
 
     return {
         
-        'lectureId': value['lectureId'],
+        'promptId': value['promptId'],
     };
 }
 

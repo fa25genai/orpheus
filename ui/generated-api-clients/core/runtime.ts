@@ -2,7 +2,7 @@
 /* eslint-disable */
 /**
  * Orpheus CoreAI-Service API
- * API for the Orpheus core orchestration. From the repository: \"The Orpheus System transforms static slides into interactive lecture videos with lifelike professor avatars, combining expressive narration, visual presence, and dynamic content to create engaging, personalized learning experiences.\" License: MIT (see repository). 
+ * API for the Orpheus core orchestration. From the repository: \"The Orpheus System transforms static slides into interactive prompt videos with lifelike professor avatars, combining expressive narration, visual presence, and dynamic content to create engaging, personalized learning experiences.\" License: MIT (see repository). 
  *
  * The version of the OpenAPI document: 0.1.0
  * 

@@ -24,7 +24,7 @@ export interface GenerationAcceptedResponse {
      * @type {string}
      * @memberof GenerationAcceptedResponse
      */
-    lectureId?: string;
+    promptId?: string;
     /**
      * 
      * @type {string}
@@ -68,7 +68,7 @@ export function GenerationAcceptedResponseFromJSONTyped(json: any, ignoreDiscrim
     }
     return {
         
-        'lectureId': json['lectureId'] == null ? undefined : json['lectureId'],
+        'promptId': json['promptId'] == null ? undefined : json['promptId'],
         'status': json['status'] == null ? undefined : json['status'],
         'createdAt': json['createdAt'] == null ? undefined : (new Date(json['createdAt'])),
     };
@@ -85,7 +85,7 @@ export function GenerationAcceptedResponseToJSONTyped(value?: GenerationAccepted
 
     return {
         
-        'lectureId': value['lectureId'],
+        'promptId': value['promptId'],
         'status': value['status'],
         'createdAt': value['createdAt'] == null ? undefined : ((value['createdAt']).toISOString()),
     };

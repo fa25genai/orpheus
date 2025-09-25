@@ -14,28 +14,10 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import {useState} from "react";
-import {UploadedFile} from "@/types/uploading";
 import {FileUpload} from "@/components/file-upload";
 
 export default function Admin() {
   const [activeTab, setActiveTab] = useState("slides");
-  const [uploadedFiles, setUploadedFiles] = useState<{
-    slides: UploadedFile[];
-    avatar: UploadedFile[];
-    audio: UploadedFile[];
-  }>({
-    slides: [],
-    avatar: [],
-    audio: [],
-  });
-
-  const handleFilesUploaded =
-    (type: "slides" | "avatar" | "audio") => (files: UploadedFile[]) => {
-      setUploadedFiles((prev) => ({
-        ...prev,
-        [type]: files,
-      }));
-    };
 
   return (
     <main>
@@ -94,12 +76,12 @@ export default function Admin() {
                   <FileUpload
                     acceptedTypes={["application/pdf"]}
                     maxSize={100}
-                    onFilesUploaded={handleFilesUploaded("slides")}
                     icon={
                       <FileText className="w-12 h-12 text-muted-foreground" />
                     }
                     title="Upload Lecture Slides"
                     description="PDF files"
+                    multiple={false}
                   />
                 </div>
               </CardContent>
@@ -117,7 +99,6 @@ export default function Admin() {
                 <FileUpload
                   acceptedTypes={["image/jpeg", "image/png", "image/webp"]}
                   maxSize={10}
-                  onFilesUploaded={handleFilesUploaded("avatar")}
                   icon={
                     <ImageIcon className="w-12 h-12 text-muted-foreground" />
                   }
@@ -140,7 +121,6 @@ export default function Admin() {
                   acceptedTypes={["audio/mpeg", "audio/wav", "audio/mp3"]}
                   maxSize={100}
                   multiple={true}
-                  onFilesUploaded={handleFilesUploaded("audio")}
                   icon={<Mic className="w-12 h-12 text-muted-foreground" />}
                   title="Audio Samples"
                   description="MP3, WAV"

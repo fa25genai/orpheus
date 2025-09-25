@@ -29,7 +29,7 @@ import {
 } from '../models/index';
 
 export interface GetGenerationResultRequest {
-    lectureId: string;
+    promptId: string;
 }
 
 export interface RequestVideoGenerationOperationRequest {
@@ -45,10 +45,10 @@ export class VideoApi extends runtime.BaseAPI {
      * Wait until video generation finishes and return the final result
      */
     async getGenerationResultRaw(requestParameters: GetGenerationResultRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<GenerationStatusResponse>> {
-        if (requestParameters['lectureId'] == null) {
+        if (requestParameters['promptId'] == null) {
             throw new runtime.RequiredError(
-                'lectureId',
-                'Required parameter "lectureId" was null or undefined when calling getGenerationResult().'
+                'promptId',
+                'Required parameter "promptId" was null or undefined when calling getGenerationResult().'
             );
         }
 
@@ -57,8 +57,8 @@ export class VideoApi extends runtime.BaseAPI {
         const headerParameters: runtime.HTTPHeaders = {};
 
 
-        let urlPath = `/v1/video/{lectureId}/status`;
-        urlPath = urlPath.replace(`{${"lectureId"}}`, encodeURIComponent(String(requestParameters['lectureId'])));
+        let urlPath = `/v1/video/{promptId}/status`;
+        urlPath = urlPath.replace(`{${"promptId"}}`, encodeURIComponent(String(requestParameters['promptId'])));
 
         const response = await this.request({
             path: urlPath,
@@ -79,7 +79,7 @@ export class VideoApi extends runtime.BaseAPI {
     }
 
     /**
-     * Accepts an array of messages written in fluent text. They are divided by slides. Accepts a courseId used to identify and pull the correct audio and image samples for generating the requested professor avatar. Accepts a lectureId, a unique identifier for the generated video and slides. Accepts user profile information for adapting the video to the specific user needs. 
+     * Accepts an array of messages written in fluent text. They are divided by slides. Accepts a courseId used to identify and pull the correct audio and image samples for generating the requested professor avatar. Accepts a promptId, a unique identifier for the generated video and slides. Accepts user profile information for adapting the video to the specific user needs. 
      * Request generation of a video, given the written text
      */
     async requestVideoGenerationRaw(requestParameters: RequestVideoGenerationOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<GenerationAcceptedResponse>> {
@@ -111,7 +111,7 @@ export class VideoApi extends runtime.BaseAPI {
     }
 
     /**
-     * Accepts an array of messages written in fluent text. They are divided by slides. Accepts a courseId used to identify and pull the correct audio and image samples for generating the requested professor avatar. Accepts a lectureId, a unique identifier for the generated video and slides. Accepts user profile information for adapting the video to the specific user needs. 
+     * Accepts an array of messages written in fluent text. They are divided by slides. Accepts a courseId used to identify and pull the correct audio and image samples for generating the requested professor avatar. Accepts a promptId, a unique identifier for the generated video and slides. Accepts user profile information for adapting the video to the specific user needs. 
      * Request generation of a video, given the written text
      */
     async requestVideoGeneration(requestParameters: RequestVideoGenerationOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<GenerationAcceptedResponse> {

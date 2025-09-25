@@ -1,16 +1,23 @@
 import {UploadedFile} from "@/types/uploading";
 import {AlertCircle, CheckCircle, Upload, X} from "lucide-react";
-import {useCallback, useState} from "react";
+import {useCallback, useEffect, useState} from "react";
 import {Card} from "@/components/ui/card";
 import {Button} from "@/components/ui/button";
 import {Progress} from "@/components/ui/progress";
 import {Badge} from "@/components/ui/badge";
+import {docintApi} from "@/app/api-clients";
+import {toast} from "sonner";
+import {
+  clearUploadedFilesCookie,
+  getUploadedFilesCookie,
+  removeUploadedFileFromCookie,
+  setUploadedFilesCookie,
+} from "@/helper/cookies";
 
 interface FileUploadProps {
   acceptedTypes: string[];
   maxSize: number; // in MB
   multiple?: boolean;
-  onFilesUploaded: (files: UploadedFile[]) => void;
   icon?: React.ReactNode;
   title: string;
   description: string;
@@ -21,7 +28,6 @@ export function FileUpload({
   acceptedTypes,
   maxSize,
   multiple = false,
-  onFilesUploaded,
   icon,
   title,
   description,
@@ -29,6 +35,94 @@ export function FileUpload({
 }: FileUploadProps) {
   const [dragOver, setDragOver] = useState(false);
   const [files, setFiles] = useState<UploadedFile[]>([]);
+
+  async function uploadSlides(file: File, fileId: string) {
+    try {
+      const response = await docintApi.uploadsDocument({
+        courseId: "1",
+        body: file,
+      });
+
+      setFiles((prev) =>
+        prev.map((f) =>
+          f.id === fileId
+            ? {
+                ...f,
+                status: "completed",
+                progress: 100,
+                documentId: response.documentId,
+              }
+            : f
+        )
+      );
+
+      clearUploadedFilesCookie();
+      // Store in cookie
+      setUploadedFilesCookie({
+        documentId: response.documentId,
+        name: file.name,
+        size: file.size,
+      });
+      toast.success(`Uploaded ${file.name}`);
+    } catch (err) {
+      console.error("Upload failed:", err);
+      setFiles((prev) =>
+        prev.map((f) => (f.id === fileId ? {...f, status: "error"} : f))
+      );
+      toast.error(`Failed to upload ${file.name}`, {
+        description: (err as Error).message,
+      });
+    }
+  }
+
+  async function uploadAvatar(file: File, fileId: string) {
+    try {
+      // TODO: call avatar upload API
+      setFiles((prev) =>
+        prev.map((f) =>
+          f.id === fileId ? {...f, status: "completed", progress: 100} : f
+        )
+      );
+      toast.success(`Uploaded ${file.name}`);
+    } catch (error) {
+      console.error("Upload failed:", error);
+      setFiles((prev) =>
+        prev.map((f) => (f.id === fileId ? {...f, status: "error"} : f))
+      );
+      toast.error(`Failed to upload ${file.name}`, {
+        description: (error as Error).message,
+      });
+    }
+  }
+
+  async function uploadAudio(file: File, fileId: string) {
+    try {
+      // TODO: call audio upload API
+      setFiles((prev) =>
+        prev.map((f) =>
+          f.id === fileId ? {...f, status: "completed", progress: 100} : f
+        )
+      );
+      toast.success(`Uploaded ${file.name}`, {
+        action: {
+          label: "Close",
+          onClick: () => toast.dismiss(),
+        },
+      });
+    } catch (error) {
+      console.error("Upload failed:", error);
+      setFiles((prev) =>
+        prev.map((f) => (f.id === fileId ? {...f, status: "error"} : f))
+      );
+      toast.error(`Failed to upload ${file.name}`, {
+        description: (error as Error).message,
+        action: {
+          label: "Close",
+          onClick: () => toast.dismiss(),
+        },
+      });
+    }
+  }
 
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return "0 Bytes";
@@ -50,28 +144,6 @@ export function FileUpload({
     return null;
   };
 
-  const simulateUpload = (fileId: string) => {
-    let progress = 0;
-    const interval = setInterval(() => {
-      progress += Math.random() * 30;
-      if (progress >= 100) {
-        progress = 100;
-        clearInterval(interval);
-        setFiles((prev) =>
-          prev.map((f) =>
-            f.id === fileId
-              ? {...f, status: "completed" as const, progress: 100}
-              : f
-          )
-        );
-      } else {
-        setFiles((prev) =>
-          prev.map((f) => (f.id === fileId ? {...f, progress} : f))
-        );
-      }
-    }, 200);
-  };
-
   const handleFiles = useCallback(
     (fileList: FileList) => {
       const newFiles: UploadedFile[] = [];
@@ -79,13 +151,14 @@ export function FileUpload({
       Array.from(fileList).forEach((file) => {
         const error = validateFile(file);
         if (error) {
-          // Handle error - could show toast notification
-          console.error(error);
+          toast.error(`Invalid file: ${file.name}`, {
+            description: error,
+          });
           return;
         }
 
         const uploadedFile: UploadedFile = {
-          id: Math.random().toString(36).substr(2, 9),
+          id: crypto.randomUUID(),
           name: file.name,
           size: file.size,
           type: file.type,
@@ -94,43 +167,42 @@ export function FileUpload({
         };
 
         newFiles.push(uploadedFile);
+
+        if (file.type.startsWith("image/")) uploadAvatar(file, uploadedFile.id);
+        if (file.type.startsWith("application/pdf"))
+          uploadSlides(file, uploadedFile.id);
+        if (file.type.startsWith("audio/")) uploadAudio(file, uploadedFile.id);
       });
 
       if (newFiles.length > 0) {
         setFiles((prev) => (multiple ? [...prev, ...newFiles] : newFiles));
-        newFiles.forEach((file) => simulateUpload(file.id));
-        onFilesUploaded(newFiles);
       }
     },
-    [acceptedTypes, maxSize, multiple, onFilesUploaded]
+    [acceptedTypes, maxSize, multiple]
   );
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setDragOver(true);
-  };
+  const removeFile = async (documentId: string) => {
+    try {
+      await docintApi.deletesDocument({documentId});
+      setFiles((prev) => prev.filter((f) => f.documentId !== documentId));
+      removeUploadedFileFromCookie(documentId);
 
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    setDragOver(false);
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setDragOver(false);
-    if (e.dataTransfer.files) {
-      handleFiles(e.dataTransfer.files);
+      toast.success("File deleted", {
+        action: {
+          label: "Close",
+          onClick: () => toast.dismiss(),
+        },
+      });
+    } catch (error) {
+      console.error("Delete failed:", error);
+      toast.error(`Failed to delete file`, {
+        description: (error as Error).message,
+        action: {
+          label: "Close",
+          onClick: () => toast.dismiss(),
+        },
+      });
     }
-  };
-
-  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      handleFiles(e.target.files);
-    }
-  };
-
-  const removeFile = (fileId: string) => {
-    setFiles((prev) => prev.filter((f) => f.id !== fileId));
   };
 
   const getStatusIcon = (status: string) => {
@@ -146,6 +218,22 @@ export function FileUpload({
     }
   };
 
+  useEffect(() => {
+    const saved = getUploadedFilesCookie();
+    if (saved.length > 0) {
+      const restoredFiles: UploadedFile[] = saved.map((f) => ({
+        id: f.documentId, // use documentId as stable id
+        name: f.name,
+        size: f.size,
+        type: "application/pdf", // fallback (you can improve by storing type in cookie too)
+        status: "completed",
+        progress: 100,
+        documentId: f.documentId,
+      }));
+      setFiles(restoredFiles);
+    }
+  }, []);
+
   return (
     <div className={`space-y-4 ${className}`}>
       <Card
@@ -154,9 +242,21 @@ export function FileUpload({
             ? "border-primary bg-primary/5"
             : "border-border hover:border-primary/50"
         }`}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
+        onDragOver={(e) => {
+          e.preventDefault();
+          setDragOver(true);
+        }}
+        onDragLeave={(e) => {
+          e.preventDefault();
+          setDragOver(false);
+        }}
+        onDrop={(e) => {
+          e.preventDefault();
+          setDragOver(false);
+          if (e.dataTransfer.files) {
+            handleFiles(e.dataTransfer.files);
+          }
+        }}
         onClick={() => document.getElementById(`file-input-${title}`)?.click()}
       >
         <div className="flex flex-col items-center space-y-4">
@@ -177,12 +277,11 @@ export function FileUpload({
           type="file"
           accept={acceptedTypes.join(",")}
           multiple={multiple}
-          onChange={handleFileInput}
+          onChange={(e) => e.target.files && handleFiles(e.target.files)}
           className="hidden"
         />
       </Card>
 
-      {/* File List */}
       {files.length > 0 && (
         <div className="space-y-2">
           {files.map((file) => (
@@ -208,7 +307,7 @@ export function FileUpload({
                     size="sm"
                     onClick={(e) => {
                       e.stopPropagation();
-                      removeFile(file.id);
+                      removeFile(file.documentId!);
                     }}
                   >
                     <X className="w-4 h-4" />
