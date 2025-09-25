@@ -43,6 +43,9 @@ class FilePathHelper:
     def get_asset_file(self, prompt_id: str, path: str) -> str:
         return os.path.join(self.get_markdown_directory(prompt_id), path)
 
+    def get_web_asset_file(self, prompt_id: str, path: str) -> str:
+        return os.path.join(self.get_web_directory(prompt_id), path)
+
     def get_markdown_directory(self, prompt_id: str) -> str:
         return os.path.join(self._get_markdown_dir(), prompt_id)
 
