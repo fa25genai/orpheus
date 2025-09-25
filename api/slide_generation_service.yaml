@@ -229,6 +229,12 @@ components:
         lastUpdated:
           type: string
           format: date-time
+        webUrl:
+          type: string
+          format: url
+        pdfUrl:
+          type: string
+          format: url
         error:
           $ref: "#/components/schemas/Error"
 

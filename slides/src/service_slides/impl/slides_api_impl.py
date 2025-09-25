@@ -180,7 +180,13 @@ class SlidesApiImpl(BaseSlidesApi):
                     job_manager,
                     prompt_id,
                     "\n".join(slide_contents),
-                    [],  # TODO: Add assets
+                    list(map(
+                        lambda asset: SlidesetWithIdAssetsInner(
+                            path=f"assets/{asset.name}",
+                            data=asset.data,
+                        ),
+                        request_slide_generation_request.assets,
+                    )),
                 )
             )
 
