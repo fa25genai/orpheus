@@ -64,7 +64,7 @@ async def process_prompt(prompt_id: str, prompt_request: str): # TODO: type prom
         "courseId": prompt_request.course_id,
         "promptId": str(prompt_id),
         "lectureScript": lecture_script,
-        "user": fetch_mock_data.create_demo_user().model_dump_json(by_alias=True, exclude_unset=True),
+        "user": json.loads(fetch_mock_data.create_demo_user().model_dump_json(by_alias=True, exclude_unset=True)),
         "assets": refined_output.get("assets", "")
     }
     print("Slides context: ", slides_context, flush=True)

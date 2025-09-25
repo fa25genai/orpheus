@@ -73,11 +73,11 @@ def generate_script_llm(retrieved_content: List[Dict[str, Any]], persona):
     "assets": [
         {{
         "name": "filename_1.jpg",
-        "assetDesc": "A concise and clear description of the content and purpose of the first image."
+        "assetDescription": "A concise and clear description of the content and purpose of the first image."
         }},
         {{
         "name": "filename_2.png",
-        "assetDesc": "A description for the second image."
+        "assetDescription": "A description for the second image."
         }}
     ]
     }}
@@ -126,19 +126,19 @@ def generate_script(retrieved_content: List[Dict[str, Any]], persona: UserProfil
     asset_lookup = {}
     retrieved_content_for_llm = copy.deepcopy(retrieved_content)
     for item in retrieved_content_for_llm:
-        print('a', flush=True)
+        # print('a', flush=True)
         if 'assets' in item:
-            print('b', flush=True)
+            # print('b', flush=True)
             for asset in item['assets']:
-                print('c', flush=True)
+                # print('c', flush=True)
                 if 'name' in asset:
                     # Store the original asset data
                     asset_lookup[asset['name']] = {
-                        'mimetype': asset.get('mimetype'),
+                        'mimeType': asset.get('mimeType'),
                         'data': asset.get('data')
                     }
                 # Remove bulky data for the LLM call
-                asset.pop('mimetype', None)
+                asset.pop('mimeType', None)
                 asset.pop('data', None)
 
     generated_script = generate_script_llm(retrieved_content_for_llm, persona)   

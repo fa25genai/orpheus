@@ -53,8 +53,8 @@ def convert_json_structure(retrieved_content: list) -> list:
                 
                 asset = {
                     "name": filename,
-                    "assetDesc": description,
-                    "mimetype": mime_type,
+                    "assetDescription": description,
+                    "mimeType": mime_type,
                     "data": base64_data
                 }
                 new_item["assets"].append(asset)

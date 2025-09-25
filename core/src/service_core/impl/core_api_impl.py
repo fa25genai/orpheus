@@ -13,9 +13,21 @@ from ..app_state import app_state
 def get_executor(prompt_id: UUID) -> ThreadPoolExecutor:
     with app_state.lock:
         if app_state.executor is None:
-            print(f"Initializing CoreThreadPoolExecutor for {prompt_id}")
+            # print(f"")
             app_state.executor = ThreadPoolExecutor()
     return app_state.executor
+
+class ProgressTracker:
+    def __init__(self, total_steps):
+        self.total_steps = total_steps
+        self.current_step = 0
+
+    def log(self, message):
+        self.current_step += 1
+        print(f"({self.current_step}/{self.total_steps}): {message}")
+
+total_tasks = 4
+tracker = ProgressTracker(total_steps=total_tasks)
 
 class CoreApiImpl(BaseCoreApi):
     async def create_lecture_from_prompt(self, prompt_request: PromptRequest) -> PromptResponse:
@@ -29,6 +41,7 @@ class CoreApiImpl(BaseCoreApi):
             #     executor.submit(process_prompt_handler, prompt_id, prompt_request)
             #     print(prompt_id)
             executor = get_executor(prompt_id)
+            tracker.log(f"Initializing CoreThreadPoolExecutor for {prompt_id}")
             executor.submit(process_prompt_handler, prompt_id, prompt_request)
 
             return PromptResponse(promptId=str(prompt_id))
@@ -41,6 +54,6 @@ class CoreApiImpl(BaseCoreApi):
 def process_prompt_handler(prompt_id: UUID, prompt_request: PromptRequest):
     try:
         asyncio.run(process_prompt(prompt_id, prompt_request))
-        print(f"SUCCESS: Closing CoreThreadPoolExecutor for {prompt_id}")
+        print(f"SUCCESS: Closing CoreThreadPoolExecutor for {prompt_id}", flush=True)
     except Exception as e:
         print(f"A critical error occurred for prompt [{prompt_id}]: {e}")
