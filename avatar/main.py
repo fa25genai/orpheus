@@ -19,9 +19,6 @@ from pydantic import BaseModel, Field, constr
 
 from fastapi.middleware.cors import CORSMiddleware
 
-
-
-
 app = FastAPI(title="Service Video-Generation APIs", version="0.1")
 origins = ["*"]
 
@@ -76,6 +73,7 @@ class GenerationAcceptedResponse(BaseModel):
     promptId: UUID
     createdAt: datetime
 
+
 class GenerationStatusResponse(BaseModel):
     promptId: UUID
     status: Literal["IN_PROGRESS", "FAILED", "DONE"]
@@ -84,16 +82,18 @@ class GenerationStatusResponse(BaseModel):
     estimatedSecondsLeft: int  # 0 when DONE/FAILED
     error: Optional[ErrorModel] = None
 
+
 class AvatarImagePayload(BaseModel):
     id: UUID
     filePath: str
     mimeType: Optional[str] = None
     sizeBytes: Optional[int] = None
     createdAt: datetime
+
+
 class AvatarCreatedResponse(BaseModel):
     avatarId: UUID
     image: Optional[AvatarImagePayload] = None
-
 
 
 # ---------------------------
@@ -103,8 +103,10 @@ class AvatarCreatedResponse(BaseModel):
 class Base(DeclarativeBase):
     pass
 
+
 engine = create_engine(DATABASE_URL, future=True)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, future=True)
+
 
 def get_db() -> Session:
     db = SessionLocal()
@@ -144,9 +146,11 @@ def _startup_create_tables() -> None:
 
 ALLOWED_IMAGE_MIMES = {"image/png", "image/jpeg", "image/webp"}
 
+
 class AvatarCreatedResponse(BaseModel):
     avatarId: UUID
     image: Optional[Dict] = None  # { id, filePath, mimeType, sizeBytes, createdAt }
+
 
 class AvatarImageResponse(BaseModel):
     id: UUID
@@ -156,8 +160,10 @@ class AvatarImageResponse(BaseModel):
     sizeBytes: Optional[int] = None
     createdAt: datetime
 
+
 def _ext_from_mime(mime: str) -> str:
     return {"image/png": "png", "image/jpeg": "jpg", "image/webp": "webp"}.get(mime, "bin")
+
 
 def _save_upload_to_disk(avatar_id: UUID, upload: UploadFile) -> Path:
     if upload.content_type not in ALLOWED_IMAGE_MIMES:
@@ -175,6 +181,7 @@ def _save_upload_to_disk(avatar_id: UUID, upload: UploadFile) -> Path:
         shutil.copyfileobj(upload.file, out)
     return target
 
+
 @app.post(
     "/v1/avatars",
     status_code=201,
@@ -182,8 +189,8 @@ def _save_upload_to_disk(avatar_id: UUID, upload: UploadFile) -> Path:
     tags=["avatar"],
 )
 def create_avatar(
-    file: Optional[UploadFile] = File(default=None),
-    db: Session = Depends(get_db),
+        file: Optional[UploadFile] = File(default=None),
+        db: Session = Depends(get_db),
 ):
     # Create avatar id and persist
     avatar_id = uuid.uuid4()
@@ -223,9 +230,9 @@ def create_avatar(
     tags=["avatar"],
 )
 def add_avatar_image(
-    avatarId: UUID,
-    file: UploadFile = File(...),
-    db: Session = Depends(get_db),
+        avatarId: UUID,
+        file: UploadFile = File(...),
+        db: Session = Depends(get_db),
 ):
     # Strict: avatar must exist
     avatar = db.get(Avatar, str(avatarId))
@@ -254,6 +261,8 @@ def add_avatar_image(
         sizeBytes=db_img.size_bytes,
         createdAt=db_img.created_at,
     )
+
+
 # ---------------------------
 # In-memory job store
 # ---------------------------
@@ -270,7 +279,7 @@ class Job(BaseModel):
 
 
 # TODO: check usefullness of this
-#to be stored in a db
+# to be stored in a db
 JOBS: Dict[UUID, Job] = {}
 
 CDN_BASE = "https://cdn.example.com/videos"
@@ -318,50 +327,48 @@ async def generate_audio(slide_text: str, course_id: str, prompt_id: UUID, user_
 
 
 async def generate_video(
-    audio_path: Optional[str] = None,
-    prompt_id: UUID = None,
-    course_id: Optional[str] = None,
-    user_profile: Optional[UserProfile] = None,
-    video_counter: Optional[int] = None
+        audio_path: Optional[str] = None,
+        prompt_id: UUID = None,
+        course_id: Optional[str] = None,
+        user_profile: Optional[UserProfile] = None,
+        video_counter: Optional[int] = None,
 ) -> Optional[str]:
     """
     Assemble the final video using the audio tracks and slide content.
-    Returns a URI (string) to the rendered video file which consists of one video per slide.
+    Downloads the rendered MP4 file returned by the API and saves it locally.
+    Returns the local file path.
     """
     pid = str(prompt_id)
-    out_path = f"/data/{pid}_{video_counter}.mp4"
+    local_filename = f"{pid}_{video_counter}.mp4"
 
     # Default audio & source if not provided
-    audio_path = audio_path or "/data/example/krusche_voice.wav"
-    source_path = "/data/example/image_michal.png"
+    audio_path = audio_path or r"C:\Users\julia\Desktop\Ferienakademie\orpheus\avatar\ditto-talkinghead\example\krusche_voice.wav"
+    source_path = r"C:\Users\julia\Desktop\Ferienakademie\orpheus\avatar\ditto-talkinghead\example\image_michal.png"
 
-    # API endpoint
+    # Use the new file-upload endpoint
     video_api_url = os.getenv("GEN_VIDEO", "http://localhost:8000/infer")
 
-    # Send out_path explicitly as string
-    payload = {"output_path": out_path}
-
-    print(f"Sending request to {video_api_url} with payload: {payload}")
+    print(f"Sending request to {video_api_url} with audio={audio_path} and source={source_path}")
 
     try:
         with open(audio_path, "rb") as audio_file, open(source_path, "rb") as image_file:
             files = {
-                "audio": ("audio.wav", audio_file, "audio/wav"),
-                "source": ("image.png", image_file, "image/png"),
+                "audio": ("ditto-talkinghead/example/krusche_voice.wav", audio_file, "audio/wav"),
+                "source": ("ditto-talkinghead/example/image_michal.png", image_file, "image/png"),
             }
 
-            response = requests.post(video_api_url, data=payload, files=files)
+            response = requests.post(video_api_url, files=files, stream=True)
             response.raise_for_status()
+            with open(local_filename, "wb") as f:
+                for chunk in response.iter_content(chunk_size=8192):
+                    f.write(chunk)
 
-        response_data = response.json()
-        print("Successfully received response:", response_data)
-        return response_data.get("output_path")
+        print(f"Video saved as {local_filename}")
+        return local_filename
 
     except requests.exceptions.RequestException as e:
         print(f"An error occurred while calling the API: {e}")
         return None
-
-
 
 
 # TODO: maybe remove return
@@ -445,7 +452,7 @@ async def process_generation(payload: GenerateRequest) -> Dict[str, Union[List[O
 # ---------------------------
 def _run_process_generation(payload: "GenerateRequest") -> None:
     # Runs the async coroutine in a fresh event loop, safe for BackgroundTasks
-    #can't run in the same loop context
+    # can't run in the same loop context
 
     loop = asyncio.get_event_loop()
     '''
@@ -454,6 +461,7 @@ def _run_process_generation(payload: "GenerateRequest") -> None:
     “asyncio.run() cannot be called from a running event loop”.
     '''
     loop.create_task(process_generation(payload))
+
 
 @app.post(
     "/v1/video/generate",
@@ -477,7 +485,7 @@ async def request_video_generation(payload: GenerateRequest, background: Backgro
         error=None,
     )
     # fire-and-forget
-    background.add_task(_run_process_generation, payload)    # absolute Location per spec
+    background.add_task(_run_process_generation, payload)  # absolute Location per spec
     base = str(request.base_url).rstrip("/")
     response.headers["Location"] = f"{base}/v1/video/{payload.promptId}/status"
     return GenerationAcceptedResponse(promptId=payload.promptId, createdAt=now)

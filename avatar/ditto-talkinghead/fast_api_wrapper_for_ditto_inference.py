@@ -16,13 +16,12 @@ import math
 import pickle
 import random
 import threading
-import json
 import numpy as np
 import torch
 import librosa
 from typing import Any, Dict, Optional
 
-from fastapi import FastAPI, HTTPException, UploadFile, File, Form
+from fastapi import FastAPI, HTTPException, UploadFile, File, BackgroundTasks
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
@@ -171,107 +170,72 @@ def health():
 
 @app.post("/infer")
 async def infer(
-        audio: UploadFile = File(..., description="WAV audio file"),
-        source: UploadFile = File(..., description="Source image or video"),
-        output_path: str = Form(..., description="Desired output .mp4 path"),
-        setup_kwargs: Optional[str] = Form(None, description="JSON string for SDK.setup kwargs"),
-        run_kwargs: Optional[str] = Form(None, description="JSON string for run kwargs (fade_in, chunksize, etc.)"),
-        seed: Optional[int] = Form(None),
-        return_file: Optional[bool] = Form(True, description="If true, return MP4 file; otherwise JSON with output_path"),
+    audio: UploadFile = File(..., description="WAV audio file"),
+    source: UploadFile = File(..., description="Source image or video"),
+    background_tasks: BackgroundTasks = BackgroundTasks()
 ):
-    """
-    Multipart variant:
-    - Files: `audio` (wav), `source` (image/video)
-    - Form fields: `output_path` (string), optional `setup_kwargs`, `run_kwargs` (JSON strings), `seed`, `return_file`
-    Returns:
-      - MP4 file (default), or
-      - JSON {status, output_path}
-    """
     global _SDK
     if _SDK is None:
         raise HTTPException(status_code=500, detail="SDK not initialized")
 
-    # Optional per-request seeding
-    if seed is not None:
-        seed_everything(seed)
-
-    # Parse kwargs if provided as JSON strings
-    try:
-        setup_kw = json.loads(setup_kwargs) if setup_kwargs else {}
-        run_kw = json.loads(run_kwargs) if run_kwargs else {}
-    except json.JSONDecodeError as e:
-        raise HTTPException(status_code=400, detail=f"Invalid JSON in setup_kwargs/run_kwargs: {e}")
-
-    more_kwargs: Dict[str, Any] = {
-        "setup_kwargs": setup_kw,
-        "run_kwargs": run_kw,
-    }
-
-    # Ensure output directory exists
-    os.makedirs(os.path.dirname(os.path.abspath(output_path)) or ".", exist_ok=True)
-
-    # Persist uploaded files to disk (so the existing run_inference can use paths)
     tmp_dir = os.getenv("DITTO_UPLOAD_TMP", "/tmp/ditto_uploads")
     os.makedirs(tmp_dir, exist_ok=True)
 
-    # Build deterministic temp names under tmp_dir
     audio_tmp = os.path.join(tmp_dir, f"audio_{random.getrandbits(32)}.wav")
     source_ext = os.path.splitext(source.filename or "source.png")[1] or ".png"
     source_tmp = os.path.join(tmp_dir, f"source_{random.getrandbits(32)}{source_ext}")
+    output_tmp = os.path.join(tmp_dir, f"output_{random.getrandbits(32)}.mp4")
 
     try:
         # Save audio
         with open(audio_tmp, "wb") as f:
-            while True:
-                chunk = await audio.read(1024 * 1024)
-                if not chunk:
-                    break
+            while chunk := await audio.read(1024 * 1024):
                 f.write(chunk)
 
         # Save source
         with open(source_tmp, "wb") as f:
-            while True:
-                chunk = await source.read(1024 * 1024)
-                if not chunk:
-                    break
+            while chunk := await source.read(1024 * 1024):
                 f.write(chunk)
 
-        # Run inference with lock (single-GPU safety)
+        # Run inference
         with _sdk_lock:
-            try:
-                final_path = run_inference(
-                    _SDK,
-                    audio_path=audio_tmp,
-                    source_path=source_tmp,
-                    output_path=output_path,
-                    more_kwargs=more_kwargs,
-                )
-            except FileNotFoundError as e:
-                raise HTTPException(status_code=400, detail=str(e))
-            except Exception as e:
-                raise HTTPException(status_code=500, detail=f"Inference failed: {e}")
-
-        # Return the full video file (default) or JSON summary
-        if return_file:
-            filename = os.path.basename(final_path)
-            # FastAPI will stream the file efficiently
-            return FileResponse(
-                path=final_path,
-                media_type="video/mp4",
-                filename=filename,
-                headers={"Cache-Control": "no-store"},
+            final_path = run_inference(
+                _SDK,
+                audio_path=audio_tmp,
+                source_path=source_tmp,
+                output_path=output_tmp,
+                more_kwargs={"setup_kwargs": {}, "run_kwargs": {}},
             )
-        else:
-            return InferenceResponse(status="success", output_path=final_path)
 
-    finally:
-        # Best-effort cleanup of temp uploads
+        # schedule cleanup AFTER response is sent
+        def cleanup_files():
+            for p in (audio_tmp, source_tmp, final_path):
+                try:
+                    if os.path.exists(p):
+                        os.remove(p)
+                except Exception:
+                    pass
+
+        background_tasks.add_task(cleanup_files)
+
+        # Return the MP4 file
+        return FileResponse(
+            path=final_path,
+            media_type="video/mp4",
+            filename=os.path.basename(final_path),
+            headers={"Cache-Control": "no-store"},
+            background=background_tasks,
+        )
+
+    except Exception as e:
+        # If something fails, try to cleanup temp inputs but we don’t delete output (likely not created)
         for p in (audio_tmp, source_tmp):
             try:
                 if os.path.exists(p):
                     os.remove(p)
             except Exception:
                 pass
+        raise HTTPException(status_code=500, detail=f"Inference failed: {e}")
 
 
 # For local testing: `python app.py`
