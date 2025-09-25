@@ -38,7 +38,7 @@ def generate_narrations(lecture_script, example_slides, user_profile, debug=Fals
 
     #slides_data = json.loads(example_slides.model_dump_json())
     pages = example_slides["structure"]["pages"]
-    print("\n\npages:", pages, flush=True)
+    # print("\n\npages:", pages, flush=True)
     narration_history = ""
     slide_messages = []
     
@@ -48,7 +48,7 @@ def generate_narrations(lecture_script, example_slides, user_profile, debug=Fals
     # Load the prompt templates
     prompt_templates = json.loads(prompt_templates_json)
     for i, page in enumerate(pages):
-        print("\n\npage:", page, flush=True)
+        # print("\n\npage:", page, flush=True)
         page_content = page["content"]
         # Build the prompt using the templates
         prompt_parts = [

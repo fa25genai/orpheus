@@ -46,9 +46,9 @@ def generate_script_llm(retrieved_content: List[Dict[str, Any]], persona):
 
     #print("Refining lecture content for persona:")
     persona_str = json.dumps(persona_dict, indent=2, ensure_ascii=False)
-    print(persona_str)
+    # print(persona_str)
     content_str = json.dumps(retrieved_content, indent=2, ensure_ascii=False)
-    print(content_str)
+    # print(content_str)
     prompt = f"""
         You are an expert AI assistant specializing in personalized educational content creation. Your purpose is to transform raw educational material into an engaging and effective lecture script tailored to a specific learner's profile.\n\n
         Your task is to synthesize the provided content into a single, coherent lecture script.
@@ -82,7 +82,7 @@ def generate_script_llm(retrieved_content: List[Dict[str, Any]], persona):
     ]
     }}
     """
-    print(prompt)
+    # print(prompt)
     max_retries = 3
     for attempt in range(max_retries):
         try:
@@ -102,7 +102,7 @@ def generate_script_llm(retrieved_content: List[Dict[str, Any]], persona):
             # Try to parse JSON
             success, result = try_parse_json(raw)
             if success:
-                print(json.dumps(result, indent=2, ensure_ascii=False))
+                # print(json.dumps(result, indent=2, ensure_ascii=False))
                 return result
             
             # If it didn't work, this will raise JSONDecodeError and trigger retry
@@ -142,14 +142,14 @@ def generate_script(retrieved_content: List[Dict[str, Any]], persona: UserProfil
                 asset.pop('data', None)
 
     generated_script = generate_script_llm(retrieved_content_for_llm, persona)   
-    print("\n\nGenerate Script Output:", generated_script)
+    # print("\n\nGenerate Script Output:", generated_script)
     
     # Add mimetype and data back to the assets in the generated script
     assets = generated_script.get('assets', [])
     if assets:
         for asset in assets:
-            print("asset:", asset)
+            # print("asset:", asset)
             if 'name' in asset and asset['name'] in asset_lookup:
                 asset.update(asset_lookup[asset['name']])
-    print("\n\nFinal Generated Script with Assets:", json.dumps(generated_script, indent=2))
+    # print("\n\nFinal Generated Script with Assets:", json.dumps(generated_script, indent=2))
     return generated_script
