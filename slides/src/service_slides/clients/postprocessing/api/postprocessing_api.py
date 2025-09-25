@@ -526,7 +526,6 @@ class PostprocessingApi:
         :type _host_index: int, optional
         :return: Returns the result object.
         """  # noqa: E501
-        print("store_slideset")
         _param = self._store_slideset_serialize(
             store_slideset_request=store_slideset_request,
             _request_auth=_request_auth,
@@ -534,7 +533,6 @@ class PostprocessingApi:
             _headers=_headers,
             _host_index=_host_index,
         )
-        print(_param)
 
         _response_types_map: Dict[str, Optional[str]] = {
             "200": "UploadAcceptedResponse",

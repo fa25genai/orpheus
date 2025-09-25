@@ -153,7 +153,6 @@ class SlidesApiImpl(BaseSlidesApi):
                 # Save all slides to markdown file
                 async with ApiClient(get_postprocessing_api_config()) as api_client:
                     postprocessor = PostprocessingApi(api_client)
-                    print("store_slideset")
                     try:
                         response = await postprocessor.store_slideset(
                             StoreSlidesetRequest(
@@ -168,7 +167,6 @@ class SlidesApiImpl(BaseSlidesApi):
                     except Exception as e:
                         print(e, file=sys.stderr)
                         await job_manager.fail(prompt_id)
-                    print(response)
                     await job_manager.finish_upload(prompt_id, response.web_url, response.pdf_url)
 
             asyncio.run(store_upload_info())

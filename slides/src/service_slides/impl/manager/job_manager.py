@@ -1,6 +1,6 @@
 import datetime
 from asyncio import Lock
-from threading import Condition
+from asyncio import Condition
 from typing import Dict, Set
 
 
