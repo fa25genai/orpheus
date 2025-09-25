@@ -13,7 +13,16 @@ class JobStatus:
     web_url: str | None
     pdf_url: str | None
 
-    def __init__(self, total: int, achieved: int, error: bool, uploaded: bool, updated_at: datetime.datetime, web_url: str | None, pdf_url: str | None) -> None:
+    def __init__(
+        self,
+        total: int = 0,
+        achieved: int = 0,
+        error: bool = False,
+        uploaded: bool = False,
+        updated_at: datetime.datetime = datetime.datetime(1970, 1, 1),
+        web_url: str | None = None,
+        pdf_url: str | None = None,
+    ) -> None:
         self.total = total
         self.achieved = achieved
         self.error = error
@@ -92,7 +101,7 @@ class JobManager:
                 ) < datetime.datetime.now():
                     to_remove.add(job)
             for job in to_remove:
-                    self.jobs.remove(job)
-                    del self.job_required_counts[job]
-                    del self.job_achieved_counts[job]
-                    del self.job_update_timestamps[job]
+                self.jobs.remove(job)
+                del self.job_required_counts[job]
+                del self.job_achieved_counts[job]
+                del self.job_update_timestamps[job]
