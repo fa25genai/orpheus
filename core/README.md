@@ -37,7 +37,7 @@ poetry run uvicorn src.service_core.main:app --reload
 
 The server will be available at `http://127.0.0.1:8000`.
 
-## Running with Docker
+## Running with Docker (**ONLY CORE SERVICE**)
 
 To build and run the service using Docker, execute the following commands from the root of the `core` directory:
 
@@ -48,3 +48,18 @@ docker run --name core-ai -it --rm -p 8000:8000 service-core
 ```
 
 This will build the image and start the service on port 8000.
+
+## Testing with Docker (**WITH DOCINT INTG.**)
+Open a terminal and run:
+```sh
+docker network create orpheus-network
+cd document-intelligence
+docker build -t docint-app .
+docker run --network orpheus-network --name docint-app -p 25565:25565 docint-app
+```
+In another terminal, run:
+```sh
+cd core
+docker build -t service-core .
+docker run --network orpheus-network --name core-ai -p 8000:8000 service-core
+```
