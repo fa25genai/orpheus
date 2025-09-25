@@ -214,3 +214,7 @@ ui/.next
 ui/node_modules
 ui/next-env.d.ts
 
+
+.DS_Store
+avatar/.DS_Store
+avatar/assets/.DS_Store

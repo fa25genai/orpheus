@@ -38,6 +38,9 @@ DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./app.db")
 IMAGES_OUTPUT_DIR = Path(os.getenv("IMAGES_OUTPUT_DIR", "data/avatars")).resolve()
 IMAGES_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
+VIDEO_ROOT = Path(os.getenv("VIDEO_ROOT", "/data/jobs")).resolve()
+PUBLIC_VIDEOS_BASE = os.getenv("PUBLIC_VIDEOS_BASE", "/videos/jobs")
+VIDEO_ROOT.mkdir(parents=True, exist_ok=True)
 
 # ---------------------------
 # Models
@@ -117,6 +120,7 @@ def get_db() -> Session:
         db.close()
 
 
+
 class Avatar(Base):
     __tablename__ = "avatars"
     avatar_id: Mapped[str] = mapped_column(String(36), primary_key=True)
@@ -139,6 +143,25 @@ class AvatarImage(Base):
 @app.on_event("startup")
 def _startup_create_tables() -> None:
     Base.metadata.create_all(engine)
+
+
+# ---------- Saving helpers ----------
+def job_dir(prompt_id: UUID) -> Path:
+    d = VIDEO_ROOT / str(prompt_id)
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+def slide_paths(prompt_id: UUID, idx_one_based: int) -> tuple[Path, Path]:
+    d = job_dir(prompt_id)
+    temp = d / f".{idx_one_based}.mp4.part"   # render/download into this temp file
+    final = d / f"{idx_one_based}.mp4"        # publish atomically
+    return temp, final
+
+def public_video_url(prompt_id: UUID, idx_one_based: int) -> str:
+    return f"{PUBLIC_VIDEOS_BASE}/{prompt_id}/{idx_one_based}.mp4"
+
+def folder_url(prompt_id: UUID) -> str:
+    return f"{PUBLIC_VIDEOS_BASE}/{prompt_id}/"
 
 
 # ---------------------------
@@ -351,48 +374,90 @@ async def generate_audio(
 
 
 async def generate_video(
-        audio_path: Optional[str] = None,
-        prompt_id: Optional[UUID] = None,
-        course_id: Optional[str] = None,
-        user_profile: Optional[UserProfile] = None,
-        video_counter: Optional[int] = None,
+    audio_path: Optional[str] = None,
+    prompt_id: Optional[UUID] = None,
+    course_id: Optional[str] = None,
+    user_profile: Optional[UserProfile] = None,
+    video_counter: Optional[int] = None,
 ) -> Optional[str]:
     """
-    Assemble the final video using the audio tracks and slide content.
-    Downloads the rendered MP4 file returned by the API and saves it locally.
-    Returns the local file path.
+    Calls the renderer which returns video BYTES, streams them to /data/jobs/<promptId>/.N.mp4.part,
+    then atomically publishes to N.mp4. Returns the absolute final path on success.
     """
-    pid = str(prompt_id)
-    local_filename = f"{pid}_{video_counter}.mp4"
+    if prompt_id is None or video_counter is None:
+        print("generate_video: prompt_id and video_counter are required.")
+        return None
 
-    # Default audio & source if not provided
-    audio_path = audio_path or r"C:\Users\julia\Desktop\Ferienakademie\orpheus\avatar\ditto-talkinghead\example\krusche_voice.wav"
-    source_path = r"C:\Users\julia\Desktop\Ferienakademie\orpheus\avatar\ditto-talkinghead\example\image_michal.png"
+    slide_no = video_counter + 1  # 1-based
+    temp_path, final_path = slide_paths(prompt_id, slide_no)
+    temp_path.parent.mkdir(parents=True, exist_ok=True)
 
-    # Use the new file-upload endpoint
+    # Resolve inputs
+    resolved_audio = audio_path or "/data/example/krusche_voice.wav"
+    source_path = "/data/example/image_michal.png"
+
     video_api_url = os.getenv("GEN_VIDEO", "http://localhost:8000/infer")
 
-    print(f"Sending request to {video_api_url} with audio={audio_path} and source={source_path}")
+    # Prepare multipart files (renderer expects uploads and returns raw MP4 bytes)
+    files = {
+        "audio": ("audio.wav", open(resolved_audio, "rb"), "audio/wav"),
+        "source": ("image.png", open(source_path, "rb"), "image/png"),
+    }
+
+    timeout = httpx.Timeout(connect=5.0, read=600.0, write=60.0, pool=5.0)
 
     try:
-        with open(audio_path, "rb") as audio_file, open(source_path, "rb") as image_file:
-            files = {
-                "audio": ("ditto-talkinghead/example/krusche_voice.wav", audio_file, "audio/wav"),
-                "source": ("ditto-talkinghead/example/image_michal.png", image_file, "image/png"),
-            }
+        async with httpx.AsyncClient(timeout=timeout) as client:
+            req = client.build_request("POST", video_api_url, files=files)
+            async with client.send(req, stream=True) as resp:
+                if resp.status_code >= 400:
+                    body = await resp.aread()
+                    print(f"[generate_video] HTTP {resp.status_code}: {body[:500]!r}")
+                    return None
 
-            response = requests.post(video_api_url, files=files, stream=True)
-            response.raise_for_status()
-            with open(local_filename, "wb") as f:
-                for chunk in response.iter_content(chunk_size=8192):
-                    f.write(chunk)
+                ctype = resp.headers.get("Content-Type", "").lower()
+                if "application/json" in ctype:
+                    # Unexpected here; renderer should return bytes
+                    data = await resp.json()
+                    print(f"[generate_video] Unexpected JSON: {str(data)[:500]}")
+                    return None
 
-        print(f"Video saved as {local_filename}")
-        return local_filename
-
-    except requests.exceptions.RequestException as e:
-        print(f"An error occurred while calling the API: {e}")
+                # Stream to temp file
+                with temp_path.open("wb") as f:
+                    async for chunk in resp.aiter_bytes(chunk_size=1024 * 256):
+                        if chunk:
+                            f.write(chunk)
+                    f.flush()
+                    os.fsync(f.fileno())
+    except Exception as e:
+        print(f"[generate_video] stream/write error: {e!r}")
         return None
+    finally:
+        # close file handles from 'files'
+        for v in files.values():
+            try:
+                v[1].close()
+            except Exception:
+                pass
+
+    # Validate non-empty
+    try:
+        if temp_path.stat().st_size == 0:
+            print("[generate_video] empty file received")
+            return None
+    except OSError as e:
+        print(f"[generate_video] stat failed: {e!r}")
+        return None
+
+    # Atomic publish
+    try:
+        temp_path.replace(final_path)
+    except OSError as e:
+        print(f"[generate_video] publish rename failed: {e!r}")
+        return None
+
+    print(f"[generate_video] OK -> {final_path}")
+    return str(final_path)
 
 
 # TODO: maybe remove return
@@ -496,20 +561,26 @@ def _run_process_generation(payload: "GenerateRequest") -> None:
 )
 async def request_video_generation(payload: GenerateRequest, background: BackgroundTasks, response: Response, request: Request):
     now = _utcnow()
-    # pre-compute where the file will live
-    url = _result_url(payload.promptId)
+
+    # create the per-job output folder now and compute its public URL
+    job_dir(payload.promptId)
+    folder = folder_url(payload.promptId)
+
     expected = _estimate_total_seconds(len(payload.slideMessages))
+    # set resultUrl to the folder so /status points somewhere real
     JOBS[payload.promptId] = Job(
         promptId=payload.promptId,
         status="IN_PROGRESS",
         lastUpdated=now,
-        resultUrl=url,
+        resultUrl=folder,
         startedAt=now,
         expectedDurationSec=expected,
         error=None,
     )
+
     # fire-and-forget
-    background.add_task(_run_process_generation, payload)  # absolute Location per spec
+    background.add_task(_run_process_generation, payload)
+
     base = str(request.base_url).rstrip("/")
     response.headers["Location"] = f"{base}/v1/video/{payload.promptId}/status"
     return GenerationAcceptedResponse(promptId=payload.promptId, createdAt=now)
