@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   weaviate:
     image: cr.weaviate.io/semitechnologies/weaviate:1.32.9
@@ -7,7 +5,7 @@ services:
       - --host
       - 0.0.0.0
       - --port
-      - "8080"
+      - "28947"
       - --scheme
       - http
     environment:
@@ -24,7 +22,7 @@ services:
       DISABLE_TELEMETRY: "true"
 
     ports:
-      - "8080:8080"   # REST/GraphQL
+      - "28947:28947"   # REST/GraphQL
       - "50051:50051" # gRPC
     volumes:
       - weaviate_data:/var/lib/weaviate

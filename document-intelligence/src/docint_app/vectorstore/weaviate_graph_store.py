@@ -48,12 +48,12 @@ class WeaviateError(RuntimeError):
 class WeaviateGraphStore:
     def __init__(
         self,
-        base_url: str = "http://localhost:8080",
+        base_url: str = "http://localhost:28947",
         api_key: Optional[str] = None,
         timeout_s: int = 15,
     ):
         """
-        :param base_url: Weaviate HTTP endpoint (e.g., http://localhost:8080 or http://<host-ip>:8080)
+        :param base_url: Weaviate HTTP endpoint (e.g., http://localhost:28947 or http://<host-ip>:28947)
         :param api_key:  Optional API key (if we enable auth later)
         :param timeout_s: Default request timeout
         """
