@@ -24,6 +24,8 @@ services:
       context: ../ditto-talkinghead
       dockerfile: Dockerfile
     networks: [gpu-core]
+    volumes:
+      - ../ditto-talkinghead/checkpoints:/app/checkpoints
     expose:
       - "8000"  # see docker file in ditto-talkinghead
     healthcheck:
