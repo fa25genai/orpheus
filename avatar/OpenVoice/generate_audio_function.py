@@ -3,6 +3,10 @@ import sys
 from pathlib import Path
 from typing import List, Optional, Literal, Dict
 
+import base64
+import binascii
+import tempfile
+
 import torch
 import nltk
 from fastapi import FastAPI, HTTPException
@@ -173,7 +177,7 @@ class GenerateAudioRequest(BaseModel):
 
 
 class GenerateAudioResponse(BaseModel):
-    audio_paths: List[str]
+    audio_file: str
 
 app = FastAPI(
     title=CFG["server"]["title"],
@@ -255,7 +259,7 @@ def generate_audio(
     *,
     course_id: str,
     user_profile: Optional[UserProfile] = None,
-    voice_file: str,
+    reference_voice_path: Path,
 ) -> List[str]:
     """
     Create per-slide audio files from text using:
@@ -285,11 +289,10 @@ def generate_audio(
 
     tone_color_converter = _load_converter(ckpt_converter, device)
 
-    reference_speaker = _resolve_reference_voice(voice_file, ref_dir)
-    if not reference_speaker.exists():
-        raise HTTPException(status_code=400, detail=f"voice_file not found: {reference_speaker}")
+    if not reference_voice_path.exists():
+        raise HTTPException(status_code=400, detail=f"voice_file not found: {reference_voice_path}")
 
-    target_se, _ = se_extractor.get_se(str(reference_speaker), tone_color_converter, vad=True)
+    target_se, _ = se_extractor.get_se(str(reference_voice_path), tone_color_converter, vad=True)
 
     model = _load_tts(language=language, device=device)
     speaker_ids = model.hps.data.spk2id
@@ -389,6 +392,37 @@ def health():
     }
 
 
+def _decode_b64_audio_to_temp_file(b64_str: str, *, suffix: str = ".mp3") -> Path:
+    if not b64_str:
+        raise HTTPException(status_code=400, detail="voice_mp3_b64 is required.")
+
+    # data URL Präfix abschneiden, falls vorhanden
+    if b64_str.strip().startswith("data:"):
+        try:
+            b64_str = b64_str.split(",", 1)[1]
+        except Exception:
+            raise HTTPException(status_code=400, detail="Invalid data URL for voice_mp3_b64.")
+
+    try:
+        raw = base64.b64decode(b64_str, validate=True)
+    except (binascii.Error, ValueError):
+        raise HTTPException(status_code=400, detail="voice_mp3_b64 is not valid base64.")
+
+    if not raw:
+        raise HTTPException(status_code=400, detail="Decoded voice_mp3_b64 is empty.")
+
+    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
+    try:
+        tmp.write(raw)
+        tmp.flush()
+    finally:
+        tmp.close()
+    return Path(tmp.name)
+
+def _file_to_base64(path: Path) -> str:
+    with open(path, "rb") as f:
+        return base64.b64encode(f.read()).decode("utf-8")
+
 @app.post("/v1/audio/generate", response_model=GenerateAudioResponse)
 def generate_audio_endpoint(req: GenerateAudioRequest):
     slide_texts = req.slide_texts if req.slide_texts is not None else CFG["defaults"].get("slide_texts", [])
@@ -402,18 +436,29 @@ def generate_audio_endpoint(req: GenerateAudioRequest):
     if not voice_file:
         raise HTTPException(status_code=400, detail="voice_file is required (provide in request or config defaults).")
 
+    ref_mp3_path = _decode_b64_audio_to_temp_file(voice_file, suffix=".mp3")
+
     try:
         paths = generate_audio(
             slide_texts=slide_texts,
             course_id=course_id,
             user_profile=req.user_profile,
-            voice_file=voice_file,
+            reference_voice_path=ref_mp3_path,
         )
-        return GenerateAudioResponse(audio_paths=paths)
+        first_path = next((Path(p) for p in paths if p), None)
+        if not first_path or not first_path.exists():
+            raise HTTPException(status_code=500, detail="Audio generation produced no files.")
+        return GenerateAudioResponse(audio_b64=_file_to_base64(first_path))
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        try:
+            if ref_mp3_path.exists():
+                ref_mp3_path.unlink()
+        except Exception:
+            pass
     
 if __name__ == "__main__":
     import uvicorn
