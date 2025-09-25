@@ -24,10 +24,10 @@ def is_black_square(img_bytes, darkness_threshold=30, variance_threshold=15):
 
 def extract_images_grouped(pdf_path):
     """
-    Rückgabe: List[List[dict]]
-      - äußere Liste = Seiten
-      - innere Liste = Bilder auf der Seite
-      - jedes Bild: { "data": base64, "mime_type": "image/..." }
+    Returns: List[List[dict]]
+      - outer list = pages
+      - inner list = images on the page
+      - each image: { "data": base64, "mime_type": "image/..." }
     """
     pdf = fitz.open(pdf_path)
     result = []
