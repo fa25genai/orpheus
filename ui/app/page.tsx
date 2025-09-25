@@ -103,7 +103,7 @@ export default function Home() {
     try {
       const coreResponse: PromptResponse =
         await coreApi.createLectureFromPrompt({
-          promptRequest: {prompt: finalPrompt},
+          promptRequest: {prompt: finalPrompt, courseId: "IN001"},
         });
 
       const promptId = coreResponse.promptId;

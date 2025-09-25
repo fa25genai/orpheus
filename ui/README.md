@@ -22,10 +22,12 @@
 
 ### Generate the api clients with the openapi yaml specifications
 
+Run the following command from the `ui` directory:
+
 1. Generate them for the core
     ```bash
     pnpm exec openapi-generator-cli generate \
-    -i ../core/service_core_v1.yaml \
+    -i ../api/answer_generation_service.yaml \
     -g typescript-fetch \
     -o ./generated-api-clients/core
     ```
