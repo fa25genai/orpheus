@@ -6,10 +6,8 @@ from typing_extensions import Annotated
 from docint_app.apis.docint_api_base import BaseDocintApi
 from docint_app.models.retrieval_response import RetrievalResponse
 from docint_app.models.upload_response import UploadResponse
-from docint_app.services.mock_retrieve_data_for_generation_service import (
-    get_retrieval_service,
-)
-from docint_app.services.mock_upload_pdf_service import get_upload_pdf_service
+from docint_app.services.retrieval_service import get_retrieval_service
+from docint_app.services.pdf_upload_service import get_upload_pdf_service
 
 
 class DocintApiImpl(BaseDocintApi):
@@ -21,7 +19,7 @@ class DocintApiImpl(BaseDocintApi):
     ) -> RetrievalResponse:
         service = get_retrieval_service()
 
-        return await service.get_content(courseId, prompt_query)
+        return await service.search(prompt_query, courseId)
     
     async def uploads_document(
         self,
@@ -30,5 +28,5 @@ class DocintApiImpl(BaseDocintApi):
     ) -> UploadResponse:
         service = get_upload_pdf_service()
         
-        document_id = service.upload_pdf(courseId, body)
+        document_id = await service.upload_pdf(courseId, body)
         return UploadResponse(documentId=document_id)

@@ -377,17 +377,20 @@ class WeaviateGraphStore:
         alpha: float = 0.8,             # weight for text; (1 - alpha) for image
         per_slide_image_agg: str = "max",  # "max" or "mean"
         include_distance: bool = True,
+        similarity_threshold: float = 0.5,  # minimum similarity threshold (0.0 to 1.0)
     ) -> List[Dict[str, Any]]:
         """
         Single 'logical' retrieval with score fusion across two channels:
 
           1) Text ANN on Slide (slideDescription vector)
           2) Image-description ANN on SlideImage (caption vector)
-          3) Normalize both channels (min-max), fuse with weights, pick top-k
-          4) For each chosen slide, fetch ALL images for that slide and assemble
+          3) Normalize both channels (min-max), fuse with weights
+          4) Filter by similarity threshold, then pick top-k
+          5) For each chosen slide, fetch ALL images for that slide and assemble
 
         Returns a list of hits (dicts) with Slide fields + nested images and
         extra keys: distanceText, bestImageDistance, fusedScore.
+        Only slides with fused similarity >= similarity_threshold are returned.
         """
         # --- 1) Text ANN on Slide ---
         where_clause = ""
@@ -486,7 +489,10 @@ class WeaviateGraphStore:
 
         # Rank by fused score desc
         fused.sort(key=lambda x: x[1], reverse=True)
-        top_keys = [k for (k, _) in fused[:k]]
+        
+        # Apply similarity threshold filter before taking top k
+        filtered_fused = [(key, score) for (key, score) in fused if score >= similarity_threshold]
+        top_keys = [k for (k, _) in filtered_fused[:k]]
 
         # --- 4) Assemble: fetch ALL images for each selected slide ---
         out: List[Dict[str, Any]] = []

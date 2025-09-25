@@ -29,7 +29,7 @@ class ImageDescriptionService:
             )
         return self._client
     
-    def get_image_caption(self, base64_string: str) -> str:
+    def _get_image_caption(self, base64_string: str) -> str:
         """
         Generate a caption for a single image from base64 string.
         
@@ -88,7 +88,7 @@ class ImageDescriptionService:
 
             page_out = []
             for img_idx, item in enumerate(page_items, start=1):
-                caption = self.get_image_caption(item["data"])
+                caption = self._get_image_caption(item["data"])
                 page_out.append({
                     "data": item["data"],
                     "caption": caption

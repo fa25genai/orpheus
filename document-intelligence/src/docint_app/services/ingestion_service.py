@@ -41,7 +41,7 @@ class IngestionService:
             course_id: Unique course identifier
             document_id: Unique document identifier
             slide_texts: List of slide texts, index = slide number - 1
-            slide_images: List of lists, each entry is [] or [{data, mime_type, caption}, ...]
+            slide_images: List of lists, each entry is [] or [{data, caption}, ...]
             
         Returns:
             Dict containing ingestion results and statistics
