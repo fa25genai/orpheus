@@ -12,7 +12,7 @@ Output format:
   "Images": [{"image": "...", "description": "..."}]
 }
 """
-from helpers.llm import getLLM  
+from service_core.services.helpers.llm import getLLM  
 import json
 import textwrap
 from typing import Dict, Any, List
@@ -61,7 +61,7 @@ def generate_script(retrieved_content: List[Dict[str, Any]], persona: Dict[str, 
         persona_dict = persona.model_dump()
     else:
         persona_dict = persona
-
+    
     persona_dict['id'] = str(persona_dict['id'])
     #print("Refining lecture content for persona:")
 
