@@ -101,6 +101,7 @@ components:
           example: "Explain the theory of relativity in simple terms."
         courseId:
           type: "string"
+<<<<<<< HEAD
 <<<<<<< HEAD:core/service_core_v1.yaml
           description: "The course id."
           example: "CS001"
@@ -109,6 +110,11 @@ components:
           description: "The identifier of the course for which the prompt is being generated."
           example: "IN001"
 >>>>>>> develop:api/answer_generation_service.yaml
+=======
+          format: "string"
+          description: "The identifier of the course for which the prompt is being generated."
+          example: "IN001"
+>>>>>>> develop
       required:
         - "prompt"
         - "courseId"

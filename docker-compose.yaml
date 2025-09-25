@@ -75,3 +75,6 @@ services:
       
 networks:
   orpheus:
+
+volumes:
+  slides-data:
