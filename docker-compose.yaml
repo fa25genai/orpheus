@@ -56,6 +56,35 @@ services:
       - "25565:25565"
     networks:
       - orpheus
+    depends_on:
+      - docint-weaviate
+
+  docint-weaviate:
+    image: cr.weaviate.io/semitechnologies/weaviate:1.32.9
+    command:
+      - --host
+      - 0.0.0.0
+      - --port
+      - "28947"
+      - --scheme
+      - http
+    environment:
+      AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: "true"
+      PERSISTENCE_DATA_PATH: "/var/lib/weaviate"
+      QUERY_DEFAULTS_LIMIT: "25"
+      CLUSTER_HOSTNAME: "node1"
+      DEFAULT_VECTORIZER_MODULE: "none"
+      ENABLE_API_BASED_MODULES: "false"
+      ENABLE_MODULES: ""
+      DISABLE_TELEMETRY: "true"
+    ports:
+      - "28947:28947"
+      - "50051:50051"
+    volumes:
+      - weaviate_data:/var/lib/weaviate
+    networks:
+      - orpheus
+    restart: unless-stopped
 
 
   core-service:
@@ -72,9 +101,40 @@ services:
     depends_on:
       - docint-service
       - slides-service
+
+  video-assets:
+    build:
+      context: ./avatar/assets
+      dockerfile: Dockerfile
+    volumes:
+      - file_storage:/data
+    networks:
+      - orpheus
+    ports:
+      - "8080:80"
+
+  video-producer:
+    build:
+      context: ./avatar
+      dockerfile: Dockerfile
+    environment:
+      VIDEO_ROOT: "/data/jobs"
+      PUBLIC_VIDEOS_BASE: "/videos/jobs"
+      GEN_AUDIO: "https://gpu.aet.cit.tum.de/avatar/audio/v1/audio/generate"
+      GEN_VIDEO: "https://gpu.aet.cit.tum.de/avatar/video/infer"
+    volumes:
+      - file_storage:/data
+    networks:
+      - orpheus
+    ports:
+      - "9000:9000"
+    depends_on:
+      - video-assets
       
 networks:
   orpheus:
 
 volumes:
   slides-data:
+  file_storage:
+  weaviate_data:
