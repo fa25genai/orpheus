@@ -14,6 +14,7 @@ import GuideCards from "@/components/guide-cards";
 import {PersonaLevel} from "@/types/uploading";
 import VideoPlayer from "@/components/video-player";
 import {Skeleton} from "@/components/ui/skeleton";
+import SlidevEmbed, { SlidevEmbedHandle } from "@/components/slidev-embed";
 import {GenerationStatusResponse as SlidesGenerationStatusResponse} from "@/generated-api-clients/slides";
 import {toast} from "sonner";
 
@@ -23,8 +24,10 @@ export default function Home() {
   const [messages, setMessages] = useState<string[]>([]);
   const [slides, setSlides] = useState<SlidesGenerationStatusResponse>();
   const [avatarData, setAvatarData] = useState<AvatarGenerationStatusReponse>();
+  const [sources, setSources] = useState<string[]>([]);
 
   const bottomRef = useRef<HTMLDivElement>(null);
+  const slidevRef = useRef<SlidevEmbedHandle>(null);
 
   async function getAvatar(promptId: string) {
     try {
@@ -134,6 +137,37 @@ export default function Home() {
     setPrompt("");
   }
 
+  async function fetchVideoList(baseUrl: string): Promise<string[]> {
+  const sources: string[] = [];
+  let index = 1;
+
+  while (true) {
+    const url = `${baseUrl}${index}.mp4`;
+    try {
+      const res = await fetch(url, { method: "HEAD" });
+      if (!res.ok) break;
+      sources.push(url);
+      index++;
+    } catch {
+      break;
+    }
+  }
+
+  return sources;
+}
+
+useEffect(() => {
+      if (!avatarData?.resultUrl) return; // wait until we have a URL
+    console.log("Fetching video list...");
+    async function loadVideos() {
+        // setSources(await fetchVideoList(avatarData?.resultUrl ?? ""));
+        // http://192.168.137.1:8080/videos
+         const list = await fetchVideoList(avatarData?.resultUrl + "/");
+    setSources(list);
+    }
+    loadVideos();
+}, [avatarData]);
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({behavior: "smooth"});
   }, [messages, avatarData, slides]);
@@ -163,7 +197,13 @@ export default function Home() {
       );
 
     if (avatarData.status === "DONE") {
-      return <VideoPlayer src={avatarData.resultUrl ?? ""} />;
+      return <VideoPlayer
+          sources={sources}
+          onBeforeNext={() => {
+              console.log("next slide")
+              slidevRef.current?.next()
+          }}
+      />;
     }
 
     return (
@@ -188,14 +228,8 @@ export default function Home() {
     if (slides.status === "DONE") {
       return (
         <Card className="p-8 bg-card border-border md:col-span-2">
-          <iframe
-            width="100%"
-            height="100%"
-            src="http://localhost:3030"
-            className="w-full h-98 pointer-events-none"
-            title="Generated Slides"
-            loading="lazy"
-          />
+            {/* URL is for now hardcoded. It will be replaced with the actual URL when the nginx server is integrated. */}
+            <SlidevEmbed baseUrl="http://172.16.9.217:8080" className="h-98" ref={slidevRef} />
         </Card>
       );
     }
@@ -272,6 +306,11 @@ export default function Home() {
                 <AvatarSection avatarData={avatarData} />
                 <SlidesSection slides={slides} />
               </div>
+                {/* For testing purposes of the slide change */}
+                {/*<div className="flex gap-2">*/}
+                {/*    <Button onClick={() => slidevRef.current?.next()}>Next</Button>*/}
+                {/*    <Button onClick={() => slidevRef.current?.prev()}>Prev</Button>*/}
+                {/*</div>*/}
             </div>
           ))}
           <div ref={bottomRef}></div>

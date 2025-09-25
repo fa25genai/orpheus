@@ -110,7 +110,7 @@ ${content}
                 Template(
                     """---
 layout: image-left
-image: ${image}
+image: assets/${image}
 class: ${class_name}
 ---
 
@@ -128,7 +128,7 @@ ${content}
                 Template(
                     """---
 layout: image-right
-image: ${image}
+image: assets/${image}
 class: ${class_name}
 ---
 
@@ -146,7 +146,7 @@ ${content}
                 Template(
                     """---
 layout: image
-image: ${image}
+image: assets/${image}
 backgroundSize: ${background_size}
 ---
 """
@@ -213,14 +213,11 @@ layout: intro
 # ${title}
 
 ${description}
-
-_Author: ${author}_
 """
                 ),
                 {
                     "title": "Presentation title",
                     "description": "Short description",
-                    "author": "Author name(s)",
                 },
             ),
             "none": LayoutTemplate(

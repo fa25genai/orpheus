@@ -1,12 +1,18 @@
-import {useRef, useState, useEffect} from "react";
+import {useRef, useState, useEffect, useCallback} from "react";
 import {Card} from "@/components/ui/card";
 import {Button} from "@/components/ui/button";
 import {Pause, Play, Volume2} from "lucide-react";
 
-export default function CustomVideoPlayer({src}: {src: string}) {
+type CustomVideoPlayerProps = {
+    sources: string[]
+    onBeforeNext?: (index: number) => void;
+}
+
+export default function CustomVideoPlayer({ sources, onBeforeNext }: CustomVideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(true);
   const [showControls, setShowControls] = useState(false);
+  const [currentIndex, setCurrentIndex] = useState(0);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const togglePlay = () => {
@@ -35,11 +41,33 @@ export default function CustomVideoPlayer({src}: {src: string}) {
     timeoutRef.current = setTimeout(() => setShowControls(false), 2000);
   };
 
+  const handleEnded = useCallback(() => {
+      if (currentIndex < sources.length - 1) {
+          onBeforeNext?.(currentIndex + 1)
+          setCurrentIndex((prev) => prev + 1)
+          setIsPlaying(true);
+      } else {
+          setIsPlaying(false);
+      }
+  }, [currentIndex, sources.length, onBeforeNext]);
+
+
+
   useEffect(() => {
     return () => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
   }, []);
+
+    useEffect(() => {
+        const video = videoRef.current;
+        if (!video) return;
+
+        video.load()
+        if (isPlaying) {
+            video.play()
+        }
+    }, [currentIndex]);
 
   return (
     <Card
@@ -55,9 +83,13 @@ export default function CustomVideoPlayer({src}: {src: string}) {
         preload="none"
         autoPlay
         muted
+        onEnded={handleEnded}
       >
-        <source src={src} type="video/mp4" />
-        Your browser does not support the video tag.
+          {sources[currentIndex] ? (
+    <source src={sources[currentIndex]} type="video/mp4" />
+  ) : null}
+        {/*<source src={sources[currentIndex]} type="video/mp4" />*/}
+        {/*Your browser does not support the video tag.*/}
       </video>
 
       {/* Overlay controls */}

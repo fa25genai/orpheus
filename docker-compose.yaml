@@ -5,23 +5,25 @@ services:
       context: ./slides
       dockerfile: Dockerfile
     env_file:
-      - ./slides/.env
+      - ./slides/.env # ask Krasi
     ports:
       - "30606:30606"
     networks:
       - orpheus
+
   slides-postprocessing:
     build:
       context: ./slides/postprocessing
       dockerfile: Dockerfile
     env_file:
-      - ./slides/postprocessing/.env
+      - ./slides/postprocessing/.env # ask Krasi
     ports:
       - "30607:30607"
     networks:
       - orpheus
     volumes:
       - slides-data:/etc/orpheus/slides/storage
+
   slides-delivery:
     build:
       context: ./slides/delivery
@@ -51,20 +53,49 @@ services:
       context: ./document-intelligence
       dockerfile: Dockerfile
     env_file:
-      - ./document-intelligence/.env
+      - ./document-intelligence/.env # ask Krasi
     ports:
       - "25565:25565"
     networks:
       - orpheus
+    depends_on:
+      - docint-weaviate
+
+  docint-weaviate:
+    image: cr.weaviate.io/semitechnologies/weaviate:1.32.9
+    command:
+      - --host
+      - 0.0.0.0
+      - --port
+      - "28947"
+      - --scheme
+      - http
+    environment:
+      AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: "true"
+      PERSISTENCE_DATA_PATH: "/var/lib/weaviate"
+      QUERY_DEFAULTS_LIMIT: "25"
+      CLUSTER_HOSTNAME: "node1"
+      DEFAULT_VECTORIZER_MODULE: "none"
+      ENABLE_API_BASED_MODULES: "false"
+      ENABLE_MODULES: ""
+      DISABLE_TELEMETRY: "true"
+    ports:
+      - "28947:28947"
+      - "50051:50051"
+    volumes:
+      - weaviate_data:/var/lib/weaviate
+    networks:
+      - orpheus
+    restart: unless-stopped
 
 
   core-service:
     container_name: core
-    build: 
+    build:
       context: ./core
       dockerfile: Dockerfile
     env_file:
-      - ./core/.env
+      - ./core/.env # ask Krasi
     ports:
       - "8000:8000"
     networks:
@@ -72,9 +103,41 @@ services:
     depends_on:
       - docint-service
       - slides-service
-      
+      - avatar-video-producer
+
+  avatar-delivery:
+    build:
+      context: ./avatar/assets
+      dockerfile: Dockerfile
+    volumes:
+      - avatar_file_storage:/data
+    networks:
+      - orpheus
+    ports:
+      - "21234:80"
+
+  avatar-video-producer:
+    build:
+      context: ./avatar
+      dockerfile: Dockerfile
+    environment:
+      VIDEO_ROOT: "/data/jobs"
+      PUBLIC_VIDEOS_BASE: "/videos/jobs"
+      GEN_AUDIO: "https://gpu.aet.cit.tum.de/avatar/audio/v1/audio/generate"
+      GEN_VIDEO: "https://gpu.aet.cit.tum.de/avatar/video/infer"
+    volumes:
+      - avatar_file_storage:/data
+    networks:
+      - orpheus
+    expose:
+      - "80:9000"
+    depends_on:
+      - avatar-delivery
+
 networks:
-  orpheus:
+  orpheus: {}
 
 volumes:
   slides-data:
+  avatar_file_storage: {}
+  weaviate_data:

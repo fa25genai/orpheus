@@ -12,14 +12,11 @@ from service_slides.models.request_slide_generation_request_assets_inner import 
 
 def create_layout_parser(layout_template: LayoutTemplate) -> PydanticOutputParser[Any]:
     """Create a dynamic Pydantic parser for a specific layout template."""
-    # Create fields for the Pydantic model based on the template schema
     fields = {}
     for field_name, field_description in layout_template.schema.items():
         fields[field_name] = (str, Field(description=field_description))
 
-    # Dynamically create the Pydantic model
     DynamicSlideModel = create_model(f"{layout_template.name.title()}SlideModel", **fields)  # type: ignore
-
     return PydanticOutputParser(pydantic_object=DynamicSlideModel)
 
 
@@ -32,78 +29,90 @@ def generate_single_slide_content(
 ) -> str:
     """Generate a single slide from text using structured output."""
 
-    # Create parser for this specific layout
     parser = create_layout_parser(layout_template)
 
     system = SystemMessagePromptTemplate.from_template(
         """
-        You are a helpful assistant that creates concise and engaging presentation slides.
+You write student-friendly slides for sli.dev.
 
-        The slide should be clear and to the point.
-        Use bullet points where appropriate for content fields.
+Goal
+- Produce clear, learnable content: one main idea per slide, supported by compact evidence (bullets/table/code).
+- Keep cognitive load low: simple wording, short lines, logical order.
 
-        We are using sli.dev for slide rendering.
-        
-        You must return structured JSON data that will be used to populate a slide template.
-        The JSON must conform to the following schema:
-        {format_instructions}
-        """
+Hard rules
+- Return JSON only (no prose, no code fences around JSON) that matches the schema below.
+- Use ONLY the given text; do not invent facts, numbers, images, or URLs.
+- Slides must be self-contained (understandable without other slides).
+- Preserve exact numbers, terms, order, and code formatting.
+- If a field has no support in the text, set it to "".
+
+Markdown (inside content fields)
+- Bullets start with "- " (3–6 bullets ideal; one idea each). Sub-points allowed with two spaces then "- ".
+- Inline code with backticks.
+- Code blocks ONLY if present; keep whitespace; add language tag if known (```python ...```).
+- Tables: reproduce fully as Markdown (no dropped rows/columns).
+- Light emphasis (**bold**/*italics*) is ok for key terms present in the text.
+
+Titles (when a title/headline field exists)
+- Short, assertive, learner-facing (≈6–12 words), no trailing period.
+
+Images
+- If the text names an image, copy the filename EXACTLY as written (no prefixes/suffixes/paths). Otherwise use "".
+
+Schema:
+{format_instructions}
+"""
     )
 
     user = ChatPromptTemplate.from_template(
         """
-        Create slide content based on the following text:
-        {text}
-        
-        This is slide number {slide_number}.
-        
-        Layout: {layout_name}
-        Layout description: Each field in the output should contain appropriate content for a {layout_name} slide.
-        
-        Template schema explanation:
-        {schema_explanation}
-        """
+Create content for a {layout_name} slide that helps a student learn the idea quickly.
+
+Use only this text:
+<BEGIN_TEXT>
+{text}
+<END_TEXT>
+
+How to write it
+- Use the fields as they are intended for a {layout_name} slide (see purposes below).
+- Prefer bullets over long prose; group example with its explanation.
+- Keep item order and wording from the text when listing steps/ranks/values.
+- Define terms only if the definition is in the text; do not add new information.
+- If a field is not applicable or not supported by the text, set it to "".
+
+Field purposes:
+{schema_explanation}
+
+Return JSON only.
+"""
     )
 
     prompt = ChatPromptTemplate.from_messages([system, user])
 
-    # Create schema explanation
     schema_explanation = "\n".join(
         [f"- {field}: {description}" for field, description in layout_template.schema.items()]
     )
 
     input_data = {
         "text": text,
-        "slide_number": slide_number,
         "layout_name": layout_template.name,
         "schema_explanation": schema_explanation,
         "format_instructions": parser.get_format_instructions(),
     }
 
-    # Get structured output from LLM
-    # Since we provide a parser, invoke_llm will return a parsed Pydantic model
     structured_data = invoke_llm(model, prompt, input_data, parser)
 
-    # Extract values from the Pydantic model
-    # Since the parser was successful, we can assume it's a valid model
     template_vars: Dict[str, Any] = {}
-
-    # Use model_dump() for Pydantic v2 or dict() for v1
     if hasattr(structured_data, "model_dump"):
-        # Pydantic v2
         template_vars = structured_data.model_dump()
     elif hasattr(structured_data, "dict"):
-        # Pydantic v1
         template_vars = structured_data.dict()
     else:
-        # Fallback for dynamic models - use __dict__
         template_vars = structured_data.__dict__
 
-    # Generate the final slide using the template
     try:
         final_slide = layout_template.template.substitute(**template_vars)
     except KeyError:
-        # Try with safe_substitute for missing variables
         final_slide = layout_template.template.safe_substitute(**template_vars)
 
     return str(final_slide)

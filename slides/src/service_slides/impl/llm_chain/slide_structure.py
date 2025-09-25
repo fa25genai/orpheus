@@ -1,69 +1,125 @@
+from typing import List, Any, cast
 from langchain_core.language_models import BaseLanguageModel
-from langchain_core.messages import SystemMessage, HumanMessage
 from langchain_core.output_parsers import PydanticOutputParser
-from langchain_core.prompts import ChatPromptTemplate, SystemMessagePromptTemplate
+from langchain_core.prompts import (
+    ChatPromptTemplate,
+    SystemMessagePromptTemplate,
+    HumanMessagePromptTemplate,
+)
 from pydantic import BaseModel, Field
-from service_slides.impl.manager.layout_manager import LayoutDescription
+
 from service_slides.impl.llm_chain.shared_llm import invoke_llm
 from service_slides.models.slide_item import SlideItem
 from service_slides.models.slide_structure import SlideStructure
-from typing import List, Any, cast
+from service_slides.impl.manager.layout_manager import LayoutDescription
 
 
 class DetailedSlideStructureItem(BaseModel):
     content: str = Field(
-        description="Detailed description of what content the slide should contain. This must contain all relevant information for the slide. It does not have to follow a specific format and may be a human readable description. It will later be used to create the specific slide contents. It should contain details for the layout as well as the relevant original section from the lecture outline."
+        description=(
+            "A self-contained chunk of the lecture script that could serve as the basis for a slide. "
+            "Keep the original information intact (no omissions, no additions). "
+            "Begin with a 'Title:' line that summarizes the chunk, followed by bullets or compact sentences. "
+            "Preserve tables and code exactly as they appear in the script. "
+            "Each chunk should represent one coherent idea and stand alone without referencing other chunks."
+        )
     )
     layout: str = Field(
-        description="Layout name to use for that slide. Must be the exact name of one of the available slide layouts."
+        description=(
+            "The name of the layout template to use for this slide. Choose the best fitting layout from the provided list of available layouts. "
+            "Do not invent layouts, only pick one that is guaranteed to exist."
+        )
     )
 
 
 class DetailedSlideStructure(BaseModel):
     items: List[DetailedSlideStructureItem] = Field(
-        default=[], description="List of the slides which are used to support the lecture"
+        default=[],
+        description="Ordered list of slide candidates representing the lecture script split into logical chunks.",
     )
 
     def as_simple_slide_structure(self) -> SlideStructure:
         return SlideStructure(
-            pages=list(map(lambda item: SlideItem(content=item.content), self.items)),
+            pages=[SlideItem(content=item.content) for item in self.items],
         )
 
 
 async def generate_slide_structure(
-    model: BaseLanguageModel[Any], lecture_script: str, available_layouts: List[LayoutDescription]
+    model: BaseLanguageModel[Any],
+    lecture_script: str,
+    available_layouts: List[LayoutDescription],
 ) -> DetailedSlideStructure:
-    prompt = ChatPromptTemplate.from_messages(
+    """
+    Intermediate goal: split the lecture script into logical chunks
+    that can serve as candidate slides. No optimization beyond chunking.
+    """
+
+    layouts_description = "\n".join(
         [
-            SystemMessagePromptTemplate.from_template(
-                "You must *only* return JSON, **no prose**, in exactly this shape and conforming to the schema definition:\n{format_instructions}",
-            ),
-            SystemMessage(
-                "You are a lecturer tasked with creating a slideset for a lecture. The lecture is already prepared with all relevant contents, examples and exercises. The slideset must not be empty. This is the outline:"
-            ),
-            HumanMessage(lecture_script),
-            SystemMessage(
-                "Create the sequence of slides, that should be used for this slideset. Make sure every part of the lecture outline is kept in at least one slides. You must not add any content of your own. If a specific slide should use any asset, do indicate this."
-            ),
-            SystemMessage("The available slide layouts are as follows: "),
-            SystemMessage(
-                list(
-                    map(
-                        lambda layout: f"Name: {layout.name} ; description: {layout.description}",
-                        available_layouts,
-                    )
-                )
-            ),
+            f"- Name: '{layout.name}', Description: {layout.description}"
+            for layout in available_layouts
         ]
     )
 
     parser = PydanticOutputParser(pydantic_object=DetailedSlideStructure)
 
-    detailed_structure = invoke_llm(
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            SystemMessagePromptTemplate.from_template(
+                """
+You are a careful academic slide outliner. Your single job is to split one lecture script
+into clear, standalone chunks that map 1:1 to slides.
+
+Write in a natural, direct style. Follow these simple rules:
+• Stay faithful to the script: never add, remove, or change facts, numbers, examples, or wording beyond light condensation.
+• Segment by idea (one coherent idea per chunk). Prefer short, meaningful segments over long, mixed ones.
+• Start each chunk with "Title:" (a short, assertive headline derived from the text), then bullets or compact sentences.
+• Keep the original order of ideas.
+• If the script poses a question and later gives its answer, make them two separate chunks placed consecutively.
+• Keep lists/tables/code intact within a single chunk. Reproduce tables as-is (markdown) and code verbatim.
+• Each chunk must be self-contained—no cross-references such as “as above/as next slide”.
+• Choose a layout from the provided list. If unsure, select the most general content layout. Do not invent layout names.
+• Aim for concise, readable content suitable for a slide and voiceover (roughly 60–140 words if prose; lists are fine).
+• If an image or asset is mentioned in the script text, keep that mention inside the relevant chunk; do not invent assets.
+
+Available layouts:
+{layouts_description}
+""".strip()
+            ),
+            HumanMessagePromptTemplate.from_template(
+                """
+Lecture script:
+
+{lecture_script}
+
+Split this script into an ordered list of standalone chunks.
+Each chunk must include a 'Title:' line and the full content needed for that slide,
+and must be assigned a valid layout name from the list above.
+""".strip()
+            ),
+            SystemMessagePromptTemplate.from_template(
+                """
+Return JSON ONLY, matching this schema exactly:
+{format_instructions}
+""".strip()
+            ),
+        ]
+    )
+
+    result = invoke_llm(
         model=model,
         prompt=prompt,
-        input_data={"format_instructions": parser.get_format_instructions()},
+        input_data={
+            "layouts_description": layouts_description,
+            "lecture_script": lecture_script,
+            "format_instructions": parser.get_format_instructions(),
+        },
         parser=parser,
     )
 
-    return cast(DetailedSlideStructure, detailed_structure)
+    # Defensive: if model forgets layout, assign default
+    for item in result.items:
+        if not item.layout.strip():
+            item.layout = "default"
+
+    return cast(DetailedSlideStructure, result)
