@@ -110,7 +110,7 @@ ${content}
                 Template(
                     """---
 layout: image-left
-image: asset/${image}
+image: assets/${image}
 class: ${class_name}
 ---
 
@@ -128,7 +128,7 @@ ${content}
                 Template(
                     """---
 layout: image-right
-image: asset/${image}
+image: assets/${image}
 class: ${class_name}
 ---
 
@@ -146,7 +146,7 @@ ${content}
                 Template(
                     """---
 layout: image
-image: asset/${image}
+image: assets/${image}
 backgroundSize: ${background_size}
 ---
 """
