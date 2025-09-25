@@ -19,11 +19,11 @@ const SlidevEmbed = forwardRef<SlidevEmbedHandle, SlidevEmbedProps>(
   ({ baseUrl, className }, ref) => {
     const iframeRef = useRef<HTMLIFrameElement | null>(null);
 
-    const post = (msg: any) => {
+    const post = (msg: SlideMessage) => {
       iframeRef.current?.contentWindow?.postMessage(msg, baseUrl);
     };
 
-    const createMessage  = (data: any)=> {
+    const createMessage  = (data: SlideMessageData) : SlideMessage => {
         return {
             appId: "slidev",
             data: data

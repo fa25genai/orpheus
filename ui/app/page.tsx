@@ -190,6 +190,7 @@ export default function Home() {
     if (slides.status === "DONE") {
       return (
         <Card className="p-8 bg-card border-border md:col-span-2">
+            {/* URL is for now hardcoded. It will be replaced with the actual URL when the nginx server is integrated. */}
             <SlidevEmbed baseUrl="http://172.16.9.217:8080" className="h-98" ref={slidevRef} />
         </Card>
       );
