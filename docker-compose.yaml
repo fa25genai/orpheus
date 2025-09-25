@@ -10,6 +10,7 @@ services:
       - "30606:30606"
     networks:
       - orpheus
+
   slides-postprocessing:
     build:
       context: ./slides/postprocessing
@@ -22,6 +23,7 @@ services:
       - orpheus
     volumes:
       - slides-data:/etc/orpheus/slides/storage
+
   slides-delivery:
     build:
       context: ./slides/delivery
@@ -89,7 +91,7 @@ services:
 
   core-service:
     container_name: core
-    build: 
+    build:
       context: ./core
       dockerfile: Dockerfile
     env_file:
@@ -101,19 +103,20 @@ services:
     depends_on:
       - docint-service
       - slides-service
+      - avatar-video-producer
 
-  video-assets:
+  avatar-delivery:
     build:
       context: ./avatar/assets
       dockerfile: Dockerfile
     volumes:
-      - file_storage:/data
+      - avatar_file_storage:/data
     networks:
       - orpheus
     ports:
-      - "8080:80"
+      - "21234:80"
 
-  video-producer:
+  avatar-video-producer:
     build:
       context: ./avatar
       dockerfile: Dockerfile
@@ -123,18 +126,18 @@ services:
       GEN_AUDIO: "https://gpu.aet.cit.tum.de/avatar/audio/v1/audio/generate"
       GEN_VIDEO: "https://gpu.aet.cit.tum.de/avatar/video/infer"
     volumes:
-      - file_storage:/data
+      - avatar_file_storage:/data
     networks:
       - orpheus
-    ports:
-      - "9000:9000"
+    expose:
+      - "80:9000"
     depends_on:
-      - video-assets
-      
+      - avatar-delivery
+
 networks:
-  orpheus:
+  orpheus: {}
 
 volumes:
   slides-data:
-  file_storage:
+  avatar_file_storage: {}
   weaviate_data:
