@@ -40,6 +40,8 @@ WORKDIR /app
 # TODO: To support multiple avatars, we can not rely on this COPY command to copy the example files into the image.
 COPY . /app/
 
+RUN pip install --no-cache-dir python-multipart
+
 # Expose the port the API server will run on
 EXPOSE 8000
 

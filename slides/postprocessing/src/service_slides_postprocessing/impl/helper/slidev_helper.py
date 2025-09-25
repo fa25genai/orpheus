@@ -1,4 +1,7 @@
+import logging
 import subprocess
+
+_log = logging.getLogger("slidev")
 
 
 class SlidevHelper:
@@ -19,8 +22,10 @@ class SlidevHelper:
             "--base",
             base_path,
         ]
+        _log.debug("Invoking slidev command: %s", " ".join(cmd))
         return subprocess.run(cmd, cwd=work_dir).returncode == 0
 
     def export_pdf(self, work_dir: str, source_path: str, output_file: str) -> bool:
         cmd = ["slidev", "export", source_path, "--output", output_file]
+        _log.debug("Invoking slidev command: %s", " ".join(cmd))
         return subprocess.run(cmd, cwd=work_dir).returncode == 0

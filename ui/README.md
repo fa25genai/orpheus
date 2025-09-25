@@ -24,29 +24,35 @@
 
 Run the following command from the `ui` directory:
 
-1. Generate them for the core
+1. Setup the openapi-generator-cli
+    ```bash
+    pnpm add -D @openapitools/openapi-generator-cli -g
+    openapi-generator-cli version #to check your version
+    ```
+
+2. Generate them for the core
     ```bash
     pnpm exec openapi-generator-cli generate \
     -i ../api/answer_generation_service.yaml \
     -g typescript-fetch \
     -o ./generated-api-clients/core
     ```
-2. Generate them for the avatar
+3. Generate them for the avatar
     ```bash
     pnpm exec openapi-generator-cli generate \
     -i ../api/avatar_generation_service.yaml \
     -g typescript-fetch \
     -o ./generated-api-clients/avatar
     ```
-3. Generate them for slides
+4. Generate them for slides
     ```bash
     pnpm exec openapi-generator-cli generate \
-    -i ../slides/service_slides_v1.yaml \
+    -i ../api/slide_generation_service.yaml \
     -g typescript-fetch \
     -o ./generated-api-clients/slides
     ```
 
-4. Generate them for document-intelligence
+5. Generate them for document-intelligence
     ```bash
     pnpm exec openapi-generator-cli generate \
     -i ../document-intelligence/service_document-intelligence_v1.yaml \
