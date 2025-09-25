@@ -1,4 +1,5 @@
 import asyncio
+
 import requests
 from datetime import datetime, timezone
 from typing import List, Optional, Literal, Dict, Tuple, Union
@@ -310,25 +311,48 @@ def _eta_seconds(job: Job) -> int:
 # Fake pipeline
 # ---------------------------
 
-async def generate_audio(slide_text: str, course_id: str, prompt_id: UUID, user_profile: UserProfile, audio_counter: int) -> str:
+async def generate_audio(
+        slide_text: Optional[str] = "Hello students! I want you to drink coffe.",
+        course_id: Optional[str] = "course_123",
+        voice_sample: str = r"C:\Users\julia\Desktop\Ferienakademie\orpheus\avatar\OpenVoice\kursche_voice.mp3",
+        prompt_id: Optional[UUID] = "default123",
+        user_profile: Optional[UserProfile] = None,
+        audio_counter: Optional[int] = 5) -> str:
     """
     Create per-slide audio files from text.
     Returns a list of file paths (one per slide).
     """
-    pid = str(prompt_id)
-    audio_path = f"/tmp/{pid}_{audio_counter}.wav"
-    # TODO: generate real audio in OpenVoice container and save it in the mentioned path
-    # use slide_text, course_id, prompt_id and user_profil for this
+    audio_api_url = os.getenv("GEN_AUDIO", "http://localhost:8000/v1/audio/generate")
+    timeout = httpx.Timeout(connect=5.0, read=120.0, write=30.0, pool=5.0)
 
-    # hard_code
-    return f"/data/example/krusche_voice.wav"
+    output_wav = f"blabla_{audio_counter}.wav"
 
-    # return audio_path
+    try:
+        async with httpx.AsyncClient(timeout=timeout) as client:
+            with open(voice_sample, "rb") as f:
+                # slide_text as simple form field, voice file as file field
+                data = {"slide_text": slide_text}
+                files = {"voice_file": (os.path.basename(voice_sample), f, "audio/mpeg")}
+
+                resp = await client.post(audio_api_url, data=data, files=files)
+                resp.raise_for_status()
+
+        # assume API returns WAV bytes directly
+        Path(output_wav).write_bytes(resp.content)
+        print(f"[generate_audio] OK -> saved to {output_wav}")
+        return output_wav
+
+    except httpx.HTTPStatusError as e:
+        print(f"[generate_audio] HTTP {e.response.status_code}: {e.response.text[:200]}")
+        return None
+    except httpx.RequestError as e:
+        print(f"[generate_audio] Request error: {e}")
+        return None
 
 
 async def generate_video(
         audio_path: Optional[str] = None,
-        prompt_id: UUID = None,
+        prompt_id: Optional[UUID] = None,
         course_id: Optional[str] = None,
         user_profile: Optional[UserProfile] = None,
         video_counter: Optional[int] = None,
