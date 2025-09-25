@@ -1,6 +1,6 @@
 openapi: 3.1.0
 info:
-  title: Document Intelligence API
+  title: Lecture Ingestion Service API
   version: "0.1.0"
   description: |-
     API for the Orpheus document intelligence orchestration.
