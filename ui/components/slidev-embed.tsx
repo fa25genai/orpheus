@@ -20,8 +20,6 @@ const SlidevEmbed = forwardRef<SlidevEmbedHandle, SlidevEmbedProps>(
     const iframeRef = useRef<HTMLIFrameElement | null>(null);
 
     const post = (msg: any) => {
-        console.log("sending message")
-        console.log(msg)
       iframeRef.current?.contentWindow?.postMessage(msg, baseUrl);
     };
 
@@ -53,8 +51,7 @@ const SlidevEmbed = forwardRef<SlidevEmbedHandle, SlidevEmbedProps>(
         <iframe
           ref={iframeRef}
           src={baseUrl}
-          className="w-full h-[600px] rounded-2xl border-0 pointer-events-none pointer-none"
-            onLoad={() => console.log("Iframe loaded, ready to post messages!")} // Add this for debugging
+          className="w-full h-[600px] rounded-2xl border-0 pointer-events-none"
         />
       </Card>
     );
