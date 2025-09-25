@@ -66,25 +66,25 @@ components:
           example: "a1b2c3d4-e5f6-7890-1234-567890abcdef"
         role:
           type: "string"
-          enum: ["student", "instructor"]
+          enum: [ "student", "instructor" ]
         language:
           type: "string"
-          enum: ["german", "english"]
+          enum: [ "german", "english" ]
         preferences:
           type: "object"
           properties:
             answerLength:
               type: "string"
-              enum: ["short", "medium", "long"]
+              enum: [ "short", "medium", "long" ]
             languageLevel:
               type: "string"
-              enum: ["basic", "intermediate", "advanced"]
+              enum: [ "basic", "intermediate", "advanced" ]
             expertiseLevel:
               type: "string"
-              enum: ["beginner", "intermediate", "advanced", "expert"]
+              enum: [ "beginner", "intermediate", "advanced", "expert" ]
             includePictures:
               type: "string"
-              enum: ["none", "few", "many"]
+              enum: [ "none", "few", "many" ]
         enrolledCourses:
           type: "array"
           items:
@@ -101,20 +101,9 @@ components:
           example: "Explain the theory of relativity in simple terms."
         courseId:
           type: "string"
-<<<<<<< HEAD
-<<<<<<< HEAD:core/service_core_v1.yaml
-          description: "The course id."
-          example: "CS001"
-=======
           format: "string"
           description: "The identifier of the course for which the prompt is being generated."
           example: "IN001"
->>>>>>> develop:api/answer_generation_service.yaml
-=======
-          format: "string"
-          description: "The identifier of the course for which the prompt is being generated."
-          example: "IN001"
->>>>>>> develop
       required:
         - "prompt"
         - "courseId"
