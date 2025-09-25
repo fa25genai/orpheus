@@ -117,7 +117,7 @@ def generate_script_llm(retrieved_content: List[Dict[str, Any]], persona: Dict[s
                 raise RuntimeError(f"Failed to get valid response from LLM after {max_retries} attempts: {e}")
             continue
 
-def generate_script(retrieved_content: List[Dict[str, Any]], persona: Dict[str, Any]):
+def generate_script(retrieved_content: List[Dict[str, Any]], persona: Dict[str, Any], courseId: str, promptId: str):
     
     retrieved_content = convert_json_structure(retrieved_content)
     
@@ -147,6 +147,8 @@ def generate_script(retrieved_content: List[Dict[str, Any]], persona: Dict[str, 
             print("asset:", asset)
             if 'name' in asset and asset['name'] in asset_lookup:
                 asset.update(asset_lookup[asset['name']])
-
+    generated_script['persona'] = persona
+    generated_script['courseId'] = courseId
+    generated_script["promptId"] = promptId
     print("\n\nFinal Generated Script with Assets:", json.dumps(generated_script, indent=2))
     return generated_script
