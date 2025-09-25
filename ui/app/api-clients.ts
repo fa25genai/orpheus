@@ -14,7 +14,7 @@ import {
 
 export const coreApi = new CoreApi(
   new Configuration({
-    basePath: "http://localhost:8000",
+    basePath: "http://localhost:8080",
   })
 );
 

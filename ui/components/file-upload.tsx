@@ -49,6 +49,28 @@ export function FileUpload({
     }
   }
 
+  async function uploadAvatar(file: File, fileId: string) {
+    try {
+      //TODO: call function to upload avatar
+    } catch (error) {
+      console.error("Upload failed:", error);
+      setFiles((prev) =>
+        prev.map((f) => (f.id === fileId ? {...f, status: "error"} : f))
+      );
+    }
+  }
+
+  async function uploadAudio(file: File, fileId: string) {
+    try {
+      //TODO: call function to upload audio
+    } catch (error) {
+      console.error("Upload failed:", error);
+      setFiles((prev) =>
+        prev.map((f) => (f.id === fileId ? {...f, status: "error"} : f))
+      );
+    }
+  }
+
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return "0 Bytes";
     const k = 1024;
@@ -81,7 +103,7 @@ export function FileUpload({
         }
 
         const uploadedFile: UploadedFile = {
-          id: Math.random().toString(36).slice(2),
+          id: crypto.randomUUID(),
           name: file.name,
           size: file.size,
           type: file.type,
@@ -90,7 +112,9 @@ export function FileUpload({
         };
 
         newFiles.push(uploadedFile);
-        uploadSlides(file, uploadedFile.id); // ✅ pass the actual File + id
+        if (file.type.startsWith("image/")) uploadAvatar(file, uploadedFile.id);
+        if (file.type.startsWith("application/pdf")) uploadSlides(file, uploadedFile.id);
+        if (file.type.startsWith("audio/")) uploadAudio(file, uploadedFile.id);
       });
 
       if (newFiles.length > 0) {

@@ -15,6 +15,7 @@ import {PersonaLevel} from "@/types/uploading";
 import VideoPlayer from "@/components/video-player";
 import {Skeleton} from "@/components/ui/skeleton";
 import {GenerationStatusResponse as SlidesGenerationStatusResponse} from "@/generated-api-clients/slides";
+import {toast} from "sonner";
 
 export default function Home() {
   const [prompt, setPrompt] = useState("");
@@ -22,63 +23,71 @@ export default function Home() {
   const [messages, setMessages] = useState<string[]>([]);
   const [slides, setSlides] = useState<SlidesGenerationStatusResponse>();
   const [avatarData, setAvatarData] = useState<AvatarGenerationStatusReponse>();
+  const [loading, setLoading] = useState(false);
 
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  // TODO: API calls without polling
-  // async function fetchAvatar(promptId: string) {
-  //   const avatarResponse: AvatarGenerationStatusReponse =
-  //     await avatarApi.getGenerationResult({promptId});
-  //   setAvatarData(avatarResponse);
-  // }
-
-  // async function fetchSlides(promptId: string) {
-  //   const slidesResponse: SlidesGenerationStatusResponse =
-  //     await slidesApi.getGenerationStatus({
-  //       promptId: promptId,
-  //     });
-  //   setSlides(slidesResponse);
-  // }
-
   async function pollAvatar(promptId: string, maxRetries: number) {
-    for (let i = 0; i < maxRetries; i++) {
-      const avatarResponse: AvatarGenerationStatusReponse =
-        await avatarApi.getGenerationResult({promptId});
+    try {
+      for (let i = 0; i < maxRetries; i++) {
+        const avatarResponse: AvatarGenerationStatusReponse =
+          await avatarApi.getGenerationResult({promptId});
 
-      setAvatarData(avatarResponse);
+        setAvatarData(avatarResponse);
 
-      // If the response indicates it's done, break early
-      if (
-        avatarResponse.status === "DONE" ||
-        avatarResponse.status === "FAILED"
-      ) {
-        break;
+        if (
+          avatarResponse.status === "DONE" ||
+          avatarResponse.status === "FAILED"
+        ) {
+          if (avatarResponse.status === "FAILED") {
+            toast.error("Avatar generation failed. Please try again.");
+          }
+          break;
+        }
+
+        await new Promise((resolve) =>
+          setTimeout(resolve, (avatarResponse.estimatedSecondsLeft ?? 3) * 1000)
+        );
       }
-
-      // Wait for cooldown before trying again
-      await new Promise(
-        (resolve) =>
-          setTimeout(resolve, (avatarResponse.estimatedSecondsLeft ?? 0) * 1000) // convert seconds to milliseconds
-      );
+    } catch (error) {
+      console.error("Avatar polling failed:", error);
+      toast.error("An error occurred while fetching the avatar.", {
+        action: {
+          label: "Close",
+          onClick: () => toast.dismiss(),
+        },
+      });
     }
   }
+
   async function pollSlides(promptId: string, maxRetries: number) {
-    // 3. call the slides API to get the slides
-    for (let i = 0; i < maxRetries; i++) {
-      const slidesResponse: SlidesGenerationStatusResponse =
-        await slidesApi.getGenerationStatus({
-          promptId: promptId,
-        });
+    try {
+      for (let i = 0; i < maxRetries; i++) {
+        const slidesResponse: SlidesGenerationStatusResponse =
+          await slidesApi.getGenerationStatus({promptId});
 
-      setSlides(slidesResponse);
+        setSlides(slidesResponse);
 
-      if (
-        slidesResponse.status === "DONE" ||
-        slidesResponse.status === "FAILED"
-      ) {
-        break;
+        if (
+          slidesResponse.status === "DONE" ||
+          slidesResponse.status === "FAILED"
+        ) {
+          if (slidesResponse.status === "FAILED") {
+            toast.error("Slides generation failed. Please try again.", {
+              action: {
+                label: "Close",
+                onClick: () => toast.dismiss(),
+              },
+            });
+          }
+          break;
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, 3000));
       }
-      await new Promise((resolve) => setTimeout(resolve, 3000)); // wait for 3 seconds before polling again
+    } catch (error) {
+      console.error("Slides polling failed:", error);
+      toast.error("An error occurred while fetching the slides.");
     }
   }
 
@@ -88,33 +97,43 @@ export default function Home() {
     const finalPrompt = input ?? prompt;
     if (!finalPrompt.trim()) return;
 
-    // add to messages
     setMessages((prev) => [...prev, finalPrompt]);
+    setLoading(true);
 
     try {
-      console.log("Creating lecture with prompt:", finalPrompt);
-
-      // 1. Call core API
       const coreResponse: PromptResponse =
         await coreApi.createLectureFromPrompt({
           promptRequest: {prompt: finalPrompt},
         });
-      const promptId = coreResponse.promptId;
-      console.log("Lecture created:", promptId);
 
-      // 2. Poll APIs in parallel
+      const promptId = coreResponse.promptId;
+      toast.success("Lecture generation started.", {
+        action: {
+          label: "Close",
+          onClick: () => toast.dismiss(),
+        }
+      });
+
       pollAvatar(promptId, 20);
       pollSlides(promptId, 20);
     } catch (error) {
       console.error("API error:", error);
+      toast.error("Failed to create lecture.", {
+        description: (error as Error).message,
+        action: {
+          label: "Close",
+          onClick: () => toast.dismiss(),
+        },
+      });
+    } finally {
+      setPrompt("");
+      setLoading(false);
     }
-
-    setPrompt(""); // reset input
   }
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({behavior: "smooth"});
-  }, [messages]);
+  }, [messages, avatarData, slides]);
 
   function AvatarSection({
     avatarData,
@@ -124,53 +143,58 @@ export default function Home() {
     if (!avatarData || avatarData.status === "IN_PROGRESS")
       return (
         <Card className="relative p-0 bg-card border-border overflow-hidden rounded-2xl">
-          {/* Video skeleton */}
           <Skeleton className="w-full rounded-2xl" />
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
-            Estimated Time until completion:{" "}
-            {avatarData?.estimatedSecondsLeft ?? "-"} mins (does not update yet)
-          </div>
-          {/* Controls skeleton */}
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-4 items-center bg-black/30 backdrop-blur-sm p-2 rounded-xl">
-            <Skeleton className="w-8 h-8 rounded-md" />{" "}
-            {/* play/pause button */}
-            <Skeleton className="w-6 h-6 rounded-md" /> {/* volume icon */}
-            <Skeleton className="w-32 h-2 rounded-full" /> {/* volume slider */}
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-center text-sm p-2">
+            <p>Estimated time: {avatarData?.estimatedSecondsLeft ?? "-"} sec</p>
           </div>
         </Card>
       );
-    if (avatarData.status === "DONE")
+
+    if (avatarData.status === "DONE") {
       return <VideoPlayer src={avatarData.resultUrl ?? ""} />;
-    return <div>Avatar failed to generate.</div>;
+    }
+
+    return (
+      <Card className="p-6 text-center text-red-500">
+        Avatar failed to generate.
+      </Card>
+    );
   }
 
   function SlidesSection({slides}: {slides?: SlidesGenerationStatusResponse}) {
     if (!slides || slides.status === "IN_PROGRESS")
       return (
         <Card className="relative p-8 bg-card border-border md:col-span-2 rounded-2xl">
-          {/* Slides preview skeleton */}
           <Skeleton className="w-full h-98 rounded-2xl" />
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
-            {slides?.generatedPages} / {slides?.totalPages} slides generated
+          <div className="absolute inset-0 flex items-center justify-center text-sm">
+            {slides?.generatedPages ?? 0} / {slides?.totalPages ?? "?"} slides
+            generated
           </div>
         </Card>
       );
-    if (slides.status === "DONE")
+
+    if (slides.status === "DONE") {
       return (
         <Card className="p-8 bg-card border-border md:col-span-2">
           <iframe
             width="100%"
             height="100%"
             src="http://localhost:3030"
-            className="w-full h-98 pointer-events-none pointer-none"
+            className="w-full h-98 pointer-events-none"
             title="Generated Slides"
             loading="lazy"
           />
         </Card>
       );
+    }
 
-    return <div>Slides failed to generate</div>;
+    return (
+      <Card className="p-6 text-center text-red-500">
+        Slides failed to generate.
+      </Card>
+    );
   }
+
   return (
     <main>
       <header className="p-4 border-b border-border mb-6">
@@ -190,7 +214,7 @@ export default function Home() {
 
       {messages.length === 0 && (
         <section className="max-w-6xl mx-auto text-center h-screen">
-          <h1 className="text-4xl font-bold">Whats on your mind?</h1>
+          <h1 className="text-4xl font-bold">What’s on your mind?</h1>
           <p className="text-muted-foreground text-lg">
             Ask any question about your course material and get personalized
             explanations.
@@ -214,9 +238,13 @@ export default function Home() {
               type="submit"
               size="sm"
               className="absolute right-2 top-2 h-10 w-10 rounded-full"
-              disabled={!prompt.trim()}
+              disabled={!prompt.trim() || loading}
             >
-              <ArrowUp className="w-4 h-4" />
+              {loading ? (
+                <Loader2Icon className="w-4 h-4 animate-spin" />
+              ) : (
+                <ArrowUp className="w-4 h-4" />
+              )}
             </Button>
           </form>
         </section>
@@ -227,25 +255,26 @@ export default function Home() {
           {messages.map((msg, index) => (
             <div key={index} className="space-y-6">
               <div className="flex justify-end">
-                <div className="bg-primary text-primary-foreground px-6 py-3 rounded-2xl max-w-2xl space-y-6">
+                <div className="bg-primary text-primary-foreground px-6 py-3 rounded-2xl max-w-2xl">
                   <p className="text-lg">{msg}</p>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <AvatarSection avatarData={avatarData} />
-
                 <SlidesSection slides={slides} />
               </div>
             </div>
           ))}
           <div ref={bottomRef}></div>
-          {(avatarData?.status === "IN_PROGRESS" || !avatarData) && (
-            <div className="fixed bottom-6 right-0 left-0 mx-auto max-w-6xl flex items-center justify-center">
+
+          {(!avatarData || avatarData.status === "IN_PROGRESS") && (
+            <div className="fixed bottom-6 right-0 left-0 mx-auto max-w-6xl flex items-center justify-center bg-card/90 backdrop-blur-md p-3 rounded-lg shadow">
               <Loader2Icon className="animate-spin mr-2" />
-              <p>Please wait, your lecture is being generated...</p>
+              <p>Generating your lecture… please wait.</p>
             </div>
           )}
+
           {avatarData?.status === "DONE" && (
             <form
               onSubmit={(e) => handleSubmit(undefined, e)}
@@ -254,16 +283,20 @@ export default function Home() {
               <Input
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
-                placeholder="Type in your question"
+                placeholder="Ask another question"
                 className="w-full h-14 pr-14 text-lg bg-card border-border rounded-full"
               />
               <Button
                 type="submit"
                 size="sm"
                 className="absolute right-2 top-2 h-10 w-10 rounded-full"
-                disabled={!prompt.trim()}
+                disabled={!prompt.trim() || loading}
               >
-                <ArrowUp className="w-4 h-4" />
+                {loading ? (
+                  <Loader2Icon className="w-4 h-4 animate-spin" />
+                ) : (
+                  <ArrowUp className="w-4 h-4" />
+                )}
               </Button>
             </form>
           )}
