@@ -1,0 +1,9 @@
+.openapi-generator-ignore
+apis/DocintApi.ts
+apis/index.ts
+index.ts
+models/ImageObject.ts
+models/RetrievalResponse.ts
+models/UploadResponse.ts
+models/index.ts
+runtime.ts

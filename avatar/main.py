@@ -8,6 +8,8 @@ import uuid
 from uuid import UUID
 from pathlib import Path
 
+import httpx
+
 from fastapi import FastAPI, BackgroundTasks, Response, Request
 from fastapi import UploadFile, File, Depends, HTTPException, status
 from fastapi.responses import JSONResponse
@@ -15,11 +17,21 @@ from sqlalchemy import create_engine, String, DateTime, Text, Integer, func, For
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship, sessionmaker, Session
 from pydantic import BaseModel, Field, constr
 
+from fastapi.middleware.cors import CORSMiddleware
+
 
 
 
 app = FastAPI(title="Service Video-Generation APIs", version="0.1")
+origins = ["*"]
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # ---------------------------
 # Config (env-driven)
@@ -63,8 +75,6 @@ class ErrorModel(BaseModel):
 class GenerationAcceptedResponse(BaseModel):
     promptId: UUID
     createdAt: datetime
-    # status omitted on purpose to match your earlier schema (202 body minimal)
-
 
 class GenerationStatusResponse(BaseModel):
     promptId: UUID
@@ -73,6 +83,16 @@ class GenerationStatusResponse(BaseModel):
     resultUrl: str  # always present now
     estimatedSecondsLeft: int  # 0 when DONE/FAILED
     error: Optional[ErrorModel] = None
+
+class AvatarImagePayload(BaseModel):
+    id: UUID
+    filePath: str
+    mimeType: Optional[str] = None
+    sizeBytes: Optional[int] = None
+    createdAt: datetime
+class AvatarCreatedResponse(BaseModel):
+    avatarId: UUID
+    image: Optional[AvatarImagePayload] = None
 
 
 
@@ -159,6 +179,7 @@ def _save_upload_to_disk(avatar_id: UUID, upload: UploadFile) -> Path:
     "/v1/avatars",
     status_code=201,
     response_model=AvatarCreatedResponse,
+    tags=["avatar"],
 )
 def create_avatar(
     file: Optional[UploadFile] = File(default=None),
@@ -199,6 +220,7 @@ def create_avatar(
     "/v1/avatars/{avatarId}/images",
     status_code=201,
     response_model=AvatarImageResponse,
+    tags=["avatar"],
 )
 def add_avatar_image(
     avatarId: UUID,
@@ -295,40 +317,62 @@ async def generate_audio(slide_text: str, course_id: str, prompt_id: UUID, user_
     # return audio_path
 
 
-async def generate_video(audio_path: str = None, prompt_id: UUID = None, course_id: str = None, user_profile: UserProfile = None,
-                         video_counter: int = None) -> str:
+async def generate_video(
+    audio_path: Optional[str] = None,
+    prompt_id: Optional[UUID] = None,
+    course_id: Optional[str] = None,
+    user_profile: Optional[UserProfile] = None,
+    video_counter: Optional[int] = None,
+) -> Optional[str]:
     """
-    Assemble the final video using the audio tracks and slide content.
-    Returns a URI (string) to the rendered video file which consists of one video per slide.
+    Assemble the final video using the audio track and a source image.
+    Returns the path/URL of the rendered video, or None on failure.
     """
+    if prompt_id is None or video_counter is None:
+        print("generate_video: prompt_id and video_counter are required.")
+        return None
+
     pid = str(prompt_id)
-    # out_path = f"avatar/ditto-talkinghead/tmp/{pid}_{video_counter}.mp4"
+
+    # Defaults for your MVP; swap with course-specific assets later
     out_path = f"/data/{pid}_{video_counter}.mp4"
-    # audio_path = f"avatar/ditto-talkinghead/example/krusche_voice.wav" if audio_path is None else audio_path
-    audio_path = f"/data/example/krusche_voice.wav" if audio_path is None else audio_path
-    # source_path = f"avatar/ditto-talkinghead/example/image_michal.png" if course_id is None else f"avatar/ditto-talkinghead/example/image_michal.png"
-    source_path = f"/data/example/image_michal.png" if course_id is None else f"/data/example/image_michal.png"
+    resolved_audio = audio_path or "/data/example/krusche_voice.wav"
+    source_path = "/data/example/image_michal.png"  # could be derived from course_id/user_profile
 
     # Call to API
     video_api_url = os.getenv("GEN_VIDEO", "http://localhost:8000/video/infer")
 
     payload = {
-        "audio_path": audio_path,
+        "audio_path": resolved_audio,
         "source_path": source_path,
-        "output_path": out_path
+        "output_path": out_path,
     }
 
-    print(f"Sending request to {video_api_url} with payload: {payload}")
+
+    print(f"[generate_video] POST {api_url} payload={payload}")
+
+    # Reasonable timeouts for an internal service call
+    timeout = httpx.Timeout(connect=5.0, read=120.0, write=30.0, pool=5.0)
 
     try:
-        response = requests.post(video_api_url, json=payload)
-        response.raise_for_status()
-        response_data = response.json()
-        print("Successfully received response:", response_data)
-        return response_data.get("output_path")
+        async with httpx.AsyncClient(timeout=timeout) as client:
+            resp = await client.post(video_api_url, json=payload)
+            resp.raise_for_status()
 
-    except requests.exceptions.RequestException as e:
-        print(f"An error occurred while calling the API: {e}")
+        # The infer API is expected to return JSON with "output_path"
+        data = resp.json()
+        result = data.get("output_path") or out_path
+        print(f"[generate_video] OK -> {result}")
+        return result
+
+    except httpx.HTTPStatusError as e:
+        # Server returned non-2xx
+        body = e.response.text[:500]
+        print(f"[generate_video] HTTP {e.response.status_code}: {body}")
+        return None
+    except (httpx.RequestError, ValueError) as e:
+        # Network error or JSON parse issue
+        print(f"[generate_video] request/json error: {e!r}")
         return None
 
 
@@ -414,13 +458,22 @@ async def process_generation(payload: GenerateRequest) -> Dict[str, Union[List[O
 # ---------------------------
 def _run_process_generation(payload: "GenerateRequest") -> None:
     # Runs the async coroutine in a fresh event loop, safe for BackgroundTasks
-    asyncio.run(process_generation(payload))
+    #can't run in the same loop context
+
+    loop = asyncio.get_event_loop()
+    '''
+    BackgroundTasks executes after the response in the same event loop context;
+    calling asyncio.run() from a running loop raises: 
+    “asyncio.run() cannot be called from a running event loop”.
+    '''
+    loop.create_task(process_generation(payload))
 
 @app.post(
     "/v1/video/generate",
     response_model=GenerationAcceptedResponse,
     status_code=202,
     responses={400: {"model": ErrorModel}, 401: {"model": ErrorModel}, 500: {"model": ErrorModel}},
+    tags=["video"],
 )
 async def request_video_generation(payload: GenerateRequest, background: BackgroundTasks, response: Response, request: Request):
     now = _utcnow()
@@ -447,6 +500,7 @@ async def request_video_generation(payload: GenerateRequest, background: Backgro
     "/v1/video/{promptId}/status",
     response_model=GenerationStatusResponse,
     responses={404: {"model": ErrorModel}},
+    tags=["video"],
 )
 def get_generation_status(promptId: UUID):
     job = JOBS.get(promptId)

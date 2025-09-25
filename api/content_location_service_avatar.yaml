@@ -1,0 +1,119 @@
+openapi: 3.1.0
+info:
+  title: Avatar Content Location Service API
+  version: "0.1"
+  description: |
+    API for the Orpheus video generation.
+    From the repository: "The Orpheus System transforms static slides into interactive lecture videos with lifelike professor avatars, combining expressive narration, visual presence, and dynamic content to create engaging, personalized learning experiences."
+  license:
+    name: MIT
+    url: "https://opensource.org/licenses/MIT"
+  termsOfService: "https://github.com/fa25genai/orpheus"
+  contact:
+    name: "Orpheus Project"
+    url: "https://github.com/fa25genai/orpheus/issues/new"
+
+servers:
+  - url: "http://localhost:8080"
+    description: "Local development"
+
+tags:
+  - name: video
+    description: "Endpoints for video generation, retrieval and status"
+
+paths:
+
+  /v1/video/{promptId}/getLocation:
+    get:
+      tags:
+        - slides
+      summary: "Get the URL for the avatar video that has been generated (or is currently generated)."
+      operationId: getGenerationStatus
+      parameters:
+        - name: promptId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: "The promptId returned by /v1/slides/generate"
+      responses:
+        "200":
+          description: "URL to the CDN where the slides are stored (response might take a while if the slides are still generated)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AvatarContentLocationResponse"
+              examples:
+                done:
+                  value:
+                    promptId: "01997fe4-864e-7da0-b959-b44e925a3c6e"
+                    slidesUrl: "https://cdn.example.com/videos/0f2f9d77.mp4"
+        "404":
+          description: "Slides were not found (wrong promptId?)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+components:
+  schemas:
+    UserProfile:
+      type: object
+      description: "Information about the user and their preferences."
+      required:
+        - id
+        - role
+        - language
+      properties:
+        id:
+          type: string
+          description: "Unique identifier of the user."
+        role:
+          type: string
+          enum: [ student, instructor ]
+          description: "User's role."
+        language:
+          type: string
+          enum: [ german, english ]
+          description: "Primary language."
+        preferences:
+          type: object
+          description: "Generation/presentation preferences."
+          properties:
+            answerLength:
+              type: string
+              enum: [ short, medium, long ]
+            languageLevel:
+              type: string
+              enum: [ basic, intermediate, advanced ]
+            expertiseLevel:
+              type: string
+              enum: [ beginner, intermediate, advanced, expert ]
+            includePictures:
+              type: string
+              enum: [ none, few, many ]
+        enrolledCourses:
+          type: array
+          description: "Course IDs the user is enrolled in."
+          items:
+            type: string
+
+    AvatarContentLocationResponse:
+      type: object
+      properties:
+        lectureId: { type: string, format: uuid }
+        resultUrl: { type: string, format: uri, description: "URL as soon as it is ready" }
+        error: { $ref: "#/components/schemas/Error" }
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+
+externalDocs:
+  description: "Project repository and README"
+  url: "https://github.com/fa25genai/orpheus"
+

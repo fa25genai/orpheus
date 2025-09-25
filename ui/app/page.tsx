@@ -6,58 +6,194 @@ import {Input} from "@/components/ui/input";
 import {ArrowUp, Loader2Icon, User} from "lucide-react";
 import Link from "next/link";
 import {useEffect, useRef, useState} from "react";
-import {avatarApi, coreApi} from "@/app/api-clients";
+import {avatarApi, coreApi, slidesApi} from "@/app/api-clients";
 import {PromptResponse} from "@/generated-api-clients/core";
-import {GenerationStatusResponse} from "@/generated-api-clients/avatar";
+import {GenerationStatusResponse as AvatarGenerationStatusReponse} from "@/generated-api-clients/avatar";
 import {guideText} from "@/data/text";
 import GuideCards from "@/components/guide-cards";
 import {PersonaLevel} from "@/types/uploading";
 import VideoPlayer from "@/components/video-player";
 import {Skeleton} from "@/components/ui/skeleton";
+import {GenerationStatusResponse as SlidesGenerationStatusResponse} from "@/generated-api-clients/slides";
+import {toast} from "sonner";
 
 export default function Home() {
   const [prompt, setPrompt] = useState("");
   const [personaLevel, setPersonaLevel] = useState<PersonaLevel>("beginner");
   const [messages, setMessages] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [slides, setSlides] = useState<SlidesGenerationStatusResponse>();
+  const [avatarData, setAvatarData] = useState<AvatarGenerationStatusReponse>();
+  const [loading, setLoading] = useState(false);
 
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  async function handleSubmit(e: React.FormEvent) {
-    setIsLoading(true);
-    e.preventDefault();
-    if (prompt.trim()) {
-      setMessages((prev) => [...prev, prompt]);
-      // Call API to get response
-      // try {
-      //   const coreResponse: PromptResponse =
-      //     await coreApi.createLectureFromPrompt({
-      //       promptRequest: {
-      //         prompt: prompt,
-      //       },
-      //     });
+  async function pollAvatar(promptId: string, maxRetries: number) {
+    try {
+      for (let i = 0; i < maxRetries; i++) {
+        const avatarResponse: AvatarGenerationStatusReponse =
+          await avatarApi.getGenerationResult({promptId});
 
-      //   const promptId = coreResponse.promptId;
-      //   console.log("Lecture created:", promptId);
+        setAvatarData(avatarResponse);
 
-      //   const avatarResponse: GenerationStatusResponse =
-      //     await avatarApi.getGenerationResult({
-      //       promptId: promptId,
-      //     });
+        if (
+          avatarResponse.status === "DONE" ||
+          avatarResponse.status === "FAILED"
+        ) {
+          if (avatarResponse.status === "FAILED") {
+            toast.error("Avatar generation failed. Please try again.");
+          }
+          break;
+        }
 
-      //   console.log("Avatar generation status:", avatarResponse.status);
-      // } catch (error) {
-      //   console.error("API error:", error);
-      // }
+        await new Promise((resolve) =>
+          setTimeout(resolve, (avatarResponse.estimatedSecondsLeft ?? 3) * 1000)
+        );
+      }
+    } catch (error) {
+      console.error("Avatar polling failed:", error);
+      toast.error("An error occurred while fetching the avatar.", {
+        action: {
+          label: "Close",
+          onClick: () => toast.dismiss(),
+        },
+      });
+    }
+  }
 
-      setPrompt(""); // clear input after submit
-      setIsLoading(false);
+  async function pollSlides(promptId: string, maxRetries: number) {
+    try {
+      for (let i = 0; i < maxRetries; i++) {
+        const slidesResponse: SlidesGenerationStatusResponse =
+          await slidesApi.getGenerationStatus({promptId});
+
+        setSlides(slidesResponse);
+
+        if (
+          slidesResponse.status === "DONE" ||
+          slidesResponse.status === "FAILED"
+        ) {
+          if (slidesResponse.status === "FAILED") {
+            toast.error("Slides generation failed. Please try again.", {
+              action: {
+                label: "Close",
+                onClick: () => toast.dismiss(),
+              },
+            });
+          }
+          break;
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, 3000));
+      }
+    } catch (error) {
+      console.error("Slides polling failed:", error);
+      toast.error("An error occurred while fetching the slides.");
+    }
+  }
+
+  async function handleSubmit(input?: string, e?: React.FormEvent) {
+    if (e) e.preventDefault();
+
+    const finalPrompt = input ?? prompt;
+    if (!finalPrompt.trim()) return;
+
+    setMessages((prev) => [...prev, finalPrompt]);
+    setLoading(true);
+
+    try {
+      const coreResponse: PromptResponse =
+        await coreApi.createLectureFromPrompt({
+          promptRequest: {prompt: finalPrompt, courseId: "IN001"},
+        });
+
+      const promptId = coreResponse.promptId;
+      toast.success("Lecture generation started.", {
+        action: {
+          label: "Close",
+          onClick: () => toast.dismiss(),
+        },
+      });
+
+      pollAvatar(promptId, 20);
+      pollSlides(promptId, 20);
+    } catch (error) {
+      console.error("API error:", error);
+      toast.error("Failed to create lecture.", {
+        description: (error as Error).message,
+        action: {
+          label: "Close",
+          onClick: () => toast.dismiss(),
+        },
+      });
+    } finally {
+      setPrompt("");
+      setLoading(false);
     }
   }
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({behavior: "smooth"});
-  }, [messages]);
+  }, [messages, avatarData, slides]);
+
+  function AvatarSection({
+    avatarData,
+  }: {
+    avatarData?: AvatarGenerationStatusReponse;
+  }) {
+    if (!avatarData || avatarData.status === "IN_PROGRESS")
+      return (
+        <Card className="relative p-0 bg-card border-border overflow-hidden rounded-2xl">
+          <Skeleton className="w-full rounded-2xl" />
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-center text-sm p-2">
+            <p>Estimated time: {avatarData?.estimatedSecondsLeft ?? "-"} sec</p>
+          </div>
+        </Card>
+      );
+
+    if (avatarData.status === "DONE") {
+      return <VideoPlayer src={avatarData.resultUrl ?? ""} />;
+    }
+
+    return (
+      <Card className="p-6 text-center text-red-500">
+        Avatar failed to generate.
+      </Card>
+    );
+  }
+
+  function SlidesSection({slides}: {slides?: SlidesGenerationStatusResponse}) {
+    if (!slides || slides.status === "IN_PROGRESS")
+      return (
+        <Card className="relative p-8 bg-card border-border md:col-span-2 rounded-2xl">
+          <Skeleton className="w-full h-98 rounded-2xl" />
+          <div className="absolute inset-0 flex items-center justify-center text-sm">
+            {slides?.generatedPages ?? 0} / {slides?.totalPages ?? "?"} slides
+            generated
+          </div>
+        </Card>
+      );
+
+    if (slides.status === "DONE") {
+      return (
+        <Card className="p-8 bg-card border-border md:col-span-2">
+          <iframe
+            width="100%"
+            height="100%"
+            src="http://localhost:3030"
+            className="w-full h-98 pointer-events-none"
+            title="Generated Slides"
+            loading="lazy"
+          />
+        </Card>
+      );
+    }
+
+    return (
+      <Card className="p-6 text-center text-red-500">
+        Slides failed to generate.
+      </Card>
+    );
+  }
 
   return (
     <main>
@@ -78,7 +214,7 @@ export default function Home() {
 
       {messages.length === 0 && (
         <section className="max-w-6xl mx-auto text-center h-screen">
-          <h1 className="text-4xl font-bold">Whats on your mind?</h1>
+          <h1 className="text-4xl font-bold">What’s on your mind?</h1>
           <p className="text-muted-foreground text-lg">
             Ask any question about your course material and get personalized
             explanations.
@@ -86,10 +222,10 @@ export default function Home() {
           <GuideCards
             persona={personaLevel}
             guideText={guideText}
-            onSelect={(question) => setMessages((prev) => [...prev, question])}
+            onSelect={(question) => handleSubmit(question)}
           />
           <form
-            onSubmit={handleSubmit}
+            onSubmit={(e) => handleSubmit(undefined, e)}
             className="relative max-w-2xl mx-auto mt-6"
           >
             <Input
@@ -102,9 +238,13 @@ export default function Home() {
               type="submit"
               size="sm"
               className="absolute right-2 top-2 h-10 w-10 rounded-full"
-              disabled={!prompt.trim()}
+              disabled={!prompt.trim() || loading}
             >
-              <ArrowUp className="w-4 h-4" />
+              {loading ? (
+                <Loader2Icon className="w-4 h-4 animate-spin" />
+              ) : (
+                <ArrowUp className="w-4 h-4" />
+              )}
             </Button>
           </form>
         </section>
@@ -115,77 +255,48 @@ export default function Home() {
           {messages.map((msg, index) => (
             <div key={index} className="space-y-6">
               <div className="flex justify-end">
-                <div className="bg-primary text-primary-foreground px-6 py-3 rounded-2xl max-w-2xl space-y-6">
+                <div className="bg-primary text-primary-foreground px-6 py-3 rounded-2xl max-w-2xl">
                   <p className="text-lg">{msg}</p>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {isLoading && (
-                  <Card className="relative p-0 bg-card border-border overflow-hidden rounded-2xl">
-                    {/* Video skeleton */}
-                    <Skeleton className="w-full rounded-2xl" />
-                    {/* Controls skeleton */}
-                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-4 items-center bg-black/30 backdrop-blur-sm p-2 rounded-xl">
-                      <Skeleton className="w-8 h-8 rounded-md" />{" "}
-                      {/* play/pause button */}
-                      <Skeleton className="w-6 h-6 rounded-md" />{" "}
-                      {/* volume icon */}
-                      <Skeleton className="w-32 h-2 rounded-full" />{" "}
-                      {/* volume slider */}
-                    </div>
-                  </Card>
-                )}
-                {!isLoading && (
-                  <VideoPlayer src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" />
-                )}
-
-                {isLoading && (
-                  <Card className="p-8 bg-card border-border md:col-span-2 rounded-2xl">
-                    {/* Slides preview skeleton */}
-                    <Skeleton className="w-full h-98 rounded-2xl" />
-                  </Card>
-                )}
-                {!isLoading && (
-                  <Card className="p-8 bg-card border-border md:col-span-2">
-                      <iframe
-                          width="100%"
-                          height="100%"
-                          src="http://localhost:3030"
-                          className="w-full h-98 pointer-events-none pointer-none"
-                          title="Generated Slides"
-                          loading="lazy"
-                      />
-                  </Card>
-                )}
+                <AvatarSection avatarData={avatarData} />
+                <SlidesSection slides={slides} />
               </div>
             </div>
           ))}
           <div ref={bottomRef}></div>
-          {isLoading && (
-            <div className="fixed bottom-6 right-0 left-0 mx-auto max-w-6xl flex items-center justify-center">
+
+          {(!avatarData || avatarData.status === "IN_PROGRESS") && (
+            <div className="fixed bottom-6 right-0 left-0 mx-auto max-w-6xl flex items-center justify-center bg-card/90 backdrop-blur-md p-3 rounded-lg shadow">
               <Loader2Icon className="animate-spin mr-2" />
-              <p>Please wait, your lecture is being generated...</p>
+              <p>Generating your lecture… please wait.</p>
             </div>
           )}
-          {!isLoading && (
+
+          {avatarData?.status === "DONE" && (
             <form
-              onSubmit={handleSubmit}
+              onSubmit={(e) => handleSubmit(undefined, e)}
               className="fixed bottom-4 right-0 left-0 mx-auto max-w-6xl"
             >
               <Input
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
-                placeholder="Type in your question"
+                placeholder="Ask another question"
                 className="w-full h-14 pr-14 text-lg bg-card border-border rounded-full"
               />
               <Button
                 type="submit"
                 size="sm"
                 className="absolute right-2 top-2 h-10 w-10 rounded-full"
-                disabled={!prompt.trim()}
+                disabled={!prompt.trim() || loading}
               >
-                <ArrowUp className="w-4 h-4" />
+                {loading ? (
+                  <Loader2Icon className="w-4 h-4 animate-spin" />
+                ) : (
+                  <ArrowUp className="w-4 h-4" />
+                )}
               </Button>
             </form>
           )}
