@@ -144,10 +144,6 @@ def _startup_create_tables() -> None:
 
 ALLOWED_IMAGE_MIMES = {"image/png", "image/jpeg", "image/webp"}
 
-class AvatarCreatedResponse(BaseModel):
-    avatarId: UUID
-    image: Optional[Dict] = None  # { id, filePath, mimeType, sizeBytes, createdAt }
-
 class AvatarImageResponse(BaseModel):
     id: UUID
     avatarId: UUID
