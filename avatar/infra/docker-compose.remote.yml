@@ -13,7 +13,7 @@ services:
       context: ../assets
       dockerfile: Dockerfile
     volumes:
-      - file_storage:/srv/assets:ro
+      - file_storage:/data:ro
     networks: [local-core]
     ports:
       - "8080:80"
@@ -24,7 +24,8 @@ services:
       context: ..
       dockerfile: Dockerfile
     environment:
-      VIDEO_ROOT: "/srv/assets/jobs"
+      VIDEO_ROOT: "/data/jobs"
+      PUBLIC_VIDEOS_BASE: "/videos/jobs"
       GEN_AUDIO: "https://gpu.aet.cit.tum.de/avatar/audio/v1/audio/generate"
       GEN_VIDEO: "https://gpu.aet.cit.tum.de/avatar/video/infer"
     volumes:

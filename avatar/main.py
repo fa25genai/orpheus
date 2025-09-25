@@ -40,6 +40,9 @@ DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./app.db")
 IMAGES_OUTPUT_DIR = Path(os.getenv("IMAGES_OUTPUT_DIR", "data/avatars")).resolve()
 IMAGES_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
+VIDEO_ROOT = Path(os.getenv("VIDEO_ROOT", "/data/jobs")).resolve()
+PUBLIC_VIDEOS_BASE = os.getenv("PUBLIC_VIDEOS_BASE", "/videos/jobs")
+VIDEO_ROOT.mkdir(parents=True, exist_ok=True)
 
 # ---------------------------
 # Models
@@ -75,6 +78,7 @@ class ErrorModel(BaseModel):
 class GenerationAcceptedResponse(BaseModel):
     promptId: UUID
     createdAt: datetime
+    folderUrl: str
 
 class GenerationStatusResponse(BaseModel):
     promptId: UUID
@@ -136,6 +140,28 @@ class AvatarImage(Base):
 @app.on_event("startup")
 def _startup_create_tables() -> None:
     Base.metadata.create_all(engine)
+
+
+# ---------------------------
+# Saving Helpers
+# ---------------------------
+
+def job_dir(prompt_id: UUID) -> Path:
+    d = VIDEO_ROOT / str(prompt_id)
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+def slide_paths(prompt_id: UUID, idx_one_based: int) -> tuple[Path, Path]:
+    d = job_dir(prompt_id)
+    temp = d / f".{idx_one_based}.mp4.part"  # render here first
+    final = d / f"{idx_one_based}.mp4"       # publish atomically
+    return temp, final
+
+def public_video_url(prompt_id: UUID, idx_one_based: int) -> str:
+    return f"{PUBLIC_VIDEOS_BASE}/{prompt_id}/{idx_one_based}.mp4"
+
+def folder_url(prompt_id: UUID) -> str:
+    return f"{PUBLIC_VIDEOS_BASE}/{prompt_id}/"
 
 
 # ---------------------------
@@ -328,48 +354,49 @@ async def generate_video(
         print("generate_video: prompt_id and video_counter are required.")
         return None
 
-    pid = str(prompt_id)
+    slide_no = video_counter + 1  # 1,2,3...
+    temp_path, final_path = slide_paths(prompt_id, slide_no)
 
-    # Defaults for your MVP; swap with course-specific assets later
-    out_path = f"/data/{pid}_{video_counter}.mp4"
     resolved_audio = audio_path or "/data/example/krusche_voice.wav"
-    source_path = "/data/example/image_michal.png"  # could be derived from course_id/user_profile
+    source_path = "/data/example/image_michal.png"
 
-    # Call to API
     video_api_url = os.getenv("GEN_VIDEO", "http://localhost:8000/video/infer")
+    payload = {"audio_path": resolved_audio, "source_path": source_path, "output_path": str(temp_path)}
+    print(f"[generate_video] POST {video_api_url} payload={payload}")
 
-    payload = {
-        "audio_path": resolved_audio,
-        "source_path": source_path,
-        "output_path": out_path,
-    }
-
-
-    print(f"[generate_video] POST {api_url} payload={payload}")
-
-    # Reasonable timeouts for an internal service call
     timeout = httpx.Timeout(connect=5.0, read=120.0, write=30.0, pool=5.0)
-
     try:
         async with httpx.AsyncClient(timeout=timeout) as client:
             resp = await client.post(video_api_url, json=payload)
             resp.raise_for_status()
-
-        # The infer API is expected to return JSON with "output_path"
-        data = resp.json()
-        result = data.get("output_path") or out_path
-        print(f"[generate_video] OK -> {result}")
-        return result
-
+            data = resp.json()
     except httpx.HTTPStatusError as e:
-        # Server returned non-2xx
-        body = e.response.text[:500]
-        print(f"[generate_video] HTTP {e.response.status_code}: {body}")
+        print(f"[generate_video] HTTP {e.response.status_code}: {e.response.text[:500]}")
         return None
     except (httpx.RequestError, ValueError) as e:
-        # Network error or JSON parse issue
         print(f"[generate_video] request/json error: {e!r}")
         return None
+
+    # The renderer might confirm output_path; assume it wrote to temp_path.
+    # If it wrote elsewhere, move it into temp_path first.
+    rendered = Path(data.get("output_path") or str(temp_path))
+    if rendered != temp_path and rendered.exists():
+        temp_path.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            shutil.move(str(rendered), str(temp_path))
+        except Exception as e:
+            print(f"[generate_video] move to temp failed: {e!r}")
+            return None
+
+    # Atomic publish
+    try:
+        temp_path.replace(final_path)  # atomic rename on same FS
+    except Exception as e:
+        print(f"[generate_video] publish rename failed: {e!r}")
+        return None
+
+    print(f"[generate_video] OK -> {final_path}")
+    return str(final_path)
 
 
 
@@ -409,19 +436,32 @@ async def process_generation(payload: GenerateRequest) -> Dict[str, Union[List[O
             while processed < slides_amount:
                 idx, aurl = await audio_done_q.get()
                 processed += 1
+
+                # No audio => mark error and continue
                 if not aurl:
-                    continue  # audio "" oder not excisting -> no video
+                    errors[idx] = errors.get(idx) or "audio_error: empty_or_missing_audio"
+                    continue
+
                 try:
-                    vurl = await generate_video(
+                    # generate_video returns the FINAL ABSOLUTE PATH on disk (inside /srv/assets/jobs/<promptId>/N.mp4)
+                    vpath = await generate_video(
                         audio_path=aurl,
                         prompt_id=payload.promptId,
                         course_id=payload.courseId,
                         user_profile=payload.userProfile,
-                        video_counter=idx,
+                        video_counter=idx,   # 0-based in your pipeline
                     )
-                    video_urls[idx] = vurl
+
+                    if vpath:
+                        # publish public URL for client consumption
+                        slide_no = idx + 1  # 1,2,3...
+                        video_urls[idx] = public_video_url(payload.promptId, slide_no)
+                    else:
+                        errors[idx] = errors.get(idx) or "video_error: render_failed_or_no_output"
+
                 except Exception as e:
                     errors[idx] = f"video_error: {e!r}"
+
 
         prod = asyncio.create_task(audio_producer())
         cons = asyncio.create_task(video_consumer())
@@ -473,6 +513,10 @@ def _run_process_generation(payload: "GenerateRequest") -> None:
 )
 async def request_video_generation(payload: GenerateRequest, background: BackgroundTasks, response: Response, request: Request):
     now = _utcnow()
+
+    # create the folder right away
+    job_dir(payload.promptId)
+    folder = folder_url(payload.promptId)
     # pre-compute where the file will live
     url = _result_url(payload.promptId)
     expected = _estimate_total_seconds(len(payload.slideMessages))
@@ -489,8 +533,7 @@ async def request_video_generation(payload: GenerateRequest, background: Backgro
     background.add_task(_run_process_generation, payload)    # absolute Location per spec
     base = str(request.base_url).rstrip("/")
     response.headers["Location"] = f"{base}/v1/video/{payload.promptId}/status"
-    return GenerationAcceptedResponse(promptId=payload.promptId, createdAt=now)
-
+    return GenerationAcceptedResponse(promptId=payload.promptId, createdAt=now, folderUrl=folder)
 
 @app.get(
     "/v1/video/{promptId}/status",
@@ -511,4 +554,4 @@ def get_generation_status(promptId: UUID):
         error=job.error,
     )
 
-# Run: uvicorn main:app --host 0.0.0.0 --port 8080 --reload
+# Run: uvicorn main:app --host 0.0.0.0 --port 9000 --reload
