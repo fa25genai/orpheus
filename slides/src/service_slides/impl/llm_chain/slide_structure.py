@@ -56,7 +56,10 @@ async def generate_slide_structure(
     """
 
     layouts_description = "\n".join(
-        [f"- Name: '{layout.name}', Description: {layout.description}" for layout in available_layouts]
+        [
+            f"- Name: '{layout.name}', Description: {layout.description}"
+            for layout in available_layouts
+        ]
     )
 
     parser = PydanticOutputParser(pydantic_object=DetailedSlideStructure)

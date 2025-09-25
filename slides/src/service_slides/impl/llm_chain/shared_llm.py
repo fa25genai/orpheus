@@ -19,22 +19,22 @@ T = TypeVar("T")
 def _remove_thinking_tags(text: str) -> str:
     """
     Removes <think>...</think> and <thinking>...</thinking> tags and their content from the text.
-    
+
     Args:
         text: Input text that may contain thinking tags
-        
+
     Returns:
         Text with all thinking tags and their content removed
     """
     if not text:
         return text
-    
+
     # Remove <think>...</think> tags and their content
-    text = re.sub(r'<think>.*?</think>', '', text, flags=re.DOTALL)
-    
-    # Remove <thinking>...</thinking> tags and their content  
-    text = re.sub(r'<thinking>.*?</thinking>', '', text, flags=re.DOTALL)
-    
+    text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL)
+
+    # Remove <thinking>...</thinking> tags and their content
+    text = re.sub(r"<thinking>.*?</thinking>", "", text, flags=re.DOTALL)
+
     return text.strip()
 
 
@@ -101,13 +101,18 @@ def create_base_model(
                 "headers": {"Authorization": f"Bearer {os.environ['OLLAMA_LLM_KEY']}"}
             }
         return OllamaLLM(**model_kwargs)  # type: ignore
-    
+
     # Try AWS Bedrock last
-    if "AWS_ACCESS_KEY_ID" in os.environ and "AWS_SECRET_ACCESS_KEY" in os.environ and "AWS_SESSION_TOKEN" in os.environ and "AWS_PROVIDER" in os.environ:
+    if (
+        "AWS_ACCESS_KEY_ID" in os.environ
+        and "AWS_SECRET_ACCESS_KEY" in os.environ
+        and "AWS_SESSION_TOKEN" in os.environ
+        and "AWS_PROVIDER" in os.environ
+    ):
         model_kwargs = {
             "model_id": model_name,
             "temperature": temperature,
-            "provider": os.environ["AWS_PROVIDER"]
+            "provider": os.environ["AWS_PROVIDER"],
         }
         if max_tokens:
             model_kwargs["max_tokens"] = max_tokens
