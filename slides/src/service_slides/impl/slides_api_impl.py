@@ -1,4 +1,5 @@
 import asyncio
+import sys
 from datetime import datetime
 
 from concurrent.futures.thread import ThreadPoolExecutor
@@ -56,12 +57,12 @@ class SlidesApiImpl(BaseSlidesApi):
                     totalPages=0,
                     generatedPages=0,
                     lastUpdated=datetime.now(),
-                    webUrl=resp.webUrl,
-                    pdfUrl=resp.pdfUrl,
+                    webUrl=resp.web_url,
+                    pdfUrl=resp.pdf_url,
                 )
         return GenerationStatusResponse(
             promptId=promptId,
-            status="IN_PROGRESS" if (status.achieved < status.total or not status.uploaded) else "DONE",
+            status="FAILED" if status.error else "IN_PROGRESS" if (status.achieved < status.total or not status.uploaded) else "DONE",
             totalPages=status.total,
             generatedPages=status.achieved,
             lastUpdated=status.updated_at,
@@ -143,17 +144,23 @@ class SlidesApiImpl(BaseSlidesApi):
                 # Save all slides to markdown file
                 async with ApiClient(get_postprocessing_api_config()) as api_client:
                     postprocessor = PostprocessingApi(api_client)
-                    response = await postprocessor.store_slideset(
-                        StoreSlidesetRequest(
-                            slideset=SlidesetWithId(
-                                promptId=prompt_id,
-                                slideset=slide_contents,
-                                assets=[]  # TODO: Add assets if necessary
+                    print("store_slideset")
+                    try:
+                        response = await postprocessor.store_slideset(
+                            StoreSlidesetRequest(
+                                theme="tum",
+                                slideset=SlidesetWithId(
+                                    promptId=prompt_id,
+                                    slideset="\n".join(slide_contents),
+                                    assets=[]  # TODO: Add assets if necessary
+                                )
                             )
                         )
-                    )
-
-                await job_manager.finish_upload(prompt_id, response.web_url, response.pdf_url)
+                    except Exception as e:
+                        print(e, file=sys.stderr)
+                        await job_manager.fail(prompt_id)
+                    print(response)
+                    await job_manager.finish_upload(prompt_id, response.web_url, response.pdf_url)
 
             asyncio.run(store_upload_info())
 
@@ -162,7 +169,7 @@ class SlidesApiImpl(BaseSlidesApi):
         status = await job_manager.get_status(request_slide_generation_request.prompt_id)
         return GenerationAcceptedResponse(
             promptId=request_slide_generation_request.prompt_id,
-            status="IN_PROGRESS" if status and status.achieved < status.total else "DONE",
+            status="FAILED" if status.error else "IN_PROGRESS" if (status.achieved < status.total or not status.uploaded) else "DONE",
             createdAt=datetime.now(),
             structure=structure.as_simple_slide_structure(),
         )
