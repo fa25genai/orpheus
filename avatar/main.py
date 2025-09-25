@@ -169,6 +169,7 @@ def _save_upload_to_disk(avatar_id: UUID, upload: UploadFile) -> Path:
     "/v1/avatars",
     status_code=201,
     response_model=AvatarCreatedResponse,
+    tags=["avatar"],
 )
 def create_avatar(
     file: Optional[UploadFile] = File(default=None),
@@ -209,6 +210,7 @@ def create_avatar(
     "/v1/avatars/{avatarId}/images",
     status_code=201,
     response_model=AvatarImageResponse,
+    tags=["avatar"],
 )
 def add_avatar_image(
     avatarId: UUID,
@@ -458,6 +460,7 @@ def _run_process_generation(payload: "GenerateRequest") -> None:
     response_model=GenerationAcceptedResponse,
     status_code=202,
     responses={400: {"model": ErrorModel}, 401: {"model": ErrorModel}, 500: {"model": ErrorModel}},
+    tags=["video"],
 )
 async def request_video_generation(payload: GenerateRequest, background: BackgroundTasks, response: Response, request: Request):
     now = _utcnow()
@@ -484,6 +487,7 @@ async def request_video_generation(payload: GenerateRequest, background: Backgro
     "/v1/video/{promptId}/status",
     response_model=GenerationStatusResponse,
     responses={404: {"model": ErrorModel}},
+    tags=["video"],
 )
 def get_generation_status(promptId: UUID):
     job = JOBS.get(promptId)
