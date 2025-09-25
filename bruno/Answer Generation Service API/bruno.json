@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "name": "slides",
+  "name": "Answer Generation Service API",
   "type": "collection",
   "ignore": [
     "node_modules",

@@ -51,6 +51,18 @@ export interface GenerationStatusResponse {
     lastUpdated?: Date;
     /**
      * 
+     * @type {string}
+     * @memberof GenerationStatusResponse
+     */
+    webUrl?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof GenerationStatusResponse
+     */
+    pdfUrl?: string;
+    /**
+     * 
      * @type {Error}
      * @memberof GenerationStatusResponse
      */
@@ -91,6 +103,8 @@ export function GenerationStatusResponseFromJSONTyped(json: any, ignoreDiscrimin
         'totalPages': json['totalPages'] == null ? undefined : json['totalPages'],
         'generatedPages': json['generatedPages'] == null ? undefined : json['generatedPages'],
         'lastUpdated': json['lastUpdated'] == null ? undefined : (new Date(json['lastUpdated'])),
+        'webUrl': json['webUrl'] == null ? undefined : json['webUrl'],
+        'pdfUrl': json['pdfUrl'] == null ? undefined : json['pdfUrl'],
         'error': json['error'] == null ? undefined : json['error'],
     };
 }
@@ -111,6 +125,8 @@ export function GenerationStatusResponseToJSONTyped(value?: GenerationStatusResp
         'totalPages': value['totalPages'],
         'generatedPages': value['generatedPages'],
         'lastUpdated': value['lastUpdated'] == null ? undefined : ((value['lastUpdated']).toISOString()),
+        'webUrl': value['webUrl'],
+        'pdfUrl': value['pdfUrl'],
         'error': value['error'],
     };
 }
