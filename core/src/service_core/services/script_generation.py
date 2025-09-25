@@ -113,7 +113,7 @@ def generate_script(retrieved_content: List[Dict[str, Any]], persona: Dict[str, 
         persona_dict = persona
 
     persona_dict['id'] = str(persona_dict['id'])
-    print("Refining lecture content for persona:")
+    #print("Refining lecture content for persona:")
 
     prompt = REFINE_PROMPT + "\n\n" + json.dumps({
         "persona": persona_dict,
@@ -123,7 +123,7 @@ def generate_script(retrieved_content: List[Dict[str, Any]], persona: Dict[str, 
     for attempt in range(max_retries):
         try:
             raw = llm_call(prompt)       
-            print(f"\nBreak point (attempt {attempt + 1}): {raw}")
+            #print(f"\nBreak point (attempt {attempt + 1}): {raw}")
             
             # Try to parse JSON directly first
             success, result = try_parse_json(raw)

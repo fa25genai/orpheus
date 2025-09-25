@@ -41,7 +41,7 @@ async def process_prompt(prompt_id: str, prompt_request: str):
 
     #print("Simulating async processing delay...")
     #await asyncio.sleep(5)
-    refined_output = script_generation.generate_script(str(retrieved_content), fetch_mock_data.create_demo_user())
+    refined_output = script_generation.generate_script(str(fetch_mock_data.create_demoretrieved_content()), fetch_mock_data.create_demo_user())
     #print(refined_output)
     #lecture_script = refined_output.get("lectureScript", "")
     #print("\n\nGenerated Lecture Script:", lecture_script)
