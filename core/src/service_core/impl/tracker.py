@@ -5,7 +5,7 @@ class ProgressTracker:
 
     def log(self, message):
         self.current_step += 1
-        print(f"({self.current_step}/{self.total_steps}): {message}")
+        print(f"({self.current_step}/{self.total_steps}): {message}", flush=True)
 
 total_tasks = 4
 tracker = ProgressTracker(total_steps=total_tasks)
