@@ -85,7 +85,7 @@ Write in a natural, direct style. Follow these simple rules:
 Available layouts:
 {layouts_description}
 """.strip()
-),
+            ),
             HumanMessagePromptTemplate.from_template(
                 """
 Lecture script:
