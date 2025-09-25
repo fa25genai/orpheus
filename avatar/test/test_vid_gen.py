@@ -1,6 +1,6 @@
 import asyncio
 from uuid import uuid4
-from ..main import generate_video
+from avatar.main import generate_video
 
 async def main():
     video = await generate_video(
