@@ -3,6 +3,7 @@ from os import cpu_count, getenv
 from typing import Any
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from service_slides.apis.slides_api import router as SlidesApiRouter
 from service_slides.impl.manager.job_manager import JobManager
@@ -38,5 +39,15 @@ async def lifespan(app: FastAPI) -> Any:
 
 
 app = FastAPI(title="orpheus-service-slides", lifespan=lifespan)
+
+origins = ["*"]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 app.include_router(SlidesApiRouter)
