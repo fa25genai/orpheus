@@ -310,7 +310,7 @@ async def generate_video(audio_path: str = None, prompt_id: UUID = None, course_
     source_path = f"/data/example/image_michal.png" if course_id is None else f"/data/example/image_michal.png"
 
     # Call to API
-    api_url = "http://localhost:8000/infer"
+    video_api_url = os.getenv("GEN_VIDEO", "http://localhost:8000/video/infer")
 
     payload = {
         "audio_path": audio_path,
@@ -318,10 +318,10 @@ async def generate_video(audio_path: str = None, prompt_id: UUID = None, course_
         "output_path": out_path
     }
 
-    print(f"Sending request to {api_url} with payload: {payload}")
+    print(f"Sending request to {video_api_url} with payload: {payload}")
 
     try:
-        response = requests.post(api_url, json=payload)
+        response = requests.post(video_api_url, json=payload)
         response.raise_for_status()
         response_data = response.json()
         print("Successfully received response:", response_data)

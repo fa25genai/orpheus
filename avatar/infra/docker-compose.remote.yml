@@ -7,6 +7,7 @@ networks:
   local-core: {}
 
 services:
+  # Responsibility: nginx
   video-assets:
     build:
       context: ../assets
@@ -17,13 +18,14 @@ services:
     ports:
       - "8080:80"
 
+  # Responsibility: main.py
   video-producer:
     build:
       context: ..
       dockerfile: Dockerfile
     environment:
-      GEN_AUDIO: "http://localhost:8000/infer"
-      GEN_VIDEO: "http://localhost:8000/infer"
+      GEN_AUDIO: "https://gpu.aet.cit.tum.de/avatar/audio/v1/audio/generate"
+      GEN_VIDEO: "https://gpu.aet.cit.tum.de/avatar/video/infer"
     volumes:
       - file_storage:/data
     networks: [local-core]
