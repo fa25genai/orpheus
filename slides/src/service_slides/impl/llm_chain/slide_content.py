@@ -49,7 +49,7 @@ def generate_single_slide_content(
         - Code: Include code ONLY if present in the text, verbatim, fenced with a language tag when known (e.g., ```java ...```), preserving indentation.
         - Assets/links: If a field would require an image/URL/author and the text does not provide it, leave that field as an empty string. Never invent assets.
         - Style: Follow assertion–evidence principles. Use a short, informative title if the layout expects one; support it with compact bullets or the required content type.
-        - Formatting hygiene: Do not include templating tokens like ${...}. Escape quotes normally within JSON strings.
+        - Formatting hygiene: Do not include templating tokens. Escape quotes normally within JSON strings.
 
         The JSON must conform to the following schema:
         {format_instructions}

@@ -27,7 +27,7 @@ class DetailedSlideStructureItem(BaseModel):
     )
     layout: str = Field(
         description=(
-            "For now, always assign a neutral or general-purpose layout from the provided list. "
+            "The name of the layout template to use for this slide. Choose the best fitting layout from the provided list of available layouts. "
             "Do not invent layouts, only pick one that is guaranteed to exist."
         )
     )
@@ -54,9 +54,6 @@ async def generate_slide_structure(
     Intermediate goal: split the lecture script into logical chunks
     that can serve as candidate slides. No optimization beyond chunking.
     """
-
-    # Pick a safe default layout (e.g., the first one in the list).
-    default_layout = available_layouts[0].name if available_layouts else "Default"
 
     layouts_description = "\n".join(
         [f"- Name: '{layout.name}', Description: {layout.description}" for layout in available_layouts]
@@ -105,6 +102,6 @@ async def generate_slide_structure(
     # Defensive: if model forgets layout, assign default
     for item in result.items:
         if not item.layout.strip():
-            item.layout = default_layout
+            item.layout = "default"
 
     return cast(DetailedSlideStructure, result)
