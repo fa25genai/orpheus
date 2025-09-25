@@ -72,6 +72,11 @@ export default function Home() {
 
       return slidesResponse;
     } catch (error) {
+
+      if (error instanceof Error && error.message.includes("404")) {
+        // If 404, it means the slides are not yet created. We can ignore this error.
+        return;
+      }
       console.error("Slides polling failed:", error);
       toast.error("An error occurred while fetching the slides.", {
         action: {
@@ -108,8 +113,17 @@ export default function Home() {
     if (!finalPrompt.trim()) return;
 
     setMessages((prev) => [...prev, finalPrompt]);
-    const promptId = (await getPromptId(finalPrompt)) ?? "";
+    const promptId = await getPromptId(finalPrompt)
 
+    if (!promptId) {
+      toast.error("No prompt ID received.", {
+        action: {
+          label: "Close",
+          onClick: () => toast.dismiss(),
+        }
+      });
+      return;
+    }
     const maxRetries = 3000;
 
     for (let attempt = 0; attempt < maxRetries; attempt++) {
