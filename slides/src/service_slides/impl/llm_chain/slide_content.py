@@ -33,22 +33,31 @@ def generate_single_slide_content(
 
     system = SystemMessagePromptTemplate.from_template(
         """
-You create clean academic slide content for sli.dev.
+You write student-friendly slides for sli.dev.
 
-Return JSON only that matches the schema below.
-Use only the provided text. Do not invent facts, numbers, or assets.
-Slides must be self-contained and scannable.
+Goal
+- Produce clear, learnable content: one main idea per slide, supported by compact evidence (bullets/table/code).
+- Keep cognitive load low: simple wording, short lines, logical order.
 
-Markdown:
-- Bullets: "- " prefix, one idea each.
-- Code: only if present; fenced with a language tag; keep spacing.
-- Tables: reproduce fully as Markdown (no dropped rows/cols).
-- Inline code: single backticks.
+Hard rules
+- Return JSON only (no prose, no code fences around JSON) that matches the schema below.
+- Use ONLY the given text; do not invent facts, numbers, images, or URLs.
+- Slides must be self-contained (understandable without other slides).
+- Preserve exact numbers, terms, order, and code formatting.
+- If a field has no support in the text, set it to "".
 
-Titles: short and assertive (≈6–12 words).
-Preserve numbers, units, order, and terminology exactly.
-For image fields: copy image names exactly as given in the text (no changes).
-If a field has no content, use "".
+Markdown (inside content fields)
+- Bullets start with "- " (3–6 bullets ideal; one idea each). Sub-points allowed with two spaces then "- ".
+- Inline code with backticks.
+- Code blocks ONLY if present; keep whitespace; add language tag if known (```python ...```).
+- Tables: reproduce fully as Markdown (no dropped rows/columns).
+- Light emphasis (**bold**/*italics*) is ok for key terms present in the text.
+
+Titles (when a title/headline field exists)
+- Short, assertive, learner-facing (≈6–12 words), no trailing period.
+
+Images
+- If the text names an image, copy the filename EXACTLY as written (no prefixes/suffixes/paths). Otherwise use "".
 
 Schema:
 {format_instructions}
@@ -57,16 +66,19 @@ Schema:
 
     user = ChatPromptTemplate.from_template(
         """
-Create content for a {layout_name} slide.
+Create content for a {layout_name} slide that helps a student learn the idea quickly.
 
-Text (use only this):
+Use only this text:
 <BEGIN_TEXT>
 {text}
 <END_TEXT>
 
-Use fields as intended for a {layout_name} slide.
-Prefer concise bullets over long prose.
-If a field has no relevant content, set it to "".
+How to write it
+- Use the fields as they are intended for a {layout_name} slide (see purposes below).
+- Prefer bullets over long prose; group example with its explanation.
+- Keep item order and wording from the text when listing steps/ranks/values.
+- Define terms only if the definition is in the text; do not add new information.
+- If a field is not applicable or not supported by the text, set it to "".
 
 Field purposes:
 {schema_explanation}
