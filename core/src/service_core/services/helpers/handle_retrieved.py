@@ -50,24 +50,8 @@ def convert_json_structure(retrieved_content: list) -> list:
                 mime_type = image_info["mime_type"]
                 base64_data = image_info["data"]
                 
-                # 1. Generate filename (simulating the LLM call)
                 filename = generate_filename_from_description(description, mime_type)
                 
-                # 2. Decode the image data to save it (optional, but good practice)
-                try:
-                    # Create an 'output' directory if it doesn't exist
-                    os.makedirs("output", exist_ok=True)
-                    output_path = os.path.join("output", filename)
-                    
-                    with open(output_path, "wb") as f:
-                        f.write(base64.b64decode(base64_data))
-                    print(f"Successfully saved image to: {output_path}")
-
-                except (ValueError, TypeError) as e:
-                    print(f"Error decoding or saving {filename}: {e}")
-                    continue
-
-                # 3. Create the new asset structure for the output JSON
                 asset = {
                     "name": filename,
                     "assetDesc": description,
