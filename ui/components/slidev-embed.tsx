@@ -3,6 +3,7 @@
 import { useRef, useImperativeHandle, forwardRef } from "react";
 import { Card } from "@/components/ui/card";
 import {clsx} from "clsx";
+import {SlideMessage, SlideMessageData} from "@/types/slide-message";
 
 export interface SlidevEmbedHandle {
   goToSlide: (slide: number) => void;

@@ -1,9 +1,9 @@
-interface SlideMessage {
+export interface SlideMessage {
     appId: 'slidev'
     data: SlideMessageData
 }
 
-interface SlideMessageData {
+export interface SlideMessageData {
     type: 'slide.navigate' | 'slide.next' | 'slide.prev'
     value?: number
 }
