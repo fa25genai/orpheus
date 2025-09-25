@@ -22,6 +22,8 @@ services:
       context: ..
       dockerfile: Dockerfile
     environment:
+      VIDEO_ROOT: "/data/jobs"
+      PUBLIC_VIDEOS_BASE: "/videos/jobs"
       GEN_AUDIO: "http://localhost:8000/infer"
       GEN_VIDEO: "http://localhost:8000/infer"
     volumes:

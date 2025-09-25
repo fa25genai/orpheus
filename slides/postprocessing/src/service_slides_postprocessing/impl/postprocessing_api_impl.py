@@ -48,7 +48,9 @@ class ImplPostprocessingApi(BasePostprocessingApi):
             f.write(slideset.slideset)
 
         for asset in slideset.assets:
-            with open(path_helper.get_asset_file(slideset.prompt_id, asset.path), "b+w") as f:
+            asset_file = path_helper.get_asset_file(slideset.prompt_id, asset.path)
+            pathlib.Path(asset_file).parent.mkdir(parents=True, exist_ok=True)
+            with open(asset_file, "b+w") as f:
                 f.write(b64decode(asset.data))
 
         # Step 2: Build HTML/Web distribution with theme
