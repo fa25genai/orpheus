@@ -14,6 +14,7 @@ import GuideCards from "@/components/guide-cards";
 import {PersonaLevel} from "@/types/uploading";
 import VideoPlayer from "@/components/video-player";
 import {Skeleton} from "@/components/ui/skeleton";
+import SlidevEmbed, { SlidevEmbedHandle } from "@/components/slidev-embed";
 import {GenerationStatusResponse as SlidesGenerationStatusResponse} from "@/generated-api-clients/slides";
 import {toast} from "sonner";
 
@@ -25,6 +26,7 @@ export default function Home() {
   const [avatarData, setAvatarData] = useState<AvatarGenerationStatusReponse>();
 
   const bottomRef = useRef<HTMLDivElement>(null);
+  const slidevRef = useRef<SlidevEmbedHandle>(null);
 
   async function getAvatar(promptId: string) {
     try {
@@ -188,14 +190,8 @@ export default function Home() {
     if (slides.status === "DONE") {
       return (
         <Card className="p-8 bg-card border-border md:col-span-2">
-          <iframe
-            width="100%"
-            height="100%"
-            src="http://localhost:3030"
-            className="w-full h-98 pointer-events-none"
-            title="Generated Slides"
-            loading="lazy"
-          />
+            {/* URL is for now hardcoded. It will be replaced with the actual URL when the nginx server is integrated. */}
+            <SlidevEmbed baseUrl="http://172.16.9.217:8080" className="h-98" ref={slidevRef} />
         </Card>
       );
     }
@@ -272,6 +268,11 @@ export default function Home() {
                 <AvatarSection avatarData={avatarData} />
                 <SlidesSection slides={slides} />
               </div>
+                {/* For testing purposes of the slide change */}
+                {/*<div className="flex gap-2">*/}
+                {/*    <Button onClick={() => slidevRef.current?.next()}>Next</Button>*/}
+                {/*    <Button onClick={() => slidevRef.current?.prev()}>Prev</Button>*/}
+                {/*</div>*/}
             </div>
           ))}
           <div ref={bottomRef}></div>

@@ -13,14 +13,24 @@ FROM poetry-base
 # Install slidev executable (requires node)
 ENV DEBIAN_FRONTEND="noninteractive"
 RUN apt-get update ;\
-    apt-get install -y npm ;\
+    apt-get install -y npm git ;\
+    apt-get clean autoclean ;\
+    apt-get autoremove --yes ;\
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-RUN npm install -g @slidev/cli@52.2.4 ;\
-    npm install -g @slidev/types@52.2.4 ;\
+RUN npm install -g @pnpm/exe ;\
     npm install -g playwright-chromium ;\
     npx playwright install-deps ;\
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* ;\
+    apt-get clean autoclean ;\
+    apt-get autoremove --yes ;\
+    npm cache clean --force
+
+RUN git clone https://github.com/fa25genai/slidev.git /install/slidev/ ;\
+    cd /install/slidev ;\
+    pnpm install ;\
+    pnpm -w build ;\
+    ln -s /install/slidev/packages/slidev/bin/slidev.mjs /usr/local/bin/slidev ;\
     npm cache clean --force
 
 WORKDIR /app
@@ -28,7 +38,7 @@ COPY src src
 COPY pyproject.toml README.md ./
 
 # Add predefined sli.dev themes
-ADD themes/slidev-theme-tum.tgz /etc/slidev/themes/theme-tum/
+ADD themes/slidev-theme-tum-0.1.0.tgz /etc/slidev/themes/theme-tum/
 RUN cd /etc/slidev/themes/theme-tum/package ; \
     npm install ; \
     npm cache clean --force

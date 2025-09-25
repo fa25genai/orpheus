@@ -28,7 +28,6 @@ RUN wget https://myshell-public-repo-host.s3.amazonaws.com/openvoice/checkpoints
     && rm checkpoints_v2_0417.zip 
 
 COPY generate_audio_function.py /app/OpenVoice/generate_audio_function.py
-COPY kursche_voice.mp3 /app/OpenVoice/kursche_voice.mp3
 
 EXPOSE 8000
 CMD ["uvicorn", "generate_audio_function:app", "--host", "0.0.0.0", "--port", "8000"]

@@ -1,4 +1,5 @@
 import asyncio
+
 import requests
 from datetime import datetime, timezone
 from typing import List, Optional, Literal, Dict, Tuple, Union
@@ -19,9 +20,6 @@ from pydantic import BaseModel, Field, constr
 
 from fastapi.middleware.cors import CORSMiddleware
 
-
-
-
 app = FastAPI(title="Service Video-Generation APIs", version="0.1")
 origins = ["*"]
 
@@ -40,6 +38,9 @@ DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./app.db")
 IMAGES_OUTPUT_DIR = Path(os.getenv("IMAGES_OUTPUT_DIR", "data/avatars")).resolve()
 IMAGES_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
+VIDEO_ROOT = Path(os.getenv("VIDEO_ROOT", "/data/jobs")).resolve()
+PUBLIC_VIDEOS_BASE = os.getenv("PUBLIC_VIDEOS_BASE", "/videos/jobs")
+VIDEO_ROOT.mkdir(parents=True, exist_ok=True)
 
 # ---------------------------
 # Models
@@ -76,6 +77,7 @@ class GenerationAcceptedResponse(BaseModel):
     promptId: UUID
     createdAt: datetime
 
+
 class GenerationStatusResponse(BaseModel):
     promptId: UUID
     status: Literal["IN_PROGRESS", "FAILED", "DONE"]
@@ -84,16 +86,18 @@ class GenerationStatusResponse(BaseModel):
     estimatedSecondsLeft: int  # 0 when DONE/FAILED
     error: Optional[ErrorModel] = None
 
+
 class AvatarImagePayload(BaseModel):
     id: UUID
     filePath: str
     mimeType: Optional[str] = None
     sizeBytes: Optional[int] = None
     createdAt: datetime
+
+
 class AvatarCreatedResponse(BaseModel):
     avatarId: UUID
     image: Optional[AvatarImagePayload] = None
-
 
 
 # ---------------------------
@@ -103,8 +107,10 @@ class AvatarCreatedResponse(BaseModel):
 class Base(DeclarativeBase):
     pass
 
+
 engine = create_engine(DATABASE_URL, future=True)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, future=True)
+
 
 def get_db() -> Session:
     db = SessionLocal()
@@ -112,6 +118,7 @@ def get_db() -> Session:
         yield db
     finally:
         db.close()
+
 
 
 class Avatar(Base):
@@ -138,15 +145,36 @@ def _startup_create_tables() -> None:
     Base.metadata.create_all(engine)
 
 
+# ---------- Saving helpers ----------
+def job_dir(prompt_id: UUID) -> Path:
+    d = VIDEO_ROOT / str(prompt_id)
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+def slide_paths(prompt_id: UUID, idx_one_based: int) -> tuple[Path, Path]:
+    d = job_dir(prompt_id)
+    temp = d / f".{idx_one_based}.mp4.part"   # render/download into this temp file
+    final = d / f"{idx_one_based}.mp4"        # publish atomically
+    return temp, final
+
+def public_video_url(prompt_id: UUID, idx_one_based: int) -> str:
+    return f"{PUBLIC_VIDEOS_BASE}/{prompt_id}/{idx_one_based}.mp4"
+
+def folder_url(prompt_id: UUID) -> str:
+    return f"{PUBLIC_VIDEOS_BASE}/{prompt_id}/"
+
+
 # ---------------------------
 # Avatars API 
 # ---------------------------
 
 ALLOWED_IMAGE_MIMES = {"image/png", "image/jpeg", "image/webp"}
 
+
 class AvatarCreatedResponse(BaseModel):
     avatarId: UUID
     image: Optional[Dict] = None  # { id, filePath, mimeType, sizeBytes, createdAt }
+
 
 class AvatarImageResponse(BaseModel):
     id: UUID
@@ -156,8 +184,10 @@ class AvatarImageResponse(BaseModel):
     sizeBytes: Optional[int] = None
     createdAt: datetime
 
+
 def _ext_from_mime(mime: str) -> str:
     return {"image/png": "png", "image/jpeg": "jpg", "image/webp": "webp"}.get(mime, "bin")
+
 
 def _save_upload_to_disk(avatar_id: UUID, upload: UploadFile) -> Path:
     if upload.content_type not in ALLOWED_IMAGE_MIMES:
@@ -175,6 +205,7 @@ def _save_upload_to_disk(avatar_id: UUID, upload: UploadFile) -> Path:
         shutil.copyfileobj(upload.file, out)
     return target
 
+
 @app.post(
     "/v1/avatars",
     status_code=201,
@@ -182,8 +213,8 @@ def _save_upload_to_disk(avatar_id: UUID, upload: UploadFile) -> Path:
     tags=["avatar"],
 )
 def create_avatar(
-    file: Optional[UploadFile] = File(default=None),
-    db: Session = Depends(get_db),
+        file: Optional[UploadFile] = File(default=None),
+        db: Session = Depends(get_db),
 ):
     # Create avatar id and persist
     avatar_id = uuid.uuid4()
@@ -223,9 +254,9 @@ def create_avatar(
     tags=["avatar"],
 )
 def add_avatar_image(
-    avatarId: UUID,
-    file: UploadFile = File(...),
-    db: Session = Depends(get_db),
+        avatarId: UUID,
+        file: UploadFile = File(...),
+        db: Session = Depends(get_db),
 ):
     # Strict: avatar must exist
     avatar = db.get(Avatar, str(avatarId))
@@ -254,6 +285,8 @@ def add_avatar_image(
         sizeBytes=db_img.size_bytes,
         createdAt=db_img.created_at,
     )
+
+
 # ---------------------------
 # In-memory job store
 # ---------------------------
@@ -270,7 +303,7 @@ class Job(BaseModel):
 
 
 # TODO: check usefullness of this
-#to be stored in a db
+# to be stored in a db
 JOBS: Dict[UUID, Job] = {}
 
 CDN_BASE = "https://cdn.example.com/videos"
@@ -301,20 +334,43 @@ def _eta_seconds(job: Job) -> int:
 # Fake pipeline
 # ---------------------------
 
-async def generate_audio(slide_text: str, course_id: str, prompt_id: UUID, user_profile: UserProfile, audio_counter: int) -> str:
+async def generate_audio(
+        slide_text: Optional[str] = "Hello students! I want you to drink coffe.",
+        course_id: Optional[str] = "course_123",
+        voice_sample: str = r"C:\Users\julia\Desktop\Ferienakademie\orpheus\avatar\OpenVoice\kursche_voice.mp3",
+        prompt_id: Optional[UUID] = "default123",
+        user_profile: Optional[UserProfile] = None,
+        audio_counter: Optional[int] = 5) -> str:
     """
     Create per-slide audio files from text.
     Returns a list of file paths (one per slide).
     """
-    pid = str(prompt_id)
-    audio_path = f"/tmp/{pid}_{audio_counter}.wav"
-    # TODO: generate real audio in OpenVoice container and save it in the mentioned path
-    # use slide_text, course_id, prompt_id and user_profil for this
+    audio_api_url = os.getenv("GEN_AUDIO", "http://localhost:8000/v1/audio/generate")
+    timeout = httpx.Timeout(connect=5.0, read=120.0, write=30.0, pool=5.0)
 
-    # hard_code
-    return f"/data/example/krusche_voice.wav"
+    output_wav = f"blabla_{audio_counter}.wav"
 
-    # return audio_path
+    try:
+        async with httpx.AsyncClient(timeout=timeout) as client:
+            with open(voice_sample, "rb") as f:
+                # slide_text as simple form field, voice file as file field
+                data = {"slide_text": slide_text}
+                files = {"voice_file": (os.path.basename(voice_sample), f, "audio/mpeg")}
+
+                resp = await client.post(audio_api_url, data=data, files=files)
+                resp.raise_for_status()
+
+        # assume API returns WAV bytes directly
+        Path(output_wav).write_bytes(resp.content)
+        print(f"[generate_audio] OK -> saved to {output_wav}")
+        return output_wav
+
+    except httpx.HTTPStatusError as e:
+        print(f"[generate_audio] HTTP {e.response.status_code}: {e.response.text[:200]}")
+        return None
+    except httpx.RequestError as e:
+        print(f"[generate_audio] Request error: {e}")
+        return None
 
 
 async def generate_video(
@@ -325,56 +381,83 @@ async def generate_video(
     video_counter: Optional[int] = None,
 ) -> Optional[str]:
     """
-    Assemble the final video using the audio track and a source image.
-    Returns the path/URL of the rendered video, or None on failure.
+    Calls the renderer which returns video BYTES, streams them to /data/jobs/<promptId>/.N.mp4.part,
+    then atomically publishes to N.mp4. Returns the absolute final path on success.
     """
     if prompt_id is None or video_counter is None:
         print("generate_video: prompt_id and video_counter are required.")
         return None
 
-    pid = str(prompt_id)
+    slide_no = video_counter + 1  # 1-based
+    temp_path, final_path = slide_paths(prompt_id, slide_no)
+    temp_path.parent.mkdir(parents=True, exist_ok=True)
 
-    # Defaults for your MVP; swap with course-specific assets later
-    out_path = f"/data/{pid}_{video_counter}.mp4"
+    # Resolve inputs
     resolved_audio = audio_path or "/data/example/krusche_voice.wav"
-    source_path = "/data/example/image_michal.png"  # could be derived from course_id/user_profile
+    source_path = "/data/example/image_michal.png"
 
-    # Call to API
-    video_api_url = os.getenv("GEN_VIDEO", "http://localhost:8000/video/infer")
+    video_api_url = os.getenv("GEN_VIDEO", "http://localhost:8000/infer")
 
-    payload = {
-        "audio_path": resolved_audio,
-        "source_path": source_path,
-        "output_path": out_path,
+    # Prepare multipart files (renderer expects uploads and returns raw MP4 bytes)
+    files = {
+        "audio": ("audio.wav", open(resolved_audio, "rb"), "audio/wav"),
+        "source": ("image.png", open(source_path, "rb"), "image/png"),
     }
 
-
-    print(f"[generate_video] POST {api_url} payload={payload}")
-
-    # Reasonable timeouts for an internal service call
-    timeout = httpx.Timeout(connect=5.0, read=120.0, write=30.0, pool=5.0)
+    timeout = httpx.Timeout(connect=5.0, read=600.0, write=60.0, pool=5.0)
 
     try:
         async with httpx.AsyncClient(timeout=timeout) as client:
-            resp = await client.post(video_api_url, json=payload)
-            resp.raise_for_status()
+            req = client.build_request("POST", video_api_url, files=files)
+            async with client.send(req, stream=True) as resp:
+                if resp.status_code >= 400:
+                    body = await resp.aread()
+                    print(f"[generate_video] HTTP {resp.status_code}: {body[:500]!r}")
+                    return None
 
-        # The infer API is expected to return JSON with "output_path"
-        data = resp.json()
-        result = data.get("output_path") or out_path
-        print(f"[generate_video] OK -> {result}")
-        return result
+                ctype = resp.headers.get("Content-Type", "").lower()
+                if "application/json" in ctype:
+                    # Unexpected here; renderer should return bytes
+                    data = await resp.json()
+                    print(f"[generate_video] Unexpected JSON: {str(data)[:500]}")
+                    return None
 
-    except httpx.HTTPStatusError as e:
-        # Server returned non-2xx
-        body = e.response.text[:500]
-        print(f"[generate_video] HTTP {e.response.status_code}: {body}")
+                # Stream to temp file
+                with temp_path.open("wb") as f:
+                    async for chunk in resp.aiter_bytes(chunk_size=1024 * 256):
+                        if chunk:
+                            f.write(chunk)
+                    f.flush()
+                    os.fsync(f.fileno())
+    except Exception as e:
+        print(f"[generate_video] stream/write error: {e!r}")
         return None
-    except (httpx.RequestError, ValueError) as e:
-        # Network error or JSON parse issue
-        print(f"[generate_video] request/json error: {e!r}")
+    finally:
+        # close file handles from 'files'
+        for v in files.values():
+            try:
+                v[1].close()
+            except Exception:
+                pass
+
+    # Validate non-empty
+    try:
+        if temp_path.stat().st_size == 0:
+            print("[generate_video] empty file received")
+            return None
+    except OSError as e:
+        print(f"[generate_video] stat failed: {e!r}")
         return None
 
+    # Atomic publish
+    try:
+        temp_path.replace(final_path)
+    except OSError as e:
+        print(f"[generate_video] publish rename failed: {e!r}")
+        return None
+
+    print(f"[generate_video] OK -> {final_path}")
+    return str(final_path)
 
 
 # TODO: maybe remove return
@@ -458,7 +541,7 @@ async def process_generation(payload: GenerateRequest) -> Dict[str, Union[List[O
 # ---------------------------
 def _run_process_generation(payload: "GenerateRequest") -> None:
     # Runs the async coroutine in a fresh event loop, safe for BackgroundTasks
-    #can't run in the same loop context
+    # can't run in the same loop context
 
     loop = asyncio.get_event_loop()
     '''
@@ -467,6 +550,7 @@ def _run_process_generation(payload: "GenerateRequest") -> None:
     “asyncio.run() cannot be called from a running event loop”.
     '''
     loop.create_task(process_generation(payload))
+
 
 @app.post(
     "/v1/video/generate",
@@ -477,20 +561,26 @@ def _run_process_generation(payload: "GenerateRequest") -> None:
 )
 async def request_video_generation(payload: GenerateRequest, background: BackgroundTasks, response: Response, request: Request):
     now = _utcnow()
-    # pre-compute where the file will live
-    url = _result_url(payload.promptId)
+
+    # create the per-job output folder now and compute its public URL
+    job_dir(payload.promptId)
+    folder = folder_url(payload.promptId)
+
     expected = _estimate_total_seconds(len(payload.slideMessages))
+    # set resultUrl to the folder so /status points somewhere real
     JOBS[payload.promptId] = Job(
         promptId=payload.promptId,
         status="IN_PROGRESS",
         lastUpdated=now,
-        resultUrl=url,
+        resultUrl=folder,
         startedAt=now,
         expectedDurationSec=expected,
         error=None,
     )
+
     # fire-and-forget
-    background.add_task(_run_process_generation, payload)    # absolute Location per spec
+    background.add_task(_run_process_generation, payload)
+
     base = str(request.base_url).rstrip("/")
     response.headers["Location"] = f"{base}/v1/video/{payload.promptId}/status"
     return GenerationAcceptedResponse(promptId=payload.promptId, createdAt=now)
