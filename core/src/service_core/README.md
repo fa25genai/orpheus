@@ -42,11 +42,9 @@ The server will be available at `http://127.0.0.1:8000`.
 To build and run the service using Docker, execute the following commands from the root of the `core` directory:
 
 ```sh
-# Build the Docker image
 docker build -t service-core .
 
-# Run the Docker container (mapping container port 8000 to host port 8000)
-docker run -it --rm -p 8000:8000 service-core
+docker run --name core-ai -it --rm -p 8000:8000 service-core
 ```
 
 This will build the image and start the service on port 8000.
