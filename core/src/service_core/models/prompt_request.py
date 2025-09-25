@@ -1,7 +1,7 @@
 # coding: utf-8
 
 """
-    Orpheus CoreAI-Service API
+    Answer Generation Service API
 
     API for the Orpheus core orchestration. From the repository: \"The Orpheus System transforms static slides into interactive prompt videos with lifelike professor avatars, combining expressive narration, visual presence, and dynamic content to create engaging, personalized learning experiences.\" License: MIT (see repository). 
 
@@ -32,7 +32,7 @@ class PromptRequest(BaseModel):
     PromptRequest
     """ # noqa: E501
     prompt: StrictStr = Field(description="The user's educational prompt.")
-    course_id: Optional[StrictStr] = Field(default=None, description="The course id.", alias="courseId")
+    course_id: StrictStr = Field(alias="courseId")
     __properties: ClassVar[List[str]] = ["prompt", "courseId"]
 
     model_config = {

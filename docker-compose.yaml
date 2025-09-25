@@ -10,6 +10,28 @@ services:
       - "30606:30606"
     networks:
       - orpheus
+  slides-postprocessing:
+    build:
+      context: ./slides/postprocessing
+      dockerfile: Dockerfile
+    env_file:
+      - ./slides/postprocessing/.env
+    ports:
+      - "30607:30607"
+    networks:
+      - orpheus
+    volumes:
+      - slides-data:/etc/orpheus/slides/storage
+  slides-delivery:
+    build:
+      context: ./slides/delivery
+      dockerfile: Dockerfile
+    ports:
+      - "30608:30608"
+    networks:
+      - orpheus
+    volumes:
+      - slides-data:/var/www:ro
 
   ui-service:
     container_name: ui
