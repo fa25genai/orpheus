@@ -2,8 +2,7 @@ import base64
 import re
 import json
 import os
-from typing import Any, Dict, List, Tuple
-from helpers.llm import getLLM
+from typing import Any, Dict, List
 # --- Helper function to simulate getLLM().invoke(description) ---
 def generate_filename_from_description(description: str, mime_type: str) -> str:
     """
