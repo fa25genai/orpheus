@@ -5,10 +5,10 @@ from dotenv import load_dotenv
 
 load_dotenv()
 api_key = os.getenv("KEY", "")
-
+ollama_host = os.getenv("OLLAMA_HOST", "https://gpu.aet.cit.tum.de/ollama")
 # --- Client unverändert lassen ---
 client = ollama.Client(
-    host='https://gpu.aet.cit.tum.de/ollama',
+    host=ollama_host,
     headers={'Authorization': f'Bearer {api_key}'}
 )
 
