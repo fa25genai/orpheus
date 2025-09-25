@@ -53,7 +53,7 @@ class SlidesApiImpl(BaseSlidesApi):
             async with ApiClient(get_postprocessing_api_config()) as api_client:
                 postprocessing_api = PostprocessingApi(api_client)
                 resp = await postprocessing_api.get_slideset(promptId)
-                if resp is Error:  # type: ignore
+                if isinstance(resp, Error):  # type: ignore
                     raise HTTPException(status_code=404, detail="Slideset not found")
                 return GenerationStatusResponse(
                     promptId=promptId,
