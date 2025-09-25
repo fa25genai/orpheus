@@ -1,0 +1,130 @@
+openapi: 3.1.0
+info:
+  title: Slides Content Location Service API
+  version: "0.1.0"
+  description: |
+    API for the Orpheus slide generation.
+    From the repository: "The Orpheus System transforms static slides into interactive lecture videos with lifelike professor avatars, combining expressive narration, visual presence, and dynamic content to create engaging, personalized learning experiences."
+    License: MIT (see repository).
+  termsOfService: "https://github.com/fa25genai/orpheus"
+  contact:
+    name: "Orpheus Project"
+    url: "https://github.com/fa25genai/orpheus/issues/new"
+  license:
+    name: MIT
+    url: "https://opensource.org/licenses/MIT"
+
+servers:
+  - url: "http://localhost:30606"
+    description: "Local development (random port chosen: 30606)"
+  - url: "http://orpheus-service-slidegen:8080"
+    description: "DNS service name for in-cluster service"
+
+tags:
+  - name: slides
+    description: "Endpoints for slide generation, retrieval and status"
+
+paths:
+
+  /v1/slides/{promptId}/getLocation:
+    get:
+      tags:
+        - slides
+      summary: "Get the URL for slides that have been generated (or are currently generated)."
+      operationId: getGenerationStatus
+      parameters:
+        - name: promptId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: "The promptId returned by /v1/slides/generate"
+      responses:
+        "200":
+          description: "URL to the CDN where the slides are stored (response might take a while if the slides are still generated)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenerationStatusResponse"
+              examples:
+                done:
+                  value:
+                    promptId: "01997fe4-864e-7da0-b959-b44e925a3c6e"
+                    slidesUrl: "https://someCDNUrl"
+        "404":
+          description: "Slides were not found (wrong promptId?)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+components:
+  schemas:
+    UserProfile:
+      type: object
+      description: "Schemaless additional information about the user (e.g. preferences regarding slide style)."
+
+    SlideItem:
+      type: object
+      description: "One slide entry in the structure summary"
+      properties:
+        content:
+          description: Human readable text, describing which lecture contents will be contained in the slide
+          type: string
+
+    SlideStructure:
+      type: object
+      description: "High-level structure of the slide deck returned early for UI and navigation"
+      properties:
+        pages:
+          type: array
+          items:
+            $ref: "#/components/schemas/SlideItem"
+      example:
+        pages:
+          - content: "Title slide introducing the topic \"for loops\""
+          - content: "Loops are a programming structure which allows to repeatedly execute the same code."
+          - content: "Simple example of a for loop with the text \"...\""
+
+    GenerationAcceptedResponse:
+      type: object
+      description: "Returned immediately after generation request accepted"
+      properties:
+        promptId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [ IN_PROGRESS, FAILED, DONE ]
+        createdAt:
+          type: string
+          format: date-time
+        structure:
+          $ref: "#/components/schemas/SlideStructure"
+          description: "Structure preview for progressing other generation steps"
+
+    GenerationStatusResponse:
+      type: object
+      properties:
+        promptId:
+          type: string
+          format: uuid
+        slidesUrl:
+          type: string
+          format: url
+        error:
+          $ref: "#/components/schemas/Error"
+
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+
+externalDocs:
+  description: "Project repository and README"
+  url: "https://github.com/fa25genai/orpheus"
+

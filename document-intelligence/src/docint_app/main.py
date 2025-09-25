@@ -13,6 +13,7 @@
 
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from docint_app.apis.docint_api import router as DocintApiRouter
 
@@ -20,6 +21,17 @@ app = FastAPI(
     title="Document Intelligence API",
     description="API for the Orpheus document intelligence orchestration. From the repository: \&quot;The Orpheus System transforms static slides into interactive lecture videos with lifelike professor avatars, combining expressive narration, visual presence, and dynamic content to create engaging, personalized learning experiences.\&quot; License: MIT (see repository).",
     version="0.1.0",
+)
+
+
+origins = ["*"]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 app.include_router(DocintApiRouter)

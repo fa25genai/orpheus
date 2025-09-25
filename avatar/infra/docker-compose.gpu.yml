@@ -1,0 +1,38 @@
+version: "3.9"
+
+networks:
+  gpu-core: {}
+
+services:
+  voice-generation:
+    build:
+      context: ../OpenVoice
+      dockerfile: Dockerfile
+    networks: [gpu-core]
+    ports:
+      - "7000:8000"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:7000/health || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 20s
+    restart: on-failure
+
+  avatar-generation:
+    build:
+      context: ../ditto-talkinghead
+      dockerfile: Dockerfile
+    networks: [gpu-core]
+    volumes:
+      - ../ditto-talkinghead/checkpoints:/app/checkpoints
+    ports:
+      - "8000:8000"  # see docker file in ditto-talkinghead
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8000/health || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 30s
+    restart: on-failure
+    gpus: all

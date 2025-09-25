@@ -1,28 +1,50 @@
-from datetime import datetime
-
+import asyncio
 from concurrent.futures.thread import ThreadPoolExecutor
-from typing import Any
+from datetime import datetime
+from logging import getLogger
+from typing import Any, List
 
 from fastapi import HTTPException
 from langchain_core.language_models import BaseLanguageModel
 from pydantic import StrictStr, Field
-from service_slides.impl.llm_chain.slide_structure import generate_slide_structure
-from service_slides.impl.llm_chain.slide_content import generate_single_slide_content
-from service_slides.impl.manager.layout_manager import LayoutManager
-from service_slides.impl.manager.slide_output_manager import save_slides_to_file
 from typing_extensions import Annotated
 
-from service_slides.apis.slides_api import router as router
 from service_slides.apis.slides_api_base import BaseSlidesApi
-from service_slides.impl.manager.job_manager import JobManager
+from service_slides.clients.configurations import get_postprocessing_api_config
+from service_slides.clients.postprocessing import ApiClient, ApiException, SlidesetWithIdAssetsInner
+from service_slides.clients.postprocessing.api.postprocessing_api import PostprocessingApi
+from service_slides.clients.postprocessing.models.slideset_with_id import SlidesetWithId
+from service_slides.clients.postprocessing.models.store_slideset_request import StoreSlidesetRequest
+from service_slides.impl.llm_chain.slide_content import generate_single_slide_content
+from service_slides.impl.llm_chain.slide_structure import generate_slide_structure
+from service_slides.impl.manager.job_manager import JobManager, JobStatus
+from service_slides.impl.manager.layout_manager import LayoutManager
 from service_slides.models.generation_accepted_response import GenerationAcceptedResponse
 from service_slides.models.generation_status_response import GenerationStatusResponse
 from service_slides.models.request_slide_generation_request import RequestSlideGenerationRequest
+
+_log = getLogger("slides_impl")
 
 
 class SlidesApiImpl(BaseSlidesApi):
     def __init_subclass__(cls: Any, **kwargs: Any) -> None:
         super().__init_subclass__(**kwargs)
+
+    async def get_content_url(
+        self,
+        promptId: Annotated[
+            StrictStr, Field(description="The promptId returned by /v1/slides/generate")
+        ],
+        job_manager: JobManager,
+    ) -> GenerationStatusResponse:
+        async with job_manager.condition_variable:
+            while True:
+                status = await self.get_content_url(promptId, job_manager)
+                if status is None or status.status in ["DONE", "FAILED"]:
+                    return status
+
+                _log.debug("Waiting on status change for %s", promptId)
+                await job_manager.condition_variable.wait()
 
     async def get_generation_status(
         self,
@@ -33,15 +55,44 @@ class SlidesApiImpl(BaseSlidesApi):
     ) -> GenerationStatusResponse:
         status = await job_manager.get_status(promptId)
         if status is None:
-            raise HTTPException(
-                status_code=404
-            )  # TODO: Check if lecture is present on CDN and then we have to return done
+            try:
+                async with ApiClient(get_postprocessing_api_config()) as api_client:
+                    postprocessing_api = PostprocessingApi(api_client)
+                    resp = await postprocessing_api.get_slideset(promptId)
+                    return GenerationStatusResponse(
+                        promptId=promptId,
+                        status="DONE",
+                        totalPages=0,
+                        generatedPages=0,
+                        lastUpdated=datetime.now(),
+                        webUrl=resp.web_url,
+                        pdfUrl=resp.pdf_url,
+                    )
+            except ApiException as ex:
+                if ex.status == 404:
+                    raise HTTPException(404, detail="Slideset not found")
+                _log.warning(
+                    "Failed to get generation status for %s. Error %d: %s",
+                    promptId,
+                    ex.status,
+                    ex.reason,
+                )
+                raise HTTPException(500, detail="Slideset API call failed") from ex
+            except Exception as e:
+                _log.error(
+                    "Error when calling the postprocessing API for request %s",
+                    promptId,
+                    exc_info=e,
+                )
+                raise HTTPException(500, detail="Slideset API call failed") from e
         return GenerationStatusResponse(
             promptId=promptId,
-            status="IN_PROGRESS" if status.achieved < status.total else "DONE",
+            status=status.get_status_text(),
             totalPages=status.total,
             generatedPages=status.achieved,
             lastUpdated=status.updated_at,
+            webUrl=status.web_url,
+            pdfUrl=status.pdf_url,
         )
 
     async def request_slide_generation(
@@ -53,14 +104,18 @@ class SlidesApiImpl(BaseSlidesApi):
         splitting_model: BaseLanguageModel[Any],
         slidesgen_model: BaseLanguageModel[Any],
     ) -> GenerationAcceptedResponse:
+        _log.info(
+            "Starting slide generation request %s", request_slide_generation_request.prompt_id
+        )
         # 1. Generate the slide structure
         structure = await generate_slide_structure(
             model=splitting_model,
             lecture_script=request_slide_generation_request.lecture_script,
-            available_layouts = await layout_manager.get_available_layouts(
+            available_layouts=await layout_manager.get_available_layouts(
                 request_slide_generation_request.course_id
-            )
+            ),
         )
+        _log.debug("Structure generated for request %s", request_slide_generation_request.prompt_id)
 
         # 2. Initialize job for tracking progress
         await job_manager.init_job(request_slide_generation_request.prompt_id, len(structure.items))
@@ -89,6 +144,11 @@ class SlidesApiImpl(BaseSlidesApi):
                     slide_number=slide_num,
                     assets=getattr(item, "assets", []),
                 )
+                _log.debug(
+                    "Slide number %d generated for request %s",
+                    slide_num,
+                    request_slide_generation_request.prompt_id,
+                )
 
                 # Update job manager for this completed slide
                 async def update_job() -> None:
@@ -115,15 +175,56 @@ class SlidesApiImpl(BaseSlidesApi):
                 slide_content = future.result()
                 slide_contents.append(slide_content)
 
-            # Save all slides to markdown file
-            save_slides_to_file(prompt_id, slide_contents)
+            asyncio.run(
+                store_upload_info(
+                    job_manager,
+                    prompt_id,
+                    "\n".join(slide_contents),
+                    [],  # TODO: Add assets
+                )
+            )
 
         executor.submit(finalize_slides, slide_futures, request_slide_generation_request.prompt_id)
 
         status = await job_manager.get_status(request_slide_generation_request.prompt_id)
+        if status is None:
+            status = JobStatus(error=True)
         return GenerationAcceptedResponse(
             promptId=request_slide_generation_request.prompt_id,
-            status="IN_PROGRESS" if status and status.achieved < status.total else "DONE",
+            status=status.get_status_text(),
             createdAt=datetime.now(),
             structure=structure.as_simple_slide_structure(),
         )
+
+
+async def store_upload_info(
+    job_manager: JobManager, prompt_id: str, content: str, assets: List[SlidesetWithIdAssetsInner]
+) -> None:
+    # Save all slides to markdown file
+    async with ApiClient(get_postprocessing_api_config()) as api_client:
+        postprocessor = PostprocessingApi(api_client)
+        try:
+            response = await postprocessor.store_slideset(
+                StoreSlidesetRequest(
+                    theme="tum",
+                    slideset=SlidesetWithId(
+                        promptId=prompt_id,
+                        slideset=content,
+                        assets=assets,
+                    ),
+                )
+            )
+        except ApiException as ex:
+            _log.error(
+                "Error when calling the postprocessing API for request %s: %d %s",
+                prompt_id,
+                ex.status,
+                ex.reason,
+            )
+            await job_manager.fail(prompt_id)
+        except Exception as e:
+            _log.error(
+                "Error when calling the postprocessing API for request %s", prompt_id, exc_info=e
+            )
+            await job_manager.fail(prompt_id)
+        await job_manager.finish_upload(prompt_id, response.web_url, response.pdf_url)
