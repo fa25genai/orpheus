@@ -111,7 +111,7 @@ export default function Home() {
         action: {
           label: "Close",
           onClick: () => toast.dismiss(),
-        }
+        },
       });
 
       pollAvatar(promptId, 20);

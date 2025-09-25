@@ -57,7 +57,11 @@
     ```bash
     docker build -t nextjs-docker .
     ```
-2. How to run the docker container
+2. How to run the docker container alternatively you can use the `docker-compose.yaml`
     ```bash
+    # either 
     docker run -p 3000:3000 nextjs-docker
+
+    # or
+    docker compose up
     ```
