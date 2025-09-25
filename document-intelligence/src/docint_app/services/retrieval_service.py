@@ -188,7 +188,7 @@ class RetrievalService:
                 alpha=0.8,  # Default text-heavy weighting
                 include_distance=False
             )
-            logger.error(f"Retrieved {len(slide_hits)} hits from store")
+            logger.info(f"Retrieved {len(slide_hits)} hits from store")
             
             # Convert to OpenAPI format
             response = self.store.to_retrieval_response(slide_hits)
