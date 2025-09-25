@@ -1,6 +1,6 @@
 openapi: 3.1.0
 info:
-  title: Content Retrival Service API
+  title: Content Retrieval Service API
   version: "0.1.0"
   description: |-
     API for the Orpheus document intelligence orchestration.
