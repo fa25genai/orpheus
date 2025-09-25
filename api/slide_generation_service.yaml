@@ -1,0 +1,246 @@
+openapi: 3.1.0
+info:
+  title: Slide Generation Service API
+  version: "0.1.0"
+  description: |
+    API for the Orpheus slide generation.
+    From the repository: "The Orpheus System transforms static slides into interactive lecture videos with lifelike professor avatars, combining expressive narration, visual presence, and dynamic content to create engaging, personalized learning experiences."
+    License: MIT (see repository).
+  termsOfService: "https://github.com/fa25genai/orpheus"
+  contact:
+    name: "Orpheus Project"
+    url: "https://github.com/fa25genai/orpheus/issues/new"
+  license:
+    name: MIT
+    url: "https://opensource.org/licenses/MIT"
+
+servers:
+  - url: "http://localhost:30606"
+    description: "Local development (random port chosen: 30606)"
+  - url: "http://orpheus-service-slidegen:8080"
+    description: "DNS service name for in-cluster service"
+
+tags:
+  - name: slides
+    description: "Endpoints for slide generation, retrieval and status"
+
+paths:
+  /v1/slides/generate:
+    post:
+      tags:
+        - slides
+      summary: "Request generation of a slide deck (async — returns early)"
+      description: |
+        Accepts a concept and supporting assets (images, graphs, tables, code listings, equations).
+        The request returns immediately with a request_id and status (typically IN_PROGRESS).
+        Final slide deck (PDF) is produced asynchronously; the client can poll the status endpoint
+        and fetch the resulting deck when complete.
+      operationId: requestSlideGeneration
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - courseId
+                - promptId
+                - lectureScript
+                - assets
+              properties:
+                courseId:
+                  type: string
+                  format: uuid
+                  description: >
+                    Unique identifier of the course for which slides should be generated
+                promptId:
+                  type: string
+                  format: uuid
+                  description: >
+                    Unique identifier of the prompt to which the slides will belong.
+                lectureScript:
+                  type: string
+                  description: >
+                    Plain text containing the details of the lecture (including examples and explanations).
+                    May have any format (i.e. human readable).
+                user:
+                  $ref: "#/components/schemas/UserProfile"
+                assets:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - assetDescription
+                      - mimeType
+                      - data
+                    properties:
+                      name:
+                        type: string
+                        description: File name of the asset
+                      assetDescription:
+                        type: string
+                        description: Plain text description of the asset/it's contents
+                      mimeType:
+                        type: string
+                        description: MIME-Type name of the file type (e.g. image/png)
+                      data:
+                        type: string
+                        format: byte
+                        description: Base64 encoded raw data of the asset
+                  description: "Additional files: images, PDFs, graphs, tables, listings, equations. Use multiple entries for multiple files. May be empty."
+      responses:
+        "202":
+          description: "Request accepted — generation started. Returns request metadata and immediate structure summary."
+          headers:
+            Location:
+              description: "URL to query the status of the generation (status endpoint)."
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenerationAcceptedResponse"
+              examples:
+                accepted:
+                  summary: "Example accepted response"
+                  value:
+                    promptId: 51
+                    status: "IN_PROGRESS"
+                    created_at: "2025-09-22T09:12:33Z"
+                    structure:
+                      $ref: "#/components/schemas/SlideStructure"
+        "400":
+          description: "Malformed request (missing concept, invalid files, etc.)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: "Unauthorized"
+        "500":
+          description: "Server error"
+  /v1/slides/{promptId}/status:
+    get:
+      tags:
+        - slides
+      summary: "Get generation status for a previously-submitted request"
+      operationId: getGenerationStatus
+      parameters:
+        - name: promptId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: "The promptId returned by /v1/slides/generate"
+      responses:
+        "200":
+          description: "Status of the generation job"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenerationStatusResponse"
+              examples:
+                in_progress:
+                  value:
+                    promptId: 42
+                    status: "IN_PROGRESS"
+                    totalPages: 25
+                    generatedPages: 10
+                    lastUpdated: "2025-09-22T09:30:00Z"
+                done:
+                  value:
+                    promptId: 43
+                    status: "DONE"
+                    totalPages: 15
+                    generatedPages: 15
+                    lastUpdated: "2025-09-22T09:41:00Z"
+        "404":
+          description: "Request not found"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+components:
+  schemas:
+    UserProfile:
+      type: object
+      description: "Schemaless additional information about the user (e.g. preferences regarding slide style)."
+
+    SlideItem:
+      type: object
+      description: "One slide entry in the structure summary"
+      properties:
+        content:
+          description: Human readable text, describing which lecture contents will be contained in the slide
+          type: string
+
+    SlideStructure:
+      type: object
+      description: "High-level structure of the slide deck returned early for UI and navigation"
+      properties:
+        pages:
+          type: array
+          items:
+            $ref: "#/components/schemas/SlideItem"
+      example:
+        pages:
+          - content: "Title slide introducing the topic \"for loops\""
+          - content: "Loops are a programming structure which allows to repeatedly execute the same code."
+          - content: "Simple example of a for loop with the text \"...\""
+
+    GenerationAcceptedResponse:
+      type: object
+      description: "Returned immediately after generation request accepted"
+      properties:
+        promptId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [IN_PROGRESS, FAILED, DONE]
+        createdAt:
+          type: string
+          format: date-time
+        structure:
+          $ref: "#/components/schemas/SlideStructure"
+          description: "Structure preview for progressing other generation steps"
+
+    GenerationStatusResponse:
+      type: object
+      properties:
+        promptId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          description: "Job status"
+          enum:
+            - IN_PROGRESS
+            - FAILED
+            - DONE
+        totalPages:
+          type: integer
+          description: "Total amount of pages that have to be generated"
+        generatedPages:
+          type: integer
+          description: "Amount of generated pages at the last point of update"
+        lastUpdated:
+          type: string
+          format: date-time
+        error:
+          $ref: "#/components/schemas/Error"
+
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+
+externalDocs:
+  description: "Project repository and README"
+  url: "https://github.com/fa25genai/orpheus"
+

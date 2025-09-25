@@ -4,8 +4,6 @@ from typing import ClassVar, Dict, List, Tuple  # noqa: F401
 
 from pydantic import Field
 from typing_extensions import Annotated
-from uuid import UUID
-from service_core.models.data_response import DataResponse
 from service_core.models.error import Error
 from service_core.models.prompt_request import PromptRequest
 from service_core.models.prompt_response import PromptResponse
@@ -21,21 +19,5 @@ class BaseCoreApi:
         self,
         prompt_request: Annotated[PromptRequest, Field(description="The user prompt to generate content from.")],
     ) -> PromptResponse:
-        """Accepts a user prompt and initiates an asynchronous job to generate lecture content. Returns a unique lecture ID to track the job."""
-        ...
-
-
-    async def get_slides_by_lecture_id(
-        self,
-        lectureId: Annotated[UUID, Field(description="The unique identifier for the lecture generation job.")],
-    ) -> DataResponse:
-        """Retrieves the status or result of a slide generation job using the lecture ID."""
-        ...
-
-
-    async def get_video_by_lecture_id(
-        self,
-        lectureId: Annotated[UUID, Field(description="The unique identifier for the lecture generation job.")],
-    ) -> DataResponse:
-        """Retrieves the status or result of a video generation job using the lecture ID."""
+        """Accepts a user prompt and initiates an asynchronous job to generate lecture content. Returns a unique prompt ID to track the job."""
         ...
