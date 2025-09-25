@@ -1,0 +1,15 @@
+meta {
+  name: Get the generated slides
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/core/getSlides/:lectureId
+  body: none
+  auth: inherit
+}
+
+params:path {
+  lectureId: 
+}
