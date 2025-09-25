@@ -37,14 +37,20 @@ def generate_single_slide_content(
 
     system = SystemMessagePromptTemplate.from_template(
         """
-        You are a helpful assistant that creates concise and engaging presentation slides.
+        You are a senior academic slide writer. Produce structured JSON to populate a slide template.
 
-        The slide should be clear and to the point.
-        Use bullet points where appropriate for content fields.
+        NON-NEGOTIABLES:
+        - Output: JSON ONLY (no prose, no code fences), exactly matching the schema below.
+        - Fidelity: Use ONLY information from the provided text. Do NOT invent facts, numbers, dates, citations, code, images, or URLs.
+        - Self-contained: The slide must be understandable without any other slide.
+        - Brevity & clarity: Prefer concise bullet points over long prose. Target ~60–120 words total where appropriate.
+        - Numeric & order fidelity: Preserve exact values, orders, ranks, thresholds, and terminology from the text.
+        - Tables: If the text contains a table, reproduce it COMPLETELY as markdown within the appropriate field. If it’s too long for this single slide per the layout, include the complete table as given (do not drop rows/columns). Do not summarize unless the source text itself is a summary.
+        - Code: Include code ONLY if present in the text, verbatim, fenced with a language tag when known (e.g., ```java ...```), preserving indentation.
+        - Assets/links: If a field would require an image/URL/author and the text does not provide it, leave that field as an empty string. Never invent assets.
+        - Style: Follow assertion–evidence principles. Use a short, informative title if the layout expects one; support it with compact bullets or the required content type.
+        - Formatting hygiene: Do not include templating tokens like ${...}. Escape quotes normally within JSON strings.
 
-        We are using sli.dev for slide rendering.
-        
-        You must return structured JSON data that will be used to populate a slide template.
         The JSON must conform to the following schema:
         {format_instructions}
         """
@@ -52,14 +58,26 @@ def generate_single_slide_content(
 
     user = ChatPromptTemplate.from_template(
         """
-        Create slide content based on the following text:
+        Create slide content from this text (use only what appears below):
+        <BEGIN_TEXT>
         {text}
-        
+        <END_TEXT>
+
         Layout: {layout_name}
-        Layout description: Each field in the output should contain appropriate content for a {layout_name} slide.
-        
-        Template schema explanation:
+        Layout guidance: Fill every required field appropriately for a {layout_name} slide. 
+        If a field is not applicable or the text provides no content for it, return an empty string for that field.
+
+        Template schema explanation (field purposes):
         {schema_explanation}
+
+        Authoring guidelines (apply if relevant to the fields):
+        - Titles: short and assertive (≈6–12 words), no terminal punctuation.
+        - Bullets: 3–6 bullets where relevant, 5–14 words each, parallel grammar, domain terms preserved.
+        - Definitions/examples: keep explanation adjacent to the item it explains (same field if applicable).
+        - Do not add transitions like “as seen earlier” or “in the next slide”.
+        - Keep any bracketed reference markers present in the text (e.g., [1], [2]) when you quote or closely paraphrase the relevant line.
+
+        Return JSON ONLY that matches the schema above.
         """
     )
 
