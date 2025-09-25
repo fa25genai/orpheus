@@ -581,6 +581,22 @@ files = [
 ]
 
 [[package]]
+name = "ollama"
+version = "0.6.0"
+description = "The official Python client for Ollama."
+optional = false
+python-versions = ">=3.8"
+groups = ["main"]
+files = [
+    {file = "ollama-0.6.0-py3-none-any.whl", hash = "sha256:534511b3ccea2dff419ae06c3b58d7f217c55be7897c8ce5868dfb6b219cf7a0"},
+    {file = "ollama-0.6.0.tar.gz", hash = "sha256:da2b2d846b5944cfbcee1ca1e6ee0585f6c9d45a2fe9467cbcd096a37383da2f"},
+]
+
+[package.dependencies]
+httpx = ">=0.27"
+pydantic = ">=2.9"
+
+[[package]]
 name = "openapi-generator-cli"
 version = "7.15.0"
 description = "CLI for openapi generator"
@@ -1657,4 +1673,4 @@ cffi = ["cffi (>=1.17,<2.0) ; platform_python_implementation != \"PyPy\" and pyt
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.13"
-content-hash = "94bb3eb3c3a97ddbead9582f9ad88a7fc2a8d07899a68ac00a23d09665496571"
+content-hash = "e2543e999b23de1135efad073088a87f410946d8e199d7c6dc314fa29092c0f8"
