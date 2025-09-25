@@ -17,6 +17,7 @@ import json
 from typing import Dict, Any, List
 from service_core.services.helpers.handle_retrieved import convert_json_structure
 import copy
+from service_core.models.user_profile import UserProfile
 # -----------------------------
 # JSON helpers
 # -----------------------------
@@ -117,7 +118,7 @@ def generate_script_llm(retrieved_content: List[Dict[str, Any]], persona):
                 raise RuntimeError(f"Failed to get valid response from LLM after {max_retries} attempts: {e}")
             continue
 
-def generate_script(retrieved_content: List[Dict[str, Any]], persona: Dict[str, Any]):
+def generate_script(retrieved_content: List[Dict[str, Any]], persona: UserProfile):
     
     retrieved_content = convert_json_structure(retrieved_content)
     
@@ -125,8 +126,11 @@ def generate_script(retrieved_content: List[Dict[str, Any]], persona: Dict[str, 
     asset_lookup = {}
     retrieved_content_for_llm = copy.deepcopy(retrieved_content)
     for item in retrieved_content_for_llm:
+        print('a', flush=True)
         if 'assets' in item:
+            print('b', flush=True)
             for asset in item['assets']:
+                print('c', flush=True)
                 if 'name' in asset:
                     # Store the original asset data
                     asset_lookup[asset['name']] = {
