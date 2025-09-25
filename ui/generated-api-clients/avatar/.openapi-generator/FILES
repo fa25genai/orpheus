@@ -1,0 +1,11 @@
+apis/VideoApi.ts
+apis/index.ts
+index.ts
+models/GenerationAcceptedResponse.ts
+models/GenerationStatusResponse.ts
+models/ModelError.ts
+models/RequestVideoGenerationRequest.ts
+models/UserProfile.ts
+models/UserProfilePreferences.ts
+models/index.ts
+runtime.ts

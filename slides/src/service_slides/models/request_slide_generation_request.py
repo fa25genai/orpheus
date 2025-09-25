@@ -13,11 +13,10 @@ Do not edit the class manually.
 
 from __future__ import annotations
 import pprint
-import re  # noqa: F401
 import json
 
 
-from pydantic import BaseModel, Field, StrictInt, StrictStr
+from pydantic import BaseModel, Field, StrictStr
 from typing import Any, ClassVar, Dict, List, Optional
 from service_slides.models.request_slide_generation_request_assets_inner import (
     RequestSlideGenerationRequestAssetsInner,
@@ -38,9 +37,9 @@ class RequestSlideGenerationRequest(BaseModel):
         description="Unique identifier of the course for which slides should be generated ",
         alias="courseId",
     )
-    lecture_id: StrictStr = Field(
-        description="Unique identifier of the lecture to which the slides will belong. ",
-        alias="lectureId",
+    prompt_id: StrictStr = Field(
+        description="Unique identifier of the prompt to which the slides will belong. ",
+        alias="promptId",
     )
     lecture_script: StrictStr = Field(
         description="Plain text containing the details of the lecture (including examples and explanations). May have any format (i.e. human readable). ",
@@ -53,7 +52,7 @@ class RequestSlideGenerationRequest(BaseModel):
     assets: List[RequestSlideGenerationRequestAssetsInner] = Field(
         description="Additional files: images, PDFs, graphs, tables, listings, equations. Use multiple entries for multiple files. May be empty."
     )
-    __properties: ClassVar[List[str]] = ["courseId", "lectureId", "lectureScript", "user", "assets"]
+    __properties: ClassVar[List[str]] = ["courseId", "promptId", "lectureScript", "user", "assets"]
 
     model_config = {
         "populate_by_name": True,
@@ -100,7 +99,7 @@ class RequestSlideGenerationRequest(BaseModel):
         return _dict
 
     @classmethod
-    def from_dict(cls, obj: Dict) -> Self:
+    def from_dict(cls, obj: Dict[str, Any]) -> Self:
         """Create an instance of RequestSlideGenerationRequest from a dict"""
         if obj is None:
             return None
@@ -111,14 +110,14 @@ class RequestSlideGenerationRequest(BaseModel):
         _obj = cls.model_validate(
             {
                 "courseId": obj.get("courseId"),
-                "lectureId": obj.get("lectureId"),
+                "promptId": obj.get("promptId"),
                 "lectureScript": obj.get("lectureScript"),
                 "user": obj.get("user"),
                 "assets": [
                     RequestSlideGenerationRequestAssetsInner.from_dict(_item)
-                    for _item in obj.get("assets")
+                    for _item in assets_data
                 ]
-                if obj.get("assets") is not None
+                if (assets_data := obj.get("assets")) is not None
                 else None,
             }
         )

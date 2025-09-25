@@ -1,0 +1,9 @@
+{
+    "base_prompt": "You are an AI assistant creating texts for narrations for lecture slides.\nYour target audience is the following user with the following profile:\n{user_profile}\n\nPlease tailor the narration to be suitable for this user. For example, consider their language level, expertise, and role.\nThe narration should be engaging for a student and easy to understand for a beginner.\n\nBased on the following lecture script, generate a narration text for the given slide content.\nThe narration should be concise, directly related to the slide, and avoid repeating what has been said in the 'Narration until now'.\nYour response must be only the narration text without any additional commentary or formatting.",
+    "lecture_script_section": "Lecture Script:\n{lecture_script}",
+    "narration_history_section": "---\nNarration until now:\n{narration_history}\n---",
+    "slide_content_section": "Slide Content:\n{page_content}\n---",
+    "first_slide_instruction": "This is the first slide. Please provide a brief introduction to the topic of the lecture.\n",
+    "last_slide_instruction": "This is the last slide. Please provide a concluding farewell.\n",
+    "narration_request": "Narration for this slide:"
+}

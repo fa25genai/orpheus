@@ -1,7 +1,7 @@
 __pycache__/
 .ipynb_checkpoints/
 processed
-outputs
+output
 outputs_v2
 checkpoints
 checkpoints_v2

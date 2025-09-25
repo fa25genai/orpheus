@@ -1,0 +1,10 @@
+apis/CoreApi.ts
+apis/index.ts
+index.ts
+models/ModelError.ts
+models/PromptRequest.ts
+models/PromptResponse.ts
+models/UserProfile.ts
+models/UserProfilePreferences.ts
+models/index.ts
+runtime.ts

@@ -1,9 +1,80 @@
 services:
   slides-service:
+    container_name: slides
     build:
       context: ./slides
       dockerfile: Dockerfile
     env_file:
       - ./slides/.env
     ports:
-      - "60303:60303"
+      - "30606:30606"
+    networks:
+      - orpheus
+  slides-postprocessing:
+    build:
+      context: ./slides/postprocessing
+      dockerfile: Dockerfile
+    env_file:
+      - ./slides/postprocessing/.env
+    ports:
+      - "30607:30607"
+    networks:
+      - orpheus
+    volumes:
+      - slides-data:/etc/orpheus/slides/storage
+  slides-delivery:
+    build:
+      context: ./slides/delivery
+      dockerfile: Dockerfile
+    ports:
+      - "30608:30608"
+    networks:
+      - orpheus
+    volumes:
+      - slides-data:/var/www:ro
+
+  ui-service:
+    container_name: ui
+    build:
+      context: ./ui
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    networks:
+      - orpheus
+    depends_on:
+      - slides-service
+
+  docint-service:
+    container_name: docint
+    build:
+      context: ./document-intelligence
+      dockerfile: Dockerfile
+    env_file:
+      - ./document-intelligence/.env
+    ports:
+      - "25565:25565"
+    networks:
+      - orpheus
+
+
+  core-service:
+    container_name: core
+    build: 
+      context: ./core
+      dockerfile: Dockerfile
+    env_file:
+      - ./core/.env
+    ports:
+      - "8000:8000"
+    networks:
+      - orpheus
+    depends_on:
+      - docint-service
+      - slides-service
+      
+networks:
+  orpheus:
+
+volumes:
+  slides-data:

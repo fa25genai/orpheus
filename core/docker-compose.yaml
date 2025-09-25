@@ -1,0 +1,10 @@
+version: '3.8'
+services:
+  api:
+    container_name: core-ai
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./src:/app/src
+    command: poetry run uvicorn service_core.main:app --host 0.0.0.0 --port 8000

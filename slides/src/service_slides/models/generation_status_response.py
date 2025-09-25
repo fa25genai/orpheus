@@ -1,4 +1,5 @@
 # coding: utf-8
+# Do not check generated files:
 
 """
 Orpheus Slide-Service API
@@ -13,7 +14,6 @@ Do not edit the class manually.
 
 from __future__ import annotations
 import pprint
-import re  # noqa: F401
 import json
 
 
@@ -33,7 +33,7 @@ class GenerationStatusResponse(BaseModel):
     GenerationStatusResponse
     """  # noqa: E501
 
-    lecture_id: Optional[StrictStr] = Field(default=None, alias="lectureId")
+    prompt_id: Optional[StrictStr] = Field(default=None, alias="promptId")
     status: Optional[StrictStr] = Field(default=None, description="Job status")
     total_pages: Optional[StrictInt] = Field(
         default=None,
@@ -46,18 +46,22 @@ class GenerationStatusResponse(BaseModel):
         alias="generatedPages",
     )
     last_updated: Optional[datetime] = Field(default=None, alias="lastUpdated")
+    web_url: Optional[StrictStr] = Field(default=None, alias="webUrl")
+    pdf_url: Optional[StrictStr] = Field(default=None, alias="pdfUrl")
     error: Optional[Error] = None
     __properties: ClassVar[List[str]] = [
-        "lectureId",
+        "promptId",
         "status",
         "totalPages",
         "generatedPages",
         "lastUpdated",
+        "webUrl",
+        "pdfUrl",
         "error",
     ]
 
     @field_validator("status")
-    def status_validate_enum(cls, value):
+    def status_validate_enum(cls, value) -> Any:  # type: ignore
         """Validates the enum"""
         if value is None:
             return value
@@ -111,7 +115,7 @@ class GenerationStatusResponse(BaseModel):
         return _dict
 
     @classmethod
-    def from_dict(cls, obj: Dict) -> Self:
+    def from_dict(cls, obj: Dict[str, Any]) -> Self:
         """Create an instance of GenerationStatusResponse from a dict"""
         if obj is None:
             return None
@@ -121,12 +125,14 @@ class GenerationStatusResponse(BaseModel):
 
         _obj = cls.model_validate(
             {
-                "lectureId": obj.get("lectureId"),
+                "promptId": obj.get("promptId"),
                 "status": obj.get("status"),
                 "totalPages": obj.get("totalPages"),
                 "generatedPages": obj.get("generatedPages"),
                 "lastUpdated": obj.get("lastUpdated"),
-                "error": Error.from_dict(obj.get("error"))
+                "webUrl": obj.get("webUrl"),
+                "pdfUrl": obj.get("pdfUrl"),
+                "error": Error.from_dict(obj.get("error"))  # type: ignore
                 if obj.get("error") is not None
                 else None,
             }
