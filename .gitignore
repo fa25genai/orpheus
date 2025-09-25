@@ -214,3 +214,5 @@ ui/.next
 ui/node_modules
 ui/next-env.d.ts
 
+# MacOS specific
+.DS_Store
