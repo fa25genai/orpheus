@@ -17,11 +17,21 @@ from sqlalchemy import create_engine, String, DateTime, Text, Integer, func, For
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship, sessionmaker, Session
 from pydantic import BaseModel, Field, constr
 
+from fastapi.middleware.cors import CORSMiddleware
+
 
 
 
 app = FastAPI(title="Service Video-Generation APIs", version="0.1")
+origins = ["*"]
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # ---------------------------
 # Config (env-driven)

@@ -119,7 +119,7 @@ paths:
           description: "The promptId returned by /v1/video/generate"
       responses:
         "200":
-          description: "Final result of the generation job."
+          description: "Current generation status (may be IN_PROGRESS, DONE, or FAILED)."
           content:
             application/json:
               schema:
