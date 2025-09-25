@@ -185,15 +185,28 @@ app = FastAPI(
 def _ensure_nltk(auto: bool):
     if not auto:
         return
-    try:
-        nltk.data.find("tokenizers/punkt")
-    except LookupError:
-        nltk.download("punkt", quiet=True)
-    try:
-        nltk.data.find("taggers/averaged_perceptron_tagger")
-    except LookupError:
-        nltk.download("averaged_perceptron_tagger", quiet=True)
+    import nltk
 
+    resources = [
+        ("tokenizers/punkt", "punkt"),
+        ("tokenizers/punkt_tab", "punkt_tab"),  # present on newer NLTK builds
+        ("taggers/averaged_perceptron_tagger_eng", "averaged_perceptron_tagger_eng"),  # new name
+        ("taggers/averaged_perceptron_tagger", "averaged_perceptron_tagger"),          # old name (fallback)
+        ("corpora/cmudict", "cmudict"),  # some pipelines expect this present
+    ]
+
+    for find_key, dl_name in resources:
+        try:
+            nltk.data.find(find_key)
+        except LookupError:
+            try:
+                nltk.download(dl_name, quiet=True)
+            except Exception:
+                # final fallback: try the old tagger if new one failed (or vice versa)
+                if dl_name == "averaged_perceptron_tagger_eng":
+                    nltk.download("averaged_perceptron_tagger", quiet=True)
+                elif dl_name == "averaged_perceptron_tagger":
+                    nltk.download("averaged_perceptron_tagger_eng", quiet=True)
 
 def _maybe_install_silero_vad(auto: bool):
     if not auto:
@@ -257,7 +270,7 @@ def generate_audio(
     deps_cfg = CFG["deps"]
 
     ckpt_converter = Path(paths["ckpt_converter"]).resolve()
-    output_dir = Path(paths["output_dir"]).resolve()
+    output_dir = Path("./output").resolve()
     base_speakers_dir = Path(paths["base_speakers_dir"]).resolve()
     ses_dir = _speaker_embeddings_dir(base_speakers_dir, paths["ses_subdir"])
     ref_dir = Path(paths["reference_speaker_dir"]).resolve()

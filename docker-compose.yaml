@@ -1,5 +1,6 @@
 services:
   slides-service:
+    container_name: slides
     build:
       context: ./slides
       dockerfile: Dockerfile
@@ -33,6 +34,7 @@ services:
       - slides-data:/var/www:ro
 
   ui-service:
+    container_name: ui
     build:
       context: ./ui
       dockerfile: Dockerfile
@@ -43,6 +45,34 @@ services:
     depends_on:
       - slides-service
 
+  docint-service:
+    container_name: docint
+    build:
+      context: ./document-intelligence
+      dockerfile: Dockerfile
+    env_file:
+      - ./document-intelligence/.env
+    ports:
+      - "25565:25565"
+    networks:
+      - orpheus
+
+
+  core-service:
+    container_name: core
+    build: 
+      context: ./core
+      dockerfile: Dockerfile
+    env_file:
+      - ./core/.env
+    ports:
+      - "8000:8000"
+    networks:
+      - orpheus
+    depends_on:
+      - docint-service
+      - slides-service
+      
 networks:
   orpheus:
 

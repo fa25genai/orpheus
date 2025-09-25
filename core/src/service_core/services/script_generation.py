@@ -12,55 +12,10 @@ Output format:
   "Images": [{"image": "...", "description": "..."}]
 }
 """
-
-import os
+from service_core.services.helpers.llm import getLLM  
 import json
 import textwrap
 from typing import Dict, Any, List
-from pydantic import BaseModel
-from dotenv import load_dotenv
-from langchain_community.chat_models import ChatOllama
-
-# Load environment variables from .env file
-load_dotenv()
-
-# -----------------------------
-# CONFIGURATION
-# -----------------------------
-class Config(BaseModel):
-    llama_api_key: str = os.environ.get("LLAMA_API_KEY", "")
-    llama_model: str = os.environ.get("LLAMA_MODEL", "")
-    llama_api_url: str = os.environ.get("LLAMA_API_URL", "")
-
-cfg = Config()
-
-# -----------------------------
-# Llama API helper
-# -----------------------------
-def call_llama(prompt: str, model: str = None, max_tokens: int = 1024) -> str:
-    """Call Llama API via LangChain ChatOllama"""
-    model = model or cfg.llama_model
-    if not cfg.llama_api_key:
-        raise RuntimeError("LLAMA_API_KEY not set")
-    
-    # Initialize ChatOllama with custom endpoint and API key
-    llm = ChatOllama(
-        model=model,
-        base_url=cfg.llama_api_url,
-        headers={"Authorization": f"Bearer {cfg.llama_api_key}"},
-    )
-    
-    # Generate response
-    response = llm.invoke(prompt)
-    return response.content.strip() if hasattr(response, 'content') else str(response).strip()
-
-# -----------------------------
-# Unified LLM caller
-# -----------------------------
-def llm_call(prompt: str) -> str:
-    if cfg.llama_api_key:
-        return call_llama(prompt)
-    raise RuntimeError("No valid LLM API key available (Llama)")
 
 # -----------------------------
 # JSON helpers
@@ -78,30 +33,25 @@ def try_parse_json(raw_response: str) -> tuple[bool, dict]:
 # Refine lecture content
 # -----------------------------
 REFINE_PROMPT = textwrap.dedent("""
-You are an assistant that produces a coherent answer to a question based on the provided content and student persona.
-
-Inputs:
-- A student persona (id, role, language, preferences, enrolled cources).
-- A list of retrieved content (text + images) for a lecture.                               
-
-Task:
-- Combine the retrieved content into a single lecture script.
-- Adapt the content difficulty and explanation based on the student's persona.
-- Make the script formal.
-- Reference images inline where appropriate (e.g., "see image: <description>").
-- Respond in strict JSON format with properly escaped strings:
-
-{
-  "lectureScript": "Your complete lecture script here as a single string with no line breaks",
-  "Images": [{"image": "filename.jpg", "description": "Description text"}]
-}
-
-IMPORTANT: 
-- The JSON must be valid and parseable
-- Do NOT include actual line breaks in the lectureScript string value
-- Use \\n for line breaks within the text if needed
-- Start the lectureScript content immediately after the opening quote
-- Do NOT produce slides or voice scripts at this stage
+You are an expert AI assistant specializing in personalized educational content creation. Your purpose is to transform raw educational material into an engaging and effective lecture script tailored to a specific learner's profile.\n\n
+Your task is to synthesize the provided content into a single, coherent lecture script.
+This script must be meticulously tailored to the specified learner PERSONA.\n\n
+---\n### INPUTS\n---\n\n1. PERSONA: A JSON object describing the target student.
+    \njson\n{{persona_dict}}\n\n\n
+2. RETRIEVED_CONTENT: A string of text containing the raw information for the lecture.\n\n{{retrieved_content}}\n\n\n
+---\n### RULES & GUIDELINES\n---\n\n
+* Persona-Driven Adaptation: You MUST adapt the script based on the PERSONA object:\n
+* Tone & Style: Match the persona's preferred communication style (e.g., formal, conversational, enthusiastic, humorous).\n
+* Complexity & Depth: Adjust the technical jargon, depth of explanation, and complexity of concepts to the persona's knowledgeLevel (e.g., "Beginner", "Intermediate", "Expert").\n
+* Examples & Analogies: Generate relevant and relatable examples, analogies, or case studies that align with the persona's interests and goals.\n
+* Language: The entire lecture script MUST be written in the language specified in the persona's language field.\n\n
+* Image Integration: Strategically identify points in the lecture where a given image would significantly enhance understanding.\n
+* In the lectureScript, reference the image with a clear placeholder (e.g., Here you can see a diagram showing the Krebs cycle]).\n
+* For each referenced image, add a corresponding object to the Images list in the final JSON output.\n
+* Image filenames need to match the given namens.\n\n
+* Coherence: The final lectureScript must flow logically and be structured as a single, cohesive piece, not a list of disconnected facts.\n\n
+---\n### OUTPUT FORMAT\n---\n\n
+Your response MUST be a single, valid JSON object and nothing else. Do not include any introductory text, explanations, or markdown formatting (like json) around the JSON object. The JSON object must strictly adhere to the following structure:\n\njson\n{\n  "lectureScript": "A single string containing the entire lecture script. Use \n for new paragraphs and \t for indentation if needed.",\n  "Images": [\n    {\n      "image": "filename_1.jpg",\n      "description": "A concise and clear description of the content and purpose of the first image."\n    },\n    {\n      "image": "filename_2.png",\n      "description": "A description for the second image."\n    }\n  ]\n}\n```
 """)
 
 def generate_script(retrieved_content: List[Dict[str, Any]], persona: Dict[str, Any]) -> Dict[str, Any]:
@@ -111,9 +61,9 @@ def generate_script(retrieved_content: List[Dict[str, Any]], persona: Dict[str, 
         persona_dict = persona.model_dump()
     else:
         persona_dict = persona
-
+    
     persona_dict['id'] = str(persona_dict['id'])
-    print("Refining lecture content for persona:")
+    #print("Refining lecture content for persona:")
 
     prompt = REFINE_PROMPT + "\n\n" + json.dumps({
         "persona": persona_dict,
@@ -123,9 +73,9 @@ def generate_script(retrieved_content: List[Dict[str, Any]], persona: Dict[str, 
     for attempt in range(max_retries):
         try:
             raw = llm_call(prompt)       
-            print(f"\nBreak point (attempt {attempt + 1}): {raw}")
+            #print(f"\nBreak point (attempt {attempt + 1}): {raw}")
             
-            # Try to parse JSON directly first
+            # Try to parse JSON
             success, result = try_parse_json(raw)
             if success:
                 return result
