@@ -72,7 +72,7 @@ def generate_script(retrieved_content: List[Dict[str, Any]], persona: Dict[str, 
     max_retries = 3
     for attempt in range(max_retries):
         try:
-            raw = llm_call(prompt)       
+            raw = getLLM()(prompt)       
             #print(f"\nBreak point (attempt {attempt + 1}): {raw}")
             
             # Try to parse JSON

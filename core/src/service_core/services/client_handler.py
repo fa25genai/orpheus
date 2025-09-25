@@ -1,11 +1,13 @@
 import httpx
+import logging
 from service_core.services import decompose_input, fetch_mock_data, script_generation, narration_generation
 from service_core.services.fetch_mock_data import create_context_mock
+import json
 
 client = httpx.AsyncClient()
 
 DI_API_URL = "http://docint:25565"
-SLIDES_API_URL = "https://slides:30606"
+SLIDES_API_URL = "http://slides:30606"
 
 
 async def process_prompt(prompt_id: str, prompt_request: str): # TODO: type prompt_request
@@ -28,8 +30,8 @@ async def process_prompt(prompt_id: str, prompt_request: str): # TODO: type prom
         )
         di_response.raise_for_status()
         di_data = di_response.json()
-        print("Decompose Input API response:", di_data)
-        
+        print(f"Input Decomposed for {prompt_id}")
+        print(di_data.get("content", [])[:10])
         entry = {
             "Question": subquery,
             "retrieved_content": di_data.get("content", []),
@@ -42,17 +44,19 @@ async def process_prompt(prompt_id: str, prompt_request: str): # TODO: type prom
 
     #print("Simulating async processing delay...")
     #await asyncio.sleep(5)
-    refined_output = script_generation.generate_script(str(fetch_mock_data.create_demoretrieved_content()), fetch_mock_data.create_demo_user())
+    # refined_output = script_generation.generate_script(str(fetch_mock_data.create_demoretrieved_content()), fetch_mock_data.create_demo_user())
     #print(refined_output)
-    lecture_script = refined_output.get("lectureScript", "")
-
-    context_mock = create_context_mock(prompt_request.courseId, prompt_id, lecture_script, fetch_mock_data.create_demo_user())
+    # lecture_script = refined_output.get("lectureScript", "")
+    lecture_script = "This a sample lecture about for loops. It's a nightmare and a headaches for some."
+    print(lecture_script)
+    context_mock = create_context_mock(prompt_request.course_id, prompt_id, lecture_script, fetch_mock_data.create_demo_user())
+    print(context_mock)
     slides_response = await client.post(
             f"{SLIDES_API_URL}/v1/slides/generate",
             json=context_mock,
-            timeout=300.0,
+            # timeout=300.0,
         )
-    print("Slides API response:", slides_response.json())
+    print("Slides API response:", slides_response)
     #print("\n\nGenerated Lecture Script:", lecture_script)
     #example_slides = fetch_mock_data.create_demo_slides()
     #print("\nExample Slides:", example_slides)
