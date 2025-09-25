@@ -5,3 +5,4 @@ sqlalchemy>=2.0
 python-multipart>=0.0.9
 typing-extensions>=4.12
 python-multipart
+requests

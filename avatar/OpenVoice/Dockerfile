@@ -22,8 +22,12 @@ RUN pip install -e . \
     && pip install fastapi uvicorn orjson \
     && python -m unidic download
 
+# Download and extract checkpoints
+RUN wget https://myshell-public-repo-host.s3.amazonaws.com/openvoice/checkpoints_v2_0417.zip \
+    && unzip checkpoints_v2_0417.zip \
+    && rm checkpoints_v2_0417.zip 
+
 COPY generate_audio_function.py /app/OpenVoice/generate_audio_function.py
-COPY checkpoints_v2 /app/OpenVoice/checkpoints_v2
 COPY kursche_voice.mp3 /app/OpenVoice/kursche_voice.mp3
 
 EXPOSE 8000

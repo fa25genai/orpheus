@@ -2,19 +2,18 @@ FROM pytorch/pytorch:2.5.1-cuda11.8-cudnn9-runtime
 
 ARG DEBIAN_FRONTEND=noninteractive
 
-# Python, build-essential, and core libs are already in the base image.
+# Install system dependencies like ffmpeg, which is required by the inference script
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     ffmpeg \
     libsndfile1 \
-    git \
  && rm -rf /var/lib/apt/lists/*
 
-# Python quality-of-life
+# Set Python environment variables for best practices in containers
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
 
-# Install remaining pip packages.
+# Install the Python packages from the original Dockerfile, plus fastapi and uvicorn
 RUN python3 -m pip install --no-cache-dir \
     librosa \
     tqdm \
@@ -26,19 +25,30 @@ RUN python3 -m pip install --no-cache-dir \
     imageio-ffmpeg \
     colored \
     polygraphy \
-    numpy==2.0.1 \
+    numpy \
     onnxruntime \
     mediapipe \
-    einops
+    einops \
+    # Add API-specific packages
+    fastapi \
+    uvicorn[standard]
 
-# App code
+# Set the working directory
 WORKDIR /app
-COPY . /app
 
-# Default entrypoint and command remain the same
-ENTRYPOINT ["python3", "inference.py"]
-CMD ["--data_root","./checkpoints/ditto_pytorch", \
-     "--cfg_pkl","./checkpoints/ditto_cfg/v0.4_hubert_cfg_pytorch.pkl", \
-     "--audio_path","./example/krusche_voice.wav", \
-     "--source_path","./example/image_michal.png", \
-     "--output_path","./tmp/result_michal.mp4"]
+# Copy your application code and models into the container
+# TODO: To support multiple avatars, we can not rely on this COPY command to copy the example files into the image.
+COPY . /app/
+
+# Expose the port the API server will run on
+EXPOSE 8000
+
+# Set default model paths via environment variables, as used in the startup script.
+# These can be overridden during `docker run`.
+ENV DITTO_DATA_ROOT=./checkpoints/ditto_pytorch
+ENV DITTO_CFG_PKL=./checkpoints/ditto_cfg/v0.4_hubert_cfg_pytorch.pkl
+
+# Command to run the Uvicorn server for your FastAPI application.
+# It uses the filename and the FastAPI app instance name (`app`).
+# --host 0.0.0.0 is crucial to make it accessible from outside the container.
+CMD ["uvicorn", "fast_api_wrapper_for_ditto_inference:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]
