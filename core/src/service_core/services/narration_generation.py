@@ -37,7 +37,8 @@ def generate_narrations(lecture_script, example_slides, user_profile, debug=Fals
     llm = getLLM()
 
     #slides_data = json.loads(example_slides.model_dump_json())
-    pages = example_slides.structure.pages
+    pages = example_slides["structure"]["pages"]
+    # print("\n\npages:", pages, flush=True)
     narration_history = ""
     slide_messages = []
     
@@ -47,7 +48,8 @@ def generate_narrations(lecture_script, example_slides, user_profile, debug=Fals
     # Load the prompt templates
     prompt_templates = json.loads(prompt_templates_json)
     for i, page in enumerate(pages):
-        page_content = page.content
+        # print("\n\npage:", page, flush=True)
+        page_content = page["content"]
         # Build the prompt using the templates
         prompt_parts = [
             prompt_templates["base_prompt"].format(user_profile=user_profile.to_dict()),
@@ -78,7 +80,7 @@ def generate_narrations(lecture_script, example_slides, user_profile, debug=Fals
         slide_messages.append(narration)
     # Prepare output data with actual user profile
     output_data = {
-        "promptId": example_slides.promptId,
+        "promptId": example_slides["promptId"],
         "courseId": user_profile.enrolled_courses[0] if user_profile.enrolled_courses else None,
         "slideMessages": slide_messages,
         "userProfile": json.loads(user_profile.model_dump_json()),
