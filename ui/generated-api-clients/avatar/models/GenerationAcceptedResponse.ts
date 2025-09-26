@@ -1,7 +1,7 @@
 /* tslint:disable */
 /* eslint-disable */
 /**
- * Service Video-Generation APIs
+ * Avatar Generation Service API
  * API for the Orpheus video generation. From the repository: \"The Orpheus System transforms static slides into interactive lecture videos with lifelike professor avatars, combining expressive narration, visual presence, and dynamic content to create engaging, personalized learning experiences.\" 
  *
  * The version of the OpenAPI document: 0.1
@@ -27,29 +27,11 @@ export interface GenerationAcceptedResponse {
     promptId?: string;
     /**
      * 
-     * @type {string}
-     * @memberof GenerationAcceptedResponse
-     */
-    status?: GenerationAcceptedResponseStatusEnum;
-    /**
-     * 
      * @type {Date}
      * @memberof GenerationAcceptedResponse
      */
     createdAt?: Date;
 }
-
-
-/**
- * @export
- */
-export const GenerationAcceptedResponseStatusEnum = {
-    InProgress: 'IN_PROGRESS',
-    Failed: 'FAILED',
-    Done: 'DONE'
-} as const;
-export type GenerationAcceptedResponseStatusEnum = typeof GenerationAcceptedResponseStatusEnum[keyof typeof GenerationAcceptedResponseStatusEnum];
-
 
 /**
  * Check if a given object implements the GenerationAcceptedResponse interface.
@@ -69,7 +51,6 @@ export function GenerationAcceptedResponseFromJSONTyped(json: any, ignoreDiscrim
     return {
         
         'promptId': json['promptId'] == null ? undefined : json['promptId'],
-        'status': json['status'] == null ? undefined : json['status'],
         'createdAt': json['createdAt'] == null ? undefined : (new Date(json['createdAt'])),
     };
 }
@@ -86,7 +67,6 @@ export function GenerationAcceptedResponseToJSONTyped(value?: GenerationAccepted
     return {
         
         'promptId': value['promptId'],
-        'status': value['status'],
         'createdAt': value['createdAt'] == null ? undefined : ((value['createdAt']).toISOString()),
     };
 }

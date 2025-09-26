@@ -1,7 +1,7 @@
 /* tslint:disable */
 /* eslint-disable */
 /**
- * Document Intelligence API
+ * Lecture Ingestion Service API
  * API for the Orpheus document intelligence orchestration. From the repository: \"The Orpheus System transforms static slides into interactive lecture videos with lifelike professor avatars, combining expressive narration, visual presence, and dynamic content to create engaging, personalized learning experiences.\" License: MIT (see repository).
  *
  * The version of the OpenAPI document: 0.1.0
@@ -15,23 +15,15 @@
 
 import * as runtime from '../runtime';
 import type {
-  RetrievalResponse,
   UploadResponse,
 } from '../models/index';
 import {
-    RetrievalResponseFromJSON,
-    RetrievalResponseToJSON,
     UploadResponseFromJSON,
     UploadResponseToJSON,
 } from '../models/index';
 
 export interface DeletesDocumentRequest {
     documentId: string;
-}
-
-export interface RetrievesDataForGenerationRequest {
-    courseId: string;
-    promptQuery: string;
 }
 
 export interface UploadsDocumentRequest {
@@ -78,54 +70,6 @@ export class DocintApi extends runtime.BaseAPI {
      */
     async deletesDocument(requestParameters: DeletesDocumentRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
         await this.deletesDocumentRaw(requestParameters, initOverrides);
-    }
-
-    /**
-     * Provides relevant textual content and images
-     */
-    async retrievesDataForGenerationRaw(requestParameters: RetrievesDataForGenerationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<RetrievalResponse>> {
-        if (requestParameters['courseId'] == null) {
-            throw new runtime.RequiredError(
-                'courseId',
-                'Required parameter "courseId" was null or undefined when calling retrievesDataForGeneration().'
-            );
-        }
-
-        if (requestParameters['promptQuery'] == null) {
-            throw new runtime.RequiredError(
-                'promptQuery',
-                'Required parameter "promptQuery" was null or undefined when calling retrievesDataForGeneration().'
-            );
-        }
-
-        const queryParameters: any = {};
-
-        if (requestParameters['promptQuery'] != null) {
-            queryParameters['promptQuery'] = requestParameters['promptQuery'];
-        }
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-
-        let urlPath = `/v1/retrieval/{courseId}`;
-        urlPath = urlPath.replace(`{${"courseId"}}`, encodeURIComponent(String(requestParameters['courseId'])));
-
-        const response = await this.request({
-            path: urlPath,
-            method: 'GET',
-            headers: headerParameters,
-            query: queryParameters,
-        }, initOverrides);
-
-        return new runtime.JSONApiResponse(response, (jsonValue) => RetrievalResponseFromJSON(jsonValue));
-    }
-
-    /**
-     * Provides relevant textual content and images
-     */
-    async retrievesDataForGeneration(requestParameters: RetrievesDataForGenerationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<RetrievalResponse> {
-        const response = await this.retrievesDataForGenerationRaw(requestParameters, initOverrides);
-        return await response.value();
     }
 
     /**

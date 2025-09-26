@@ -114,7 +114,7 @@ services:
     networks:
       - orpheus
     ports:
-      - "21234:80"
+      - "8080:80"
 
   avatar-video-producer:
     build:
@@ -129,8 +129,8 @@ services:
       - avatar_file_storage:/data
     networks:
       - orpheus
-    expose:
-      - "80:9000"
+    ports:
+      - "9000:9000"
     depends_on:
       - avatar-delivery
 
