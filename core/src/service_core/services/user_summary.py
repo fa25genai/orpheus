@@ -3,7 +3,7 @@ from service_core.services.helpers.llm import ask_llm
 from service_core.impl.tracker import tracker
 
 
-def extract_text_content(retrieved_content):
+def extract_text_content(data: Dict[str, Any]) -> str:
     """Extract only the text content from a list of dicts, ignoring images or other fields."""
     if not isinstance(retrieved_content, list):
         return str(retrieved_content)
@@ -41,6 +41,6 @@ async def send_summary_to_endpoint(summary, client):
         print("Error sending summary to endpoint:", e, flush=True)
 
 
-async def summarize_and_send(retrieved_content, client):
+async def summarize_and_send(content: Dict[str, Any], client: httpx.AsyncClient) -> None: # Resolves missing annotations
     summary = summarize_content_with_llama(retrieved_content)
     # await send_summary_to_endpoint(summary, client)

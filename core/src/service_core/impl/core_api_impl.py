@@ -35,7 +35,7 @@ class CoreApiImpl(BaseCoreApi):  # type: ignore[no-untyped-call]
             tracker.log(f"Initializing CoreThreadPoolExecutor for {prompt_id}")
             executor.submit(process_prompt_handler, prompt_id, prompt_request)
 
-            return PromptResponse(promptId=prompt_id, summary="Accepted")
+            return PromptResponse(promptId=prompt_id)
 
         except ConnectionError as e:
             raise HTTPException(status_code=503, detail=f"Datastore error: {e}")
