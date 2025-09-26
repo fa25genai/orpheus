@@ -111,9 +111,7 @@ components:
         lectureSummary:
           type: string
         slideStructure:
-          type: array
-          items:
-            $ref: "#/components/schemas/SlideStructure"
+          $ref: "#/components/schemas/SlideStructure"
 
     AvatarElementStatusPatch:
       type: object
@@ -133,8 +131,6 @@ components:
         - stepSlideGeneration
         - stepSlidePostprocessing
         - stepsAvatarGeneration
-        - lectureSummary
-        - slideStructure
       properties:
         stepUnderstanding:
           $ref: "#/components/schemas/StepStatus"
@@ -155,9 +151,7 @@ components:
         lectureSummary:
           type: string
         slideStructure:
-          type: array
-          items:
-            $ref: "#/components/schemas/SlideStructure"
+          $ref: "#/components/schemas/SlideStructure"
 
     AvatarElementStatus:
       type: object
