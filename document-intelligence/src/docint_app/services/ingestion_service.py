@@ -5,7 +5,7 @@ Takes parsed slides (text + images), generates embeddings, and stores them in We
 
 import logging
 import os
-from typing import Any, Dict, List
+from typing import Any, Dict, List, TypedDict
 
 from docint_app.services.embedding_service import get_embedding_service
 from docint_app.vectorstore.weaviate_graph_store import WeaviateGraphStore
@@ -13,6 +13,18 @@ from docint_app.vectorstore.weaviate_graph_store import WeaviateGraphStore
 # Set up logger
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+
+
+class _IngestResults(TypedDict):
+    course_id: str
+    document_id: str
+    total_slides: int
+    processed_slides: int
+    total_images: int
+    processed_images: int
+    slide_uuids: List[str]
+    image_ids: List[str]
+    errors: List[str]
 
 
 class IngestionService:
@@ -34,7 +46,7 @@ class IngestionService:
         document_id: str,
         slide_texts: List[str],
         slide_images: List[List[Dict[str, Any]]],
-    ) -> Dict[str, Any]:
+    ) -> _IngestResults:
         """
         Ingest slides + images into Weaviate.
 
@@ -57,7 +69,17 @@ class IngestionService:
         if len(slide_texts) != len(slide_images):
             raise ValueError(f"Slide texts ({len(slide_texts)}) and images ({len(slide_images)}) must align")
 
-        results = {"course_id": course_id, "document_id": document_id, "total_slides": len(slide_texts), "processed_slides": 0, "total_images": sum(len(images) for images in slide_images), "processed_images": 0, "slide_uuids": [], "image_ids": [], "errors": []}
+        results: _IngestResults = {
+            "course_id": course_id,
+            "document_id": document_id,
+            "total_slides": len(slide_texts),
+            "processed_slides": 0,
+            "total_images": sum(len(images) for images in slide_images),
+            "processed_images": 0,
+            "slide_uuids": [],
+            "image_ids": [],
+            "errors": [],
+        }
 
         try:
             # 1. Ensure schema exists

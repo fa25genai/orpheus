@@ -39,13 +39,14 @@ class ExtractTextService:
                     },
                 ],
             )
-            return response["message"]["content"]
+            return str(response.get("message", {}).get("content", ""))
         except ollama.RequestError as e:
-            print(f"Error: {e.error}")
-            if e.status_code == 401:
+            print(f"Error: {getattr(e, 'error', e)}")
+            status_code = getattr(e, "status_code", None)
+            if status_code == 401:
                 print("Authentication failed. Please check your API key.")
             else:
-                print(f"An error occurred with status code {e.status_code}.")
+                print(f"An error occurred with status code {status_code}.")
         return ""
 
     def extract_text_from_pdf(self, pdf_path: str) -> List[str]:
@@ -70,7 +71,7 @@ class ExtractTextService:
         return texts
 
     @staticmethod
-    def save_texts_to_txt(texts: List[str], base_filename: str = "output.txt"):
+    def save_texts_to_txt(texts: List[str], base_filename: str = "output.txt") -> None:
         """
         Saves a list of text blocks to a file, incrementing a counter in the name if the file exists.
         """

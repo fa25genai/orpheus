@@ -10,7 +10,7 @@ from docint_app.services.pdf_upload_service import get_upload_pdf_service
 from docint_app.services.retrieval_service import get_retrieval_service
 
 
-class DocintApiImpl(BaseDocintApi):
+class DocintApiImpl(BaseDocintApi):  # type: ignore[no-untyped-call]
     async def retrieves_data_for_generation(
         self,
         courseId: Annotated[StrictStr, Field(description="The course ID.")],

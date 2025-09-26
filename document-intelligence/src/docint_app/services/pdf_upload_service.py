@@ -167,7 +167,7 @@ def get_upload_pdf_service() -> PDFUploadService:
 
 
 # Example usage
-async def main():
+async def main() -> None:
     """Example usage of the PDFUploadService"""
     logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 

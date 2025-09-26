@@ -3,7 +3,7 @@ Embedding Service using Ollama API
 """
 
 import os
-from typing import List
+from typing import Any, Dict, List, cast
 
 import httpx
 
@@ -30,10 +30,16 @@ class EmbeddingService:
         headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
 
         async with httpx.AsyncClient() as client:
-            response = await client.post(f"{self.base_url}/api/embeddings", json={"model": self.model, "prompt": text}, headers=headers, timeout=30.0)
+            response = await client.post(
+                f"{self.base_url}/api/embeddings",
+                json={"model": self.model, "prompt": text},
+                headers=headers,
+                timeout=30.0,
+            )
             response.raise_for_status()
-            result = response.json()
-            return result["embedding"]
+            data = cast(Dict[str, Any], response.json())
+            emb = cast(List[float], data.get("embedding", []))
+            return emb
 
     async def embed_batch(self, texts: List[str]) -> List[List[float]]:
         """

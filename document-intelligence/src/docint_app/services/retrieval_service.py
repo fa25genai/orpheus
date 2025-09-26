@@ -5,7 +5,7 @@ Searches for slides and images in WeaviateGraphStore using text queries and retu
 
 import logging
 import os
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional, TypedDict, cast
 
 from docint_app.services.embedding_service import get_embedding_service
 from docint_app.vectorstore.weaviate_graph_store import WeaviateGraphStore
@@ -13,6 +13,25 @@ from docint_app.vectorstore.weaviate_graph_store import WeaviateGraphStore
 # Set up logger
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+
+
+class _SearchMetadata(TypedDict):
+    query_embedding_dims: int
+    fusion_weights: Dict[str, float]
+    image_aggregation: str
+
+
+class _SearchResults(TypedDict):
+    query: str
+    course_id: Optional[str]
+    k: int
+    alpha: float
+    total_hits: int
+    slides: List[Dict[str, Any]]
+    content: List[str]
+    images: List[Dict[str, Any]]
+    search_metadata: _SearchMetadata
+    errors: List[str]
 
 
 class RetrievalService:
@@ -29,7 +48,7 @@ class RetrievalService:
             logger.error(f"Failed to initialize RetrievalService: {e}")
             raise
 
-    async def search(self, query: str, course_id: Optional[str] = None, k: int = 5, alpha: float = 0.8, per_slide_image_agg: str = "max", include_images: bool = True) -> Dict[str, Any]:
+    async def search(self, query: str, course_id: Optional[str] = None, k: int = 5, alpha: float = 0.8, per_slide_image_agg: str = "max", include_images: bool = True) -> _SearchResults:
         """
         Search for slides and images based on a text query.
 
@@ -56,7 +75,7 @@ class RetrievalService:
         if not (0.0 <= alpha <= 1.0):
             raise ValueError(f"alpha must be between 0.0 and 1.0, got: {alpha}")
 
-        results = {
+        results: _SearchResults = {
             "query": query,
             "course_id": course_id,
             "k": k,
@@ -65,7 +84,11 @@ class RetrievalService:
             "slides": [],
             "content": [],
             "images": [],
-            "search_metadata": {"query_embedding_dims": 0, "fusion_weights": {"text": alpha, "image": 1.0 - alpha}, "image_aggregation": per_slide_image_agg},
+            "search_metadata": {
+                "query_embedding_dims": 0,
+                "fusion_weights": {"text": alpha, "image": 1.0 - alpha},
+                "image_aggregation": per_slide_image_agg,
+            },
             "errors": [],
         }
 
@@ -78,7 +101,14 @@ class RetrievalService:
 
             # Perform fused search
             logger.info(f"Performing fused search (text+image) with alpha={alpha}...")
-            slide_hits = self.store.search_slides_fused_with_images(query_vector=query_vector, course_id=course_id, k=k, alpha=alpha, per_slide_image_agg=per_slide_image_agg, include_distance=True)
+            slide_hits = self.store.search_slides_fused_with_images(
+                query_vector=query_vector,
+                course_id=course_id,
+                k=k,
+                alpha=alpha,
+                per_slide_image_agg=per_slide_image_agg,
+                include_distance=True,
+            )
 
             results["total_hits"] = len(slide_hits)
             logger.info(f"Found {len(slide_hits)} slide hits")
@@ -155,7 +185,7 @@ class RetrievalService:
             logger.info(f"Retrieved {len(slide_hits)} hits from store")
 
             # Convert to OpenAPI format
-            response = self.store.to_retrieval_response(slide_hits)
+            response: Dict[str, Any] = self.store.to_retrieval_response(slide_hits)
             logger.info(f"Simple search completed. Returning {len(response.get('content', []))} content items, {len(response.get('images', []))} images")
 
             return response
@@ -178,7 +208,7 @@ class RetrievalService:
         """
         logger.info("Performing health check...")
 
-        health_status = {"service": "retrieval", "status": "unknown", "weaviate_ready": False, "embedding_service_ready": False, "timestamp": None, "errors": []}
+        health_status: Dict[str, Any] = {"service": "retrieval", "status": "unknown", "weaviate_ready": False, "embedding_service_ready": False, "timestamp": None, "errors": []}
 
         try:
             # Check Weaviate
@@ -202,7 +232,8 @@ class RetrievalService:
         except Exception as e:
             logger.error(f"Health check failed: {e}")
             health_status["status"] = "error"
-            health_status["errors"].append(str(e))
+            errors_list = cast(List[str], health_status["errors"])
+            errors_list.append(str(e))
 
         logger.info(f"Health check completed: {health_status['status']}")
         return health_status

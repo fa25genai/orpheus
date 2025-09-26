@@ -4,7 +4,7 @@ Image Description Service using Ollama API
 
 import base64
 import os
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 import ollama
 
@@ -13,7 +13,7 @@ class ImageDescriptionService:
     def __init__(self, base_url: str = "https://gpu.aet.cit.tum.de/ollama"):
         self.base_url = base_url.rstrip("/")
         self.model = "gemma3:27b"
-        self._client = None
+        self._client: Optional[ollama.Client] = None
 
     @property
     def client(self) -> ollama.Client:
@@ -75,7 +75,7 @@ class ImageDescriptionService:
         Returns:
             List of pages with images containing both 'data' and 'caption' keys
         """
-        out = []
+        out: List[List[Dict[str, str]]] = []
         for page_idx, page_items in enumerate(images_grouped, start=1):
             if not page_items:
                 print(f"[Seite {page_idx}] (keine Bilder)")
