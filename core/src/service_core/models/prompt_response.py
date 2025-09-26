@@ -20,7 +20,7 @@ import json
 
 
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, StrictStr
 from typing import Any, ClassVar, Dict, List
 from uuid import UUID
 try:
@@ -33,7 +33,8 @@ class PromptResponse(BaseModel):
     PromptResponse
     """ # noqa: E501
     prompt_id: UUID = Field(description="The unique ID assigned to the generation job.", alias="promptId")
-    __properties: ClassVar[List[str]] = ["promptId"]
+    summary: StrictStr = Field(description="The summary of the lecture being generated")
+    __properties: ClassVar[List[str]] = ["promptId", "summary"]
 
     model_config = {
         "populate_by_name": True,
@@ -84,7 +85,8 @@ class PromptResponse(BaseModel):
             return cls.model_validate(obj)
 
         _obj = cls.model_validate({
-            "promptId": obj.get("promptId")
+            "promptId": obj.get("promptId"),
+            "summary": obj.get("summary")
         })
         return _obj
 
