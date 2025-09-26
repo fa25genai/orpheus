@@ -119,48 +119,6 @@ paths:
           description: "Unauthorized"
         "500":
           description: "Server error"
-  /v1/slides/{promptId}/status:
-    get:
-      tags:
-        - slides
-      summary: "Get generation status for a previously-submitted request"
-      operationId: getGenerationStatus
-      parameters:
-        - name: promptId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-          description: "The promptId returned by /v1/slides/generate"
-      responses:
-        "200":
-          description: "Status of the generation job"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/GenerationStatusResponse"
-              examples:
-                in_progress:
-                  value:
-                    promptId: 42
-                    status: "IN_PROGRESS"
-                    totalPages: 25
-                    generatedPages: 10
-                    lastUpdated: "2025-09-22T09:30:00Z"
-                done:
-                  value:
-                    promptId: 43
-                    status: "DONE"
-                    totalPages: 15
-                    generatedPages: 15
-                    lastUpdated: "2025-09-22T09:41:00Z"
-        "404":
-          description: "Request not found"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
 
 components:
   schemas:
@@ -206,37 +164,6 @@ components:
         structure:
           $ref: "#/components/schemas/SlideStructure"
           description: "Structure preview for progressing other generation steps"
-
-    GenerationStatusResponse:
-      type: object
-      properties:
-        promptId:
-          type: string
-          format: uuid
-        status:
-          type: string
-          description: "Job status"
-          enum:
-            - IN_PROGRESS
-            - FAILED
-            - DONE
-        totalPages:
-          type: integer
-          description: "Total amount of pages that have to be generated"
-        generatedPages:
-          type: integer
-          description: "Amount of generated pages at the last point of update"
-        lastUpdated:
-          type: string
-          format: date-time
-        webUrl:
-          type: string
-          format: url
-        pdfUrl:
-          type: string
-          format: url
-        error:
-          $ref: "#/components/schemas/Error"
 
     Error:
       type: object
