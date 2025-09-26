@@ -105,7 +105,7 @@ async def websocket_status(
 
     async def send_status_update(status: Status):
         try:
-            await websocket.send_json(status)
+            await websocket.send_text(status.to_json())
         except WebSocketDisconnect:
             status_manager.remove_listener(promptId, id)
 
