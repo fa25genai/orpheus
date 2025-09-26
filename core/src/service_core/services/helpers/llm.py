@@ -26,3 +26,8 @@ def getLLM():
         headers={"Authorization": f"Bearer {api_key}"} if api_key else {}
     )
     return llm
+
+def ask_llm(prompt: str):
+    llm = getLLM()
+    response = llm.invoke(prompt)
+    return response.content
