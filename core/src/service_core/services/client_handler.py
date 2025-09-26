@@ -1,30 +1,42 @@
 import httpx
-import logging
 import json
 import asyncio
+import os
 from service_core.services import (
     decompose_input,
     fetch_mock_data,
     script_generation,
     narration_generation,
 )
-from service_core.services.fetch_mock_data import create_demoretrieved_content
+import service_core.services.fetch_mock_data as mock_service
 from service_core.impl.tracker import tracker
 
 DI_API_URL = "http://docint:25565"
 SLIDES_API_URL = "http://slides:30606"
 AVATAR_API_URL = "http://avatar-video-producer:9000"
+DEBUG = int(os.environ.get("ORPHEUS_DEBUG", "1"))
 
 
 
 async def decompose_inputs(prompt_request):
     tracker.log("Decomposing inputs")
+    
+    # DEBUG HANDLING STARTS
+    if (DEBUG):
+        return mock_service.create_decomposed_question()
+    # DEBUG HANDLING ENDS
     decomposed_questions = decompose_input.decompose_question(prompt_request.prompt)
     return decomposed_questions.get("subqueries", [])
 
 async def query_document_intelligence(subqueries, client):
     tracker.log("Querying document intelligence")
     retrieved_content = []
+
+    # DEBUG HANDLING STARTS
+    if (DEBUG):
+        return mock_service.create_retrieved_content()
+    # DEBUG HANDLING ENDS
+
     for idx, subquery in enumerate(subqueries):
         di_response = await client.get(
             f"{DI_API_URL}/v1/retrieval/abc",
@@ -40,9 +52,12 @@ async def query_document_intelligence(subqueries, client):
 def generate_script(retrieved_content):
     tracker.log("Generating script")
     try:
-        refined_output = script_generation.generate_script(
-            retrieved_content, fetch_mock_data.create_demo_user()
-        )
+        # DEBUG HANDLING STARTS
+        if (DEBUG):
+            return mock_service.create_script()
+        # DEBUG HANDLING ENDS
+
+        refined_output = script_generation.generate_script(retrieved_content, mock_service.create_user())
     except Exception as e:
         print(e)
         refined_output = {}
@@ -50,12 +65,18 @@ def generate_script(retrieved_content):
 
 async def generate_slides(prompt_request, prompt_id, lecture_script, refined_output, client):
     tracker.log("Generating slides")
+
+    # DEBUG HANDLING STARTS
+    if (DEBUG):
+        return mock_service.create_slides()
+    # DEBUG HANDLING ENDS
+
     slides_context = {
         "courseId": prompt_request.course_id,
         "promptId": str(prompt_id),
         "lectureScript": lecture_script,
         "user": json.loads(
-            fetch_mock_data.create_demo_user().model_dump_json(
+            mock_service.create_user().model_dump_json(
                 by_alias=True, exclude_unset=True
             )
         ),
@@ -74,9 +95,12 @@ async def generate_slides(prompt_request, prompt_id, lecture_script, refined_out
 def generate_voice_tracks(lecture_script, slides_data):
     tracker.log("Generating voice tracks")
     try:
-        voice_track = narration_generation.generate_narrations(
-            lecture_script, slides_data, fetch_mock_data.create_demo_user()
-        )
+        # DEBUG HANDLING STARTS
+        if (DEBUG):
+            return mock_service.create_voice_track()
+        # DEBUG HANDLING ENDS
+
+        voice_track = narration_generation.generate_narrations(lecture_script, slides_data, mock_service.create_user())
     except Exception as e:
         print("Error generating voice track:", e, flush=True)
         voice_track = {}
@@ -102,8 +126,7 @@ async def generate_avatar_video(voice_track, client):
 async def process_prompt(prompt_id: str, prompt_request: str):
     async with httpx.AsyncClient() as client:
         subqueries = await decompose_inputs(prompt_request)
-        # retrieved_content = await query_document_intelligence(subqueries, client)
-        retrieved_content = create_demoretrieved_content() # Using mock data instead of actual DI call 
+        retrieved_content = await query_document_intelligence(subqueries, client)
 
         # Run summarization and sending in the background
         #asyncio.create_task(summarize_and_send(retrieved_content, client))
