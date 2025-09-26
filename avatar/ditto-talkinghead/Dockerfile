@@ -49,6 +49,7 @@ EXPOSE 8000
 # These can be overridden during `docker run`.
 ENV DITTO_DATA_ROOT=./checkpoints/ditto_pytorch
 ENV DITTO_CFG_PKL=./checkpoints/ditto_cfg/v0.4_hubert_cfg_pytorch.pkl
+ENV DITTO_DEBUG_MP4_PATH=./debug/
 
 # Command to run the Uvicorn server for your FastAPI application.
 # It uses the filename and the FastAPI app instance name (`app`).
