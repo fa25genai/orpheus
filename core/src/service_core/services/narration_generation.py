@@ -88,6 +88,6 @@ def generate_narrations(lecture_script, example_slides, user_profile, debug=Fals
             )
         ),
     }
-
+    output_data = json.loads(output_data.model_dump_json(by_alias=True, exclude_unset=True))
     return output_data
 
