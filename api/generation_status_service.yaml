@@ -1,0 +1,215 @@
+openapi: 3.1.0
+info:
+  title: Answer Generation Service API
+  version: "0.1.0"
+  description: |
+    API for the Orpheus core orchestration.
+    From the repository: "The Orpheus System transforms static slides into interactive prompt videos with lifelike professor avatars, combining expressive narration, visual presence, and dynamic content to create engaging, personalized learning experiences."
+    License: MIT (see repository).
+  termsOfService: "https://github.com/fa25genai/orpheus"
+  contact:
+    name: "Orpheus Project"
+    url: "https://github.com/fa25genai/orpheus/issues/new"
+  license:
+    name: MIT
+    url: "https://opensource.org/licenses/MIT"
+
+servers:
+  - url: "http://localhost:19910"
+    description: "Local development"
+  - url: "http://service-status:19910"
+    description: "DNS service name for in-cluster service"
+
+tags:
+  - name: status
+    description: "Endpoints for status service"
+
+paths:
+  /status/{promptId}/update:
+    patch:
+      tags:
+        - status
+      summary: "Updates the status for a generation job"
+      description: "Takes a status update and applies it to the current status. If a status is unknown, it creates a new object for it."
+      operationId: "updateStatus"
+      parameters:
+        - name: promptId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: "The promptId of the generation job"
+      requestBody:
+        description: "The changes to apply to the status."
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StatusPatch'
+      responses:
+        '203':
+          description: "The status update has been applied."
+        '400':
+          description: "Bad Request. The request body is invalid."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /status/{promptId}:
+    get:
+      tags:
+        - status
+      summary: "Get the current status for a generation job"
+      description: >
+        Returns the current status of a generation job. If a job is unknown, then the initial status is returned.
+        The current value is also subscribable by opening a websocket to `/status/{promptId}/live`.
+        There the status object is pushed as it is described by this endpoint whenever it is updated.
+      operationId: "getStatus"
+      parameters:
+        - name: promptId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: "The promptId of the generation job"
+      responses:
+        '200':
+          description: "The current status of the request."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Status"
+
+
+components:
+  schemas:
+    StatusPatch:
+      type: object
+      required: [ ] # Every property is optional.
+      properties:
+        stepUnderstanding:
+          $ref: "#/components/schemas/StepStatus"
+        stepLookup:
+          $ref: "#/components/schemas/StepStatus"
+        stepLectureScriptGeneration:
+          $ref: "#/components/schemas/StepStatus"
+        stepSlideStructureGeneration:
+          $ref: "#/components/schemas/StepStatus"
+        stepSlideGeneration:
+          type: integer
+        stepSlidePostprocessing:
+          $ref: "#/components/schemas/StepStatus"
+        stepsAvatarGeneration:
+          # This is an object where the keys have to be numeric (i.e. slide 1,2,3,...)
+          type: object
+          patternProperties:
+            "^[0-9]+$":
+              $ref: "#/components/schemas/AvatarElementStatusPatch"
+          additionalProperties: false
+        lectureSummary:
+          type: string
+        slideStructure:
+          $ref: "#/components/schemas/SlideStructure"
+
+    AvatarElementStatusPatch:
+      type: object
+      properties:
+        audio:
+          $ref: "#/components/schemas/StepStatus"
+        video:
+          $ref: "#/components/schemas/StepStatus"
+
+    Status:
+      type: object
+      required:
+        - stepUnderstanding
+        - stepLookup
+        - stepLectureScriptGeneration
+        - stepSlideStructureGeneration
+        - stepSlideGeneration
+        - stepSlidePostprocessing
+        - stepsAvatarGeneration
+      properties:
+        stepUnderstanding:
+          $ref: "#/components/schemas/StepStatus"
+        stepLookup:
+          $ref: "#/components/schemas/StepStatus"
+        stepLectureScriptGeneration:
+          $ref: "#/components/schemas/StepStatus"
+        stepSlideStructureGeneration:
+          $ref: "#/components/schemas/StepStatus"
+        stepSlideGeneration:
+          type: integer
+        stepSlidePostprocessing:
+          $ref: "#/components/schemas/StepStatus"
+        stepsAvatarGeneration:
+          type: array
+          items:
+            $ref: "#/components/schemas/AvatarElementStatus"
+        lectureSummary:
+          type: string
+        slideStructure:
+          $ref: "#/components/schemas/SlideStructure"
+
+    AvatarElementStatus:
+      type: object
+      properties:
+        audio:
+          $ref: "#/components/schemas/StepStatus"
+        video:
+          $ref: "#/components/schemas/StepStatus"
+
+    StepStatus:
+      type: string
+      enum:
+        - "NOT_STARTED"
+        - "IN_PROGRESS"
+        - "DONE"
+        - "FAILED"
+
+    SlideStructure:
+      type: object
+      description: "High-level structure of the slide deck returned early for UI and navigation"
+      properties:
+        pages:
+          type: array
+          items:
+            $ref: "#/components/schemas/SlideItem"
+      example:
+        pages:
+          - content: "Title slide introducing the topic \"for loops\""
+          - content: "Loops are a programming structure which allows to repeatedly execute the same code."
+          - content: "Simple example of a for loop with the text \"...\""
+
+    SlideItem:
+      type: object
+      description: "One slide entry in the structure summary"
+      required:
+        - content
+      properties:
+        content:
+          description: Human readable text, describing which lecture contents will be contained in the slide
+          type: string
+
+
+    # Standard Error Schema
+    Error:
+      type: "object"
+      properties:
+        code:
+          type: "integer"
+          description: "The HTTP status code."
+          example: 404
+        message:
+          type: "string"
+          description: "A human-readable error message."
+          example: "Resource not found"
+      required:
+        - "code"
+        - "message"
+
+externalDocs:
+  description: "Project repository and README"
+  url: "https://github.com/fa25genai/orpheus"
