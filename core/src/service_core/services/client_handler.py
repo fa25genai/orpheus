@@ -4,10 +4,10 @@ import asyncio
 import os
 from service_core.services import (
     decompose_input,
-    fetch_mock_data,
     script_generation,
     narration_generation,
 )
+
 import service_core.services.fetch_mock_data as mock_service
 from service_core.impl.tracker import tracker
 from service_core.services.user_summary import summarize_and_send
