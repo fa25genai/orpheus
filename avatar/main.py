@@ -1,9 +1,13 @@
 import requests
-from datetime import datetime, timezone, timedelta
-from typing import List, Optional, Literal, Dict, Union
+from datetime import datetime, timezone
+from typing import List, Optional, Literal, Dict, Tuple, Union
 import os
 import shutil
 import uuid
+from collections.abc import Generator
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Dict, List, Literal, Optional, Union
 from uuid import UUID
 from pathlib import Path
 from queue import Queue
@@ -11,11 +15,19 @@ from threading import Thread, Event
 from time import sleep
 
 from fastapi import FastAPI, Response, Request, UploadFile, File, Depends, HTTPException, status
+import requests
+from fastapi import BackgroundTasks, Depends, FastAPI, File, HTTPException, Request, Response, UploadFile, status
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy import create_engine, String, DateTime, Text, Integer, func, ForeignKey
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship, sessionmaker, Session
 from pydantic import BaseModel, Field, constr
 from fastapi.middleware.cors import CORSMiddleware
+
+from pydantic import BaseModel, Field, StringConstraints
+from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, create_engine, func
+from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, relationship, sessionmaker
+from typing_extensions import Annotated
 
 app = FastAPI(title="Service Video-Generation APIs", version="0.1")
 origins = ["*"]
@@ -43,6 +55,7 @@ VIDEO_ROOT.mkdir(parents=True, exist_ok=True)
 # Models
 # ---------------------------
 
+
 class Preferences(BaseModel):
     answerLength: Optional[Literal["short", "medium", "long"]] = None
     languageLevel: Optional[Literal["basic", "intermediate", "advanced"]] = None
@@ -56,6 +69,9 @@ class UserProfile(BaseModel):
     language: Literal["german", "english"]
     preferences: Optional[Preferences] = None
     enrolled_courses: Optional[List[str]] = None
+
+
+SlideText = Annotated[str, StringConstraints(min_length=1)]
 
 
 class GenerateRequest(BaseModel):
@@ -102,6 +118,7 @@ class AvatarCreatedResponse(BaseModel):
 # DB layer (SQLAlchemy 2.x)
 # ---------------------------
 
+
 class Base(DeclarativeBase):
     pass
 
@@ -110,7 +127,7 @@ engine = create_engine(DATABASE_URL, future=True)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, future=True)
 
 
-def get_db() -> Session:
+def get_db() -> Generator[Session, None, None]:
     db = SessionLocal()
     try:
         yield db
@@ -197,15 +214,15 @@ def _save_upload_to_disk(avatar_id: UUID, upload: UploadFile) -> Path:
     tags=["avatar"],
 )
 def create_avatar(
-        file: Optional[UploadFile] = File(default=None),
-        db: Session = Depends(get_db),
-):
+    file: Optional[UploadFile] = File(default=None),
+    db: Session = Depends(get_db),
+) -> AvatarCreatedResponse:
     # Create avatar id and persist
     avatar_id = uuid.uuid4()
     db_avatar = Avatar(avatar_id=str(avatar_id))
     db.add(db_avatar)
 
-    image_payload = None
+    image_payload: Optional[AvatarImagePayload] = None
     if file is not None:
         saved_path = _save_upload_to_disk(avatar_id, file)
         size = saved_path.stat().st_size
@@ -219,13 +236,13 @@ def create_avatar(
         )
         db.add(db_img)
         db.flush()  # populate server defaults like created_at
-        image_payload = {
-            "id": db_img.id,
-            "filePath": db_img.file_path,
-            "mimeType": db_img.mime_type,
-            "sizeBytes": db_img.size_bytes,
-            "createdAt": db_img.created_at or datetime.now(timezone.utc),
-        }
+        image_payload = AvatarImagePayload(
+            id=UUID(db_img.id),
+            filePath=db_img.file_path,
+            mimeType=db_img.mime_type,
+            sizeBytes=db_img.size_bytes,
+            createdAt=db_img.created_at or datetime.now(timezone.utc),
+        )
 
     db.commit()
     return AvatarCreatedResponse(avatarId=avatar_id, image=image_payload)
@@ -238,10 +255,10 @@ def create_avatar(
     tags=["avatar"],
 )
 def add_avatar_image(
-        avatarId: UUID,
-        file: UploadFile = File(...),
-        db: Session = Depends(get_db),
-):
+    avatarId: UUID,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+) -> AvatarImageResponse:
     # Strict: avatar must exist
     avatar = db.get(Avatar, str(avatarId))
     if not avatar:
@@ -274,6 +291,7 @@ def add_avatar_image(
 # ---------------------------
 # In-memory job store & queue
 # ---------------------------
+
 
 class Job(BaseModel):
     promptId: UUID
@@ -337,12 +355,12 @@ def _purge_stale_jobs(now: Optional[datetime] = None) -> None:
 # ---------------------------
 
 def generate_audio(
-        slide_text: Optional[str] = "Hello students! I want you to drink coffee.",
-        course_id: Optional[str] = "course_123",
-        voice_sample: str = "/app/database/voice_sample/kursche_voice.mp3",
-        prompt_id: Optional[UUID] = None,
-        user_profile: Optional[UserProfile] = None,
-        audio_counter: Optional[int] = 0
+    slide_text: Optional[str] = "Hello students! I want you to drink coffee.",
+    course_id: Optional[str] = "course_123",
+    voice_sample: str = "/app/database/voice_sample/kursche_voice.mp3",
+    prompt_id: Optional[UUID] = None,
+    user_profile: Optional[UserProfile] = None,
+    audio_counter: int = 0,
 ) -> Optional[str]:
     """
     Generate a WAV file for one slide.
@@ -363,7 +381,8 @@ def generate_audio(
             return None
 
         with open(voice_sample, "rb") as f:
-            data = {"slide_text": slide_text}
+            is_debug = os.getenv("DEBUG", "not debug")
+            data = {"slide_text": slide_text, "debug": is_debug}
             files = {"voice_file": (os.path.basename(voice_sample), f, "audio/mpeg")}
             print(f"[generate_audio] Posting to {audio_api_url}")
             resp = requests.post(audio_api_url, data=data, files=files, timeout=(5, 600))
@@ -382,11 +401,11 @@ def generate_audio(
 
 
 def generate_video(
-        audio_path: Optional[str] = None,
-        prompt_id: Optional[UUID] = None,
-        course_id: Optional[str] = None,
-        user_profile: Optional[UserProfile] = None,
-        video_counter: Optional[int] = 0
+    audio_path: Optional[str] = None,
+    prompt_id: Optional[UUID] = None,
+    course_id: Optional[str] = None,
+    user_profile: Optional[UserProfile] = None,
+    video_counter: int = 0,
 ) -> Optional[str]:
     """
     Render MP4 video for one slide using audio and a static image.
@@ -416,10 +435,12 @@ def generate_video(
         "audio": ("audio.wav", open(resolved_audio, "rb"), "audio/wav"),
         "source": ("image.png", open(source_path, "rb"), "image/png"),
     }
+    is_debug = os.getenv("DEBUG", "not debug")
+    data = {"debug": is_debug}
 
     try:
         print(f"[generate_video] Posting to {video_api_url}")
-        with requests.post(video_api_url, files=files, stream=True, timeout=(5, 600)) as resp:
+        with requests.post(video_api_url, files=files, data=data, stream=True, timeout=(5, 600)) as resp:
             if resp.status_code >= 400:
                 print(f"[generate_video] HTTP {resp.status_code}: {resp.text[:200]}")
                 return None
@@ -450,7 +471,7 @@ def generate_video(
         for v in files.values():
             try:
                 v[1].close()
-            except:
+            except Exception:
                 pass
 
 # ---------------------------
@@ -567,7 +588,7 @@ def request_video_generation(
         payload: GenerateRequest,
         response: Response,
         request: Request
-):
+) -> GenerationAcceptedResponse:
     """
     Nimmt einen einzelnen Slide entgegen (payload.voiceTrack),
     erwartet eine explizite Slide-Nummer (payload.slideNumber) und enqueued die Aufgabe.
@@ -629,7 +650,7 @@ def request_video_generation(
     responses={404: {"model": ErrorModel}},
     tags=["video"],
 )
-def get_generation_status(promptId: UUID):
+def get_generation_status(promptId: UUID) -> GenerationStatusResponse | JSONResponse:
     _purge_stale_jobs()
     job = JOBS.get(promptId)
     if not job:
@@ -644,5 +665,6 @@ def get_generation_status(promptId: UUID):
         estimatedSecondsLeft=_eta_seconds(job),
         error=job.error,
     )
+
 
 # Run: uvicorn main:app --host 0.0.0.0 --port 8080 --reload

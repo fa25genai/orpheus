@@ -11,17 +11,17 @@ Notes
 * Start with: `uvicorn app:app --host 0.0.0.0 --port 8000 --workers 1`
 """
 
-import os
 import math
+import os
 import pickle
 import random
 import threading
-import numpy as np
-import torch
-import librosa
 from typing import Any, Dict, Optional
 
-from fastapi import FastAPI, HTTPException, UploadFile, File, BackgroundTasks
+import librosa
+import numpy as np
+import torch
+from fastapi import BackgroundTasks, FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
@@ -172,7 +172,9 @@ def health():
 async def infer(
     audio: UploadFile = File(..., description="WAV audio file"),
     source: UploadFile = File(..., description="Source image or video"),
-    background_tasks: BackgroundTasks = BackgroundTasks()
+    background_tasks: BackgroundTasks = BackgroundTasks(),
+    debug: str = Form("not debug", description="is debug?"),
+    
 ):
     global _SDK
     if _SDK is None:
@@ -185,6 +187,16 @@ async def infer(
     source_ext = os.path.splitext(source.filename or "source.png")[1] or ".png"
     source_tmp = os.path.join(tmp_dir, f"source_{random.getrandbits(32)}{source_ext}")
     output_tmp = os.path.join(tmp_dir, f"output_{random.getrandbits(32)}.mp4")
+
+    if debug == 'debug':
+        path_to_debug_mp4 = os.getenv("DITTO_DEBUG_MP4_PATH", "./debug/mock.mp4")
+        return FileResponse(
+            path=path_to_debug_mp4,
+            media_type="video/mp4",
+            filename=os.path.basename(path_to_debug_mp4),
+            headers={"Cache-Control": "no-store"},
+            background=background_tasks,
+        )
 
     try:
         # Save audio
@@ -243,3 +255,8 @@ if __name__ == "__main__":
     import uvicorn
 
     uvicorn.run(app, host="0.0.0.0", port=8000, reload=False, workers=1)
+"""TODO: add types; currently excluded from strict mypy via per-file pragma.
+
+Local wrapper around upstream project; keep runtime behavior unchanged.
+"""
+# mypy: ignore-errors

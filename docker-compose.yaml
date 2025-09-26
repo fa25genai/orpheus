@@ -6,6 +6,8 @@ services:
       dockerfile: Dockerfile
     env_file:
       - ./slides/.env # ask Krasi
+    depends_on:
+      - status-service
     ports:
       - "30606:30606"
     networks:
@@ -45,7 +47,8 @@ services:
     networks:
       - orpheus
     depends_on:
-      - slides-service
+      - core-service
+      - status-service
 
   docint-service:
     container_name: docint
@@ -104,6 +107,7 @@ services:
       - docint-service
       - slides-service
       - avatar-video-producer
+      - status-service
 
   avatar-delivery:
     build:
@@ -121,6 +125,7 @@ services:
       context: ./avatar
       dockerfile: Dockerfile
     environment:
+      DEBUG: "not debug"
       VIDEO_ROOT: "/data/jobs"
       PUBLIC_VIDEOS_BASE: "/videos/jobs"
       GEN_AUDIO: "https://gpu.aet.cit.tum.de/avatar/audio/v1/audio/generate"
@@ -133,6 +138,16 @@ services:
       - "9000:9000"
     depends_on:
       - avatar-delivery
+      - status-service
+
+  status-service:
+    build:
+      context: ./status
+      dockerfile: Dockerfile
+    networks:
+      - orpheus
+    expose:
+      - "19910:19910"
 
 networks:
   orpheus: {}

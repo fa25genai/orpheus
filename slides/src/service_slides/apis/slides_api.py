@@ -1,21 +1,19 @@
 # coding: utf-8
-from fastapi import Request
 import importlib
 import pkgutil
-
-
-import service_slides.impl
-from service_slides.apis.slides_api_base import BaseSlidesApi
 
 from fastapi import (  # noqa: F401
     APIRouter,
     Body,
     HTTPException,
     Path,
+    Request,
 )
-
 from pydantic import Field, StrictStr
 from typing_extensions import Annotated
+
+import service_slides.impl
+from service_slides.apis.slides_api_base import BaseSlidesApi
 from service_slides.models.error import Error
 from service_slides.models.generation_accepted_response import GenerationAcceptedResponse
 from service_slides.models.generation_status_response import GenerationStatusResponse
@@ -26,30 +24,6 @@ router = APIRouter()
 ns_pkg = service_slides.impl
 for _, name, _ in pkgutil.iter_modules(ns_pkg.__path__, ns_pkg.__name__ + "."):  # type: ignore
     importlib.import_module(name)
-
-
-@router.get(
-    "/v1/slides/{promptId}/getContentUrl",
-    responses={
-        200: {"model": GenerationStatusResponse, "description": "Status of the generation job"},
-        404: {"model": Error, "description": "Request not found"},
-    },
-    tags=["slides"],
-    summary="Get content URLs for a previously-submitted request. Blocks until generation is finished",
-    response_model_by_alias=True,
-)
-async def get_content_url(
-    http_request: Request,
-    promptId: Annotated[
-        StrictStr, Field(description="The promptId returned by /v1/slides/generate")
-    ] = Path(..., description="The promptId returned by /v1/slides/generate"),
-) -> GenerationStatusResponse:
-    if not BaseSlidesApi.subclasses:
-        raise HTTPException(status_code=500, detail="Not implemented")
-    result = await BaseSlidesApi.subclasses[0]().get_content_url(
-        promptId, http_request.app.state.job_manager
-    )
-    return result  # type: ignore
 
 
 @router.get(
@@ -64,15 +38,11 @@ async def get_content_url(
 )
 async def get_generation_status(
     http_request: Request,
-    promptId: Annotated[
-        StrictStr, Field(description="The promptId returned by /v1/slides/generate")
-    ] = Path(..., description="The promptId returned by /v1/slides/generate"),
+    promptId: Annotated[StrictStr, Field(description="The promptId returned by /v1/slides/generate")] = Path(..., description="The promptId returned by /v1/slides/generate"),
 ) -> GenerationStatusResponse:
     if not BaseSlidesApi.subclasses:
         raise HTTPException(status_code=500, detail="Not implemented")
-    result = await BaseSlidesApi.subclasses[0]().get_generation_status(
-        promptId, http_request.app.state.job_manager
-    )
+    result = await BaseSlidesApi.subclasses[0]().get_generation_status(promptId, http_request.app.state.job_manager)
     return result  # type: ignore
 
 

@@ -12,17 +12,18 @@ Do not edit the class manually.
 """  # noqa: E501
 
 from __future__ import annotations
+
+import json
 import pprint
 import re  # noqa: F401
-import json
+from typing import Any, ClassVar, Dict, List, Optional, Set
 
 from pydantic import BaseModel, ConfigDict, Field, StrictStr
-from typing import Any, ClassVar, Dict, List, Optional
+from typing_extensions import Self
+
 from service_slides.clients.postprocessing.models.slideset_with_id_assets_inner import (
     SlidesetWithIdAssetsInner,
 )
-from typing import Set
-from typing_extensions import Self
 
 
 class SlidesetWithId(BaseModel):
@@ -34,16 +35,12 @@ class SlidesetWithId(BaseModel):
         description="Unique identifier of the lecture to which the slides will belong. ",
         alias="promptId",
     )
-    slideset: StrictStr = Field(
-        description="Markdown source code for the slideset. Has to conform to sli.dev syntax. "
-    )
+    slideset: StrictStr = Field(description="Markdown source code for the slideset. Has to conform to sli.dev syntax. ")
     user: Optional[Dict[str, Any]] = Field(
         default=None,
         description="Schemaless additional information about the user (e.g. preferences regarding slide style).",
     )
-    assets: List[SlidesetWithIdAssetsInner] = Field(
-        description="Additional files: images, PDFs, graphs, tables, listings, equations. Use multiple entries for multiple files. May be empty."
-    )
+    assets: List[SlidesetWithIdAssetsInner] = Field(description="Additional files: images, PDFs, graphs, tables, listings, equations. Use multiple entries for multiple files. May be empty.")
     __properties: ClassVar[List[str]] = ["promptId", "slideset", "user", "assets"]
 
     model_config = ConfigDict(
@@ -106,9 +103,7 @@ class SlidesetWithId(BaseModel):
                 "promptId": obj.get("promptId"),
                 "slideset": obj.get("slideset"),
                 "user": obj.get("user"),
-                "assets": [SlidesetWithIdAssetsInner.from_dict(_item) for _item in obj["assets"]]
-                if obj.get("assets") is not None
-                else None,
+                "assets": [SlidesetWithIdAssetsInner.from_dict(_item) for _item in obj["assets"]] if obj.get("assets") is not None else None,
             }
         )
         return _obj

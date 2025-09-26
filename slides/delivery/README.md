@@ -1,5 +1,9 @@
 # Orpheus **Generated Slides Service**
 
 This component serves previously generated slidesets to use in the frontend.
-There is no formally specified file structure.
-To access files you must refer to the URLs returned by **Slide Generation Service** and **Slide Postprocessing Service**
+
+The following path schemas are available:
+
+| Schema                                                                | Description                                           |
+|-----------------------------------------------------------------------|-------------------------------------------------------|
+| `${BASE_PATH}/web/{promtId}/` `${BASE_PATH}/web/{promtId}/index.html` | Access the compiled slideset for the given `promptId` |
