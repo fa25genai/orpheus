@@ -74,7 +74,7 @@ class PDFImageExtractorService:
                             continue
                         print(f"    [Bild {img_index}] extrahiert (Größe: {len(img_bytes)} Bytes)")
                         page_items.append({
-                            "data": base64.b64encode(img_bytes).decode("utf-8")
+                            "data": f"data:image/{info['ext']};base64,{base64.b64encode(img_bytes).decode('utf-8')}"
                         })
                     except Exception as e:
                         print(f"    [Bild {img_index}] Fehler beim Extrahieren: {e}")
