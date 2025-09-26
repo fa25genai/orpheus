@@ -110,3 +110,9 @@ async def websocket_status(
             status_manager.remove_listener(promptId, id)
 
     await status_manager.add_listener(promptId, id, send_status_update)
+
+    try:
+        while True:
+            await websocket.receive()
+    except WebSocketDisconnect:
+        status_manager.remove_listener(promptId, id)
