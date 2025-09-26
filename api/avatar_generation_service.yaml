@@ -51,7 +51,7 @@ paths:
                 voiceTrack:
                   type: string
                   description: "The voice track that the avatar shall speak."
-                  example: "This is a sample text that the avatar will speak."
+                  example: "Willkommen zur Vorlesung über For-Loops! Wir werden heute lernen, wie man Aktionen in Programmen wiederholt – ähnlich wie beim Wiederholen von Liegestützen beim Training. For-Loops ermöglichen es uns, Code effizienter und übersichtlicher zu gestalten."
                 slideNumber:
                   type: integer
                   minimum: 0
