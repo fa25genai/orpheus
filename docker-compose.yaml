@@ -37,18 +37,18 @@ services:
     volumes:
       - slides-data:/var/www:ro
 
-  # ui-service:
-  #   container_name: ui
-  #   build:
-  #     context: ./ui
-  #     dockerfile: Dockerfile
-  #   ports:
-  #     - "3000:3000"
-  #   networks:
-  #     - orpheus
-  #   depends_on:
-  #     - core-service
-  #     - status-service
+  ui-service:
+    container_name: ui
+    build:
+      context: ./ui
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    networks:
+      - orpheus
+    depends_on:
+      - core-service
+      - status-service
 
   docint-service:
     container_name: docint
