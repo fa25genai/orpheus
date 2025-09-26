@@ -44,6 +44,6 @@ class CoreApiImpl(BaseCoreApi):
 def process_prompt_handler(prompt_id: UUID, prompt_request: PromptRequest):
     try:
         asyncio.run(process_prompt(prompt_id, prompt_request))
-        tracker.log(f"SUCCESS: Closing CoreThreadPoolExecutor for {prompt_id}", flush=True)
+        tracker.log(f"SUCCESS: Closing CoreThreadPoolExecutor for {prompt_id}")
     except Exception as e:
         print(f"A critical error occurred for prompt [{prompt_id}]: {e}")
