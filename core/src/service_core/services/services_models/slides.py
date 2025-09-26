@@ -8,8 +8,10 @@ from pydantic import BaseModel
 class SlideItem(BaseModel):
     content: str
 
+
 class SlideStructure(BaseModel):
     pages: List[SlideItem]
+
 
 class SlidesEnvelope(BaseModel):
     promptId: str

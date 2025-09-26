@@ -1,21 +1,19 @@
 # coding: utf-8
-from fastapi import Request
 import importlib
 import pkgutil
-
-
-import service_slides.impl
-from service_slides.apis.slides_api_base import BaseSlidesApi
 
 from fastapi import (  # noqa: F401
     APIRouter,
     Body,
     HTTPException,
     Path,
+    Request,
 )
-
 from pydantic import Field, StrictStr
 from typing_extensions import Annotated
+
+import service_slides.impl
+from service_slides.apis.slides_api_base import BaseSlidesApi
 from service_slides.models.error import Error
 from service_slides.models.generation_accepted_response import GenerationAcceptedResponse
 from service_slides.models.generation_status_response import GenerationStatusResponse

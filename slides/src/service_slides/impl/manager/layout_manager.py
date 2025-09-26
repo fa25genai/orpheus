@@ -1,5 +1,5 @@
-from typing import List, Dict
 from string import Template
+from typing import Dict, List
 
 
 class LayoutDescription:

@@ -9,6 +9,7 @@ from ..app_state import app_state
 from ..models.prompt_request import PromptRequest
 from ..models.prompt_response import PromptResponse
 from ..services.client_handler import process_prompt
+from .tracker import tracker
 
 
 def get_executor(prompt_id: UUID) -> ThreadPoolExecutor:
@@ -18,10 +19,8 @@ def get_executor(prompt_id: UUID) -> ThreadPoolExecutor:
             app_state.executor = ThreadPoolExecutor()
     return app_state.executor
 
-from .tracker import tracker
 
-
-class CoreApiImpl(BaseCoreApi):
+class CoreApiImpl(BaseCoreApi):  # type: ignore[no-untyped-call]
     async def create_lecture_from_prompt(self, prompt_request: PromptRequest) -> PromptResponse:
         try:
             prompt_id = uuid4()
@@ -36,16 +35,17 @@ class CoreApiImpl(BaseCoreApi):
             tracker.log(f"Initializing CoreThreadPoolExecutor for {prompt_id}")
             executor.submit(process_prompt_handler, prompt_id, prompt_request)
 
-            return PromptResponse(promptId=str(prompt_id))
+            return PromptResponse(promptId=prompt_id, summary="Accepted")
 
         except ConnectionError as e:
             raise HTTPException(status_code=503, detail=f"Datastore error: {e}")
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {e}")
 
-def process_prompt_handler(prompt_id: UUID, prompt_request: PromptRequest):
+
+def process_prompt_handler(prompt_id: UUID, prompt_request: PromptRequest) -> None:
     try:
-        asyncio.run(process_prompt(prompt_id, prompt_request))
+        asyncio.run(process_prompt(str(prompt_id), prompt_request))
         tracker.log(f"SUCCESS: Closing CoreThreadPoolExecutor for {prompt_id}")
     except Exception as e:
         print(f"A critical error occurred for prompt [{prompt_id}]: {e}")

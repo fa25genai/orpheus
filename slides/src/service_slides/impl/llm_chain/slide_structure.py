@@ -1,17 +1,18 @@
-from typing import List, Any, cast
+from typing import Any, List, cast
+
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.prompts import (
     ChatPromptTemplate,
-    SystemMessagePromptTemplate,
     HumanMessagePromptTemplate,
+    SystemMessagePromptTemplate,
 )
 from pydantic import BaseModel, Field
 
 from service_slides.impl.llm_chain.shared_llm import invoke_llm
+from service_slides.impl.manager.layout_manager import LayoutDescription
 from service_slides.models.slide_item import SlideItem
 from service_slides.models.slide_structure import SlideStructure
-from service_slides.impl.manager.layout_manager import LayoutDescription
 
 
 class DetailedSlideStructureItem(BaseModel):

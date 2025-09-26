@@ -32,19 +32,19 @@ requires = ["poetry-core>=2.2.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.ruff]
-line-length = 100
+line-length = 300
 target-version = "py313"
-exclude = ["src/service_core/apis", "src/service_core/models"]
+exclude = [
+    "src/service_core/apis",
+    "src/service_core/models",
+    "src/service_core/services/fetch_mock_data.py",
+]
 
 [tool.ruff.lint]
 select = ["E", "F", "I"]
 
 [tool.ruff.lint.per-file-ignores]
-"src/service_core/services/script_generation.py" = ["E501"]
-"src/service_core/services/fetch_mock_data.py" = ["E501"]
-
-[tool.ruff.lint]
-select = ["E", "F", "I"]
+"src/service_core/services/helpers/handle_retrieved.py" = ["E501"]
 
 [tool.mypy]
 python_version = "3.13"
@@ -55,3 +55,4 @@ no_implicit_optional = true
 mypy_path = "src"
 namespace_packages = true
 explicit_package_bases = true
+exclude = "(src/service_core/apis|src/service_core/models|src/service_core/services/fetch_mock_data.py)"

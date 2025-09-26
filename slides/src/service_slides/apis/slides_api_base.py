@@ -4,10 +4,10 @@ from typing import Any, ClassVar, Tuple  # noqa: F401
 
 from langchain_core.language_models import BaseLanguageModel
 from pydantic import Field, StrictStr
-from service_slides.impl.manager.layout_manager import LayoutManager
 from typing_extensions import Annotated
 
 from service_slides.impl.manager.job_manager import JobManager
+from service_slides.impl.manager.layout_manager import LayoutManager
 from service_slides.models.generation_accepted_response import GenerationAcceptedResponse
 from service_slides.models.generation_status_response import GenerationStatusResponse
 from service_slides.models.request_slide_generation_request import RequestSlideGenerationRequest

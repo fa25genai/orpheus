@@ -6,7 +6,7 @@ from typing import Any, List
 
 from fastapi import HTTPException
 from langchain_core.language_models import BaseLanguageModel
-from pydantic import StrictStr, Field
+from pydantic import Field, StrictStr
 from typing_extensions import Annotated
 
 from service_slides.apis.slides_api_base import BaseSlidesApi

@@ -12,12 +12,13 @@ Do not edit the class manually.
 """  # noqa: E501
 
 from __future__ import annotations
-import pprint
-import json
 
+import json
+import pprint
+from typing import Any, ClassVar, Dict, List, Optional
 
 from pydantic import BaseModel
-from typing import Any, ClassVar, Dict, List, Optional
+
 from service_slides.models.slide_item import SlideItem
 
 try:

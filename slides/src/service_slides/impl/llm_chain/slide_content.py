@@ -1,8 +1,10 @@
-from typing import List, Dict, Any
+from typing import Any, Dict, List
+
 from langchain_core.language_models.base import BaseLanguageModel
-from langchain_core.prompts import ChatPromptTemplate, SystemMessagePromptTemplate
 from langchain_core.output_parsers import PydanticOutputParser
+from langchain_core.prompts import ChatPromptTemplate, SystemMessagePromptTemplate
 from pydantic import Field, create_model
+
 from service_slides.impl.llm_chain.shared_llm import invoke_llm
 from service_slides.impl.manager.layout_manager import LayoutTemplate
 from service_slides.models.request_slide_generation_request_assets_inner import (

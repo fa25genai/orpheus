@@ -1,7 +1,6 @@
 import datetime
 import logging
-from asyncio import Lock
-from asyncio import Condition
+from asyncio import Condition, Lock
 from typing import Dict, Set
 
 
