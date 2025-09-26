@@ -34,6 +34,7 @@ Notes:
 from __future__ import annotations
 
 import json
+import os
 import time
 import uuid
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
@@ -48,7 +49,7 @@ class WeaviateError(RuntimeError):
 class WeaviateGraphStore:
     def __init__(
         self,
-        base_url: str = "http://localhost:28947",
+        base_url: str = "http://docint-weaviate:28947",
         api_key: Optional[str] = None,
         timeout_s: int = 15,
     ):
@@ -57,6 +58,7 @@ class WeaviateGraphStore:
         :param api_key:  Optional API key (if we enable auth later)
         :param timeout_s: Default request timeout
         """
+        base_url = os.getenv("WEAVIATE_URL", base_url)
         self.base_url = base_url.rstrip("/")
         self.timeout_s = timeout_s
         self.session = requests.Session()
@@ -377,17 +379,20 @@ class WeaviateGraphStore:
         alpha: float = 0.8,             # weight for text; (1 - alpha) for image
         per_slide_image_agg: str = "max",  # "max" or "mean"
         include_distance: bool = True,
+        similarity_threshold: float = 0.5,  # minimum similarity threshold (0.0 to 1.0)
     ) -> List[Dict[str, Any]]:
         """
         Single 'logical' retrieval with score fusion across two channels:
 
           1) Text ANN on Slide (slideDescription vector)
           2) Image-description ANN on SlideImage (caption vector)
-          3) Normalize both channels (min-max), fuse with weights, pick top-k
-          4) For each chosen slide, fetch ALL images for that slide and assemble
+          3) Normalize both channels (min-max), fuse with weights
+          4) Filter by similarity threshold, then pick top-k
+          5) For each chosen slide, fetch ALL images for that slide and assemble
 
         Returns a list of hits (dicts) with Slide fields + nested images and
         extra keys: distanceText, bestImageDistance, fusedScore.
+        Only slides with fused similarity >= similarity_threshold are returned.
         """
         # --- 1) Text ANN on Slide ---
         where_clause = ""
@@ -486,7 +491,10 @@ class WeaviateGraphStore:
 
         # Rank by fused score desc
         fused.sort(key=lambda x: x[1], reverse=True)
-        top_keys = [k for (k, _) in fused[:k]]
+        
+        # Apply similarity threshold filter before taking top k
+        filtered_fused = [(key, score) for (key, score) in fused if score >= similarity_threshold]
+        top_keys = [k for (k, _) in filtered_fused[:k]]
 
         # --- 4) Assemble: fetch ALL images for each selected slide ---
         out: List[Dict[str, Any]] = []
@@ -557,6 +565,61 @@ class WeaviateGraphStore:
             )
 
         return out
+
+    # Test/Debug functions
+    def get_all_data_for_course(self, course_id: str) -> Dict[str, Any]:
+        """
+        Test function: Get all slides and images for a courseId (no vector search).
+        Returns all data for debugging purposes.
+        """
+        # Get all slides for the course
+        gql_slides = f"""
+        {{
+          Get {{
+            Slide(
+              where: {{ operator: Equal, path: ["courseId"], valueText: "{course_id}" }}
+              limit: 100
+            ) {{
+              courseId
+              documentId
+              slideNo
+              slideDescription
+              _additional {{ id }}
+            }}
+          }}
+        }}
+        """
+        res_slides = self._post("/v1/graphql", {"query": gql_slides})
+        slides = res_slides.get("data", {}).get("Get", {}).get("Slide", []) or []
+
+        # Get all images for the course
+        gql_images = f"""
+        {{
+          Get {{
+            SlideImage(
+              where: {{ operator: Equal, path: ["courseId"], valueText: "{course_id}" }}
+              limit: 500
+            ) {{
+              courseId
+              documentId
+              slideNo
+              description
+              imageBase64
+              _additional {{ id }}
+            }}
+          }}
+        }}
+        """
+        res_images = self._post("/v1/graphql", {"query": gql_images})
+        images = res_images.get("data", {}).get("Get", {}).get("SlideImage", []) or []
+
+        return {
+            "courseId": course_id,
+            "totalSlides": len(slides),
+            "totalImages": len(images),
+            "slides": slides,
+            "images": images
+        }
 
     # Mapping to OpenAPI response shape
     @staticmethod

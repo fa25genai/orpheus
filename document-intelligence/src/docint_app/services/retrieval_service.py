@@ -5,6 +5,7 @@ Searches for slides and images in WeaviateGraphStore using text queries and retu
 
 import asyncio
 import logging
+import os
 from typing import List, Dict, Any, Optional
 
 from docint_app.services.embedding_service import get_embedding_service
@@ -16,9 +17,11 @@ logger.setLevel(logging.INFO)
 
 
 class RetrievalService:
-    def __init__(self, base_url: str = "http://localhost:28947"):
+    def __init__(self, base_url: str = "http://docint-weaviate:28947"):
         """Initialize the retrieval service with Weaviate store and embedding service."""
+        base_url = os.getenv("WEAVIATE_URL", base_url)
         logger.info(f"Initializing RetrievalService with base_url: {base_url}")
+        
         try:
             self.store = WeaviateGraphStore(base_url=base_url)
             self.embedder = get_embedding_service()
@@ -185,6 +188,7 @@ class RetrievalService:
                 alpha=0.8,  # Default text-heavy weighting
                 include_distance=False
             )
+            logger.info(f"Retrieved {len(slide_hits)} hits from store")
             
             # Convert to OpenAPI format
             response = self.store.to_retrieval_response(slide_hits)
@@ -196,6 +200,11 @@ class RetrievalService:
         except Exception as e:
             logger.error(f"Simple search failed: {e}")
             return {"content": [], "images": [], "error": str(e)}
+
+    def get_all_course_data(self, course_id: str) -> Dict[str, Any]:
+        """Test function: Get all data for a courseId."""
+        logger.info(f"Getting all data for course: {course_id}")
+        return self.store.get_all_data_for_course(course_id)
 
     def check_health(self) -> Dict[str, Any]:
         """
