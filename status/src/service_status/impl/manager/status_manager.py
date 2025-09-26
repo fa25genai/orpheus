@@ -13,7 +13,9 @@ _log = logging.getLogger("status_manager")
 
 class StatusManager:
     status_objects: typing.Dict[str, Status] = {}
-    listeners: typing.Dict[str, typing.Dict[str, typing.Callable[[Status], Awaitable[None]]]]
+    listeners: typing.Dict[
+        str, typing.Dict[str, typing.Callable[[Status], Awaitable[None]]]
+    ]
 
     def __init__(self):
         self.status_objects = {}
@@ -28,16 +30,22 @@ class StatusManager:
         async with self.mutex:
             base = self._get_status_unsafe(prompt_id)
 
-            for (k, v) in patch.__dict__.items():
+            for k, v in patch.__dict__.items():
                 if v is not None and k != "steps_avatar_generation":
                     base.__dict__[k] = v
 
-            if base.slide_structure is not None and len(base.steps_avatar_generation) < len(base.slide_structure.pages):
-                for i in range(len(base.slide_structure.pages) - len(base.steps_avatar_generation)):
-                    base.steps_avatar_generation.append(AvatarElementStatus(
-                        audio=StepStatus.NOT_STARTED,
-                        video=StepStatus.NOT_STARTED,
-                    ))
+            if base.slide_structure is not None and len(
+                base.steps_avatar_generation
+            ) < len(base.slide_structure.pages):
+                for i in range(
+                    len(base.slide_structure.pages) - len(base.steps_avatar_generation)
+                ):
+                    base.steps_avatar_generation.append(
+                        AvatarElementStatus(
+                            audio=StepStatus.NOT_STARTED,
+                            video=StepStatus.NOT_STARTED,
+                        )
+                    )
 
             if patch.steps_avatar_generation is not None:
                 for k, v in patch.steps_avatar_generation.items():
@@ -55,11 +63,14 @@ class StatusManager:
             self.status_objects[prompt_id] = base
 
             if prompt_id in self.listeners:
-                for _, listener in self.listeners[prompt_id]:
+                for _, listener in self.listeners[prompt_id].items():
                     await listener(base)
 
     async def add_listener(
-            self, prompt_id: str, reference: str, listener: typing.Callable[[Status], Awaitable[None]]
+        self,
+        prompt_id: str,
+        reference: str,
+        listener: typing.Callable[[Status], Awaitable[None]],
     ):
         async with self.mutex:
             if prompt_id not in self.listeners:

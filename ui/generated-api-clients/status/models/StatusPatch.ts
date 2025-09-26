@@ -84,10 +84,10 @@ export interface StatusPatch {
     lectureSummary?: string;
     /**
      * 
-     * @type {Array<SlideStructure>}
+     * @type {SlideStructure}
      * @memberof StatusPatch
      */
-    slideStructure?: Array<SlideStructure>;
+    slideStructure?: SlideStructure;
 }
 
 
@@ -117,7 +117,7 @@ export function StatusPatchFromJSONTyped(json: any, ignoreDiscriminator: boolean
         'stepSlidePostprocessing': json['stepSlidePostprocessing'] == null ? undefined : StepStatusFromJSON(json['stepSlidePostprocessing']),
         'stepsAvatarGeneration': json['stepsAvatarGeneration'] == null ? undefined : json['stepsAvatarGeneration'],
         'lectureSummary': json['lectureSummary'] == null ? undefined : json['lectureSummary'],
-        'slideStructure': json['slideStructure'] == null ? undefined : ((json['slideStructure'] as Array<any>).map(SlideStructureFromJSON)),
+        'slideStructure': json['slideStructure'] == null ? undefined : SlideStructureFromJSON(json['slideStructure']),
     };
 }
 
@@ -140,7 +140,7 @@ export function StatusPatchToJSONTyped(value?: StatusPatch | null, ignoreDiscrim
         'stepSlidePostprocessing': StepStatusToJSON(value['stepSlidePostprocessing']),
         'stepsAvatarGeneration': value['stepsAvatarGeneration'],
         'lectureSummary': value['lectureSummary'],
-        'slideStructure': value['slideStructure'] == null ? undefined : ((value['slideStructure'] as Array<any>).map(SlideStructureToJSON)),
+        'slideStructure': SlideStructureToJSON(value['slideStructure']),
     };
 }
 

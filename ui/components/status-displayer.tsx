@@ -28,7 +28,7 @@ interface StatusDisplayerProps {
 
 export function StatusDisplayer({status}: StatusDisplayerProps) {
   // Count total slides
-  const totalSlides = status.slideStructure?.[0]?.pages?.length ?? 0;
+  const totalSlides = status.slideStructure?.pages?.length ?? 0;
   const generatedSlides = status.stepSlideGeneration ?? 0;
 
   return (
@@ -89,7 +89,7 @@ export function StatusDisplayer({status}: StatusDisplayerProps) {
               Slide Structure
             </h3>
             <ul className="list-disc list-inside space-y-1 text-sm">
-              {status.slideStructure[0]?.pages?.map((page, index) => (
+              {status.slideStructure?.pages?.map((page, index) => (
                 <li key={index}>{page.content}</li>
               ))}
             </ul>

@@ -88,13 +88,13 @@ export interface Status {
      * @type {string}
      * @memberof Status
      */
-    lectureSummary: string;
+    lectureSummary?: string;
     /**
      * 
-     * @type {Array<SlideStructure>}
+     * @type {SlideStructure}
      * @memberof Status
      */
-    slideStructure: Array<SlideStructure>;
+    slideStructure?: SlideStructure;
 }
 
 
@@ -110,8 +110,6 @@ export function instanceOfStatus(value: object): value is Status {
     if (!('stepSlideGeneration' in value) || value['stepSlideGeneration'] === undefined) return false;
     if (!('stepSlidePostprocessing' in value) || value['stepSlidePostprocessing'] === undefined) return false;
     if (!('stepsAvatarGeneration' in value) || value['stepsAvatarGeneration'] === undefined) return false;
-    if (!('lectureSummary' in value) || value['lectureSummary'] === undefined) return false;
-    if (!('slideStructure' in value) || value['slideStructure'] === undefined) return false;
     return true;
 }
 
@@ -132,8 +130,8 @@ export function StatusFromJSONTyped(json: any, ignoreDiscriminator: boolean): St
         'stepSlideGeneration': json['stepSlideGeneration'],
         'stepSlidePostprocessing': StepStatusFromJSON(json['stepSlidePostprocessing']),
         'stepsAvatarGeneration': ((json['stepsAvatarGeneration'] as Array<any>).map(AvatarElementStatusFromJSON)),
-        'lectureSummary': json['lectureSummary'],
-        'slideStructure': ((json['slideStructure'] as Array<any>).map(SlideStructureFromJSON)),
+        'lectureSummary': json['lectureSummary'] == null ? undefined : json['lectureSummary'],
+        'slideStructure': json['slideStructure'] == null ? undefined : SlideStructureFromJSON(json['slideStructure']),
     };
 }
 
@@ -156,7 +154,7 @@ export function StatusToJSONTyped(value?: Status | null, ignoreDiscriminator: bo
         'stepSlidePostprocessing': StepStatusToJSON(value['stepSlidePostprocessing']),
         'stepsAvatarGeneration': ((value['stepsAvatarGeneration'] as Array<any>).map(AvatarElementStatusToJSON)),
         'lectureSummary': value['lectureSummary'],
-        'slideStructure': ((value['slideStructure'] as Array<any>).map(SlideStructureToJSON)),
+        'slideStructure': SlideStructureToJSON(value['slideStructure']),
     };
 }
 

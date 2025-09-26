@@ -10,20 +10,18 @@ export const mockStatus: Status = {
   stepSlidePostprocessing: "DONE",
   stepsAvatarGeneration: [{video: "DONE", audio: "DONE"}],
   lectureSummary: "string",
-  slideStructure: [
-    {
-      pages: [
-        {
-          content: 'Title slide introducing the topic "for loops"',
-        },
-        {
-          content:
-            "Loops are a programming structure which allows to repeatedly execute the same code.",
-        },
-        {
-          content: 'Simple example of a for loop with the text "..."',
-        },
-      ],
-    },
-  ],
+  slideStructure: {
+    pages: [
+      {
+        content: 'Title slide introducing the topic "for loops"',
+      },
+      {
+        content:
+          "Loops are a programming structure which allows to repeatedly execute the same code.",
+      },
+      {
+        content: 'Simple example of a for loop with the text "..."',
+      },
+    ],
+  },
 };
