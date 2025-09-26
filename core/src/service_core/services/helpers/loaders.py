@@ -12,7 +12,6 @@
 #                  "Wir können alles. Außer Hochdeutsch."                      #
 #                                                                              #
 ################################################################################
-from typing import Final
 
 
 def load_prompt(prompt_path: str) -> str:

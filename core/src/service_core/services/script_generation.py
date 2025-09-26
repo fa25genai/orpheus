@@ -15,17 +15,15 @@ Output format:
 
 import copy
 import json
-from typing import Any, Dict, List, cast
-
-from service_core.models.user_profile import UserProfile
-from service_core.services.helpers.handle_retrieved import convert_json_structure
-from service_core.services.helpers.llm import getLLM
-
 
 # -----------------------------
 # JSON helpers
 # -----------------------------
-from typing import Tuple
+from typing import Any, Dict, List, Tuple, cast
+
+from service_core.models.user_profile import UserProfile
+from service_core.services.helpers.handle_retrieved import convert_json_structure
+from service_core.services.helpers.llm import getLLM
 
 
 def try_parse_json(raw_response: str) -> Tuple[bool, Any]:

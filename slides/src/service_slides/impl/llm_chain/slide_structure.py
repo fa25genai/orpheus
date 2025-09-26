@@ -9,13 +9,12 @@ from langchain_core.prompts import (
 )
 from pydantic import BaseModel, Field
 
+from service_slides.clients.status.models.slide_structure import SlideItem as SlideItemStatus  # type: ignore[attr-defined]
+from service_slides.clients.status.models.slide_structure import SlideStructure as SlideStructureStatus
 from service_slides.impl.llm_chain.shared_llm import invoke_llm
 from service_slides.impl.manager.layout_manager import LayoutDescription
 from service_slides.models.slide_item import SlideItem
 from service_slides.models.slide_structure import SlideStructure
-from service_slides.impl.manager.layout_manager import LayoutDescription
-from service_slides.clients.status.models.slide_structure import SlideStructure as SlideStructureStatus
-from service_slides.clients.status.models.slide_structure import SlideItem as SlideItemStatus
 
 
 class DetailedSlideStructureItem(BaseModel):

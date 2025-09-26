@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, List, Optional, Callable, cast
+from typing import Any, Callable, Dict, List, Optional, cast
 
 import httpx
 from httpx import AsyncClient, Response
@@ -9,13 +9,14 @@ from service_core.models.prompt_request import PromptRequest
 from service_core.models.user_profile import UserProfile
 from service_core.services import (
     decompose_input,
-    fetch_mock_data,
     narration_generation,
     script_generation,
 )
 from service_core.services.fetch_mock_data import (
-    create_demoretrieved_content as _create_demo_content,
     create_demo_user as _create_demo_user,
+)
+from service_core.services.fetch_mock_data import (
+    create_demoretrieved_content as _create_demo_content,
 )
 
 create_demoretrieved_content: Callable[[], List[Dict[str, Any]]] = cast(

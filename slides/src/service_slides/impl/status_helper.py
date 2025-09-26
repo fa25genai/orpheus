@@ -1,11 +1,11 @@
 from logging import getLogger
 
 from service_slides.clients.configurations import get_status_api_config
-from service_slides.clients.status import StatusPatch, ApiClient, StatusApi, ApiException
+from service_slides.clients.status import ApiClient, ApiException, StatusApi, StatusPatch
 
 _log = getLogger("status_update")
 
-async def update_status(prompt_id: str, patch: StatusPatch):
+async def update_status(prompt_id: str, patch: StatusPatch) -> None:
     try:
         async with ApiClient(get_status_api_config()) as api_client:
             status_api = StatusApi(api_client)
@@ -23,4 +23,3 @@ async def update_status(prompt_id: str, patch: StatusPatch):
             prompt_id,
             exc_info=e,
         )
-
