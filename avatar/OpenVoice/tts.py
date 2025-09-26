@@ -28,7 +28,7 @@ tone_color_converter.load_ckpt(os.path.join(ckpt_converter, "checkpoint.pth"))
 os.makedirs(output_dir, exist_ok=True)
 
 # Here specify the reference speaker file you want to use
-voice_file = "kursche_voice.mp3"
+voice_file = "krusche_voice.mp3"
 reference_speaker = os.path.join(base_dir, voice_file) # This is the voice you want to clone
 target_se, audio_name = se_extractor.get_se(reference_speaker, tone_color_converter, vad=True)
 
