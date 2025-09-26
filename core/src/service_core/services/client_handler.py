@@ -79,11 +79,13 @@ async def process_prompt(
                 by_alias=True, exclude_unset=True
             )
         ),
-        "assets": refined_output.get("assets", ""),
+        "assets": [],
     }
+
     print("Slides context: ", slides_context, flush=True)
     # context_mock = create_context_mock(prompt_request.course_id, prompt_id, lecture_script, fetch_mock_data.create_demo_user())
     # print(context_mock)
+
     slides_response = await client.post(
         f"{SLIDES_API_URL}/v1/slides/generate",
         json=slides_context,
@@ -99,14 +101,16 @@ async def process_prompt(
     # print("\nExample Slides:", example_slides)
     try:
         voice_track = narration_generation.generate_narrations(
-            lecture_script, slides_data, fetch_mock_data.create_demo_user()
+            lecture_script, slides_data, fetch_mock_data.create_demo_user_for_avatar()
         )
+        print("\nvoice_track:", voice_track, flush=True)
+
         avatar_response = await client.post(
             f"{AVATAR_API_URL}/v1/video/generate",
             json=voice_track,
             timeout=300.0,
         )
-        print("Avatar API response:", avatar_response, flush=True)
-        # print("\nvoice_track:", voice_track, flush=True)
+        # print("Avatar API response:", avatar_response, flush=True)
+        print("Avatar API response:", avatar_response.json(), flush=True)
     except Exception as e:
         print("Error generating voice track:", e, flush=True)

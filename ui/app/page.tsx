@@ -40,6 +40,7 @@ export default function Home() {
         );
       }
 
+      console.log("Avatar response:", avatarResponse);
       return avatarResponse;
     } catch (error) {
       console.error("Avatar polling failed:", error);
@@ -142,43 +143,41 @@ export default function Home() {
         break;
       }
 
-      await new Promise((resolve) =>
-        setTimeout(resolve, (avatarResponse?.estimatedSecondsLeft ?? 3) * 1000)
-      );
+      await new Promise((resolve) => setTimeout(resolve, 3 * 1000));
     }
 
     setPrompt("");
   }
 
   async function fetchVideoList(baseUrl: string): Promise<string[]> {
-  const sources: string[] = [];
-  let index = 1;
+    const sources: string[] = [];
+    let index = 1;
 
-  while (true) {
-    const url = `${baseUrl}${index}.mp4`;
-    try {
-      const res = await fetch(url, { method: "HEAD" });
-      if (!res.ok) break;
-      sources.push(url);
-      index++;
-    } catch {
-      break;
+    while (true) {
+      const url = `${baseUrl}${index}.mp4`;
+      try {
+        const res = await fetch(url, {method: "HEAD"});
+        if (!res.ok) break;
+        sources.push(url);
+        index++;
+      } catch {
+        break;
+      }
     }
+
+    return sources;
   }
 
-  return sources;
-}
-
-useEffect(() => {
-      if (!avatarData?.resultUrl) return;
+  useEffect(() => {
+    if (!avatarData?.resultUrl) return;
     async function loadVideos() {
-        const baseUrl = "http://localhost:8080/"
-        const builtUrl = baseUrl + avatarData?.resultUrl + "/"
-         const list = await fetchVideoList(builtUrl);
-    setSources(list);
+      const baseUrl = "http://localhost:8080/";
+      const builtUrl = baseUrl + avatarData?.resultUrl + "/";
+      const list = await fetchVideoList(builtUrl);
+      setSources(list);
     }
     loadVideos();
-}, [avatarData]);
+  }, [avatarData]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({behavior: "smooth"});
@@ -209,13 +208,15 @@ useEffect(() => {
       );
 
     if (avatarData.status === "DONE") {
-      return <VideoPlayer
+      return (
+        <VideoPlayer
           sources={sources}
           onBeforeNext={() => {
-              console.log("next slide")
-              slidevRef.current?.next()
+            console.log("next slide");
+            slidevRef.current?.next();
           }}
-      />;
+        />
+      );
     }
 
     return (
