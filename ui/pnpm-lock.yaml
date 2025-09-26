@@ -54,6 +54,9 @@ importers:
       '@eslint/js':
         specifier: ^9
         version: 9.36.0
+      '@next/eslint-plugin-next':
+        specifier: 15.5.3
+        version: 15.5.3
       '@tailwindcss/postcss':
         specifier: ^4
         version: 4.1.13
@@ -66,6 +69,12 @@ importers:
       '@types/react-dom':
         specifier: ^19
         version: 19.1.9(@types/react@19.1.13)
+      '@typescript-eslint/eslint-plugin':
+        specifier: ^8.44.0
+        version: 8.44.1(@typescript-eslint/parser@8.44.1(eslint@9.36.0(jiti@2.6.0))(typescript@5.9.2))(eslint@9.36.0(jiti@2.6.0))(typescript@5.9.2)
+      '@typescript-eslint/parser':
+        specifier: ^8.44.0
+        version: 8.44.1(eslint@9.36.0(jiti@2.6.0))(typescript@5.9.2)
       eslint:
         specifier: ^9
         version: 9.36.0(jiti@2.6.0)
