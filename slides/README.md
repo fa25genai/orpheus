@@ -1,4 +1,4 @@
-``# Orpheus **Slide Generation Service**
+# Orpheus **Slide Generation Service**
 
 Slide generation and delivery service for **Orpheus**.
 This directory contains the project code for the **Slide Generation Service**.
@@ -23,7 +23,11 @@ A client can:
 The intended API-Usage is to call the `/v1/slides/generate` endpoint. This will start the slide generation.
 After the operation returns, the `/v1/slides/{promptId}/status` endpoint may be used to poll the generation status.
 Upon completion, it will also provide the URL to access the content.
-``
+
+### Code generation
+```bash
+npx @openapitools/openapi-generator-cli generate -i ../api/slide_postprocessing_service.yaml -g python -o gen_client --package-name service_slides.clients.postprocessing --library asyncio
+```
 
 ## Configuration
 
