@@ -11,5 +11,5 @@ class ProgressTracker:
         print(f"({self.current_step}/{self.total_steps}): {message}", flush=True)
 
 
-total_tasks: Final[int] = 7
+total_tasks: Final[int] = 8
 tracker: ProgressTracker = ProgressTracker(total_steps=total_tasks)
