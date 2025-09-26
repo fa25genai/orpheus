@@ -10,6 +10,7 @@ from service_core.services import (
 )
 import service_core.services.fetch_mock_data as mock_service
 from service_core.impl.tracker import tracker
+from service_core.services.user_summary import summarize_and_send
 
 DI_API_URL = "http://docint:25565"
 SLIDES_API_URL = "http://slides:30606"
@@ -125,16 +126,19 @@ async def generate_avatar_video(voice_track, client):
 
 async def process_prompt(prompt_id: str, prompt_request: str):
     async with httpx.AsyncClient() as client:
-        subqueries = await decompose_inputs(prompt_request)
-        retrieved_content = await query_document_intelligence(subqueries, client)
+        try:
+            subqueries = await decompose_inputs(prompt_request)
+            retrieved_content = await query_document_intelligence(subqueries, client)
 
-        # Run summarization and sending in the background
-        #asyncio.create_task(summarize_and_send(retrieved_content, client))
+            # Run summarization and sending in the background
+            asyncio.create_task(summarize_and_send(retrieved_content, client))
 
-        # Continue with the rest of the workflow immediately
-        refined_output = generate_script(retrieved_content)
-        lecture_script = refined_output.get("lectureScript", "")
-        slides_data = await generate_slides(prompt_request, prompt_id, lecture_script, refined_output, client)
-        voice_track = generate_voice_tracks(lecture_script, slides_data)
-        await generate_avatar_video(voice_track, client)
-        tracker.log(f"SUCCESS: Completed processing for {prompt_id}")
+            # Continue with the rest of the workflow immediately
+            refined_output = generate_script(retrieved_content)
+            lecture_script = refined_output.get("lectureScript", "")
+            slides_data = await generate_slides(prompt_request, prompt_id, lecture_script, refined_output, client)
+            voice_track = generate_voice_tracks(lecture_script, slides_data)
+            await generate_avatar_video(voice_track, client)
+            tracker.log(f"SUCCESS: Completed processing for {prompt_id}")
+        except Exception as e:
+            tracker.log(f"ERROR: Failed processing for {prompt_id}: {e}")
