@@ -18,15 +18,22 @@ WeaviateGraphStore — graph-first vector store wrapper (requests-based)
     - imageBase64: blob
     - description: text
 
+  VideoChunk (vectorized with text embedding from transcription)
+    - courseId: text (mandatory)
+    - chunkId: text (unique identifier)
+    - text: text (chunk content from transcription)
+
 - Key ops:
   * ensure_schema()               -> idempotent schema creation + reference property
   * upsert_slide(...)             -> create/replace Slide with text vector
   * upsert_images_and_link(...)   -> create SlideImage objects + link to Slide.images
   * search_slides_with_images(...) -> single GraphQL query: ANN + traverse images
+  * upsert_video_chunk(...)       -> create/replace VideoChunk with text vector
+  * search_video_chunks(...)      -> search VideoChunk objects by similarity
   * to_retrieval_response(...)    -> map hits -> OpenAPI RetrievalResponse
 
 Notes:
-- BYO embeddings: send your text vector when upserting Slide.
+- BYO embeddings: send your text vector when upserting Slide or VideoChunk.
 - Vectors are stored in the class's ANN index, keyed by UUID (not a user-defined property).
 - This uses raw REST/GraphQL; no weaviate-client dependency required.
 """
@@ -217,6 +224,22 @@ class WeaviateGraphStore:
                 },
             )
 
+        # create VideoChunk (standalone, no references)
+        if "VideoChunk" not in existing_classes:
+            self._post(
+                "/v1/schema",
+                {
+                    "class": "VideoChunk",
+                    "description": "Video transcription chunks (vectorized with text embedding)",
+                    "vectorizer": "none",  # BYO vectors
+                    "properties": [
+                        {"name": "courseId", "dataType": ["text"]},
+                        {"name": "chunkId", "dataType": ["text"]},
+                        {"name": "text", "dataType": ["text"]},
+                    ],
+                },
+            )
+
         # Refresh classes set
         schema = self._get("/v1/schema")
         existing_classes = {c["class"] for c in schema.get("classes", [])}
@@ -367,6 +390,41 @@ class WeaviateGraphStore:
 
         return created_ids
 
+    def upsert_video_chunk(
+        self,
+        *,
+        course_id: str,
+        chunk_id: str,
+        text: str,
+        text_vector: Sequence[float],
+    ) -> str:
+        """
+        Create/replace a VideoChunk object with its text embedding (BYO vector).
+        Uses POST to create; on conflict falls back to PUT to update (idempotent).
+        :return: UUID used for the video chunk
+        """
+        # Generate deterministic UUID from course_id and chunk_id
+        name = f"VideoChunk::{course_id}::{chunk_id}"
+        uid = str(uuid.uuid5(uuid.NAMESPACE_URL, name))
+        
+        payload = {
+            "class": "VideoChunk",
+            "id": uid,
+            "properties": {
+                "courseId": course_id,
+                "chunkId": chunk_id,
+                "text": text,
+            },
+            "vector": list(text_vector),
+        }
+
+        # Try create first (POST); if it already exists, update (PUT)
+        try:
+            self._post("/v1/objects", payload)
+        except WeaviateError as e:
+            # Duplicate/exists -> update instead
+            self._put(f"/v1/objects/{uid}", payload)
+        return uid
 
     # Query (dual-channel with fusion: text on Slide + image-description on SlideImage)
     def search_slides_fused_with_images(
@@ -565,6 +623,65 @@ class WeaviateGraphStore:
             )
 
         return out
+
+    def search_video_chunks(
+        self,
+        *,
+        query_vector: Sequence[float],
+        course_id: Optional[str] = None,
+        k: int = 5,
+        include_distance: bool = True,
+        similarity_threshold: float = 0.80,
+    ) -> List[Dict[str, Any]]:
+        """
+        Search VideoChunk objects by text similarity.
+        
+        :param query_vector: Query embedding vector
+        :param course_id: Optional filter by course ID
+        :param k: Number of results to return
+        :param include_distance: Whether to include distance in results
+        :param similarity_threshold: Minimum similarity threshold (0.0 to 1.0)
+        :return: List of video chunk hits with similarity scores
+        """
+        where_clause = ""
+        if course_id:
+            where_clause = (
+                'where: { operator: Equal, path: ["courseId"], valueText: "%s" }' % course_id
+            )
+        
+        gql_query = f"""
+        {{
+          Get {{
+            VideoChunk(
+              nearVector: {{ vector: {json.dumps(list(query_vector))} }}
+              {where_clause}
+              limit: {int(k)}
+            ) {{
+              courseId
+              chunkId
+              text
+              _additional {{ id {"distance" if include_distance else ""} }}
+            }}
+          }}
+        }}
+        """
+        
+        res = self._post("/v1/graphql", {"query": gql_query})
+        chunk_hits = res.get("data", {}).get("Get", {}).get("VideoChunk", []) or []
+        
+        # Filter by similarity threshold if specified
+        filtered_hits = []
+        for chunk in chunk_hits:
+            dist = (chunk.get("_additional") or {}).get("distance") if include_distance else None
+            similarity = self._similarity_from_distance(dist)
+            
+            if similarity >= similarity_threshold:
+                chunk["similarity"] = similarity
+                if include_distance:
+                    chunk["distance"] = dist
+                filtered_hits.append(chunk)
+        
+        return filtered_hits
 
     # Test/Debug functions
     def get_all_data_for_course(self, course_id: str) -> Dict[str, Any]:
