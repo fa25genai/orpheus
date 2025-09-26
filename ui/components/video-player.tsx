@@ -4,11 +4,14 @@ import {Button} from "@/components/ui/button";
 import {Pause, Play, Volume2} from "lucide-react";
 
 type CustomVideoPlayerProps = {
-    sources: string[]
-    onBeforeNext?: (index: number) => void;
-}
+  sources: string[];
+  onBeforeNext?: (index: number) => void;
+};
 
-export default function CustomVideoPlayer({ sources, onBeforeNext }: CustomVideoPlayerProps) {
+export default function CustomVideoPlayer({
+  sources,
+  onBeforeNext,
+}: CustomVideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(true);
   const [showControls, setShowControls] = useState(false);
@@ -42,16 +45,14 @@ export default function CustomVideoPlayer({ sources, onBeforeNext }: CustomVideo
   };
 
   const handleEnded = useCallback(() => {
-      if (currentIndex < sources.length - 1) {
-          onBeforeNext?.(currentIndex + 1)
-          setCurrentIndex((prev) => prev + 1)
-          setIsPlaying(true);
-      } else {
-          setIsPlaying(false);
-      }
+    if (currentIndex < sources.length - 1) {
+      onBeforeNext?.(currentIndex + 1);
+      setCurrentIndex((prev) => prev + 1);
+      setIsPlaying(true);
+    } else {
+      setIsPlaying(false);
+    }
   }, [currentIndex, sources.length, onBeforeNext]);
-
-
 
   useEffect(() => {
     return () => {
@@ -59,15 +60,15 @@ export default function CustomVideoPlayer({ sources, onBeforeNext }: CustomVideo
     };
   }, []);
 
-    useEffect(() => {
-        const video = videoRef.current;
-        if (!video) return;
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
 
-        video.load()
-        if (isPlaying) {
-            video.play()
-        }
-    }, [currentIndex]);
+    video.load();
+    if (isPlaying) {
+      video.play();
+    }
+  }, [currentIndex]);
 
   return (
     <Card
@@ -82,12 +83,11 @@ export default function CustomVideoPlayer({ sources, onBeforeNext }: CustomVideo
         className="w-full h-full object-cover rounded-2xl"
         preload="none"
         autoPlay
-        muted
         onEnded={handleEnded}
       >
-          {sources[currentIndex] ? (
-    <source src={sources[currentIndex]} type="video/mp4" />
-  ) : null}
+        {sources[currentIndex] ? (
+          <source src={sources[currentIndex]} type="video/mp4" />
+        ) : null}
         {/*<source src={sources[currentIndex]} type="video/mp4" />*/}
         {/*Your browser does not support the video tag.*/}
       </video>

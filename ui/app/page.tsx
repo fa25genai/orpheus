@@ -8,11 +8,11 @@ import Link from "next/link";
 import {useEffect, useRef, useState} from "react";
 import {avatarApi, coreApi, slidesApi} from "@/app/api-clients";
 import {PromptResponse} from "@/generated-api-clients/core";
-import {GenerationStatusResponse as AvatarGenerationStatusReponse} from "@/generated-api-clients/avatar";
+import {GenerationStatusResponse as AvatarGenerationStatusResponse} from "@/generated-api-clients/avatar";
 import {guideText} from "@/data/text";
 import GuideCards from "@/components/guide-cards";
 import {PersonaLevel} from "@/types/uploading";
-import VideoPlayer from "@/components/video-player";
+import CustomVideoPlayer from "@/components/video-player";
 import {Skeleton} from "@/components/ui/skeleton";
 import SlidevEmbed, {SlidevEmbedHandle} from "@/components/slidev-embed";
 import {GenerationStatusResponse as SlidesGenerationStatusResponse} from "@/generated-api-clients/slides";
@@ -23,7 +23,8 @@ export default function Home() {
   const [personaLevel, setPersonaLevel] = useState<PersonaLevel>("beginner");
   const [messages, setMessages] = useState<string[]>([]);
   const [slides, setSlides] = useState<SlidesGenerationStatusResponse>();
-  const [avatarData, setAvatarData] = useState<AvatarGenerationStatusReponse>();
+  const [avatarData, setAvatarData] =
+    useState<AvatarGenerationStatusResponse>();
   const [sources, setSources] = useState<string[]>([]);
 
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -31,7 +32,7 @@ export default function Home() {
 
   async function getAvatar(promptId: string) {
     try {
-      const avatarResponse: AvatarGenerationStatusReponse =
+      const avatarResponse: AvatarGenerationStatusResponse =
         await avatarApi.getGenerationResult({promptId});
 
       if (avatarResponse.status === "FAILED") {
@@ -171,7 +172,7 @@ export default function Home() {
   useEffect(() => {
     if (!avatarData?.resultUrl) return;
     async function loadVideos() {
-      const baseUrl = "http://localhost:8080/";
+      const baseUrl = "http://localhost:3000";
       const builtUrl = baseUrl + avatarData?.resultUrl + "/";
       const list = await fetchVideoList(builtUrl);
       setSources(list);
@@ -186,7 +187,7 @@ export default function Home() {
   function AvatarSection({
     avatarData,
   }: {
-    avatarData?: AvatarGenerationStatusReponse;
+    avatarData?: AvatarGenerationStatusResponse;
   }) {
     if (!avatarData || avatarData.status === "IN_PROGRESS")
       return (
@@ -209,7 +210,7 @@ export default function Home() {
 
     if (avatarData.status === "DONE") {
       return (
-        <VideoPlayer
+        <CustomVideoPlayer
           sources={sources}
           onBeforeNext={() => {
             console.log("next slide");
