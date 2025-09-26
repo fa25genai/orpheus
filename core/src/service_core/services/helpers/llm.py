@@ -29,6 +29,7 @@ def getLLM() -> ChatOllama:
     )
     return llm
 
+
 def ask_llm(prompt: str):
     llm = getLLM()
     response = llm.invoke(prompt)

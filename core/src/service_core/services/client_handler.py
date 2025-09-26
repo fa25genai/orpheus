@@ -19,21 +19,21 @@ AVATAR_API_URL = "http://avatar-video-producer:9000"
 DEBUG = int(os.environ.get("ORPHEUS_DEBUG", "1"))
 
 
-
 async def decompose_inputs(prompt_request):
     tracker.log("Decomposing inputs")
-    
+
     # DEBUG HANDLING STARTS
-    if (DEBUG):
+    if DEBUG:
         return mock_service.create_decomposed_question()
     # DEBUG HANDLING ENDS
     decomposed_questions = decompose_input.decompose_question(prompt_request.prompt)
     return decomposed_questions.get("subqueries", [])
 
+
 async def query_document_intelligence(subqueries, client):
     tracker.log("Querying document intelligence")
     # DEBUG HANDLING STARTS
-    if (DEBUG):
+    if DEBUG:
         return mock_service.create_retrieved_content()
     # DEBUG HANDLING ENDS
 
@@ -46,11 +46,12 @@ async def query_document_intelligence(subqueries, client):
     di_data = di_response.json()
     return di_data
 
+
 def generate_script(retrieved_content):
     tracker.log("Generating script")
     try:
         # DEBUG HANDLING STARTS
-        if (DEBUG):
+        if DEBUG:
             return mock_service.create_script()
         # DEBUG HANDLING ENDS
 
@@ -60,11 +61,12 @@ def generate_script(retrieved_content):
         refined_output = {}
     return refined_output
 
+
 async def generate_slides(prompt_request, prompt_id, lecture_script, refined_output, client):
     tracker.log("Generating slides")
 
     # DEBUG HANDLING STARTS
-    if (DEBUG):
+    if DEBUG:
         return mock_service.create_slides()
     # DEBUG HANDLING ENDS
 
@@ -72,11 +74,7 @@ async def generate_slides(prompt_request, prompt_id, lecture_script, refined_out
         "courseId": prompt_request.course_id,
         "promptId": str(prompt_id),
         "lectureScript": lecture_script,
-        "user": json.loads(
-            mock_service.create_user().model_dump_json(
-                by_alias=True, exclude_unset=True
-            )
-        ),
+        "user": json.loads(mock_service.create_user().model_dump_json(by_alias=True, exclude_unset=True)),
         "assets": refined_output.get("assets", ""),
     }
     # print("Slides context: ", slides_context, flush=True)
@@ -89,11 +87,12 @@ async def generate_slides(prompt_request, prompt_id, lecture_script, refined_out
     slides_data = slides_response.json()
     return slides_data
 
+
 def generate_voice_scripts(lecture_script, slides_data, user, client):
     tracker.log("Generating voice script")
     try:
         # DEBUG HANDLING STARTS
-        if (DEBUG):
+        if DEBUG:
             tasks = []
             for i in range(14):
                 voice_track = mock_service.create_voice_script(i)
@@ -110,27 +109,30 @@ def generate_voice_scripts(lecture_script, slides_data, user, client):
         voice_track = {}
     return voice_track
 
+
 async def avatar_video_producer(voice_track, client):
     try:
         avatar_response = await client.post(
-                f"{AVATAR_API_URL}/v1/video/generate",
-                json=voice_track,
-                timeout=300.0,
-            )
+            f"{AVATAR_API_URL}/v1/video/generate",
+            json=voice_track,
+            timeout=300.0,
+        )
         print("Avatar API response:", avatar_response.json(), flush=True)
         return avatar_response
     except Exception as e:
         print("Error occured during avatar generation: ", e, flush=True)
 
-def generate_avatar_video(voice_track, index:int, client):
+
+def generate_avatar_video(voice_track, index: int, client):
     print(f"Calling Avatar API to generate video for slide {index}", flush=True)
     try:
-        task = asyncio.create_task(avatar_video_producer(voice_track,client))
+        task = asyncio.create_task(avatar_video_producer(voice_track, client))
         return task
     except Exception as e:
         print("Error generating avatar video:", e, flush=True)
         return None
-    
+
+
 async def process_prompt(prompt_id: str, prompt_request: PromptRequest):
     async with httpx.AsyncClient() as client:
         try:

@@ -93,38 +93,39 @@ JSON Requirements:
 - subqueries must be an array (even if single item)
 """)
 
+
 def decompose_question(question: str) -> Dict[str, Any]:
     prompt = DECOMPOSE_PROMPT + "\n\nQuestion to analyze: " + json.dumps(question)
     raw = llm_call(prompt)
-    
+
     # Clean the response - remove any potential markdown formatting
     raw = raw.strip()
-    if raw.startswith('```json'):
+    if raw.startswith("```json"):
         raw = raw[7:]
-    if raw.startswith('```'):
+    if raw.startswith("```"):
         raw = raw[3:]
-    if raw.endswith('```'):
+    if raw.endswith("```"):
         raw = raw[:-3]
     raw = raw.strip()
-    
+
     try:
         result = json.loads(raw)
         # Validate required keys
         required_keys = ["original_question", "subqueries"]
         if not all(key in result for key in required_keys):
             raise ValueError(f"Missing required keys. Expected: {required_keys}, Got: {list(result.keys())}")
-        
+
         # Ensure subqueries is a list
         if not isinstance(result["subqueries"], list):
             raise ValueError("subqueries must be an array")
-            
+
         return result
     except json.JSONDecodeError as e:
         # Try to extract JSON from the response
         start, end = raw.find("{"), raw.rfind("}")
         if start != -1 and end != -1:
             try:
-                result = json.loads(raw[start:end+1])
+                result = json.loads(raw[start : end + 1])
                 # Validate required keys for extracted JSON too
                 required_keys = ["original_question", "subqueries"]
                 if not all(key in result for key in required_keys):
@@ -133,6 +134,3 @@ def decompose_question(question: str) -> Dict[str, Any]:
             except json.JSONDecodeError:
                 pass
         raise RuntimeError(f"Failed to parse JSON from LLM output. JSON Error: {e}. Raw output: {raw[:200]}...")
-
-
-

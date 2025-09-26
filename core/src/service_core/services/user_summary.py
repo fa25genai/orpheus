@@ -11,9 +11,9 @@ def extract_text_content(retrieved_content):
     for item in retrieved_content:
         # Try common keys for text content
         if isinstance(item, dict):
-            if 'content' in item:
-                texts.append(str(item['content']))
-    return '\n'.join(texts)
+            if "content" in item:
+                texts.append(str(item["content"]))
+    return "\n".join(texts)
 
 
 def summarize_content_with_llama(retrieved_content) -> str:
@@ -44,4 +44,3 @@ async def send_summary_to_endpoint(summary, client):
 async def summarize_and_send(retrieved_content, client):
     summary = summarize_content_with_llama(retrieved_content)
     # await send_summary_to_endpoint(summary, client)
-
