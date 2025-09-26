@@ -7,14 +7,14 @@ from typing import List, Dict, Any
 
 def create_demo_user():
     demo_user = UserProfile(
-            id=uuid4(),
+            id=str(uuid4()),
             role="student",
             language="english", 
             preferences=UserProfilePreferences(
-                answer_length="medium",
-                language_level="intermediate",
-                expertise_level="beginner",
-                include_pictures="few"
+                answerLength="medium",
+                languageLevel="intermediate",
+                expertiseLevel="beginner",
+                includePictures="few"
             ),
             enrolled_courses=["SE001","cs001"]
         )

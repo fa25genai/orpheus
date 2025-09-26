@@ -82,9 +82,12 @@ def generate_narrations(lecture_script, example_slides, user_profile, debug=Fals
     output_data = {
         "slideMessages": slide_messages,
         "promptId": example_slides["promptId"],
-        "courseId": user_profile["enrolled_courses"][0] if user_profile["enrolled_courses"] else None,
-        "userProfile": user_profile
+        "courseId": user_profile.enrolled_courses[0] if user_profile.enrolled_courses else None,
+        "userProfile": json.loads(user_profile.model_dump_json(
+                by_alias=False, exclude_unset=True
+            )
+        ),
     }
 
-    return json.dumps(output_data, indent=2)
+    return output_data
 
