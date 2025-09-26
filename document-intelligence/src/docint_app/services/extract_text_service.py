@@ -10,12 +10,10 @@ from typing import List
 from PIL import Image
 from pdf2image import convert_from_path
 import ollama
-from dotenv import load_dotenv
 
 
 class ExtractTextService:
     def __init__(self, base_url: str = "https://gpu.aet.cit.tum.de/ollama"):
-        load_dotenv()
         self.base_url = base_url.rstrip("/")
         self.api_key = os.getenv("OLLAMA_API_KEY")
         if not self.api_key:

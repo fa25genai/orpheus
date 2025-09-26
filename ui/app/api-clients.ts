@@ -14,13 +14,13 @@ import {
 
 export const coreApi = new CoreApi(
   new Configuration({
-    basePath: "http://localhost:8080",
+    basePath: "http://localhost:8000",
   })
 );
 
 export const avatarApi = new VideoApi(
   new AvatarConfiguration({
-    basePath: "http://localhost:8080",
+    basePath: "http://localhost:9000",
   })
 );
 
@@ -32,6 +32,6 @@ export const slidesApi = new SlidesApi(
 
 export const docintApi = new DocintApi(
   new DocintConfiguration({
-    basePath: "http://localhost:25565", //TODO: duplicate port with slides, needs to be fixed
+    basePath: "http://localhost:25565",
   })
 );

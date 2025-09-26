@@ -55,7 +55,7 @@ Run the following command from the `ui` directory:
 5. Generate them for document-intelligence
     ```bash
     pnpm exec openapi-generator-cli generate \
-    -i ../document-intelligence/service_document-intelligence_v1.yaml \
+    -i ../api/lecture_ingestion_service.yaml \
     -g typescript-fetch \
     -o ./generated-api-clients/document-intelligence
     ```

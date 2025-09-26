@@ -1,7 +1,7 @@
 /* tslint:disable */
 /* eslint-disable */
 /**
- * Service Video-Generation APIs
+ * Avatar Generation Service API
  * API for the Orpheus video generation. From the repository: \"The Orpheus System transforms static slides into interactive lecture videos with lifelike professor avatars, combining expressive narration, visual presence, and dynamic content to create engaging, personalized learning experiences.\" 
  *
  * The version of the OpenAPI document: 0.1
@@ -42,7 +42,7 @@ export interface RequestVideoGenerationOperationRequest {
 export class VideoApi extends runtime.BaseAPI {
 
     /**
-     * Wait until video generation finishes and return the final result
+     * Return current generation status (polling)
      */
     async getGenerationResultRaw(requestParameters: GetGenerationResultRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<GenerationStatusResponse>> {
         if (requestParameters['promptId'] == null) {
@@ -71,7 +71,7 @@ export class VideoApi extends runtime.BaseAPI {
     }
 
     /**
-     * Wait until video generation finishes and return the final result
+     * Return current generation status (polling)
      */
     async getGenerationResult(requestParameters: GetGenerationResultRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<GenerationStatusResponse> {
         const response = await this.getGenerationResultRaw(requestParameters, initOverrides);
