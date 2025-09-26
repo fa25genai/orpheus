@@ -1,0 +1,14 @@
+.openapi-generator-ignore
+apis/StatusApi.ts
+apis/index.ts
+index.ts
+models/AvatarElementStatus.ts
+models/AvatarElementStatusPatch.ts
+models/ModelError.ts
+models/SlideItem.ts
+models/SlideStructure.ts
+models/Status.ts
+models/StatusPatch.ts
+models/StepStatus.ts
+models/index.ts
+runtime.ts

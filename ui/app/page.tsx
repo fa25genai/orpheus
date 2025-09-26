@@ -8,31 +8,38 @@ import Link from "next/link";
 import {useEffect, useRef, useState} from "react";
 import {avatarApi, coreApi, slidesApi} from "@/app/api-clients";
 import {PromptResponse} from "@/generated-api-clients/core";
-import {GenerationStatusResponse as AvatarGenerationStatusResponse} from "@/generated-api-clients/avatar";
+import {GenerationStatusResponse as AvatarGenerationStatusReponse} from "@/generated-api-clients/avatar";
 import {guideText} from "@/data/text";
 import GuideCards from "@/components/guide-cards";
 import {PersonaLevel} from "@/types/uploading";
-import CustomVideoPlayer from "@/components/video-player";
+import VideoPlayer from "@/components/video-player";
 import {Skeleton} from "@/components/ui/skeleton";
 import SlidevEmbed, {SlidevEmbedHandle} from "@/components/slidev-embed";
 import {GenerationStatusResponse as SlidesGenerationStatusResponse} from "@/generated-api-clients/slides";
 import {toast} from "sonner";
+import {useStatus} from "@/hooks/use-status";
+import {mockStatus} from "@/data/status";
+import {StatusDisplayer} from "@/components/status-displayer";
 
 export default function Home() {
   const [prompt, setPrompt] = useState("");
   const [personaLevel, setPersonaLevel] = useState<PersonaLevel>("beginner");
   const [messages, setMessages] = useState<string[]>([]);
   const [slides, setSlides] = useState<SlidesGenerationStatusResponse>();
-  const [avatarData, setAvatarData] =
-    useState<AvatarGenerationStatusResponse>();
+  const [avatarData, setAvatarData] = useState<AvatarGenerationStatusReponse>();
   const [sources, setSources] = useState<string[]>([]);
+
+  const [currentPromptId, setCurrentPromptId] = useState<string | undefined>(
+    undefined
+  );
+  const status = mockStatus; //useStatus(currentPromptId);
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const slidevRef = useRef<SlidevEmbedHandle>(null);
 
   async function getAvatar(promptId: string) {
     try {
-      const avatarResponse: AvatarGenerationStatusResponse =
+      const avatarResponse: AvatarGenerationStatusReponse =
         await avatarApi.getGenerationResult({promptId});
 
       if (avatarResponse.status === "FAILED") {
@@ -41,7 +48,6 @@ export default function Home() {
         );
       }
 
-      console.log("Avatar response:", avatarResponse);
       return avatarResponse;
     } catch (error) {
       console.error("Avatar polling failed:", error);
@@ -126,6 +132,9 @@ export default function Home() {
       });
       return;
     }
+
+    setCurrentPromptId(promptId);
+
     const maxRetries = 3000;
 
     for (let attempt = 0; attempt < maxRetries; attempt++) {
@@ -144,7 +153,9 @@ export default function Home() {
         break;
       }
 
-      await new Promise((resolve) => setTimeout(resolve, 3 * 1000));
+      await new Promise((resolve) =>
+        setTimeout(resolve, (avatarResponse?.estimatedSecondsLeft ?? 3) * 1000)
+      );
     }
 
     setPrompt("");
@@ -152,7 +163,7 @@ export default function Home() {
 
   async function fetchVideoList(baseUrl: string): Promise<string[]> {
     const sources: string[] = [];
-    let index = 1;
+    let index = 0;
 
     while (true) {
       const url = `${baseUrl}${index}.mp4`;
@@ -172,7 +183,7 @@ export default function Home() {
   useEffect(() => {
     if (!avatarData?.resultUrl) return;
     async function loadVideos() {
-      const baseUrl = "http://localhost:3000";
+      const baseUrl = "http://localhost:3000/";
       const builtUrl = baseUrl + avatarData?.resultUrl + "/";
       const list = await fetchVideoList(builtUrl);
       setSources(list);
@@ -187,7 +198,7 @@ export default function Home() {
   function AvatarSection({
     avatarData,
   }: {
-    avatarData?: AvatarGenerationStatusResponse;
+    avatarData?: AvatarGenerationStatusReponse;
   }) {
     if (!avatarData || avatarData.status === "IN_PROGRESS")
       return (
@@ -210,7 +221,7 @@ export default function Home() {
 
     if (avatarData.status === "DONE") {
       return (
-        <CustomVideoPlayer
+        <VideoPlayer
           sources={sources}
           onBeforeNext={() => {
             console.log("next slide");
@@ -320,15 +331,12 @@ export default function Home() {
                 </div>
               </div>
 
+              {status && <StatusDisplayer status={status} />}
+
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <AvatarSection avatarData={avatarData} />
                 <SlidesSection slides={slides} />
               </div>
-              {/* For testing purposes of the slide change */}
-              {/*<div className="flex gap-2">*/}
-              {/*    <Button onClick={() => slidevRef.current?.next()}>Next</Button>*/}
-              {/*    <Button onClick={() => slidevRef.current?.prev()}>Prev</Button>*/}
-              {/*</div>*/}
             </div>
           ))}
           <div ref={bottomRef}></div>
