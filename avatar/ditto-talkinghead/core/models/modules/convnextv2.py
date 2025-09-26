@@ -6,8 +6,9 @@ This moudle is adapted to the ConvNeXtV2 version for the extraction of implicit 
 
 import torch
 import torch.nn as nn
+
 # from timm.models.layers import trunc_normal_, DropPath
-from .util import LayerNorm, DropPath, trunc_normal_, GRN
+from .util import GRN, DropPath, LayerNorm, trunc_normal_
 
 __all__ = ['convnextv2_tiny']
 

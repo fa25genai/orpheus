@@ -1,19 +1,18 @@
 import os
+import shutil
 import sys
+import tempfile
 from pathlib import Path
-from typing import List, Optional, Literal, Dict
+from typing import Dict, List, Literal, Optional
 
 import torch
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException, BackgroundTasks
-from fastapi.responses import ORJSONResponse, FileResponse
+from fastapi import BackgroundTasks, FastAPI, File, Form, HTTPException, UploadFile
+from fastapi.responses import FileResponse, ORJSONResponse
+from melo.api import TTS
+from openvoice.api import ToneColorConverter
 from pydantic import BaseModel
 
-from melo.api import TTS
 from openvoice import se_extractor
-from openvoice.api import ToneColorConverter
-
-import tempfile
-import shutil
 
 
 def _env_or(conf: dict, dotted_key: str, default):

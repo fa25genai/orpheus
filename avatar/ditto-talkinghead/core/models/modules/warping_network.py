@@ -5,10 +5,11 @@ Warping field estimator(W) defined in the paper, which generates a warping field
 keypoint representations x_s and x_d, and employs this flow field to warp the source feature volume f_s.
 """
 import torch
-from torch import nn
 import torch.nn.functional as F
-from .util import SameBlock2d
+from torch import nn
+
 from .dense_motion import DenseMotionNetwork
+from .util import SameBlock2d
 
 
 class WarpingNetwork(nn.Module):

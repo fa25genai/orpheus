@@ -1,5 +1,5 @@
 from inspect import isfunction
-from math import log, pi
+from math import pi
 
 import torch
 from einops import rearrange, repeat

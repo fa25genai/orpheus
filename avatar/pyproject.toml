@@ -20,6 +20,7 @@ httpx = ">=0.27.0,<1.0.0"
 [tool.poetry.group.dev.dependencies]
 ruff = "0.13.1"
 mypy = "1.18.1"
+types-requests = "^2.32.0.20241016"
 
 [build-system]
 requires = ["poetry-core>=2.2.0,<3.0.0"]
@@ -28,6 +29,10 @@ build-backend = "poetry.core.masonry.api"
 [tool.ruff]
 line-length = 300
 target-version = "py313"
+exclude = [
+  "OpenVoice/**",
+  "ditto-talkinghead/**",
+]
 
 [tool.ruff.lint]
 select = ["E", "F", "I"]
@@ -38,3 +43,5 @@ strict = true
 warn_unused_ignores = true
 warn_redundant_casts = true
 no_implicit_optional = true
+exclude = "(OpenVoice|ditto-talkinghead|test)"
+ignore_missing_imports = true

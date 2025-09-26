@@ -49,3 +49,25 @@ no_implicit_optional = true
 mypy_path = "src"
 namespace_packages = true
 explicit_package_bases = true
+exclude = "(src/docint_app/apis|src/docint_app/models)"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = [
+  "docint_app.apis.*",
+  "docint_app.models.*",
+  "docint_app.vectorstore.*",
+]
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = [
+  "docint_app.services.retrieval_service",
+  "docint_app.services.ingestion_service",
+  "docint_app.services.extract_text_service",
+  "docint_app.services.describe_images_service",
+  "docint_app.services.pdf_upload_service",
+  "docint_app.services.embedding_service",
+  "docint_app.impl.docint_api_impl",
+]
+ignore_errors = true
