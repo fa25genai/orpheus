@@ -244,7 +244,7 @@ components:
             includePictures:
               type: string
               enum: [ none, few, many ]
-        enrolledCourses:
+        enrolled_courses:
           type: array
           description: "Course IDs the user is enrolled in."
           items:
