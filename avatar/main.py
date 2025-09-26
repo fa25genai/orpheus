@@ -1,29 +1,19 @@
-import requests
-from datetime import datetime, timezone
-from typing import List, Optional, Literal, Dict, Tuple, Union
 import os
 import shutil
 import uuid
 from collections.abc import Generator
-from datetime import datetime, timezone
-from pathlib import Path
-from typing import Dict, List, Literal, Optional, Union
-from uuid import UUID
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from queue import Queue
-from threading import Thread, Event
+from threading import Event, Thread
 from time import sleep
+from typing import Dict, List, Literal, Optional
+from uuid import UUID
 
-from fastapi import FastAPI, Response, Request, UploadFile, File, Depends, HTTPException, status
 import requests
-from fastapi import BackgroundTasks, Depends, FastAPI, File, HTTPException, Request, Response, UploadFile, status
+from fastapi import Depends, FastAPI, File, HTTPException, Request, Response, UploadFile, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from sqlalchemy import create_engine, String, DateTime, Text, Integer, func, ForeignKey
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship, sessionmaker, Session
-from pydantic import BaseModel, Field, constr
-from fastapi.middleware.cors import CORSMiddleware
-
 from pydantic import BaseModel, Field, StringConstraints
 from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, create_engine, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, relationship, sessionmaker
@@ -71,11 +61,11 @@ class UserProfile(BaseModel):
     enrolled_courses: Optional[List[str]] = None
 
 
-SlideText = Annotated[str, StringConstraints(min_length=1)]
+VoiceTrack = Annotated[str, StringConstraints(min_length=1)]
 
 
 class GenerateRequest(BaseModel):
-    voiceTrack: constr(min_length=1)
+    voiceTrack: VoiceTrack
     slideNumber: int = Field(..., ge=0)
     promptId: UUID
     courseId: str
@@ -158,6 +148,7 @@ class AvatarImage(Base):
 def _startup_create_tables() -> None:
     Base.metadata.create_all(engine)
     _start_worker_once()
+
 
 # ---------- Saving helpers ----------
 def job_dir(prompt_id: UUID) -> Path:
@@ -310,6 +301,7 @@ JOBS: Dict[UUID, Job] = {}
 JOB_TTL = timedelta(hours=24)
 CLEANUP_INTERVAL_SECONDS = 900
 
+
 # FIFO Queue für einzelne Slides
 class SlideTask(BaseModel):
     promptId: UUID
@@ -318,12 +310,15 @@ class SlideTask(BaseModel):
     text: str
     slideNo: int  # 1-based numbering
 
+
 SLIDE_QUEUE: "Queue[SlideTask]" = Queue()
 _WORKER_STARTED = Event()
 _CLEANUP_STARTED = Event()
 
+
 def _utcnow() -> datetime:
     return datetime.now(timezone.utc)
+
 
 def _estimate_total_seconds_for_new_slide(job: Job) -> None:
     """
@@ -333,6 +328,7 @@ def _estimate_total_seconds_for_new_slide(job: Job) -> None:
         job.expectedDurationSec = 8 + 6  # first slide
     else:
         job.expectedDurationSec += 6
+
 
 def _eta_seconds(job: Job) -> int:
     if job.status in ("DONE", "FAILED"):
@@ -350,9 +346,11 @@ def _purge_stale_jobs(now: Optional[datetime] = None) -> None:
         if now - last_touched > JOB_TTL:
             JOBS.pop(pid, None)
 
+
 # ---------------------------
 # Audio / Video Generators
 # ---------------------------
+
 
 def generate_audio(
     slide_text: Optional[str] = "Hello students! I want you to drink coffee.",
@@ -474,12 +472,13 @@ def generate_video(
             except Exception:
                 pass
 
+
 # ---------------------------
 # Cleanup Thread
 # ---------------------------
 
 
-def _cleanup_loop():
+def _cleanup_loop() -> None:
     while True:
         _purge_stale_jobs()
         sleep(CLEANUP_INTERVAL_SECONDS)
@@ -489,7 +488,8 @@ def _cleanup_loop():
 # Worker-Thread
 # ---------------------------
 
-def _worker_loop():
+
+def _worker_loop() -> None:
     print("[worker] started")
     while True:
         task: SlideTask = SLIDE_QUEUE.get()  # blocking
@@ -563,7 +563,8 @@ def _worker_loop():
                 job.lastTouched = done_time
                 JOBS[pid] = job
 
-def _start_worker_once():
+
+def _start_worker_once() -> None:
     if not _WORKER_STARTED.is_set():
         worker_thread = Thread(target=_worker_loop, name="slide-worker", daemon=True)
         worker_thread.start()
@@ -573,9 +574,11 @@ def _start_worker_once():
         cleanup_thread.start()
         _CLEANUP_STARTED.set()
 
+
 # ---------------------------
 # Routes
 # ---------------------------
+
 
 @app.post(
     "/v1/video/generate",
@@ -584,11 +587,7 @@ def _start_worker_once():
     responses={400: {"model": ErrorModel}, 401: {"model": ErrorModel}, 500: {"model": ErrorModel}},
     tags=["video"],
 )
-def request_video_generation(
-        payload: GenerateRequest,
-        response: Response,
-        request: Request
-) -> GenerationAcceptedResponse:
+def request_video_generation(payload: GenerateRequest, response: Response, request: Request) -> JSONResponse | GenerationAcceptedResponse:
     """
     Nimmt einen einzelnen Slide entgegen (payload.voiceTrack),
     erwartet eine explizite Slide-Nummer (payload.slideNumber) und enqueued die Aufgabe.
