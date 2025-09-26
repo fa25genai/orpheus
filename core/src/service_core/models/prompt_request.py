@@ -22,6 +22,7 @@ import json
 
 from pydantic import BaseModel, ConfigDict, Field, StrictStr
 from typing import Any, ClassVar, Dict, List, Optional
+from service_core.models.user_profile import UserProfile
 try:
     from typing import Self
 except ImportError:
@@ -32,8 +33,9 @@ class PromptRequest(BaseModel):
     PromptRequest
     """ # noqa: E501
     prompt: StrictStr = Field(description="The user's educational prompt.")
-    course_id: StrictStr = Field(alias="courseId")
-    __properties: ClassVar[List[str]] = ["prompt", "courseId"]
+    course_id: StrictStr = Field(description="The identifier of the course for which the prompt is being generated.", alias="courseId")
+    user_persona: Optional[UserProfile] = Field(default=None, alias="UserPersona")
+    __properties: ClassVar[List[str]] = ["prompt", "courseId", "UserPersona"]
 
     model_config = {
         "populate_by_name": True,
@@ -72,6 +74,9 @@ class PromptRequest(BaseModel):
             },
             exclude_none=True,
         )
+        # override the default output from pydantic by calling `to_dict()` of user_persona
+        if self.user_persona:
+            _dict['UserPersona'] = self.user_persona.to_dict()
         return _dict
 
     @classmethod
@@ -85,7 +90,8 @@ class PromptRequest(BaseModel):
 
         _obj = cls.model_validate({
             "prompt": obj.get("prompt"),
-            "courseId": obj.get("courseId")
+            "courseId": obj.get("courseId"),
+            "UserPersona": UserProfile.from_dict(obj.get("UserPersona")) if obj.get("UserPersona") is not None else None
         })
         return _obj
 

@@ -55,7 +55,6 @@ paths:
 
 components:
   schemas:
-    # Component provided in the prompt
     UserProfile:
       type: "object"
       properties:
@@ -91,7 +90,6 @@ components:
             type: "string"
             example: "courseId1"
 
-    # Schemas for Path Operations
     PromptRequest:
       type: "object"
       properties:
@@ -101,9 +99,10 @@ components:
           example: "Explain the theory of relativity in simple terms."
         courseId:
           type: "string"
-          format: "string"
           description: "The identifier of the course for which the prompt is being generated."
           example: "IN001"
+        UserPersona:
+          $ref: "#/components/schemas/UserProfile"
       required:
         - "prompt"
         - "courseId"
@@ -116,10 +115,15 @@ components:
           format: "uuid"
           description: "The unique ID assigned to the generation job."
           example: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+        summary:
+          type: "string"
+          description: "The summary of the lecture being generated"
+          example: "A for loop is a control flow statement used for definite iteration..."
+
       required:
         - "promptId"
+        - "summary"
 
-    # Standard Error Schema
     Error:
       type: "object"
       properties:
