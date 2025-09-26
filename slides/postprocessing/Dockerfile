@@ -12,6 +12,7 @@ FROM poetry-base
 
 # Install slidev executable (requires node)
 ENV DEBIAN_FRONTEND="noninteractive"
+ENV CI=true
 RUN apt-get update ;\
     apt-get install -y npm git ;\
     apt-get clean autoclean ;\
