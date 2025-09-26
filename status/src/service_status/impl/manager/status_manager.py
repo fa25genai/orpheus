@@ -22,17 +22,11 @@ class StatusManager:
 
     async def get_status(self, prompt_id: str) -> Status:
         async with self.mutex:
-            if prompt_id in self.status_objects:
-                return self.status_objects[prompt_id]
-
-            return self._empty_status()
+            self._get_status_unsafe(prompt_id)
 
     async def update_status(self, prompt_id: str, patch: StatusPatch):
         async with self.mutex:
-            if prompt_id in self.status_objects:
-                base = self.status_objects[prompt_id]
-            else:
-                base = self._empty_status()
+            base = self._get_status_unsafe(prompt_id)
 
             for (k, v) in patch.__dict__.items():
                 if v is not None and k != "steps_avatar_generation":
@@ -65,13 +59,13 @@ class StatusManager:
                     await listener(base)
 
     async def add_listener(
-        self, prompt_id: str, reference: str, listener: typing.Callable[[Status], Awaitable[None]]
+            self, prompt_id: str, reference: str, listener: typing.Callable[[Status], Awaitable[None]]
     ):
         async with self.mutex:
             if prompt_id not in self.listeners:
                 self.listeners[prompt_id] = {}
             self.listeners[prompt_id][reference] = listener
-            await listener(await self.get_status(prompt_id))
+            await listener(await self._get_status_unsafe(prompt_id))
 
     async def remove_listener(self, prompt_id: str, reference: str):
         async with self.mutex:
@@ -80,6 +74,11 @@ class StatusManager:
             del self.listeners[prompt_id][reference]
             if len(self.listeners[prompt_id].keys()) == 0:
                 self.listeners.pop(prompt_id, None)
+
+    def _get_status_unsafe(self, prompt_id: str) -> Status:
+        if prompt_id in self.status_objects:
+            return self.status_objects[prompt_id]
+        return self._empty_status()
 
     def _empty_status(self) -> Status:
         return Status(
