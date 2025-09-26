@@ -1,5 +1,6 @@
 import {Status} from "@/generated-api-clients/status";
 
+export const mockPromptId = "0333e664-e562-4122-982b-8af771ae6afc";
 export const mockStatus: Status = {
   stepUnderstanding: "IN_PROGRESS",
   stepLookup: "IN_PROGRESS",
