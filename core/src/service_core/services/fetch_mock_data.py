@@ -1,11 +1,10 @@
-from typing import Any, Dict, List
 from uuid import uuid4
-
-from service_core.models.user_profile import UserProfile
 from service_core.models.user_profile_preferences import UserProfilePreferences
+from service_core.models.user_profile import UserProfile
 from service_core.services.services_models.slides import SlidesEnvelope
 from service_core.services.services_models.voice_track import VoiceTrackResponse
-
+from typing import List, Dict, Any
+import json
 
 def create_user():
     demo_user = UserProfile(
@@ -144,11 +143,8 @@ def create_slides():
     )
     return slide_bullets
 
-def create_voice_track():
-    voice_track_response = VoiceTrackResponse(
-        promptId=create_slides().promptId,
-        courseId="cs001",
-        slideMessages=[
+def create_voice_script(index=0):
+    slides=[
             "Willkommen zur Vorlesung über For-Loops! Wir werden heute lernen, wie man Aktionen in Programmen wiederholt – ähnlich wie beim Wiederholen von Liegestützen beim Training. For-Loops ermöglichen es uns, Code effizienter und übersichtlicher zu gestalten.",
             "Denken Sie an Liegestütze: Wir wiederholen eine Aktion so lange, bis ein Ziel erreicht ist. Dieses Prinzip nutzen wir auch in Programmen, um Aufgaben effizient zu automatisieren.",
             "Stellen Sie sich vor, Sie müssen eine Aktion für jeden Benutzer in einem System ausführen. Oder eine Aufgabe wiederholt eine bestimmte Anzahl von Malen erledigen. Genau das ermöglicht uns ein For-Loop – die Wiederholung von Aktionen im Code.",
@@ -163,7 +159,13 @@ def create_voice_track():
             "For-Loops bieten viele Vorteile: Sie reduzieren den Codeumfang, bieten eine prägnante Syntax zum Zählen und sind vielseitig einsetzbar.",
             "For-Loops können für verschiedene Zwecke verwendet werden: zum Zählen, zum Durchlaufen eines Arrays oder zum periodischen Ausführen einer bestimmten Aktion.",
             "Vielen Dank für Ihre Aufmerksamkeit!"
-        ],
+        ]
+    print("Slide: ", slides[index])
+    voice_track_response = VoiceTrackResponse(
+        promptId=create_slides().promptId,
+        courseId="cs001",
+        voiceTrack=slides[index],
+        slideNumber=index,
         userProfile=create_user(),
         metadata=""
     )
