@@ -189,7 +189,7 @@ async def infer(
     output_tmp = os.path.join(tmp_dir, f"output_{random.getrandbits(32)}.mp4")
 
     if debug == 'debug':
-        path_to_debug_mp4 = os.getenv("DITTO_DEBUG_MP4_PATH", "./debug/")
+        path_to_debug_mp4 = os.getenv("DITTO_DEBUG_MP4_PATH", "./debug/mock.mp4")
         return FileResponse(
             path=path_to_debug_mp4,
             media_type="video/mp4",

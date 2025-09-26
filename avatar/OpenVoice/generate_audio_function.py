@@ -397,7 +397,7 @@ async def generate_audio_endpoint(
         slide_text: Optional[str] = Form(None, description="Single slide text (alternative to slide_texts)"),
         # Optional: allow course_id to be omitted; fall back to config default if needed
         course_id: Optional[str] = Form(None),
-):
+        debug: str = Form("not debug", description="is debug?")):
     """
     Accepts multipart/form-data:
       - voice_file: MP3 file upload
@@ -427,6 +427,15 @@ async def generate_audio_endpoint(
         # if not course_id:
         #     raise HTTPException(status_code=400, detail="course_id is required (provide or set default in config).")
 
+    if debug == 'debug':
+        mock_path = Path(os.getenv("VOICE_GEN_DEBUG_WAV_PATH", "./debug/mock.wav"))
+        return FileResponse(
+            path=str(mock_path),
+            media_type="audio/wav",
+            filename=mock_path.name,
+            headers={"Cache-Control": "no-store"},
+            background=background,
+        )
     # Save uploaded MP3 to a temp path
     tmp_dir = Path(tempfile.mkdtemp(prefix="audio_gen_"))
     ref_mp3_path = tmp_dir / "reference.mp3"
