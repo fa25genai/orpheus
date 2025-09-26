@@ -1,5 +1,5 @@
 import requests
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import List, Optional, Literal, Dict, Union
 import os
 import shutil
@@ -8,6 +8,7 @@ from uuid import UUID
 from pathlib import Path
 from queue import Queue
 from threading import Thread, Event
+from time import sleep
 
 from fastapi import FastAPI, Response, Request, UploadFile, File, Depends, HTTPException, status
 from fastapi.responses import JSONResponse
@@ -58,7 +59,8 @@ class UserProfile(BaseModel):
 
 
 class GenerateRequest(BaseModel):
-    slideMessages: List[constr(min_length=1)] = Field(..., min_items=1)
+    slideMessage: constr(min_length=1)
+    slideNumber: int = Field(..., ge=0)
     promptId: UUID
     courseId: str
     userProfile: UserProfile
@@ -277,6 +279,7 @@ class Job(BaseModel):
     promptId: UUID
     status: Literal["IN_PROGRESS", "FAILED", "DONE"]
     lastUpdated: datetime
+    lastTouched: datetime
     resultUrl: str
     startedAt: datetime
     expectedDurationSec: int
@@ -285,8 +288,9 @@ class Job(BaseModel):
 
 JOBS: Dict[UUID, Job] = {}
 
-# pro promptId Slide-Nummer (1-basiert)
-NEXT_SLIDE_NO: Dict[UUID, int] = {}
+# Remove jobs after 24h of inactivity
+JOB_TTL = timedelta(hours=24)
+CLEANUP_INTERVAL_SECONDS = 900
 
 # FIFO Queue für einzelne Slides
 class SlideTask(BaseModel):
@@ -298,6 +302,7 @@ class SlideTask(BaseModel):
 
 SLIDE_QUEUE: "Queue[SlideTask]" = Queue()
 _WORKER_STARTED = Event()
+_CLEANUP_STARTED = Event()
 
 def _utcnow() -> datetime:
     return datetime.now(timezone.utc)
@@ -317,6 +322,15 @@ def _eta_seconds(job: Job) -> int:
     elapsed = int((_utcnow() - job.startedAt).total_seconds())
     remaining = job.expectedDurationSec - elapsed
     return max(0, remaining)
+
+
+def _purge_stale_jobs(now: Optional[datetime] = None) -> None:
+    """Drop job entries that have been idle longer than JOB_TTL."""
+    now = now or _utcnow()
+    for pid, job in list(JOBS.items()):
+        last_touched = getattr(job, "lastTouched", job.lastUpdated)
+        if now - last_touched > JOB_TTL:
+            JOBS.pop(pid, None)
 
 # ---------------------------
 # Audio / Video Generators
@@ -352,7 +366,7 @@ def generate_audio(
             data = {"slide_text": slide_text}
             files = {"voice_file": (os.path.basename(voice_sample), f, "audio/mpeg")}
             print(f"[generate_audio] Posting to {audio_api_url}")
-            resp = requests.post(audio_api_url, data=data, files=files, timeout=(5, 120))
+            resp = requests.post(audio_api_url, data=data, files=files, timeout=(5, 600))
         resp.raise_for_status()
 
         wav_path.write_bytes(resp.content)
@@ -440,6 +454,17 @@ def generate_video(
                 pass
 
 # ---------------------------
+# Cleanup Thread
+# ---------------------------
+
+
+def _cleanup_loop():
+    while True:
+        _purge_stale_jobs()
+        sleep(CLEANUP_INTERVAL_SECONDS)
+
+
+# ---------------------------
 # Worker-Thread
 # ---------------------------
 
@@ -449,6 +474,7 @@ def _worker_loop():
         task: SlideTask = SLIDE_QUEUE.get()  # blocking
         pid = task.promptId
         now = _utcnow()
+        _purge_stale_jobs(now)
         job = JOBS.get(pid)
 
         # Sicherheit: Job-Eintrag muss existieren
@@ -457,16 +483,20 @@ def _worker_loop():
                 promptId=pid,
                 status="IN_PROGRESS",
                 lastUpdated=now,
+                lastTouched=now,
                 resultUrl=folder_url(pid),
                 startedAt=now,
                 expectedDurationSec=0,
                 error=None,
             )
             JOBS[pid] = job
+        else:
+            job.lastTouched = now
 
         # Status/ETA Update vor Start dieses Slides
         job.status = "IN_PROGRESS"
         job.lastUpdated = now
+        job.lastTouched = now
         _estimate_total_seconds_for_new_slide(job)
         JOBS[pid] = job
 
@@ -496,8 +526,10 @@ def _worker_loop():
             # mark job as failed but keep queue going for other jobs
             job = JOBS.get(pid)
             if job:
+                fail_time = _utcnow()
                 job.status = "FAILED"
-                job.lastUpdated = _utcnow()
+                job.lastUpdated = fail_time
+                job.lastTouched = fail_time
                 job.error = ErrorModel(code="GENERATION_FAILED", message=str(e))
                 JOBS[pid] = job
         finally:
@@ -505,14 +537,20 @@ def _worker_loop():
             # Nach jedem Slide die lastUpdated Zeit aktualisieren
             job = JOBS.get(pid)
             if job and job.status != "FAILED":
-                job.lastUpdated = _utcnow()
+                done_time = _utcnow()
+                job.lastUpdated = done_time
+                job.lastTouched = done_time
                 JOBS[pid] = job
 
 def _start_worker_once():
     if not _WORKER_STARTED.is_set():
-        t = Thread(target=_worker_loop, name="slide-worker", daemon=True)
-        t.start()
+        worker_thread = Thread(target=_worker_loop, name="slide-worker", daemon=True)
+        worker_thread.start()
         _WORKER_STARTED.set()
+    if not _CLEANUP_STARTED.is_set():
+        cleanup_thread = Thread(target=_cleanup_loop, name="job-cleanup", daemon=True)
+        cleanup_thread.start()
+        _CLEANUP_STARTED.set()
 
 # ---------------------------
 # Routes
@@ -531,22 +569,18 @@ def request_video_generation(
         request: Request
 ):
     """
-    Nimmt einen einzelnen Slide entgegen (payload.slideMessages == [text]),
-    vergibt fortlaufende Slide-Nummer pro promptId und enqueued die Aufgabe.
+    Nimmt einen einzelnen Slide entgegen (payload.slideMessage),
+    erwartet eine explizite Slide-Nummer (payload.slideNumber) und enqueued die Aufgabe.
     """
     now = _utcnow()
+    _purge_stale_jobs(now)
 
-    # Validierung: genau 1 Slide-Text
-    if len(payload.slideMessages) != 1:
-        return JSONResponse(
-            status_code=400,
-            content={"code": "BAD_REQUEST", "message": "slideMessages must contain exactly one text"},
-        )
-    text = payload.slideMessages[0].strip()
+    # Validierung: Slide-Text
+    text = payload.slideMessage.strip()
     if not text:
         return JSONResponse(
             status_code=400,
-            content={"code": "BAD_REQUEST", "message": "slide text must not be empty"},
+            content={"code": "BAD_REQUEST", "message": "slideMessage must not be empty"},
         )
 
     # Ordner existieren lassen
@@ -560,17 +594,18 @@ def request_video_generation(
             promptId=payload.promptId,
             status="IN_PROGRESS",
             lastUpdated=now,
+            lastTouched=now,
             resultUrl=folder,
             startedAt=now,
             expectedDurationSec=0,  # wird im Worker beim ersten Slide erhöht
             error=None,
         )
         JOBS[payload.promptId] = job
-        NEXT_SLIDE_NO[payload.promptId] = 1
+    else:
+        job.lastTouched = now
+        JOBS[payload.promptId] = job
 
-    # Fortlaufende Slide-Nummer bestimmen
-    slide_no = NEXT_SLIDE_NO[payload.promptId]
-    NEXT_SLIDE_NO[payload.promptId] = slide_no + 1
+    slide_no = payload.slideNumber
 
     # Enqueue
     SLIDE_QUEUE.put(
@@ -595,9 +630,12 @@ def request_video_generation(
     tags=["video"],
 )
 def get_generation_status(promptId: UUID):
+    _purge_stale_jobs()
     job = JOBS.get(promptId)
     if not job:
         return JSONResponse(status_code=404, content={"code": "NOT_FOUND", "message": "Request not found"})
+    job.lastTouched = _utcnow()
+    JOBS[promptId] = job
     return GenerationStatusResponse(
         promptId=job.promptId,
         status=job.status,
