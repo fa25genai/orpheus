@@ -43,6 +43,7 @@ paths:
               type: object
               required:
                 - slideMessages
+                - slideNumber
                 - promptId
                 - courseId
                 - userProfile
@@ -55,6 +56,10 @@ paths:
                     type: string
                     description: "The spoken/script text for one slide."
                     minLength: 1
+                slideNumber:
+                  type: integer
+                  minimum: 0
+                  description: "Zero-based slide index matching audio/video filenames."
                 promptId:
                   type: string
                   format: uuid
