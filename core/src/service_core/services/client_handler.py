@@ -1,6 +1,7 @@
 import httpx
 import logging
 import json
+import asyncio
 from service_core.services import (
     decompose_input,
     fetch_mock_data,
@@ -95,14 +96,22 @@ async def generate_avatar_video(voice_track, client):
     except Exception as e:
         print("Error generating avatar video:", e, flush=True)
         return None
+    
+
 
 async def process_prompt(prompt_id: str, prompt_request: str):
     async with httpx.AsyncClient() as client:
         subqueries = await decompose_inputs(prompt_request)
         # retrieved_content = await query_document_intelligence(subqueries, client)
         retrieved_content = create_demoretrieved_content() # Using mock data instead of actual DI call 
+
+        # Run summarization and sending in the background
+        #asyncio.create_task(summarize_and_send(retrieved_content, client))
+
+        # Continue with the rest of the workflow immediately
         refined_output = generate_script(retrieved_content)
         lecture_script = refined_output.get("lectureScript", "")
         slides_data = await generate_slides(prompt_request, prompt_id, lecture_script, refined_output, client)
         voice_track = generate_voice_tracks(lecture_script, slides_data)
         await generate_avatar_video(voice_track, client)
+        tracker.log(f"SUCCESS: Completed processing for {prompt_id}")
