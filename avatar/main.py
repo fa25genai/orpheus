@@ -117,14 +117,14 @@ def get_db() -> Session:
 
 
 class Avatar(Base):
-    _tablename_ = "avatars"
+    __tablename__ = "avatars"
     avatar_id: Mapped[str] = mapped_column(String(36), primary_key=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     images: Mapped[list["AvatarImage"]] = relationship(back_populates="avatar", cascade="all, delete-orphan")
 
 
 class AvatarImage(Base):
-    _tablename_ = "avatar_images"
+    __tablename__ = "avatar_images"
     id: Mapped[str] = mapped_column(String(36), primary_key=True)
     avatar_id: Mapped[str] = mapped_column(String(36), ForeignKey("avatars.avatar_id", ondelete="CASCADE"), index=True)
     file_path: Mapped[str] = mapped_column(Text, nullable=False)  # absolute path on disk
