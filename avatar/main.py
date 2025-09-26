@@ -360,7 +360,8 @@ def generate_audio(
             return None
 
         with open(voice_sample, "rb") as f:
-            data = {"slide_text": slide_text}
+            is_debug = os.getenv("DEBUG", "not debug")
+            data = {"slide_text": slide_text, "debug": is_debug}
             files = {"voice_file": (os.path.basename(voice_sample), f, "audio/mpeg")}
             print(f"[generate_audio] Posting to {audio_api_url}")
             resp = requests.post(audio_api_url, data=data, files=files, timeout=(5, 120))
@@ -414,10 +415,12 @@ def generate_video(
         "audio": ("audio.wav", open(resolved_audio, "rb"), "audio/wav"),
         "source": ("image.png", open(source_path, "rb"), "image/png"),
     }
+    is_debug = os.getenv('DEBUG', 'not debug')
+    data = {"debug": is_debug}
 
     try:
         print(f"[generate_video] Posting to {video_api_url}")
-        with requests.post(video_api_url, files=files, stream=True, timeout=(5, 600)) as resp:
+        with requests.post(video_api_url, files=files, data=data, stream=True, timeout=(5, 600)) as resp:
             if resp.status_code >= 400:
                 print(f"[generate_video] HTTP {resp.status_code}: {resp.text[:200]}")
                 return None
