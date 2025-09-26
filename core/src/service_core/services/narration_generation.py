@@ -52,7 +52,7 @@ def generate_narrations(lecture_script, example_slides, user_profile, debug=Fals
         page_content = page["content"]
         # Build the prompt using the templates
         prompt_parts = [
-            prompt_templates["base_prompt"].format(user_profile=user_profile.to_dict()),
+            prompt_templates["base_prompt"].format(user_profile=user_profile),
             prompt_templates["lecture_script_section"].format(lecture_script=lecture_script),
             prompt_templates["narration_history_section"].format(narration_history=narration_history),
             prompt_templates["slide_content_section"].format(page_content=page_content)
@@ -83,8 +83,11 @@ def generate_narrations(lecture_script, example_slides, user_profile, debug=Fals
         "slideMessages": slide_messages,
         "promptId": example_slides["promptId"],
         "courseId": user_profile.enrolled_courses[0] if user_profile.enrolled_courses else None,
-        "userProfile": json.loads(user_profile.model_dump_json())
+        "userProfile": json.loads(user_profile.model_dump_json(
+                by_alias=False, exclude_unset=True
+            )
+        ),
     }
 
-    return json.dumps(output_data, indent=2)
+    return output_data
 
