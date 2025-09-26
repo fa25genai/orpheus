@@ -70,9 +70,7 @@ class ApiClient:
     }
     _pool = None
 
-    def __init__(
-        self, configuration=None, header_name=None, header_value=None, cookie=None
-    ) -> None:
+    def __init__(self, configuration=None, header_name=None, header_value=None, cookie=None) -> None:
         # use default configuration if none is provided
         if configuration is None:
             configuration = Configuration.get_default()
@@ -188,9 +186,7 @@ class ApiClient:
             path_params = self.parameters_to_tuples(path_params, collection_formats)
             for k, v in path_params:
                 # specified safe chars, encode everything
-                resource_path = resource_path.replace(
-                    "{%s}" % k, quote(str(v), safe=config.safe_chars_for_path_param)
-                )
+                resource_path = resource_path.replace("{%s}" % k, quote(str(v), safe=config.safe_chars_for_path_param))
 
         # post parameters
         if post_params or files:
@@ -230,9 +226,7 @@ class ApiClient:
 
         return method, url, header_params, body, post_params
 
-    async def call_api(
-        self, method, url, header_params=None, body=None, post_params=None, _request_timeout=None
-    ) -> rest.RESTResponse:
+    async def call_api(self, method, url, header_params=None, body=None, post_params=None, _request_timeout=None) -> rest.RESTResponse:
         """Makes the HTTP request (synchronous)
         :param method: Method to call.
         :param url: Path to method endpoint.
@@ -276,11 +270,7 @@ class ApiClient:
         assert response_data.data is not None, msg
 
         response_type = response_types_map.get(str(response_data.status), None)
-        if (
-            not response_type
-            and isinstance(response_data.status, int)
-            and 100 <= response_data.status <= 599
-        ):
+        if not response_type and isinstance(response_data.status, int) and 100 <= response_data.status <= 599:
             # if not found, look for '1XX', '2XX', etc.
             response_type = response_types_map.get(str(response_data.status)[0] + "XX", None)
 
@@ -384,9 +374,7 @@ class ApiClient:
                 data = json.loads(response_text)
             except ValueError:
                 data = response_text
-        elif re.match(
-            r"^application/(json|[\w!#$&.+-^_]+\+json)\s*(;|$)", content_type, re.IGNORECASE
-        ):
+        elif re.match(r"^application/(json|[\w!#$&.+-^_]+\+json)\s*(;|$)", content_type, re.IGNORECASE):
             if response_text == "":
                 data = ""
             else:
@@ -394,9 +382,7 @@ class ApiClient:
         elif re.match(r"^text\/[a-z.+-]+\s*(;|$)", content_type, re.IGNORECASE):
             data = response_text
         else:
-            raise ApiException(
-                status=0, reason="Unsupported content type: {0}".format(content_type)
-            )
+            raise ApiException(status=0, reason="Unsupported content type: {0}".format(content_type))
 
         return self.__deserialize(data, response_type)
 
@@ -571,9 +557,7 @@ class ApiClient:
 
         return content_types[0]
 
-    def update_params_for_auth(
-        self, headers, queries, auth_settings, resource_path, method, body, request_auth=None
-    ) -> None:
+    def update_params_for_auth(self, headers, queries, auth_settings, resource_path, method, body, request_auth=None) -> None:
         """Updates header and query params based on authentication setting.
 
         :param headers: Header parameters dict to be updated.
@@ -595,13 +579,9 @@ class ApiClient:
             for auth in auth_settings:
                 auth_setting = self.configuration.auth_settings().get(auth)
                 if auth_setting:
-                    self._apply_auth_params(
-                        headers, queries, resource_path, method, body, auth_setting
-                    )
+                    self._apply_auth_params(headers, queries, resource_path, method, body, auth_setting)
 
-    def _apply_auth_params(
-        self, headers, queries, resource_path, method, body, auth_setting
-    ) -> None:
+    def _apply_auth_params(self, headers, queries, resource_path, method, body, auth_setting) -> None:
         """Updates the request parameters based on a single auth_setting
 
         :param headers: Header parameters dict to be updated.
@@ -683,9 +663,7 @@ class ApiClient:
         except ImportError:
             return string
         except ValueError:
-            raise rest.ApiException(
-                status=0, reason="Failed to parse `{0}` as date object".format(string)
-            )
+            raise rest.ApiException(status=0, reason="Failed to parse `{0}` as date object".format(string))
 
     def __deserialize_datetime(self, string):
         """Deserializes string to datetime.
@@ -700,9 +678,7 @@ class ApiClient:
         except ImportError:
             return string
         except ValueError:
-            raise rest.ApiException(
-                status=0, reason=("Failed to parse `{0}` as datetime object".format(string))
-            )
+            raise rest.ApiException(status=0, reason=("Failed to parse `{0}` as datetime object".format(string)))
 
     def __deserialize_enum(self, data, klass):
         """Deserializes primitive type to enum.
@@ -714,9 +690,7 @@ class ApiClient:
         try:
             return klass(data)
         except ValueError:
-            raise rest.ApiException(
-                status=0, reason=("Failed to parse `{0}` as `{1}`".format(data, klass))
-            )
+            raise rest.ApiException(status=0, reason=("Failed to parse `{0}` as `{1}`".format(data, klass)))
 
     def __deserialize_model(self, data, klass):
         """Deserializes list or dict to model.

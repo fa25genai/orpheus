@@ -91,9 +91,7 @@ Return JSON only.
 
     prompt = ChatPromptTemplate.from_messages([system, user])
 
-    schema_explanation = "\n".join(
-        [f"- {field}: {description}" for field, description in layout_template.schema.items()]
-    )
+    schema_explanation = "\n".join([f"- {field}: {description}" for field, description in layout_template.schema.items()])
 
     input_data = {
         "text": text,

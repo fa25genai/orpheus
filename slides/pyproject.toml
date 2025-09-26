@@ -36,6 +36,12 @@ build-backend = "poetry.core.masonry.api"
 line-length = 300
 target-version = "py313"
 
+
+[tool.ruff.lint.per-file-ignores]
+"src/service_slides/apis/*" = ["E501"]
+"src/service_slides/models/*" = ["E501"]
+"src/service_slides/clients/**" = ["E501"]
+
 [tool.ruff.lint]
 select = ["E", "F", "I"]
 

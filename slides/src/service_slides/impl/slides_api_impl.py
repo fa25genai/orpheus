@@ -32,9 +32,7 @@ class SlidesApiImpl(BaseSlidesApi):
 
     async def get_generation_status(
         self,
-        promptId: Annotated[
-            StrictStr, Field(description="The promptId returned by /v1/slides/generate")
-        ],
+        promptId: Annotated[StrictStr, Field(description="The promptId returned by /v1/slides/generate")],
         job_manager: JobManager,
     ) -> GenerationStatusResponse:
         status = await job_manager.get_status(promptId)
@@ -88,16 +86,12 @@ class SlidesApiImpl(BaseSlidesApi):
         splitting_model: BaseLanguageModel[Any],
         slidesgen_model: BaseLanguageModel[Any],
     ) -> GenerationAcceptedResponse:
-        _log.info(
-            "Starting slide generation request %s", request_slide_generation_request.prompt_id
-        )
+        _log.info("Starting slide generation request %s", request_slide_generation_request.prompt_id)
         # 1. Generate the slide structure
         structure = await generate_slide_structure(
             model=splitting_model,
             lecture_script=request_slide_generation_request.lecture_script,
-            available_layouts=await layout_manager.get_available_layouts(
-                request_slide_generation_request.course_id
-            ),
+            available_layouts=await layout_manager.get_available_layouts(request_slide_generation_request.course_id),
         )
         _log.debug("Structure generated for request %s", request_slide_generation_request.prompt_id)
 
@@ -109,9 +103,7 @@ class SlidesApiImpl(BaseSlidesApi):
         slide_futures = []
         for i, item in enumerate(structure.items):
 
-            def generate_item(
-                item_content: str, item_layout: str, slide_num: int, course_id: str, prompt_id: str
-            ) -> str:
+            def generate_item(item_content: str, item_layout: str, slide_num: int, course_id: str, prompt_id: str) -> str:
                 import asyncio
 
                 # Get layout template synchronously within the executor
@@ -164,13 +156,15 @@ class SlidesApiImpl(BaseSlidesApi):
                     job_manager,
                     prompt_id,
                     "\n".join(slide_contents),
-                    list(map(
-                        lambda asset: SlidesetWithIdAssetsInner(
-                            path=f"assets/{asset.name}",
-                            data=asset.data,
-                        ),
-                        request_slide_generation_request.assets,
-                    )),
+                    list(
+                        map(
+                            lambda asset: SlidesetWithIdAssetsInner(
+                                path=f"assets/{asset.name}",
+                                data=asset.data,
+                            ),
+                            request_slide_generation_request.assets,
+                        )
+                    ),
                 )
             )
 
@@ -187,9 +181,7 @@ class SlidesApiImpl(BaseSlidesApi):
         )
 
 
-async def store_upload_info(
-    job_manager: JobManager, prompt_id: str, content: str, assets: List[SlidesetWithIdAssetsInner]
-) -> None:
+async def store_upload_info(job_manager: JobManager, prompt_id: str, content: str, assets: List[SlidesetWithIdAssetsInner]) -> None:
     # Save all slides to markdown file
     async with ApiClient(get_postprocessing_api_config()) as api_client:
         postprocessor = PostprocessingApi(api_client)
@@ -213,8 +205,6 @@ async def store_upload_info(
             )
             await job_manager.fail(prompt_id)
         except Exception as e:
-            _log.error(
-                "Error when calling the postprocessing API for request %s", prompt_id, exc_info=e
-            )
+            _log.error("Error when calling the postprocessing API for request %s", prompt_id, exc_info=e)
             await job_manager.fail(prompt_id)
         await job_manager.finish_upload(prompt_id, response.web_url, response.pdf_url)

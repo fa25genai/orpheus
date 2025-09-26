@@ -1,15 +1,14 @@
-
-
 """
 Extract Text Service using Ollama API
 """
 
-import os
 import io
+import os
 from typing import List
-from PIL import Image
-from pdf2image import convert_from_path
+
 import ollama
+from pdf2image import convert_from_path
+from PIL import Image
 
 
 class ExtractTextService:
@@ -19,10 +18,7 @@ class ExtractTextService:
         if not self.api_key:
             raise ValueError("OLLAMA_API_KEY environment variable is required")
         self.model = "gemma3:27b"
-        self.client = ollama.Client(
-            host=self.base_url,
-            headers={"Authorization": f"Bearer {self.api_key}"}
-        )
+        self.client = ollama.Client(host=self.base_url, headers={"Authorization": f"Bearer {self.api_key}"})
 
     def extract_text_from_slide(self, image: Image.Image) -> str:
         """
@@ -30,25 +26,20 @@ class ExtractTextService:
         Returns the raw extracted text as a string.
         """
         byte_arr = io.BytesIO()
-        image.save(byte_arr, format='PNG')
+        image.save(byte_arr, format="PNG")
         image_bytes = byte_arr.getvalue()
         try:
             response = self.client.chat(
                 model=self.model,
                 messages=[
                     {
-                        'role': 'user',
-                        'content': (
-                            "Given the image of a single slide, extract all text and formulas. "
-                            "Consolidate the extracted content into a single, continuous string. "
-                            "Do not include any formatting, markdown, or commentary. "
-                            "Provide ONLY the raw, extracted text."
-                        ),
-                        'images': [image_bytes]
+                        "role": "user",
+                        "content": ("Given the image of a single slide, extract all text and formulas. Consolidate the extracted content into a single, continuous string. Do not include any formatting, markdown, or commentary. Provide ONLY the raw, extracted text."),
+                        "images": [image_bytes],
                     },
                 ],
             )
-            return response['message']['content']
+            return response["message"]["content"]
         except ollama.RequestError as e:
             print(f"Error: {e.error}")
             if e.status_code == 401:
@@ -73,7 +64,7 @@ class ExtractTextService:
         for i, page in enumerate(pages):
             slide_text_block = ""
             extracted_text = self.extract_text_from_slide(page)
-            slide_text_block += extracted_text + '\n\n'
+            slide_text_block += extracted_text + "\n\n"
             texts.append(slide_text_block)
         self.save_texts_to_txt(texts, "lectureSlides/out.txt")
         return texts
@@ -91,7 +82,7 @@ class ExtractTextService:
             filename = f"{name}_{counter}{ext}"
             counter += 1
         try:
-            with open(filename, 'w') as file:
+            with open(filename, "w") as file:
                 file.write(content)
         except IOError as e:
             print(f"An error occurred while writing to the file: {e}")

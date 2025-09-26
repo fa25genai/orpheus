@@ -47,9 +47,7 @@ class PostprocessingApi:
     @validate_call
     async def get_slideset(
         self,
-        prompt_id: Annotated[
-            StrictStr, Field(description="The promptId for the requested slideset")
-        ],
+        prompt_id: Annotated[StrictStr, Field(description="The promptId for the requested slideset")],
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -110,9 +108,7 @@ class PostprocessingApi:
     @validate_call
     async def get_slideset_with_http_info(
         self,
-        prompt_id: Annotated[
-            StrictStr, Field(description="The promptId for the requested slideset")
-        ],
+        prompt_id: Annotated[StrictStr, Field(description="The promptId for the requested slideset")],
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -173,9 +169,7 @@ class PostprocessingApi:
     @validate_call
     async def get_slideset_without_preload_content(
         self,
-        prompt_id: Annotated[
-            StrictStr, Field(description="The promptId for the requested slideset")
-        ],
+        prompt_id: Annotated[StrictStr, Field(description="The promptId for the requested slideset")],
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],

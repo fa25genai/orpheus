@@ -2,9 +2,9 @@
 Image Description Service using Ollama API
 """
 
-import os
 import base64
-from typing import List, Dict, Any, Optional
+import os
+from typing import Dict, List
 
 import ollama
 
@@ -14,7 +14,7 @@ class ImageDescriptionService:
         self.base_url = base_url.rstrip("/")
         self.model = "gemma3:27b"
         self._client = None
-    
+
     @property
     def client(self) -> ollama.Client:
         """Lazy initialization of Ollama client."""
@@ -23,26 +23,20 @@ class ImageDescriptionService:
             if not api_key:
                 raise ValueError("OLLAMA_API_KEY environment variable is required")
 
-            self._client = ollama.Client(
-                host=self.base_url,
-                headers={'Authorization': f'Bearer {api_key}'}
-            )
+            self._client = ollama.Client(host=self.base_url, headers={"Authorization": f"Bearer {api_key}"})
         return self._client
-    
+
     def _get_image_caption(self, base64_string: str) -> str:
         """
         Generate a caption for a single image from base64 string.
-        
+
         Args:
             base64_string: Base64 encoded image data
-            
+
         Returns:
             Image caption as string
         """
-        prompt = (
-            "Explain the given image. Write the explanation into a single, continuous string. "
-            "Do not include any formatting, markdown, or commentary. Provide ONLY the raw, extracted text."
-        )
+        prompt = "Explain the given image. Write the explanation into a single, continuous string. Do not include any formatting, markdown, or commentary. Provide ONLY the raw, extracted text."
 
         try:
             image_bytes = base64.b64decode(base64_string)
@@ -53,13 +47,15 @@ class ImageDescriptionService:
         try:
             response = self.client.chat(
                 model=self.model,
-                messages=[{
-                    'role': 'user',
-                    'content': prompt,
-                    'images': [image_bytes],
-                }],
+                messages=[
+                    {
+                        "role": "user",
+                        "content": prompt,
+                        "images": [image_bytes],
+                    }
+                ],
             )
-            return (response.get('message', {}).get('content', "") or "").strip()
+            return (response.get("message", {}).get("content", "") or "").strip()
         except ollama.RequestError as e:
             print(f"Ollama error: {e.error}")
             if getattr(e, "status_code", None) == 401:
@@ -68,14 +64,14 @@ class ImageDescriptionService:
         except Exception as e:
             print(f"Unexpected error: {e}")
             return ""
-    
+
     def caption_images_grouped(self, images_grouped: List[List[Dict[str, str]]]) -> List[List[Dict[str, str]]]:
         """
         Generate captions for grouped images (by pages).
-        
+
         Args:
             images_grouped: List of pages, each containing list of images with 'data' key
-            
+
         Returns:
             List of pages with images containing both 'data' and 'caption' keys
         """
@@ -89,10 +85,7 @@ class ImageDescriptionService:
             page_out = []
             for img_idx, item in enumerate(page_items, start=1):
                 caption = self._get_image_caption(item["data"])
-                page_out.append({
-                    "data": item["data"],
-                    "caption": caption
-                })
+                page_out.append({"data": item["data"], "caption": caption})
                 # Print caption directly
                 cap = caption or "<leer oder blockiert>"
                 print(f"[Seite {page_idx}, Bild {img_idx}] {cap}")

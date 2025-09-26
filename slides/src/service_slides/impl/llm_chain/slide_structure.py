@@ -25,12 +25,7 @@ class DetailedSlideStructureItem(BaseModel):
             "Each chunk should represent one coherent idea and stand alone without referencing other chunks."
         )
     )
-    layout: str = Field(
-        description=(
-            "The name of the layout template to use for this slide. Choose the best fitting layout from the provided list of available layouts. "
-            "Do not invent layouts, only pick one that is guaranteed to exist."
-        )
-    )
+    layout: str = Field(description=("The name of the layout template to use for this slide. Choose the best fitting layout from the provided list of available layouts. Do not invent layouts, only pick one that is guaranteed to exist."))
 
 
 class DetailedSlideStructure(BaseModel):
@@ -55,12 +50,7 @@ async def generate_slide_structure(
     that can serve as candidate slides. No optimization beyond chunking.
     """
 
-    layouts_description = "\n".join(
-        [
-            f"- Name: '{layout.name}', Description: {layout.description}"
-            for layout in available_layouts
-        ]
-    )
+    layouts_description = "\n".join([f"- Name: '{layout.name}', Description: {layout.description}" for layout in available_layouts])
 
     parser = PydanticOutputParser(pydantic_object=DetailedSlideStructure)
 

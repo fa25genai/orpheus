@@ -50,9 +50,7 @@ class RequestSlideGenerationRequest(BaseModel):
         default=None,
         description="Schemaless additional information about the user (e.g. preferences regarding slide style).",
     )
-    assets: List[RequestSlideGenerationRequestAssetsInner] = Field(
-        description="Additional files: images, PDFs, graphs, tables, listings, equations. Use multiple entries for multiple files. May be empty."
-    )
+    assets: List[RequestSlideGenerationRequestAssetsInner] = Field(description="Additional files: images, PDFs, graphs, tables, listings, equations. Use multiple entries for multiple files. May be empty.")
     __properties: ClassVar[List[str]] = ["courseId", "promptId", "lectureScript", "user", "assets"]
 
     model_config = {
@@ -114,12 +112,7 @@ class RequestSlideGenerationRequest(BaseModel):
                 "promptId": obj.get("promptId"),
                 "lectureScript": obj.get("lectureScript"),
                 "user": obj.get("user"),
-                "assets": [
-                    RequestSlideGenerationRequestAssetsInner.from_dict(_item)
-                    for _item in assets_data
-                ]
-                if (assets_data := obj.get("assets")) is not None
-                else None,
+                "assets": [RequestSlideGenerationRequestAssetsInner.from_dict(_item) for _item in assets_data] if (assets_data := obj.get("assets")) is not None else None,
             }
         )
         return _obj

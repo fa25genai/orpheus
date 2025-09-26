@@ -38,15 +38,11 @@ for _, name, _ in pkgutil.iter_modules(ns_pkg.__path__, ns_pkg.__name__ + "."): 
 )
 async def get_generation_status(
     http_request: Request,
-    promptId: Annotated[
-        StrictStr, Field(description="The promptId returned by /v1/slides/generate")
-    ] = Path(..., description="The promptId returned by /v1/slides/generate"),
+    promptId: Annotated[StrictStr, Field(description="The promptId returned by /v1/slides/generate")] = Path(..., description="The promptId returned by /v1/slides/generate"),
 ) -> GenerationStatusResponse:
     if not BaseSlidesApi.subclasses:
         raise HTTPException(status_code=500, detail="Not implemented")
-    result = await BaseSlidesApi.subclasses[0]().get_generation_status(
-        promptId, http_request.app.state.job_manager
-    )
+    result = await BaseSlidesApi.subclasses[0]().get_generation_status(promptId, http_request.app.state.job_manager)
     return result  # type: ignore
 
 

@@ -35,16 +35,12 @@ class SlidesetWithId(BaseModel):
         description="Unique identifier of the lecture to which the slides will belong. ",
         alias="promptId",
     )
-    slideset: StrictStr = Field(
-        description="Markdown source code for the slideset. Has to conform to sli.dev syntax. "
-    )
+    slideset: StrictStr = Field(description="Markdown source code for the slideset. Has to conform to sli.dev syntax. ")
     user: Optional[Dict[str, Any]] = Field(
         default=None,
         description="Schemaless additional information about the user (e.g. preferences regarding slide style).",
     )
-    assets: List[SlidesetWithIdAssetsInner] = Field(
-        description="Additional files: images, PDFs, graphs, tables, listings, equations. Use multiple entries for multiple files. May be empty."
-    )
+    assets: List[SlidesetWithIdAssetsInner] = Field(description="Additional files: images, PDFs, graphs, tables, listings, equations. Use multiple entries for multiple files. May be empty.")
     __properties: ClassVar[List[str]] = ["promptId", "slideset", "user", "assets"]
 
     model_config = ConfigDict(
@@ -107,9 +103,7 @@ class SlidesetWithId(BaseModel):
                 "promptId": obj.get("promptId"),
                 "slideset": obj.get("slideset"),
                 "user": obj.get("user"),
-                "assets": [SlidesetWithIdAssetsInner.from_dict(_item) for _item in obj["assets"]]
-                if obj.get("assets") is not None
-                else None,
+                "assets": [SlidesetWithIdAssetsInner.from_dict(_item) for _item in obj["assets"]] if obj.get("assets") is not None else None,
             }
         )
         return _obj

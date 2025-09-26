@@ -80,7 +80,5 @@ class ListSlidesets200ResponseInner(BaseModel):
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
 
-        _obj = cls.model_validate(
-            {"promptId": obj.get("promptId"), "createdAt": obj.get("createdAt")}
-        )
+        _obj = cls.model_validate({"promptId": obj.get("promptId"), "createdAt": obj.get("createdAt")})
         return _obj

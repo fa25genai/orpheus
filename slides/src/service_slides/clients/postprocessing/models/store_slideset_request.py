@@ -97,9 +97,7 @@ class StoreSlidesetRequest(BaseModel):
         _obj = cls.model_validate(
             {
                 "theme": obj.get("theme"),
-                "slideset": SlidesetWithId.from_dict(obj["slideset"])
-                if obj.get("slideset") is not None
-                else None,
+                "slideset": SlidesetWithId.from_dict(obj["slideset"]) if obj.get("slideset") is not None else None,
             }
         )
         return _obj

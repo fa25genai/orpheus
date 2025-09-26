@@ -88,11 +88,5 @@ class SlideStructure(BaseModel):
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
 
-        _obj = cls.model_validate(
-            {
-                "pages": [SlideItem.from_dict(_item) for _item in pages_data]
-                if (pages_data := obj.get("pages")) is not None
-                else None
-            }
-        )
+        _obj = cls.model_validate({"pages": [SlideItem.from_dict(_item) for _item in pages_data] if (pages_data := obj.get("pages")) is not None else None})
         return _obj
