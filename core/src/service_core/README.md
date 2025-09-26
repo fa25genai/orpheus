@@ -16,17 +16,17 @@ cd core && poetry install
 This project uses a schema-first approach. The single source of truth for the API's structure is the OpenAPI specification file.
 
 1. Modifying the API
-If you need to add, remove, or change an endpoint, you must edit the [answer_generation_service.yaml](../../../api/answer_generation_service.yaml) file first.
+    If you need to add, remove, or change an endpoint, you must edit the [answer_generation_service.yaml](../../../api/answer_generation_service.yaml) file first.
 
 2. Generating API Code
-After modifying the YAML schema, you must regenerate the server's boilerplate code. Run the following command from the `core` directory:
-```bash
-openapi-generator generate -i ../api/answer_generation_service.yaml -g python-fastapi -o . --package-name service_core --additional-properties=sourceFolder=src --ignore-file-override ./.openapi-generator-ignore --global-property apiTests=false,modelTests=false,apiDocs=false,modelDocs=false
-```
+    After modifying the YAML schema, you must regenerate the server's boilerplate code. Run the following command from the `core` directory:
+    ```bash
+    openapi-generator generate -i ../api/answer_generation_service.yaml -g python-fastapi -o . --package-name service_core --additional-properties=sourceFolder=src --ignore-file-override ./.openapi-generator-ignore --global-property apiTests=false,modelTests=false,apiDocs=false,modelDocs=false
+    ```
 
 3. Implementing Logic
-- The generator is configured to keep your custom logic separate from the generated code.
-- Generated Code (**DO NOT EDIT**): Files in `src/service_core/apis/` like `core_api.py` and `core_api_base.py` will be overwritten on each generation.
+   - The generator is configured to keep your custom logic separate from the generated code.
+   - Generated Code (**DO NOT EDIT**): Files in `src/service_core/apis/` like `core_api.py` and `core_api_base.py` will be overwritten on each generation.
 
 Your Logic (**EDIT HERE**): All your business logic should be implemented in the `src/service_core/impl/core_api_impl.py` file. This file is designed to be safe and will not be overwritten.
 
