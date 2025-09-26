@@ -1,5 +1,4 @@
 import os
-import re
 from typing import Optional, Any, TypeVar, Dict, cast
 
 from langchain_core.output_parsers import BaseOutputParser, StrOutputParser
@@ -16,28 +15,6 @@ from langchain_aws import ChatBedrockConverse
 T = TypeVar("T")
 
 
-def _remove_thinking_tags(text: str) -> str:
-    """
-    Removes <think>...</think> and <thinking>...</thinking> tags and their content from the text.
-
-    Args:
-        text: Input text that may contain thinking tags
-
-    Returns:
-        Text with all thinking tags and their content removed
-    """
-    if not text:
-        return text
-
-    # Remove <think>...</think> tags and their content
-    text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL)
-
-    # Remove <thinking>...</thinking> tags and their content
-    text = re.sub(r"<thinking>.*?</thinking>", "", text, flags=re.DOTALL)
-
-    return text.strip()
-
-
 def _create_llm_chain(
     model: BaseLanguageModel[Any],
     prompt: ChatPromptTemplate,
@@ -47,7 +24,7 @@ def _create_llm_chain(
     if parser is None:
         parser = StrOutputParser()
 
-    return prompt | model | _remove_thinking_tags | parser
+    return prompt | model | parser
 
 
 def invoke_llm(
@@ -103,12 +80,7 @@ def create_base_model(
         return OllamaLLM(**model_kwargs)  # type: ignore
 
     # Try AWS Bedrock last
-    if (
-        "AWS_ACCESS_KEY_ID" in os.environ
-        and "AWS_SECRET_ACCESS_KEY" in os.environ
-        and "AWS_SESSION_TOKEN" in os.environ
-        and "AWS_PROVIDER" in os.environ
-    ):
+    if "AWS_BEARER_TOKEN_BEDROCK" in os.environ:
         model_kwargs = {
             "model_id": model_name,
             "temperature": temperature,
@@ -120,6 +92,6 @@ def create_base_model(
 
     raise RuntimeError(
         "No LLM providers available. Please set one of: "
-        "OPENAI_API_KEY, GOOGLE_API_KEY, OLLAMA_LLM_HOST, or AWS_ACCESS_KEY_ID with AWS_SECRET_ACCESS_KEY with AWS_SESSION_TOKEN"
+        "OPENAI_API_KEY, GOOGLE_API_KEY, OLLAMA_LLM_HOST, or AWS_BEARER_TOKEN_BEDROCK"
         "in your environment variables."
     )
