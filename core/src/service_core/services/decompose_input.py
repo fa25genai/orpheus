@@ -61,25 +61,71 @@ def llm_call(prompt: str) -> str:
 # Question decomposition
 # -----------------------------
 DECOMPOSE_PROMPT = textwrap.dedent("""
-You are an assistant that decomposes a student's question into concise,
-retrieval-friendly sub-queries and a final answer plan.
-Respond in strict JSON with keys: original_question, subqueries, answer_plan.
+You are an assistant that intelligently analyzes a student's question and decomposes it only when necessary.
 
-Rules:
-- Keep subqueries short and focused.
-- Do not add explanations outside JSON.
+CRITICAL: You MUST output ONLY valid JSON with no additional text, comments, or explanations.
+
+Required JSON structure:
+{
+  "original_question": "the exact input question",
+  "subqueries": ["array of sub-questions"],
+}
+
+Analysis Rules:
+1. If the question is already simple, focused, and clear (1-2 concepts), return it as a single subquery
+2. Only decompose if the question contains multiple distinct concepts or requirements
+4. Each subquery should be self-contained and retrieval-optimized
+5. Preserve all user requirements and context from the original question
+6. Don't create artificial complexity - simple questions deserve simple treatment
+
+JSON Requirements:
+- Output ONLY the JSON object
+- No markdown formatting, no code blocks, no explanations
+- Ensure all strings are properly escaped
+- All keys must be present
+- subqueries must be an array (even if single item)
 """)
 
 def decompose_question(question: str) -> Dict[str, Any]:
-    prompt = DECOMPOSE_PROMPT + "\n\n" + json.dumps({"original_question": question})
+    prompt = DECOMPOSE_PROMPT + "\n\nQuestion to analyze: " + json.dumps(question)
     raw = llm_call(prompt)
+    
+    # Clean the response - remove any potential markdown formatting
+    raw = raw.strip()
+    if raw.startswith('```json'):
+        raw = raw[7:]
+    if raw.startswith('```'):
+        raw = raw[3:]
+    if raw.endswith('```'):
+        raw = raw[:-3]
+    raw = raw.strip()
+    
     try:
-        return json.loads(raw)
-    except Exception:
+        result = json.loads(raw)
+        # Validate required keys
+        required_keys = ["original_question", "subqueries"]
+        if not all(key in result for key in required_keys):
+            raise ValueError(f"Missing required keys. Expected: {required_keys}, Got: {list(result.keys())}")
+        
+        # Ensure subqueries is a list
+        if not isinstance(result["subqueries"], list):
+            raise ValueError("subqueries must be an array")
+            
+        return result
+    except json.JSONDecodeError as e:
+        # Try to extract JSON from the response
         start, end = raw.find("{"), raw.rfind("}")
         if start != -1 and end != -1:
-            return json.loads(raw[start:end+1])
-        raise RuntimeError("Failed to parse JSON from LLM output: " + raw)
+            try:
+                result = json.loads(raw[start:end+1])
+                # Validate required keys for extracted JSON too
+                required_keys = ["original_question", "subqueries"]
+                if not all(key in result for key in required_keys):
+                    raise ValueError(f"Missing required keys in extracted JSON. Expected: {required_keys}, Got: {list(result.keys())}")
+                return result
+            except json.JSONDecodeError:
+                pass
+        raise RuntimeError(f"Failed to parse JSON from LLM output. JSON Error: {e}. Raw output: {raw[:200]}...")
 
 
 
