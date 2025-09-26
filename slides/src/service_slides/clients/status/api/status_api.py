@@ -11,18 +11,15 @@
     Do not edit the class manually.
 """  # noqa: E501
 
-import warnings
-from pydantic import validate_call, Field, StrictFloat, StrictStr, StrictInt
 from typing import Any, Dict, List, Optional, Tuple, Union
-from typing_extensions import Annotated
 
-from pydantic import Field, StrictStr
+from pydantic import Field, StrictFloat, StrictInt, StrictStr, validate_call
 from typing_extensions import Annotated
-from service_slides.clients.status.models.status import Status
-from service_slides.clients.status.models.status_patch import StatusPatch
 
 from service_slides.clients.status.api_client import ApiClient, RequestSerialized
 from service_slides.clients.status.api_response import ApiResponse
+from service_slides.clients.status.models.status import Status
+from service_slides.clients.status.models.status_patch import StatusPatch
 from service_slides.clients.status.rest import RESTResponseType
 
 

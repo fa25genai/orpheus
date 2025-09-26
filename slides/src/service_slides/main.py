@@ -1,17 +1,17 @@
 import logging
 import os
 from concurrent.futures.thread import ThreadPoolExecutor
+from logging import getLogger
 from os import cpu_count, getenv
 from typing import Any
-from logging import getLogger
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from service_slides.apis.slides_api import router as SlidesApiRouter
+from service_slides.impl.llm_chain.shared_llm import create_base_model
 from service_slides.impl.manager.job_manager import JobManager
 from service_slides.impl.manager.layout_manager import LayoutManager
-from service_slides.impl.llm_chain.shared_llm import create_base_model
 
 _log = getLogger("app")
 

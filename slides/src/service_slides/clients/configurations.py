@@ -6,9 +6,7 @@ from service_slides.clients.status import Configuration as StatusConfiguration
 
 def get_postprocessing_api_config() -> PostprocessingConfiguration:
     return PostprocessingConfiguration(
-        host=os.environ.get("POSTPROCESSING_SERVICE_HOST")
-        if "POSTPROCESSING_SERVICE_HOST" in os.environ
-        else "http://slides-postprocessing:30607",
+        host=os.environ.get("POSTPROCESSING_SERVICE_HOST") if "POSTPROCESSING_SERVICE_HOST" in os.environ else "http://slides-postprocessing:30607",
     )
 
 

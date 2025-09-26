@@ -12,7 +12,9 @@
 """  # noqa: E501
 
 from typing import Any, Optional
+
 from typing_extensions import Self
+
 
 class OpenApiException(Exception):
     """The base exception class for all OpenAPIExceptions"""

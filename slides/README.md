@@ -25,6 +25,20 @@ After the operation returns, the `/v1/slides/{promptId}/status` endpoint may be 
 Upon completion, it will also provide the URL to access the content.
 ``
 
+## Local Setup
+
+```bash
+cd slides
+poetry install
+```
+
+## Quality Checks
+
+```bash
+poetry run ruff check .
+poetry run mypy src
+```
+
 ## Configuration
 
 The following configuration options are available (using environment variables)

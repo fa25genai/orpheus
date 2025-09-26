@@ -1,9 +1,11 @@
 import os
-import torch
-from openvoice import se_extractor
-from openvoice.api import ToneColorConverter
+
 import nltk
+import torch
 from melo.api import TTS
+from openvoice.api import ToneColorConverter
+
+from openvoice import se_extractor
 
 # Set device
 device = "cuda:0" if torch.cuda.is_available() else "cpu"

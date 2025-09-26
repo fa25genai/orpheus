@@ -1,6 +1,7 @@
+import copy
+
 import numpy as np
 from scipy.special import softmax
-import copy
 
 
 def _get_emo_avg(idx=6):

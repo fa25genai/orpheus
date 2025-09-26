@@ -14,13 +14,12 @@ Do not edit the class manually.
 import copy
 import http.client as httplib
 import logging
-from logging import FileHandler
 import sys
+from logging import FileHandler
 from typing import Any, ClassVar, Dict, List, Literal, Optional, TypedDict, Union
-from typing_extensions import NotRequired, Self
 
 import urllib3
-
+from typing_extensions import NotRequired, Self
 
 JSON_SCHEMA_VALIDATION_KEYWORDS = {
     "multipleOf",
@@ -450,9 +449,7 @@ class Configuration:
         self.__logger_format = value
         self.logger_formatter = logging.Formatter(self.__logger_format)
 
-    def get_api_key_with_prefix(
-        self, identifier: str, alias: Optional[str] = None
-    ) -> Optional[str]:
+    def get_api_key_with_prefix(self, identifier: str, alias: Optional[str] = None) -> Optional[str]:
         """Gets API key (with prefix if set).
 
         :param identifier: The identifier of apiKey.
@@ -497,13 +494,7 @@ class Configuration:
 
         :return: The report for debugging.
         """
-        return (
-            "Python SDK Debug Report:\n"
-            "OS: {env}\n"
-            "Python Version: {pyversion}\n"
-            "Version of the API: 0.1.0\n"
-            "SDK Package Version: 1.0.0".format(env=sys.platform, pyversion=sys.version)
-        )
+        return "Python SDK Debug Report:\nOS: {env}\nPython Version: {pyversion}\nVersion of the API: 0.1.0\nSDK Package Version: 1.0.0".format(env=sys.platform, pyversion=sys.version)
 
     def get_host_settings(self) -> List[HostSetting]:
         """Gets an array of host settings
@@ -542,11 +533,7 @@ class Configuration:
         try:
             server = servers[index]
         except IndexError:
-            raise ValueError(
-                "Invalid index {0} when selecting the host settings. Must be less than {1}".format(
-                    index, len(servers)
-                )
-            )
+            raise ValueError("Invalid index {0} when selecting the host settings. Must be less than {1}".format(index, len(servers)))
 
         url = server["url"]
 
@@ -555,11 +542,7 @@ class Configuration:
             used_value = variables.get(variable_name, variable["default_value"])
 
             if "enum_values" in variable and used_value not in variable["enum_values"]:
-                raise ValueError(
-                    "The variable `{0}` in the host URL has invalid value {1}. Must be {2}.".format(
-                        variable_name, variables[variable_name], variable["enum_values"]
-                    )
-                )
+                raise ValueError("The variable `{0}` in the host URL has invalid value {1}. Must be {2}.".format(variable_name, variables[variable_name], variable["enum_values"]))
 
             url = url.replace("{" + variable_name + "}", used_value)
 
