@@ -12,12 +12,12 @@ Do not edit the class manually.
 """  # noqa: E501
 
 from __future__ import annotations
-import pprint
-import json
 
+import json
+import pprint
+from typing import Any, ClassVar, Dict, List, Optional
 
 from pydantic import BaseModel, StrictStr
-from typing import Any, ClassVar, Dict, List, Optional
 
 try:
     from typing import Self

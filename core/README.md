@@ -57,3 +57,10 @@ To run the tests:
 pip3 install pytest
 PYTHONPATH=src pytest tests
 ```
+
+## Quality Checks
+
+```bash
+poetry run ruff check .
+poetry run mypy src
+```

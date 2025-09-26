@@ -1,15 +1,15 @@
 import math
+
 import torch
 from torch import nn
-from torch.nn import functional as F
-
 from torch.nn import Conv1d
-from torch.nn.utils import weight_norm, remove_weight_norm
+from torch.nn import functional as F
+from torch.nn.utils import remove_weight_norm, weight_norm
 
 from openvoice import commons
-from openvoice.commons import init_weights, get_padding
-from openvoice.transforms import piecewise_rational_quadratic_transform
 from openvoice.attentions import Encoder
+from openvoice.commons import get_padding, init_weights
+from openvoice.transforms import piecewise_rational_quadratic_transform
 
 LRELU_SLOPE = 0.1
 

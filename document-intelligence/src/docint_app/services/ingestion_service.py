@@ -3,10 +3,9 @@ Ingestion Service
 Takes parsed slides (text + images), generates embeddings, and stores them in WeaviateGraphStore.
 """
 
-import asyncio
 import logging
 import os
-from typing import List, Dict, Any, Optional
+from typing import Any, Dict, List, TypedDict
 
 from docint_app.services.embedding_service import get_embedding_service
 from docint_app.vectorstore.weaviate_graph_store import WeaviateGraphStore
@@ -14,6 +13,18 @@ from docint_app.vectorstore.weaviate_graph_store import WeaviateGraphStore
 # Set up logger
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+
+
+class _IngestResults(TypedDict):
+    course_id: str
+    document_id: str
+    total_slides: int
+    processed_slides: int
+    total_images: int
+    processed_images: int
+    slide_uuids: List[str]
+    image_ids: List[str]
+    errors: List[str]
 
 
 class IngestionService:
@@ -35,7 +46,7 @@ class IngestionService:
         document_id: str,
         slide_texts: List[str],
         slide_images: List[List[Dict[str, Any]]],
-    ) -> Dict[str, Any]:
+    ) -> _IngestResults:
         """
         Ingest slides + images into Weaviate.
 
@@ -44,21 +55,21 @@ class IngestionService:
             document_id: Unique document identifier
             slide_texts: List of slide texts, index = slide number - 1
             slide_images: List of lists, each entry is [] or [{data, caption}, ...]
-            
+
         Returns:
             Dict containing ingestion results and statistics
         """
         logger.info(f"Starting ingestion for course_id='{course_id}', document_id='{document_id}'")
         logger.info(f"Processing {len(slide_texts)} slides")
-        
+
         # Validate inputs
         if not course_id or not document_id:
             raise ValueError("course_id and document_id must be non-empty strings")
-        
+
         if len(slide_texts) != len(slide_images):
             raise ValueError(f"Slide texts ({len(slide_texts)}) and images ({len(slide_images)}) must align")
 
-        results = {
+        results: _IngestResults = {
             "course_id": course_id,
             "document_id": document_id,
             "total_slides": len(slide_texts),
@@ -67,7 +78,7 @@ class IngestionService:
             "processed_images": 0,
             "slide_uuids": [],
             "image_ids": [],
-            "errors": []
+            "errors": [],
         }
 
         try:
@@ -91,7 +102,7 @@ class IngestionService:
             logger.debug(f"Text vector dimensions: {len(vec) if vec else 0}")
 
             try:
-                # Upsert Slide 
+                # Upsert Slide
                 logger.debug(f"Upserting slide {slide_no} to Weaviate...")
                 slide_uuid = self.store.upsert_slide(
                     course_id=course_id,
@@ -110,7 +121,7 @@ class IngestionService:
                     try:
                         captions = [img.get("caption", "") for img in images]
                         logger.debug(f"Image captions: {captions}")
-                        
+
                         if any(captions):  # Only generate embeddings if we have captions
                             caption_vecs = await self.embedder.embed_batch(captions)
                             logger.debug(f"Generated {len(caption_vecs)} caption embeddings")
@@ -119,9 +130,7 @@ class IngestionService:
                             logger.warning(f"No captions found for images in slide {slide_no}, using zero vectors")
 
                         # pair embeddings with image data
-                        img_payloads = [
-                            (img.get("data", ""), img.get("caption", "")) for img in images
-                        ]
+                        img_payloads = [(img.get("data", ""), img.get("caption", "")) for img in images]
 
                         created_ids = self.store.upsert_images_and_link(
                             course_id=course_id,
@@ -135,25 +144,25 @@ class IngestionService:
                         logger.info(f"Successfully linked {len(created_ids)} images for slide {slide_no}: {created_ids}")
                         results["image_ids"].extend(created_ids)
                         results["processed_images"] += len(created_ids)
-                        
+
                     except Exception as e:
                         logger.error(f"Failed to process images for slide {slide_no}: {e}")
                         results["errors"].append(f"Slide {slide_no} image processing error: {e}")
-                        
+
                 else:
                     logger.debug(f"Slide {slide_no} has no images")
-                    
+
             except Exception as e:
                 logger.error(f"Failed to process slide {slide_no}: {e}")
                 results["errors"].append(f"Slide {slide_no} processing error: {e}")
 
-        logger.info(f"Ingestion completed. Processed {results['processed_slides']}/{results['total_slides']} slides, "
-                   f"{results['processed_images']}/{results['total_images']} images")
-        
+        logger.info(f"Ingestion completed. Processed {results['processed_slides']}/{results['total_slides']} slides, {results['processed_images']}/{results['total_images']} images")
+
         if results["errors"]:
             logger.warning(f"Ingestion completed with {len(results['errors'])} errors")
-        
+
         return results
+
 
 def get_ingestion_service() -> IngestionService:
     return IngestionService()

@@ -1,10 +1,11 @@
+from typing import Any, Dict, List
 from uuid import uuid4
-from service_core.models.user_profile_preferences import UserProfilePreferences
+
 from service_core.models.user_profile import UserProfile
+from service_core.models.user_profile_preferences import UserProfilePreferences
 from service_core.services.services_models.slides import SlidesEnvelope
 from service_core.services.services_models.voice_track import VoiceTrackResponse
-from typing import List, Dict, Any
-import json
+
 
 def create_user():
     demo_user = UserProfile(

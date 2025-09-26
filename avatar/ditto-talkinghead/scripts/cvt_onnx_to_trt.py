@@ -1,6 +1,7 @@
-import os
-import torch
 import argparse
+import os
+
+import torch
 
 
 def onnx_to_trt(onnx_file, trt_file, fp16=False, more_cmd=None):
@@ -17,7 +18,7 @@ def onnx_to_trt(onnx_file, trt_file, fp16=False, more_cmd=None):
         trt_file,
         compatiable,
         "--fp16" if fp16 else "",
-        f"--builder-optimization-level=5",
+        "--builder-optimization-level=5",
     ]
     if more_cmd:
         cmd = cmd + more_cmd

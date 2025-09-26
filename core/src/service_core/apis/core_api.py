@@ -1,11 +1,8 @@
 # coding: utf-8
 
-from typing import Dict, List  # noqa: F401
 import importlib
 import pkgutil
-
-from service_core.apis.core_api_base import BaseCoreApi
-import service_core.impl
+from typing import Dict, List  # noqa: F401
 
 from fastapi import (  # noqa: F401
     APIRouter,
@@ -21,14 +18,15 @@ from fastapi import (  # noqa: F401
     Security,
     status,
 )
-
-from service_core.models.extra_models import TokenModel  # noqa: F401
 from pydantic import Field
 from typing_extensions import Annotated
+
+import service_core.impl
+from service_core.apis.core_api_base import BaseCoreApi
 from service_core.models.error import Error
+from service_core.models.extra_models import TokenModel  # noqa: F401
 from service_core.models.prompt_request import PromptRequest
 from service_core.models.prompt_response import PromptResponse
-
 
 router = APIRouter()
 

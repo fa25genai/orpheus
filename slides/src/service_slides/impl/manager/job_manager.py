@@ -1,7 +1,6 @@
 import datetime
 import logging
-from asyncio import Lock
-from asyncio import Condition
+from asyncio import Condition, Lock
 from typing import Dict, Set
 
 
@@ -116,9 +115,7 @@ class JobManager:
             # Remove jobs with update timestamps older than 4 hours
             for job in self.jobs:
                 last_update = self.job_update_timestamps[job]
-                if (
-                    last_update + datetime.timedelta(seconds=4 * 60 * 60)
-                ) < datetime.datetime.now():
+                if (last_update + datetime.timedelta(seconds=4 * 60 * 60)) < datetime.datetime.now():
                     to_remove.add(job)
             for job in to_remove:
                 _log.debug("Removing job %s (Last modified: %s)", job)

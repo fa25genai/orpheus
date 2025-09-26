@@ -11,17 +11,17 @@ Notes
 * Start with: `uvicorn app:app --host 0.0.0.0 --port 8000 --workers 1`
 """
 
-import os
 import math
+import os
 import pickle
 import random
 import threading
-import numpy as np
-import torch
-import librosa
 from typing import Any, Dict, Optional
 
-from fastapi import FastAPI, HTTPException, UploadFile, File, BackgroundTasks, Form
+import librosa
+import numpy as np
+import torch
+from fastapi import BackgroundTasks, FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
@@ -255,3 +255,8 @@ if __name__ == "__main__":
     import uvicorn
 
     uvicorn.run(app, host="0.0.0.0", port=8000, reload=False, workers=1)
+"""TODO: add types; currently excluded from strict mypy via per-file pragma.
+
+Local wrapper around upstream project; keep runtime behavior unchanged.
+"""
+# mypy: ignore-errors

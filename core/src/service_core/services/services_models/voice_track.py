@@ -1,6 +1,7 @@
-
 from __future__ import annotations
-from typing import Any, Dict, List, Literal, Optional, Union
+
+from typing import Any, Dict, List, Optional, Union
+
 from pydantic import BaseModel
 from service_core.models.user_profile import UserProfile
 
@@ -13,4 +14,3 @@ class VoiceTrackResponse(BaseModel):
     # In your code you put a string; keeping it flexible:
     userProfile: UserProfile
     metadata: Optional[str] = None
-    

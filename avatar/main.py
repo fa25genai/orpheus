@@ -1,22 +1,20 @@
-import requests
-from datetime import datetime, timezone
-from typing import List, Optional, Literal, Dict, Tuple, Union
 import os
 import shutil
 import uuid
-from uuid import UUID
+from collections.abc import Generator
+from datetime import datetime, timezone
 from pathlib import Path
+from typing import Dict, List, Literal, Optional, Union
+from uuid import UUID
 
-import httpx
-
-from fastapi import FastAPI, BackgroundTasks, Response, Request
-from fastapi import UploadFile, File, Depends, HTTPException, status
-from fastapi.responses import JSONResponse
-from sqlalchemy import create_engine, String, DateTime, Text, Integer, func, ForeignKey
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship, sessionmaker, Session
-from pydantic import BaseModel, Field, constr
-
+import requests
+from fastapi import BackgroundTasks, Depends, FastAPI, File, HTTPException, Request, Response, UploadFile, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel, Field, StringConstraints
+from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, create_engine, func
+from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, relationship, sessionmaker
+from typing_extensions import Annotated
 
 app = FastAPI(title="Service Video-Generation APIs", version="0.1")
 origins = ["*"]
@@ -45,6 +43,7 @@ VIDEO_ROOT.mkdir(parents=True, exist_ok=True)
 # Models
 # ---------------------------
 
+
 class Preferences(BaseModel):
     answerLength: Optional[Literal["short", "medium", "long"]] = None
     languageLevel: Optional[Literal["basic", "intermediate", "advanced"]] = None
@@ -60,8 +59,11 @@ class UserProfile(BaseModel):
     enrolled_courses: Optional[List[str]] = None
 
 
+SlideText = Annotated[str, StringConstraints(min_length=1)]
+
+
 class GenerateRequest(BaseModel):
-    slideMessages: List[constr(min_length=1)] = Field(..., min_items=1)
+    slideMessages: Annotated[List[SlideText], Field(min_length=1)] = Field(default=...)
     promptId: UUID
     courseId: str
     userProfile: UserProfile
@@ -103,6 +105,7 @@ class AvatarCreatedResponse(BaseModel):
 # DB layer (SQLAlchemy 2.x)
 # ---------------------------
 
+
 class Base(DeclarativeBase):
     pass
 
@@ -111,7 +114,7 @@ engine = create_engine(DATABASE_URL, future=True)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, future=True)
 
 
-def get_db() -> Session:
+def get_db() -> Generator[Session, None, None]:
     db = SessionLocal()
     try:
         yield db
@@ -216,15 +219,15 @@ def _save_upload_to_disk(avatar_id: UUID, upload: UploadFile) -> Path:
     tags=["avatar"],
 )
 def create_avatar(
-        file: Optional[UploadFile] = File(default=None),
-        db: Session = Depends(get_db),
-):
+    file: Optional[UploadFile] = File(default=None),
+    db: Session = Depends(get_db),
+) -> AvatarCreatedResponse:
     # Create avatar id and persist
     avatar_id = uuid.uuid4()
     db_avatar = Avatar(avatar_id=str(avatar_id))
     db.add(db_avatar)
 
-    image_payload = None
+    image_payload: Optional[AvatarImagePayload] = None
     if file is not None:
         saved_path = _save_upload_to_disk(avatar_id, file)
         size = saved_path.stat().st_size
@@ -238,13 +241,13 @@ def create_avatar(
         )
         db.add(db_img)
         db.flush()  # populate server defaults like created_at
-        image_payload = {
-            "id": db_img.id,
-            "filePath": db_img.file_path,
-            "mimeType": db_img.mime_type,
-            "sizeBytes": db_img.size_bytes,
-            "createdAt": db_img.created_at or datetime.now(timezone.utc),
-        }
+        image_payload = AvatarImagePayload(
+            id=UUID(db_img.id),
+            filePath=db_img.file_path,
+            mimeType=db_img.mime_type,
+            sizeBytes=db_img.size_bytes,
+            createdAt=db_img.created_at or datetime.now(timezone.utc),
+        )
 
     db.commit()
     return AvatarCreatedResponse(avatarId=avatar_id, image=image_payload)
@@ -257,10 +260,10 @@ def create_avatar(
     tags=["avatar"],
 )
 def add_avatar_image(
-        avatarId: UUID,
-        file: UploadFile = File(...),
-        db: Session = Depends(get_db),
-):
+    avatarId: UUID,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+) -> AvatarImageResponse:
     # Strict: avatar must exist
     avatar = db.get(Avatar, str(avatarId))
     if not avatar:
@@ -293,6 +296,7 @@ def add_avatar_image(
 # ---------------------------
 # In-memory job store
 # ---------------------------
+
 
 class Job(BaseModel):
     promptId: UUID
@@ -332,12 +336,12 @@ def _eta_seconds(job: Job) -> int:
 
 
 def generate_audio(
-        slide_text: Optional[str] = "Hello students! I want you to drink coffee.",
-        course_id: Optional[str] = "course_123",
-        voice_sample: str = "/app/database/voice_sample/kursche_voice.mp3",
-        prompt_id: Optional[UUID] = None,
-        user_profile: Optional[UserProfile] = None,
-        audio_counter: Optional[int] = 0
+    slide_text: Optional[str] = "Hello students! I want you to drink coffee.",
+    course_id: Optional[str] = "course_123",
+    voice_sample: str = "/app/database/voice_sample/kursche_voice.mp3",
+    prompt_id: Optional[UUID] = None,
+    user_profile: Optional[UserProfile] = None,
+    audio_counter: int = 0,
 ) -> Optional[str]:
     """
     Generate a WAV file for one slide.
@@ -380,11 +384,11 @@ def generate_audio(
 
 
 def generate_video(
-        audio_path: Optional[str] = None,
-        prompt_id: Optional[UUID] = None,
-        course_id: Optional[str] = None,
-        user_profile: Optional[UserProfile] = None,
-        video_counter: Optional[int] = 0
+    audio_path: Optional[str] = None,
+    prompt_id: Optional[UUID] = None,
+    course_id: Optional[str] = None,
+    user_profile: Optional[UserProfile] = None,
+    video_counter: int = 0,
 ) -> Optional[str]:
     """
     Render MP4 video for one slide using audio and a static image.
@@ -415,7 +419,7 @@ def generate_video(
         "audio": ("audio.wav", open(resolved_audio, "rb"), "audio/wav"),
         "source": ("image.png", open(source_path, "rb"), "image/png"),
     }
-    is_debug = os.getenv('DEBUG', 'not debug')
+    is_debug = os.getenv("DEBUG", "not debug")
     data = {"debug": is_debug}
 
     try:
@@ -451,7 +455,7 @@ def generate_video(
         for v in files.values():
             try:
                 v[1].close()
-            except:
+            except Exception:
                 pass
 
 
@@ -633,10 +637,9 @@ def _run_process_generation(payload: "GenerateRequest") -> None:
     responses={400: {"model": ErrorModel}, 401: {"model": ErrorModel}, 500: {"model": ErrorModel}},
     tags=["video"],
 )
-async def request_video_generation(payload: GenerateRequest,
-                                   background: BackgroundTasks,
-                                   response: Response,
-                                   request: Request):
+async def request_video_generation(
+    payload: GenerateRequest, background: BackgroundTasks, response: Response, request: Request
+) -> GenerationAcceptedResponse:
     now = _utcnow()
 
     # create the per-job output folder now and compute its public URL
@@ -670,7 +673,7 @@ async def request_video_generation(payload: GenerateRequest,
     responses={404: {"model": ErrorModel}},
     tags=["video"],
 )
-def get_generation_status(promptId: UUID):
+def get_generation_status(promptId: UUID) -> GenerationStatusResponse | JSONResponse:
     job = JOBS.get(promptId)
     if not job:
         return JSONResponse(status_code=404, content={"code": "NOT_FOUND", "message": "Request not found"})
@@ -682,5 +685,6 @@ def get_generation_status(promptId: UUID):
         estimatedSecondsLeft=_eta_seconds(job),
         error=job.error,
     )
+
 
 # Run: uvicorn main:app --host 0.0.0.0 --port 8080 --reload
