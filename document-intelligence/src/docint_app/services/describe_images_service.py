@@ -29,12 +29,30 @@ class ImageDescriptionService:
             )
         return self._client
     
-    def _get_image_caption(self, base64_string: str) -> str:
+    def _extract_base64_from_data_url(self, data_url: str) -> str:
         """
-        Generate a caption for a single image from base64 string.
+        Extract base64 string from data URL format.
         
         Args:
-            base64_string: Base64 encoded image data
+            data_url: Data URL in format 'data:image/jpeg;base64,{base64_string}' or just base64 string
+            
+        Returns:
+            Pure base64 string without the data URL prefix
+        """
+        if data_url.startswith('data:'):
+            # Split on comma and take the base64 part
+            parts = data_url.split(',', 1)
+            if len(parts) == 2:
+                return parts[1]
+        # If it's already just base64, return as is
+        return data_url
+
+    def _get_image_caption(self, data_url: str) -> str:
+        """
+        Generate a caption for a single image from data URL or base64 string.
+        
+        Args:
+            data_url: Data URL (data:image/ext;base64,{base64}) or just base64 string
             
         Returns:
             Image caption as string
@@ -45,6 +63,8 @@ class ImageDescriptionService:
         )
 
         try:
+            # Extract base64 string from data URL if needed
+            base64_string = self._extract_base64_from_data_url(data_url)
             image_bytes = base64.b64decode(base64_string)
         except Exception as e:
             print(f"Base64 decode error: {e}")
