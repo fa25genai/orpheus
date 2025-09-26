@@ -59,7 +59,7 @@ class UserProfile(BaseModel):
 
 
 class GenerateRequest(BaseModel):
-    slideMessage: constr(min_length=1)
+    voiceTrack: constr(min_length=1)
     slideNumber: int = Field(..., ge=0)
     promptId: UUID
     courseId: str
@@ -569,18 +569,18 @@ def request_video_generation(
         request: Request
 ):
     """
-    Nimmt einen einzelnen Slide entgegen (payload.slideMessage),
+    Nimmt einen einzelnen Slide entgegen (payload.voiceTrack),
     erwartet eine explizite Slide-Nummer (payload.slideNumber) und enqueued die Aufgabe.
     """
     now = _utcnow()
     _purge_stale_jobs(now)
 
-    # Validierung: Slide-Text
-    text = payload.slideMessage.strip()
+    # Validierung: Voice Track
+    text = payload.voiceTrack.strip()
     if not text:
         return JSONResponse(
             status_code=400,
-            content={"code": "BAD_REQUEST", "message": "slideMessage must not be empty"},
+            content={"code": "BAD_REQUEST", "message": "voiceTrack must not be empty"},
         )
 
     # Ordner existieren lassen
