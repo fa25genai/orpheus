@@ -15,10 +15,12 @@ from service_slides.clients.postprocessing import ApiClient, ApiException, Slide
 from service_slides.clients.postprocessing.api.postprocessing_api import PostprocessingApi
 from service_slides.clients.postprocessing.models.slideset_with_id import SlidesetWithId
 from service_slides.clients.postprocessing.models.store_slideset_request import StoreSlidesetRequest
+from service_slides.clients.status import StatusPatch, StepStatus
 from service_slides.impl.llm_chain.slide_content import generate_single_slide_content
 from service_slides.impl.llm_chain.slide_structure import generate_slide_structure
 from service_slides.impl.manager.job_manager import JobManager, JobStatus
 from service_slides.impl.manager.layout_manager import LayoutManager
+from service_slides.impl.status_helper import update_status
 from service_slides.models.generation_accepted_response import GenerationAcceptedResponse
 from service_slides.models.generation_status_response import GenerationStatusResponse
 from service_slides.models.request_slide_generation_request import RequestSlideGenerationRequest
@@ -86,7 +88,13 @@ class SlidesApiImpl(BaseSlidesApi):
         splitting_model: BaseLanguageModel[Any],
         slidesgen_model: BaseLanguageModel[Any],
     ) -> GenerationAcceptedResponse:
-        _log.info("Starting slide generation request %s", request_slide_generation_request.prompt_id)
+        _log.info(
+            "Starting slide generation request %s", request_slide_generation_request.prompt_id
+        )
+        await update_status(request_slide_generation_request.prompt_id, StatusPatch(
+            stepSlideStructureGeneration=StepStatus.IN_PROGRESS
+        ))
+
         # 1. Generate the slide structure
         structure = await generate_slide_structure(
             model=splitting_model,
@@ -94,6 +102,10 @@ class SlidesApiImpl(BaseSlidesApi):
             available_layouts=await layout_manager.get_available_layouts(request_slide_generation_request.course_id),
         )
         _log.debug("Structure generated for request %s", request_slide_generation_request.prompt_id)
+        await update_status(request_slide_generation_request.prompt_id, StatusPatch(
+            stepSlideStructureGeneration=StepStatus.DONE,
+            slideStructure=structure.as_simple_slide_structure_status()
+        ))
 
         # 2. Initialize job for tracking progress
         await job_manager.init_job(request_slide_generation_request.prompt_id, len(structure.items))
@@ -128,7 +140,10 @@ class SlidesApiImpl(BaseSlidesApi):
 
                 # Update job manager for this completed slide
                 async def update_job() -> None:
-                    await job_manager.finish_page(prompt_id)
+
+                    await update_status(request_slide_generation_request.prompt_id, StatusPatch(
+                        stepSlideGeneration=await job_manager.finish_page(prompt_id)
+                    ))
 
                 asyncio.run(update_job())
 
@@ -181,7 +196,13 @@ class SlidesApiImpl(BaseSlidesApi):
         )
 
 
-async def store_upload_info(job_manager: JobManager, prompt_id: str, content: str, assets: List[SlidesetWithIdAssetsInner]) -> None:
+async def store_upload_info(
+    job_manager: JobManager, prompt_id: str, content: str, assets: List[SlidesetWithIdAssetsInner]
+) -> None:
+    await update_status(prompt_id, StatusPatch(
+        stepSlidePostprocessing=StepStatus.IN_PROGRESS
+    ))
+
     # Save all slides to markdown file
     async with ApiClient(get_postprocessing_api_config()) as api_client:
         postprocessor = PostprocessingApi(api_client)
@@ -196,6 +217,9 @@ async def store_upload_info(job_manager: JobManager, prompt_id: str, content: st
                     ),
                 )
             )
+            await update_status(prompt_id, StatusPatch(
+                stepSlidePostprocessing=StepStatus.DONE
+            ))
         except ApiException as ex:
             _log.error(
                 "Error when calling the postprocessing API for request %s: %d %s",
@@ -204,7 +228,13 @@ async def store_upload_info(job_manager: JobManager, prompt_id: str, content: st
                 ex.reason,
             )
             await job_manager.fail(prompt_id)
+            await update_status(prompt_id, StatusPatch(
+                stepSlidePostprocessing=StepStatus.FAILED
+            ))
         except Exception as e:
             _log.error("Error when calling the postprocessing API for request %s", prompt_id, exc_info=e)
             await job_manager.fail(prompt_id)
+            await update_status(prompt_id, StatusPatch(
+                stepSlidePostprocessing=StepStatus.FAILED
+            ))
         await job_manager.finish_upload(prompt_id, response.web_url, response.pdf_url)

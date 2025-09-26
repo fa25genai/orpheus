@@ -13,6 +13,9 @@ from service_slides.impl.llm_chain.shared_llm import invoke_llm
 from service_slides.impl.manager.layout_manager import LayoutDescription
 from service_slides.models.slide_item import SlideItem
 from service_slides.models.slide_structure import SlideStructure
+from service_slides.impl.manager.layout_manager import LayoutDescription
+from service_slides.clients.status.models.slide_structure import SlideStructure as SlideStructureStatus
+from service_slides.clients.status.models.slide_structure import SlideItem as SlideItemStatus
 
 
 class DetailedSlideStructureItem(BaseModel):
@@ -37,6 +40,11 @@ class DetailedSlideStructure(BaseModel):
     def as_simple_slide_structure(self) -> SlideStructure:
         return SlideStructure(
             pages=[SlideItem(content=item.content) for item in self.items],
+        )
+
+    def as_simple_slide_structure_status(self) -> SlideStructureStatus:
+        return SlideStructureStatus(
+            pages=[SlideItemStatus(content=item.content) for item in self.items],
         )
 
 
