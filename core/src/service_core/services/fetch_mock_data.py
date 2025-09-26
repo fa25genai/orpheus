@@ -8,35 +8,33 @@ from typing import List, Dict, Any
 
 def create_demo_user():
     demo_user = UserProfile(
-        id=uuid4(),
-        role="student",
-        language="english",
-        preferences=UserProfilePreferences(
-            answer_length="medium",
-            language_level="intermediate",
-            expertise_level="beginner",
-            include_pictures="few",
-        ),
-        enrolled_courses=["SE001", "cs001"],
-    )
+            id=str(uuid4()),
+            role="student",
+            language="english", 
+            preferences=UserProfilePreferences(
+                answerLength="medium",
+                languageLevel="intermediate",
+                expertiseLevel="beginner",
+                includePictures="few"
+            ),
+            enrolled_courses=["SE001","cs001"]
+        )
     return demo_user
-
 
 def create_demo_user_for_avatar():
     demo_user = {
-        "id": str(uuid4()),
-        "role": "student",
-        "language": "english",
-        "preferences": {
-            "answerLength": "medium",
-            "languageLevel": "intermediate",
-            "expertiseLevel": "beginner",
-            "includePictures": "few",
-        },
-        "enrolledCourses": ["SE001", "cs001"],
-    }
+            "id": str(uuid4()),
+            "role": "student",
+            "language": "english", 
+            "preferences": {
+                "answer_length": "medium",
+                "language_level": "intermediate",
+                "expertise_level": "beginner",
+                "include_pictures": "few"
+            },
+            "enrolled_courses": ["SE001","cs001"]
+        }
     return demo_user
-
 
 def create_demoretrieved_content():
     retrieved_content: List[Dict[str, Any]] = [
@@ -153,6 +151,6 @@ def create_demo_voice_track():
             "Vielen Dank für Ihre Aufmerksamkeit!",
         ],
         userProfile=create_demo_user_for_avatar(),
-        metadata="",
+        metadata=""
     )
     return voice_track_response

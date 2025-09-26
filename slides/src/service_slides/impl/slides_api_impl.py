@@ -30,22 +30,6 @@ class SlidesApiImpl(BaseSlidesApi):
     def __init_subclass__(cls: Any, **kwargs: Any) -> None:
         super().__init_subclass__(**kwargs)
 
-    async def get_content_url(
-        self,
-        promptId: Annotated[
-            StrictStr, Field(description="The promptId returned by /v1/slides/generate")
-        ],
-        job_manager: JobManager,
-    ) -> GenerationStatusResponse:
-        async with job_manager.condition_variable:
-            while True:
-                status = await self.get_content_url(promptId, job_manager)
-                if status is None or status.status in ["DONE", "FAILED"]:
-                    return status
-
-                _log.debug("Waiting on status change for %s", promptId)
-                await job_manager.condition_variable.wait()
-
     async def get_generation_status(
         self,
         promptId: Annotated[

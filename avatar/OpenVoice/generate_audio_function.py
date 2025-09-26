@@ -165,7 +165,7 @@ class UserProfile(BaseModel):
     role: Literal["student", "instructor"]
     language: Literal["german", "english"]
     preferences: Optional[Preferences] = None
-    enrolledCourses: Optional[List[str]] = None
+    enrolled_courses: Optional[List[str]] = None
 
 
 class GenerateAudioRequest(BaseModel):
