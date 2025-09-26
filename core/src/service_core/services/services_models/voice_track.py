@@ -8,7 +8,8 @@ from service_core.models.user_profile import UserProfile
 class VoiceTrackResponse(BaseModel):
     promptId: str
     courseId: Optional[str] = None
-    slideMessages: List[str]
+    slideMessage: str
+    slideNumber: int
     # In your code you put a string; keeping it flexible:
     userProfile: UserProfile
     metadata: Optional[str] = None
