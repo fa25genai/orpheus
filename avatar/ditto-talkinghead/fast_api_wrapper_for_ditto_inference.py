@@ -255,3 +255,8 @@ if __name__ == "__main__":
     import uvicorn
 
     uvicorn.run(app, host="0.0.0.0", port=8000, reload=False, workers=1)
+"""TODO: add types; currently excluded from strict mypy via per-file pragma.
+
+Local wrapper around upstream project; keep runtime behavior unchanged.
+"""
+# mypy: ignore-errors

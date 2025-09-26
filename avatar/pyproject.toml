@@ -33,6 +33,10 @@ exclude = [
   "OpenVoice/**",
   "ditto-talkinghead/**",
 ]
+extend-include = [
+  "OpenVoice/generate_audio_function.py",
+  "ditto-talkinghead/fast_api_wrapper_for_ditto_inference.py",
+]
 
 [tool.ruff.lint]
 select = ["E", "F", "I"]
@@ -43,5 +47,5 @@ strict = true
 warn_unused_ignores = true
 warn_redundant_casts = true
 no_implicit_optional = true
-exclude = "(OpenVoice|ditto-talkinghead|test)"
+exclude = '^(OpenVoice/(?!generate_audio_function\.py$).*)|(ditto-talkinghead/(?!fast_api_wrapper_for_ditto_inference\.py$).*)|test/.*$'
 ignore_missing_imports = true
