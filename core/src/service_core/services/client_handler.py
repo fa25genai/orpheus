@@ -31,24 +31,19 @@ async def decompose_inputs(prompt_request):
 
 async def query_document_intelligence(subqueries, client):
     tracker.log("Querying document intelligence")
-    retrieved_content = []
-
     # DEBUG HANDLING STARTS
     if (DEBUG):
         return mock_service.create_retrieved_content()
     # DEBUG HANDLING ENDS
 
-    for idx, subquery in enumerate(subqueries):
-        di_response = await client.get(
-            f"{DI_API_URL}/v1/retrieval/abc",
-            params={"courseId": "abc", "promptQuery": str(subquery)},
-            timeout=300.0,
-        )
-        di_response.raise_for_status()
-        di_data = di_response.json()
-        tracker.log("di_data received:", di_data)
-        retrieved_content.append(di_data)
-    return retrieved_content
+    di_response = await client.get(
+        f"{DI_API_URL}/v1/retrieval/abc",
+        params={"courseId": "abc", "promptQuery": str(subquery)},
+        timeout=300.0,
+    )
+    di_response.raise_for_status()
+    di_data = di_response.json()
+    return di_data
 
 def generate_script(retrieved_content):
     tracker.log("Generating script")
