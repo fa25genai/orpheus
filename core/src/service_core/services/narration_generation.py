@@ -13,9 +13,11 @@
 #                                                                              #
 ################################################################################
 import json
+
+from service_core.services.helpers.debug import debug_print, enable_debug
 from service_core.services.helpers.llm import getLLM
-from service_core.services.helpers.debug import enable_debug, debug_print
 from service_core.services.helpers.loaders import load_prompt
+
 
 def generate_narrations(lecture_script, example_slides, user_profile, debug=False):
     """

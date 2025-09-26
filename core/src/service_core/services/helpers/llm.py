@@ -13,8 +13,10 @@
 #                                                                              #
 ################################################################################
 import os
-from langchain_community.chat_models import ChatOllama
+
 from dotenv import load_dotenv
+from langchain_community.chat_models import ChatOllama
+
 
 def getLLM():
     load_dotenv()

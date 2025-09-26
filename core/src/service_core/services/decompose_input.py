@@ -8,13 +8,15 @@ It will try HuggingFace first (if configured), but automatically fall back to
 Gemini (via google-generativeai) if HuggingFace errors out.
 """
 
-import os
 import json
+import os
 import textwrap
-from typing import Dict, Any
-from pydantic import BaseModel
+from typing import Any, Dict
+
 from dotenv import load_dotenv
 from langchain_community.chat_models import ChatOllama
+from pydantic import BaseModel
+
 # Load environment variables from .env file
 load_dotenv()
 

@@ -1,14 +1,15 @@
-from fastapi import HTTPException
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
 from uuid import UUID, uuid4
 
+from fastapi import HTTPException
+
 from ..apis.core_api_base import BaseCoreApi
+from ..app_state import app_state
 from ..models.prompt_request import PromptRequest
 from ..models.prompt_response import PromptResponse
 from ..services.client_handler import process_prompt
-from concurrent.futures import ThreadPoolExecutor
-import asyncio
 
-from ..app_state import app_state
 
 def get_executor(prompt_id: UUID) -> ThreadPoolExecutor:
     with app_state.lock:
@@ -18,6 +19,7 @@ def get_executor(prompt_id: UUID) -> ThreadPoolExecutor:
     return app_state.executor
 
 from .tracker import tracker
+
 
 class CoreApiImpl(BaseCoreApi):
     async def create_lecture_from_prompt(self, prompt_request: PromptRequest) -> PromptResponse:

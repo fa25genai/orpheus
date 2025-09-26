@@ -1,14 +1,15 @@
-import httpx
-import logging
 import json
+
+import httpx
+
+from service_core.impl.tracker import tracker
 from service_core.services import (
     decompose_input,
     fetch_mock_data,
-    script_generation,
     narration_generation,
+    script_generation,
 )
 from service_core.services.fetch_mock_data import create_demoretrieved_content
-from service_core.impl.tracker import tracker
 
 DI_API_URL = "http://docint:25565"
 SLIDES_API_URL = "http://slides:30606"

@@ -12,12 +12,15 @@ Output format:
   "Images": [{"image": "...", "description": "..."}]
 }
 """
-from service_core.services.helpers.llm import getLLM  
-import json
-from typing import Dict, Any, List
-from service_core.services.helpers.handle_retrieved import convert_json_structure
 import copy
+import json
+from typing import Any, Dict, List
+
 from service_core.models.user_profile import UserProfile
+from service_core.services.helpers.handle_retrieved import convert_json_structure
+from service_core.services.helpers.llm import getLLM
+
+
 # -----------------------------
 # JSON helpers
 # -----------------------------

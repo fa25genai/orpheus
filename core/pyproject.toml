@@ -34,6 +34,14 @@ build-backend = "poetry.core.masonry.api"
 [tool.ruff]
 line-length = 100
 target-version = "py313"
+exclude = ["src/service_core/apis", "src/service_core/models"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+
+[tool.ruff.lint.per-file-ignores]
+"src/service_core/services/script_generation.py" = ["E501"]
+"src/service_core/services/fetch_mock_data.py" = ["E501"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I"]

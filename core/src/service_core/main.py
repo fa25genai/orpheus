@@ -1,9 +1,10 @@
 # coding: utf-8
 
+
 from fastapi import FastAPI
-from contextlib import asynccontextmanager
-from .apis.core_api import router as CoreApiRouter
 from fastapi.middleware.cors import CORSMiddleware
+
+from .apis.core_api import router as CoreApiRouter
 
 # @asynccontextmanager
 # async def lifespan(app: FastAPI):
