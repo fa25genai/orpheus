@@ -21,7 +21,7 @@ import torch
 import librosa
 from typing import Any, Dict, Optional
 
-from fastapi import FastAPI, HTTPException, UploadFile, File, BackgroundTasks
+from fastapi import FastAPI, HTTPException, UploadFile, File, BackgroundTasks, Form
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
@@ -172,7 +172,9 @@ def health():
 async def infer(
     audio: UploadFile = File(..., description="WAV audio file"),
     source: UploadFile = File(..., description="Source image or video"),
-    background_tasks: BackgroundTasks = BackgroundTasks()
+    background_tasks: BackgroundTasks = BackgroundTasks(),
+    debug: str = Form("not debug", description="is debug?"),
+    
 ):
     global _SDK
     if _SDK is None:
@@ -185,6 +187,16 @@ async def infer(
     source_ext = os.path.splitext(source.filename or "source.png")[1] or ".png"
     source_tmp = os.path.join(tmp_dir, f"source_{random.getrandbits(32)}{source_ext}")
     output_tmp = os.path.join(tmp_dir, f"output_{random.getrandbits(32)}.mp4")
+
+    if debug == 'debug':
+        path_to_debug_mp4 = os.getenv("DITTO_DEBUG_MP4_PATH", "./debug/mock.mp4")
+        return FileResponse(
+            path=path_to_debug_mp4,
+            media_type="video/mp4",
+            filename=os.path.basename(path_to_debug_mp4),
+            headers={"Cache-Control": "no-store"},
+            background=background_tasks,
+        )
 
     try:
         # Save audio
