@@ -19,10 +19,8 @@ from service_core.services.fetch_mock_data import (
     create_demoretrieved_content as _create_demo_content,
 )
 
-create_demoretrieved_content: Callable[[], List[Dict[str, Any]]] = cast(
-    Callable[[], List[Dict[str, Any]]], _create_demo_content
-)
-create_demo_user = cast(Callable[[], _UserProfile], _create_demo_user)
+create_demoretrieved_content: Callable[[], List[Dict[str, Any]]] = _create_demo_content
+create_demo_user: Callable[[], _UserProfile] = _create_demo_user
 
 DI_API_URL = "http://docint:25565"
 SLIDES_API_URL = "http://slides:30606"

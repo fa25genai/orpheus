@@ -13,11 +13,17 @@ export function setUploadedFilesCookie(newFile: UploadedFile) {
       const cookie = document.cookie
         .split("; ")
         .find((row) => row.startsWith(`${cookieName}=`));
-      return cookie
-        ? (JSON.parse(
-            decodeURIComponent(cookie.split("=")[1])
-          ) as UploadedFile[])
-        : [];
+      if (!cookie) return [];
+      const parsed = JSON.parse(decodeURIComponent(cookie.split("=")[1]));
+      if (!Array.isArray(parsed)) return [];
+      const safe = parsed.filter(
+        (x) =>
+          x &&
+          typeof x.documentId === "string" &&
+          typeof x.name === "string" &&
+          typeof x.size === "number"
+      ) as UploadedFile[];
+      return safe;
     } catch {
       return [];
     }
