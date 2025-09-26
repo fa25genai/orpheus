@@ -42,20 +42,16 @@ paths:
             schema:
               type: object
               required:
-                - slideMessages
+                - voiceTrack
                 - slideNumber
                 - promptId
                 - courseId
                 - userProfile
               properties:
-                slideMessages:
-                  type: array
-                  description: "Per-slide text blocks in order."
-                  minItems: 1
-                  items:
-                    type: string
-                    description: "The spoken/script text for one slide."
-                    minLength: 1
+                voiceTrack:
+                  type: string
+                  description: "The voice track that the avatar shall speak."
+                  example: "Test"
                 slideNumber:
                   type: integer
                   minimum: 0
