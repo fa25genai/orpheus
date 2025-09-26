@@ -338,7 +338,7 @@ def _eta_seconds(job: Job) -> int:
 def generate_audio(
     slide_text: Optional[str] = "Hello students! I want you to drink coffee.",
     course_id: Optional[str] = "course_123",
-    voice_sample: str = "/app/database/voice_sample/kursche_voice.mp3",
+    voice_sample: str = "/app/database/voice_sample/krusche_voice.mp3",
     prompt_id: Optional[UUID] = None,
     user_profile: Optional[UserProfile] = None,
     audio_counter: int = 0,
