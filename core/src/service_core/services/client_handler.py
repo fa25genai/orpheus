@@ -6,7 +6,7 @@ from httpx import AsyncClient, Response
 
 from service_core.impl.tracker import tracker
 from service_core.models.prompt_request import PromptRequest
-from service_core.models.user_profile import UserProfile
+from service_core.models.user_profile import UserProfile as _UserProfile
 from service_core.services import (
     decompose_input,
     narration_generation,
@@ -22,7 +22,7 @@ from service_core.services.fetch_mock_data import (
 create_demoretrieved_content: Callable[[], List[Dict[str, Any]]] = cast(
     Callable[[], List[Dict[str, Any]]], _create_demo_content
 )
-create_demo_user = cast(Callable[[], UserProfile], _create_demo_user)
+create_demo_user = cast(Callable[[], _UserProfile], _create_demo_user)
 
 DI_API_URL = "http://docint:25565"
 SLIDES_API_URL = "http://slides:30606"

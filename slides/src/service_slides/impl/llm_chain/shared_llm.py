@@ -86,4 +86,7 @@ def create_base_model(model_name: str, temperature: float = 0.0, max_tokens: Opt
             model_kwargs["max_tokens"] = max_tokens
         return ChatBedrockConverse(**model_kwargs)  # type: ignore
 
-    raise RuntimeError("No LLM providers available. Please set one of: OPENAI_API_KEY, GOOGLE_API_KEY, OLLAMA_LLM_HOST, or AWS_BEARER_TOKEN_BEDROCKin your environment variables.")
+    raise RuntimeError(
+        "No LLM providers available. Please set one of: OPENAI_API_KEY, GOOGLE_API_KEY, "
+        "OLLAMA_LLM_HOST, or AWS_BEARER_TOKEN_BEDROCK in your environment variables."
+    )

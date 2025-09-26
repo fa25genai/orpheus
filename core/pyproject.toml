@@ -16,7 +16,7 @@ packages = [{ include = "service_core", from = "src" }]
 python = "^3.13"
 fastapi = "0.117.1"
 langchain = "1.0.0a6"
-langchain-community = "^0.3.29"
+langchain-community = ">=0.3.29,<1.0.0"
 uvicorn = { extras = ["standard"], version = ">=0.36.0,<0.37.0" }
 openapi-generator = ">=1.0.6,<2.0.0"
 boto3 = ">=1.40.39,<2.0.0"
