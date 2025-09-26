@@ -13,15 +13,14 @@
 
 
 from __future__ import annotations
+
+import json
 import pprint
 import re  # noqa: F401
-import json
-
-
-
-
-from pydantic import BaseModel, ConfigDict, Field, StrictStr, field_validator
 from typing import Any, ClassVar, Dict, List, Optional
+
+from pydantic import BaseModel, Field, StrictStr, field_validator
+
 try:
     from typing import Self
 except ImportError:

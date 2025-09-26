@@ -13,12 +13,20 @@
 #                                                                              #
 ################################################################################
 import json
+from typing import Any, Dict
+
+from service_core.models.user_profile import UserProfile
+from service_core.services.helpers.debug import debug_print, enable_debug
 from service_core.services.helpers.llm import getLLM
-from service_core.services.helpers.debug import enable_debug, debug_print
 from service_core.services.helpers.loaders import load_prompt
 
 
-def generate_narrations(lecture_script, example_slides, user_profile, debug=False):
+def generate_narrations(
+    lecture_script: str,
+    example_slides: Dict[str, Any],
+    user_profile: UserProfile,
+    debug: bool = False,
+) -> Dict[str, Any]:
     """
     Generates narrations for lecture slides based on a script and user profile.
 
@@ -44,9 +52,7 @@ def generate_narrations(lecture_script, example_slides, user_profile, debug=Fals
     slide_messages = []
 
     # Get prompt templates JSON string
-    prompt_templates_json = load_prompt(
-        "src/service_core/services/prompts/narration.json"
-    )
+    prompt_templates_json = load_prompt("src/service_core/services/prompts/narration.json")
 
     # Load the prompt templates
     prompt_templates = json.loads(prompt_templates_json)
@@ -58,7 +64,7 @@ def generate_narrations(lecture_script, example_slides, user_profile, debug=Fals
             prompt_templates["base_prompt"].format(user_profile=user_profile),
             prompt_templates["lecture_script_section"].format(lecture_script=lecture_script),
             prompt_templates["narration_history_section"].format(narration_history=narration_history),
-            prompt_templates["slide_content_section"].format(page_content=page_content)
+            prompt_templates["slide_content_section"].format(page_content=page_content),
         ]
 
         # Add specific instructions for first or last slide
@@ -75,22 +81,18 @@ def generate_narrations(lecture_script, example_slides, user_profile, debug=Fals
         response = llm.invoke(prompt)
         narration = response.content
 
-        debug_print(f"--- Slide {i+1} ---")
+        debug_print(f"--- Slide {i + 1} ---")
         debug_print(f"Content: {page_content}")
         debug_print(f"Generated Narration: {narration}\n")
 
-        narration_history += f"Slide {i+1} Narration: {narration}\n"
+        narration_history += f"Slide {i + 1} Narration: {narration}\n"
         slide_messages.append(narration)
     # Prepare output data with actual user profile
     output_data = {
         "slideMessages": slide_messages,
         "promptId": example_slides["promptId"],
         "courseId": user_profile.enrolled_courses[0] if user_profile.enrolled_courses else None,
-        "userProfile": json.loads(user_profile.model_dump_json(
-                by_alias=False, exclude_unset=True
-            )
-        ),
+        "userProfile": json.loads(user_profile.model_dump_json(by_alias=False, exclude_unset=True)),
     }
 
     return output_data
-

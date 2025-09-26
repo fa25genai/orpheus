@@ -1,6 +1,6 @@
-import numpy as np
 import mediapipe as mp
-from mediapipe.tasks.python import vision, BaseOptions
+import numpy as np
+from mediapipe.tasks.python import BaseOptions, vision
 
 
 class Landmark478:

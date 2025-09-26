@@ -35,7 +35,6 @@ from __future__ import annotations
 
 import json
 import os
-import time
 import uuid
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
@@ -91,30 +90,24 @@ class WeaviateGraphStore:
         return r.json()
 
     def _post(self, path: str, payload: Dict[str, Any]) -> Dict[str, Any]:
-        r = self.session.post(
-            f"{self.base_url}{path}", data=json.dumps(payload), timeout=self.timeout_s
-        )
+        r = self.session.post(f"{self.base_url}{path}", data=json.dumps(payload), timeout=self.timeout_s)
         self._raise_for_bad(r, f"POST {path}")
         if r.text.strip():
             return r.json()
         return {}
 
     def _put(self, path: str, payload: Dict[str, Any]) -> Dict[str, Any]:
-        r = self.session.put(
-            f"{self.base_url}{path}", data=json.dumps(payload), timeout=self.timeout_s
-        )
+        r = self.session.put(f"{self.base_url}{path}", data=json.dumps(payload), timeout=self.timeout_s)
         self._raise_for_bad(r, f"PUT {path}")
         if r.text.strip():
             return r.json()
         return {}
-    
+
     def _delete(self, path: str, payload: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-        r = self.session.delete(f"{self.base_url}{path}",
-                                data=(json.dumps(payload) if payload is not None else None),
-                                timeout=self.timeout_s)
+        r = self.session.delete(f"{self.base_url}{path}", data=(json.dumps(payload) if payload is not None else None), timeout=self.timeout_s)
         self._raise_for_bad(r, f"DELETE {path}")
         return r.json() if r.text.strip() else {}
-    
+
     @staticmethod
     def _similarity_from_distance(distance: Optional[float]) -> float:
         """
@@ -181,7 +174,7 @@ class WeaviateGraphStore:
         }}
         """
         res = self._post("/v1/graphql", {"query": gql})
-        return (res.get("data", {}).get("Get", {}).get("SlideImage", []) or [])
+        return res.get("data", {}).get("Get", {}).get("SlideImage", []) or []
 
     # Schema
     def ensure_schema(self) -> None:
@@ -305,7 +298,7 @@ class WeaviateGraphStore:
         # Try create first (POST); if it already exists, update (PUT)
         try:
             self._post("/v1/objects", payload)
-        except WeaviateError as e:
+        except WeaviateError:
             # Duplicate/exists -> update instead
             self._put(f"/v1/objects/{uid}", payload)
         return uid
@@ -367,7 +360,6 @@ class WeaviateGraphStore:
 
         return created_ids
 
-
     # Query (dual-channel with fusion: text on Slide + image-description on SlideImage)
     def search_slides_fused_with_images(
         self,
@@ -376,7 +368,7 @@ class WeaviateGraphStore:
         course_id: Optional[str] = None,
         k: int = 5,
         image_query_vector: Optional[Sequence[float]] = None,
-        alpha: float = 0.8,             # weight for text; (1 - alpha) for image
+        alpha: float = 0.8,  # weight for text; (1 - alpha) for image
         per_slide_image_agg: str = "max",  # "max" or "mean"
         include_distance: bool = True,
         similarity_threshold: float = 0.5,  # minimum similarity threshold (0.0 to 1.0)
@@ -397,9 +389,7 @@ class WeaviateGraphStore:
         # --- 1) Text ANN on Slide ---
         where_clause = ""
         if course_id:
-            where_clause = (
-                'where: { operator: Equal, path: ["courseId"], valueText: "%s" }' % course_id
-            )
+            where_clause = 'where: { operator: Equal, path: ["courseId"], valueText: "%s" }' % course_id
         gql_slides = f"""
         {{
           Get {{
@@ -435,9 +425,7 @@ class WeaviateGraphStore:
         img_vec = image_query_vector if image_query_vector is not None else query_vector
         where_img = ""
         if course_id:
-            where_img = (
-                'where: { operator: Equal, path: ["courseId"], valueText: "%s" }' % course_id
-            )
+            where_img = 'where: { operator: Equal, path: ["courseId"], valueText: "%s" }' % course_id
         gql_images = f"""
         {{
           Get {{
@@ -460,6 +448,7 @@ class WeaviateGraphStore:
 
         # Aggregate image channel per slide
         from collections import defaultdict
+
         per_slide_vals: Dict[tuple, List[float]] = defaultdict(list)
         for im in img_hits:
             key = (im.get("courseId"), im.get("slideNo"))
@@ -491,7 +480,7 @@ class WeaviateGraphStore:
 
         # Rank by fused score desc
         fused.sort(key=lambda x: x[1], reverse=True)
-        
+
         # Apply similarity threshold filter before taking top k
         filtered_fused = [(key, score) for (key, score) in fused if score >= similarity_threshold]
         top_keys = [k for (k, _) in filtered_fused[:k]]
@@ -528,10 +517,7 @@ class WeaviateGraphStore:
                 """
                 res_one = self._post("/v1/graphql", {"query": gql_one})
                 recs = res_one.get("data", {}).get("Get", {}).get("Slide", []) or []
-                s_meta = recs[0] if recs else {
-                    "courseId": c_id, "slideNo": s_no, "documentId": None,
-                    "slideDescription": "", "_additional": {"id": None}
-                }
+                s_meta = recs[0] if recs else {"courseId": c_id, "slideNo": s_no, "documentId": None, "slideDescription": "", "_additional": {"id": None}}
 
             # Fetch all images for this slide
             images_full = self._fetch_all_images_for_slide(c_id, s_no, limit=64)
@@ -613,13 +599,7 @@ class WeaviateGraphStore:
         res_images = self._post("/v1/graphql", {"query": gql_images})
         images = res_images.get("data", {}).get("Get", {}).get("SlideImage", []) or []
 
-        return {
-            "courseId": course_id,
-            "totalSlides": len(slides),
-            "totalImages": len(images),
-            "slides": slides,
-            "images": images
-        }
+        return {"courseId": course_id, "totalSlides": len(slides), "totalImages": len(images), "slides": slides, "images": images}
 
     # Mapping to OpenAPI response shape
     @staticmethod

@@ -1,6 +1,6 @@
 import numpy as np
-from ..models.lmdm import LMDM
 
+from ..models.lmdm import LMDM
 
 """
 lmdm_cfg = {

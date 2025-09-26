@@ -1,5 +1,5 @@
-from typing import List, Dict
 from string import Template
+from typing import Dict, List
 
 
 class LayoutDescription:
@@ -336,9 +336,7 @@ ${right}
             ),
             LayoutDescription("default", "The most basic layout, to display any kind of content."),
             LayoutDescription("end", "The final page for the presentation."),
-            LayoutDescription(
-                "fact", "To show some fact or data with a lot of prominence on the screen."
-            ),
+            LayoutDescription("fact", "To show some fact or data with a lot of prominence on the screen."),
             LayoutDescription("full", "Use all the space of the screen to display the content."),
             LayoutDescription(
                 "image-left",
@@ -364,12 +362,8 @@ ${right}
             ),
             LayoutDescription("none", "A layout without any existing styling."),
             LayoutDescription("quote", "To display a quotation with prominence."),
-            LayoutDescription(
-                "section", "Used to mark the beginning of a new presentation section."
-            ),
-            LayoutDescription(
-                "statement", "Make an affirmation/statement as the main page content."
-            ),
+            LayoutDescription("section", "Used to mark the beginning of a new presentation section."),
+            LayoutDescription("statement", "Make an affirmation/statement as the main page content."),
             LayoutDescription("two-cols", "Separates the page content in two columns."),
             LayoutDescription(
                 "two-cols-header",

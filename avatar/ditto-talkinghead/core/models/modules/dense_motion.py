@@ -4,10 +4,11 @@
 The module that predicting a dense motion from sparse motion representation given by kp_source and kp_driving
 """
 
-from torch import nn
-import torch.nn.functional as F
 import torch
-from .util import Hourglass, make_coordinate_grid, kp2gaussian
+import torch.nn.functional as F
+from torch import nn
+
+from .util import Hourglass, kp2gaussian, make_coordinate_grid
 
 
 class DenseMotionNetwork(nn.Module):

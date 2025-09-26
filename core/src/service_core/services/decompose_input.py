@@ -8,15 +8,18 @@ It will try HuggingFace first (if configured), but automatically fall back to
 Gemini (via google-generativeai) if HuggingFace errors out.
 """
 
-import os
 import json
+import os
 import textwrap
-from typing import Dict, Any
-from pydantic import BaseModel
+from typing import Any, Dict, Optional, cast
+
 from dotenv import load_dotenv
 from langchain_community.chat_models import ChatOllama
+from pydantic import BaseModel
+
 # Load environment variables from .env file
 load_dotenv()
+
 
 # -----------------------------
 # CONFIGURATION
@@ -26,28 +29,31 @@ class Config(BaseModel):
     llama_model: str = os.environ.get("LLAMA_MODEL", "")
     llama_api_url: str = os.environ.get("LLAMA_API_URL", "")
 
+
 cfg = Config()
 
 
 # -----------------------------
 # Llama API helper
 # -----------------------------
-def call_llama(prompt: str, model: str = None, max_tokens: int = 512) -> str:
+def call_llama(prompt: str, model: Optional[str] = None, max_tokens: int = 512) -> str:
     """Call Llama API via LangChain ChatOllama"""
     model = model or cfg.llama_model
     if not cfg.llama_api_key:
         raise RuntimeError("LLAMA_API_KEY not set")
-    
+
     # Initialize ChatOllama with custom endpoint and API key
     llm = ChatOllama(
         model=model,
         base_url=cfg.llama_api_url,
         headers={"Authorization": f"Bearer {cfg.llama_api_key}"},
     )
-    
+
     # Generate response
     response = llm.invoke(prompt)
-    return response.content.strip() if hasattr(response, 'content') else str(response).strip()
+    text = getattr(response, "content", response)
+    return str(text).strip()
+
 
 # -----------------------------
 # Unified LLM caller
@@ -56,6 +62,7 @@ def llm_call(prompt: str) -> str:
     if cfg.llama_api_key:
         return call_llama(prompt)
     raise RuntimeError("No valid LLM API key available (Llama)")
+
 
 # -----------------------------
 # Question decomposition
@@ -70,16 +77,14 @@ Rules:
 - Do not add explanations outside JSON.
 """)
 
+
 def decompose_question(question: str) -> Dict[str, Any]:
     prompt = DECOMPOSE_PROMPT + "\n\n" + json.dumps({"original_question": question})
     raw = llm_call(prompt)
     try:
-        return json.loads(raw)
+        return cast(Dict[str, Any], json.loads(raw))
     except Exception:
         start, end = raw.find("{"), raw.rfind("}")
         if start != -1 and end != -1:
-            return json.loads(raw[start:end+1])
+            return cast(Dict[str, Any], json.loads(raw[start : end + 1]))
         raise RuntimeError("Failed to parse JSON from LLM output: " + raw)
-
-
-

@@ -154,7 +154,7 @@ export default function Home() {
       }
 
       await new Promise((resolve) =>
-        setTimeout(resolve, (avatarResponse?.estimatedSecondsLeft ?? 3) * 1000)
+        setTimeout(resolve, Math.max(3000, (avatarResponse?.estimatedSecondsLeft ?? 3) * 1000))
       );
     }
 

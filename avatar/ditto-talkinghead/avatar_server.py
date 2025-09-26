@@ -1,16 +1,19 @@
 # ditto_server.py — FastAPI wrapper for Ditto Talking Head
-import os, tempfile, json, asyncio
+import asyncio
+import json
+import os
+import tempfile
 from pathlib import Path
-from typing import Dict, Any
+from typing import Any, Dict
 
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse, ORJSONResponse
+from inference import run as run_inference
 from pydantic import BaseModel
 from starlette.concurrency import run_in_threadpool
 
 # Ditto imports (assumes you run from the repo root)
 from stream_pipeline_offline import StreamSDK
-from inference import run as run_inference
 
 # --- Config via environment (edit paths if needed) ---
 DITTO_DATA_ROOT = Path(os.getenv("DITTO_DATA_ROOT", "./checkpoints/ditto_pytorch")).resolve()
@@ -36,8 +39,11 @@ class InferParams(BaseModel):
 
 @app.get("/health")
 async def health():
-    import torch, platform, sys
+    import platform
+    import sys
+
     import onnxruntime as ort
+    import torch
     return {
         "python": sys.version.split()[0],
         "device": "cuda" if torch.cuda.is_available() else ("mps" if torch.backends.mps.is_available() else "cpu"),
