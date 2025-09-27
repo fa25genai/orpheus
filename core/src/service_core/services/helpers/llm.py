@@ -13,9 +13,11 @@
 #                                                                              #
 ################################################################################
 import os
+from typing import cast
 
 from dotenv import load_dotenv
 from langchain_community.chat_models import ChatOllama
+from langchain_core.messages import BaseMessage
 
 
 def getLLM() -> ChatOllama:
@@ -30,7 +32,8 @@ def getLLM() -> ChatOllama:
     return llm
 
 
-def ask_llm(prompt: str):
+def ask_llm(prompt: str) -> str:
     llm = getLLM()
-    response = llm.invoke(prompt)
-    return response.content
+    response: BaseMessage = llm.invoke(prompt)
+
+    return cast(str, response.content)
