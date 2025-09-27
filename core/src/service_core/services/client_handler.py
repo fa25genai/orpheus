@@ -23,6 +23,7 @@ load_dotenv()
 DI_API_URL = "http://docint:25565"
 SLIDES_API_URL = "http://slides:30606"
 AVATAR_API_URL = "http://avatar-video-producer:9000"
+STATUS_API_URL = "http://status-service:19910"
 DEBUG = int(os.environ.get("ORPHEUS_DEBUG", "1"))
 
 
