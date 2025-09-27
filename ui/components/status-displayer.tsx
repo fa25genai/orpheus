@@ -1,5 +1,5 @@
 import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
-import {Status, StepStatus} from "@/generated-api-clients/status";
+import {Status, StepStatus} from "@/generated-api-clients/status/models";
 import {CheckCircle, CircleX, Loader2} from "lucide-react";
 
 function StepItem({title, state}: {title: string; state: StepStatus}) {

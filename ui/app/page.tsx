@@ -4,18 +4,18 @@ import GuideCards from "@/components/guide-cards";
 import {PersonaSelector} from "@/components/persona-selector";
 import {Button} from "@/components/ui/button";
 import {guideText} from "@/data/text";
-// import {PromptResponse} from "@/generated-api-clients/core";
+import {PromptResponse} from "@/generated-api-clients/core";
 import {PersonaLevel} from "@/types/uploading";
 import {User} from "lucide-react";
 import Link from "next/link";
 import {useEffect, useRef, useState} from "react";
-// import {coreApi} from "@/app/api-clients";
-// import {toast} from "sonner";
+import {coreApi} from "@/app/api-clients";
+import {toast} from "sonner";
 import {StatusDisplayer} from "@/components/status-displayer";
 import VideoPlayer from "@/components/video-player";
 import {Card} from "@/components/ui/card";
 import SlidevEmbed, {SlidevEmbedHandle} from "@/components/slidev-embed";
-import {mockStatus} from "@/data/status";
+import {useStatus} from "@/hooks/use-status";
 
 export default function Home() {
   const [personaLevel, setPersonaLevel] = useState<PersonaLevel>("beginner");
@@ -23,35 +23,35 @@ export default function Home() {
   const [prompt, setPrompt] = useState<string>("");
   const [promptId, setPromptId] = useState<string>("");
   const [sources, setSources] = useState<string[]>([]);
-  const status = mockStatus; // useStatus(promptId);
+  const status = useStatus(promptId);
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const slidevRef = useRef<SlidevEmbedHandle>(null);
   const outputRef = useRef<HTMLDivElement>(null);
-  // async function getPromptId(prompt: string) {
-  //   try {
-  //     const response: PromptResponse = await coreApi.createLectureFromPrompt({
-  //       promptRequest: {prompt, courseId: "IN001"},
-  //     });
-  //     console.log("Received prompt ID:", response.promptId);
+  async function getPromptId(prompt: string) {
+    try {
+      const response: PromptResponse = await coreApi.createLectureFromPrompt({
+        promptRequest: {prompt, courseId: "IN001"},
+      });
+      console.log("Received prompt ID:", response.promptId);
 
-  //     return response.promptId;
-  //   } catch (error) {
-  //     console.error("Failed to get prompt ID:", error);
-  //     toast.error("Failed to get prompt ID.", {
-  //       action: {
-  //         label: "Close",
-  //         onClick: () => toast.dismiss(),
-  //       },
-  //     });
-  //   }
-  // }
+      return response.promptId;
+    } catch (error) {
+      console.error("Failed to get prompt ID:", error);
+      toast.error("Failed to get prompt ID.", {
+        action: {
+          label: "Close",
+          onClick: () => toast.dismiss(),
+        },
+      });
+    }
+  }
 
   async function handleSubmit(input: string, e?: React.FormEvent) {
     if (e) e.preventDefault();
     if (!input.trim()) return;
 
-    const promptId = "8df92d96-543e-4662-887b-8285a771ba2c"; // await getPromptId(input);
+    const promptId = await getPromptId(input);
     if (promptId) setPromptId(promptId);
 
     setMessages((prev) => [...prev, input]);
@@ -62,11 +62,11 @@ export default function Home() {
     async function updateVideoSources() {
       if (status?.stepSlidePostprocessing !== "DONE") return;
 
-      const baseUrl = `http://localhost:3000/videos/jobs/2d8e3014-9dbc-440c-a1e4-2560ae05f5be/`;
+      const baseUrl = `http://localhost:3000/videos/jobs/${promptId}/`;
 
       const readyVideos: string[] = status.stepsAvatarGeneration
         .map((step, index) =>
-          step.video === "DONE" ? `${baseUrl}${index + 1}.mp4` : null
+          step.video === "DONE" ? `${baseUrl}${index}.mp4` : null
         )
         // needed to filter out all nulls
         .filter((url): url is string => url !== null);
@@ -83,7 +83,7 @@ export default function Home() {
 
   useEffect(() => {
     outputRef.current?.scrollIntoView({behavior: "smooth"});
-  }, [status.stepSlidePostprocessing]);
+  }, [status?.stepSlidePostprocessing]);
 
   return (
     <main>
