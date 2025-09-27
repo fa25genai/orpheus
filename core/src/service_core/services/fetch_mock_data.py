@@ -162,7 +162,7 @@ def create_voice_script(index=0) -> Dict[str, Any]:
         ]
     print("Slide: ", slides[index])
     voice_track_response = VoiceTrackResponse(
-        promptId=create_slides().promptId,
+        promptId=create_slides()["promptId"],
         courseId="cs001",
         voiceTrack=slides[index],
         slideNumber=index,
