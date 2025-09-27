@@ -133,7 +133,7 @@ async def avatar_video_producer(voice_track: Dict[str, Any], client: httpx.Async
             json=voice_track,
             timeout=300.0,
         )
-        print("Avatar API response:", avatar_response.json(), flush=True)
+        #print("Avatar API response:", avatar_response.json(), flush=True)
         return avatar_response
     except Exception as e:
         print("Error occured during avatar generation: ", e, flush=True)
