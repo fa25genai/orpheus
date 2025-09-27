@@ -13,9 +13,10 @@
 #                                                                              #
 ################################################################################
 import json
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from service_core.models.user_profile import UserProfile
+from service_core.services.services_models.slides import SlidesEnvelope
 from service_core.services.helpers.debug import debug_print, enable_debug
 from service_core.services.helpers.llm import getLLM
 from service_core.services.helpers.loaders import load_prompt
@@ -23,7 +24,7 @@ from service_core.services.helpers.loaders import load_prompt
 
 def generate_narrations(
     lecture_script: str,
-    example_slides: Dict[str, Any],
+    example_slides: SlidesEnvelope,
     user_profile: UserProfile,
     debug: bool = False,
 ) -> Dict[str, Any]:

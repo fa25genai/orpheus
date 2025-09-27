@@ -6,7 +6,7 @@ from service_core.services.services_models.voice_track import VoiceTrackResponse
 from typing import List, Dict, Any
 import json
 
-def create_user():
+def create_user() -> UserProfile:
     demo_user = UserProfile(
             id=str(uuid4()),
             role="student",
@@ -21,14 +21,14 @@ def create_user():
         )
     return demo_user
 
-def create_decomposed_question():
+def create_decomposed_question() -> Dict[str, Any]:
     decomposed_data = {
         'original_question': 'What is a for loop?', 
         'subqueries': ['Definition of for loop', 'Purpose of for loop in programming', 'Basic syntax of for loop'], 'answer_plan': 'Define for loop, explain its purpose, and provide basic syntax example'
         }
     return decomposed_data
 
-def create_script():
+def create_script() -> Dict[str, Any]:
     lecture_script = {
     "lectureScript":"Welcome to this lecture on for loops in Python. As a beginner in programming, it's essential to understand how to use loops to repeat tasks and make your code more efficient.\n\nA for loop is a control flow statement that allows you to execute a block of code repeatedly for each item in a sequence, such as a list or tuple. The basic syntax in Python is: for item in iterable. Here, 'iterable' refers to a collection of objects, like a list or tuple, and 'item' is a variable that takes the value of the next element in the iterable on each iteration.\n\nLet's consider an example to make this clearer. Suppose we have a list of numbers and we want to print each number in the list. We can use a for loop to achieve this. [Here you can see for_loop_example_0062.png]\n\nFor loops can also be nested, meaning you can have a for loop inside another for loop. This can be useful when working with complex data structures, such as lists of lists.\n\nIn addition to iterating over sequences, for loops can also be used with the 'range()' function to generate a sequence of numbers. This can be particularly useful when you need to repeat a task a certain number of times.\n\nIt's also important to know how to control the flow of your loop. You can use the 'break' statement to exit a for loop prematurely, and the 'continue' statement to skip the current iteration and move on to the next one. Furthermore, you can add an 'else' block to a for loop, which will be executed after the loop finishes, unless it's terminated by a 'break'.\n\nIn conclusion, for loops are a powerful tool in Python that allow you to write efficient and effective code. With practice, you'll become more comfortable using them to solve a variety of problems.",
     "assets":[
@@ -42,7 +42,7 @@ def create_script():
     }
     return lecture_script
 
-def create_retrieved_content():
+def create_retrieved_content() -> Dict[str, Any]:
     retrieved_content: List[Dict[str, Any]] = [
         {
             "content": [
@@ -71,7 +71,7 @@ def create_retrieved_content():
     ]
     return retrieved_content
 
-def create_context(courseId, promptId, lectureScript, user: UserProfile):
+def create_context(courseId, promptId, lectureScript, user: UserProfile) -> Dict[str, Any]:
     mock = {
         "courseId": courseId,
         "promptId": str(promptId),
@@ -89,7 +89,7 @@ def create_context(courseId, promptId, lectureScript, user: UserProfile):
     print("Lecture script sent")
     return mock
 
-def create_slides():
+def create_slides() -> SlidesEnvelope:
     slide_bullets = SlidesEnvelope(
         promptId=str(uuid4()),
         status="IN_PROGRESS",
@@ -143,7 +143,7 @@ def create_slides():
     )
     return slide_bullets
 
-def create_voice_script(index=0):
+def create_voice_script(index=0) -> Dict[str, Any]:
     slides=[
             "Willkommen zur Vorlesung über For-Loops! Wir werden heute lernen, wie man Aktionen in Programmen wiederholt – ähnlich wie beim Wiederholen von Liegestützen beim Training. For-Loops ermöglichen es uns, Code effizienter und übersichtlicher zu gestalten.",
             "Denken Sie an Liegestütze: Wir wiederholen eine Aktion so lange, bis ein Ziel erreicht ist. Dieses Prinzip nutzen wir auch in Programmen, um Aufgaben effizient zu automatisieren.",
