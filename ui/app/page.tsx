@@ -4,18 +4,18 @@ import GuideCards from "@/components/guide-cards";
 import {PersonaSelector} from "@/components/persona-selector";
 import {Button} from "@/components/ui/button";
 import {guideText} from "@/data/text";
-import {PromptResponse} from "@/generated-api-clients/core";
-import {useStatus} from "@/hooks/use-status";
+// import {PromptResponse} from "@/generated-api-clients/core";
 import {PersonaLevel} from "@/types/uploading";
 import {User} from "lucide-react";
 import Link from "next/link";
 import {useEffect, useRef, useState} from "react";
-import {coreApi} from "@/app/api-clients";
-import {toast} from "sonner";
+// import {coreApi} from "@/app/api-clients";
+// import {toast} from "sonner";
 import {StatusDisplayer} from "@/components/status-displayer";
 import VideoPlayer from "@/components/video-player";
 import {Card} from "@/components/ui/card";
 import SlidevEmbed, {SlidevEmbedHandle} from "@/components/slidev-embed";
+import {mockStatus} from "@/data/status";
 
 export default function Home() {
   const [personaLevel, setPersonaLevel] = useState<PersonaLevel>("beginner");
@@ -23,71 +23,50 @@ export default function Home() {
   const [prompt, setPrompt] = useState<string>("");
   const [promptId, setPromptId] = useState<string>("");
   const [sources, setSources] = useState<string[]>([]);
-  const status = useStatus(promptId);
+  const status = mockStatus; // useStatus(promptId);
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const slidevRef = useRef<SlidevEmbedHandle>(null);
+  const outputRef = useRef<HTMLDivElement>(null);
+  // async function getPromptId(prompt: string) {
+  //   try {
+  //     const response: PromptResponse = await coreApi.createLectureFromPrompt({
+  //       promptRequest: {prompt, courseId: "IN001"},
+  //     });
+  //     console.log("Received prompt ID:", response.promptId);
 
-  async function getPromptId(prompt: string) {
-    try {
-      const response: PromptResponse = await coreApi.createLectureFromPrompt({
-        promptRequest: {prompt, courseId: "IN001"},
-      });
-      console.log("Received prompt ID:", response.promptId);
-
-      return response.promptId;
-    } catch (error) {
-      console.error("Failed to get prompt ID:", error);
-      toast.error("Failed to get prompt ID.", {
-        action: {
-          label: "Close",
-          onClick: () => toast.dismiss(),
-        },
-      });
-    }
-  }
+  //     return response.promptId;
+  //   } catch (error) {
+  //     console.error("Failed to get prompt ID:", error);
+  //     toast.error("Failed to get prompt ID.", {
+  //       action: {
+  //         label: "Close",
+  //         onClick: () => toast.dismiss(),
+  //       },
+  //     });
+  //   }
+  // }
 
   async function handleSubmit(input: string, e?: React.FormEvent) {
     if (e) e.preventDefault();
     if (!input.trim()) return;
 
-    const promptId = await getPromptId(input);
+    const promptId = "8df92d96-543e-4662-887b-8285a771ba2c"; // await getPromptId(input);
     if (promptId) setPromptId(promptId);
 
     setMessages((prev) => [...prev, input]);
     setPrompt("");
   }
 
-  async function fetchVideoList(baseUrl: string): Promise<string[]> {
-    if (!status) return [];
-
-    const sources: string[] = [];
-    let index = 0;
-
-    for (let i = 0; i < status.stepsAvatarGeneration.length; i++) {
-      const url = `${baseUrl}${index}.mp4`;
-      try {
-        const res = await fetch(url, {method: "HEAD"});
-        if (!res.ok) break;
-        sources.push(url);
-        index++;
-      } catch {
-        break;
-      }
-    }
-
-    return sources;
-  }
-
   useEffect(() => {
     async function updateVideoSources() {
       if (status?.stepSlidePostprocessing !== "DONE") return;
 
-      const baseUrl = `http://localhost:3000/videos/${promptId}/`;
+      const baseUrl = `http://localhost:3000/videos/jobs/2d8e3014-9dbc-440c-a1e4-2560ae05f5be/`;
 
       const readyVideos: string[] = status.stepsAvatarGeneration
         .map((step, index) =>
-          step.video === "DONE" ? `${baseUrl}${index}.mp4` : null
+          step.video === "DONE" ? `${baseUrl}${index + 1}.mp4` : null
         )
         // needed to filter out all nulls
         .filter((url): url is string => url !== null);
@@ -101,6 +80,10 @@ export default function Home() {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({behavior: "smooth"});
   }, [messages]);
+
+  useEffect(() => {
+    outputRef.current?.scrollIntoView({behavior: "smooth"});
+  }, [status.stepSlidePostprocessing]);
 
   return (
     <main>
@@ -151,7 +134,10 @@ export default function Home() {
               {status && <StatusDisplayer status={status} />}
 
               {status?.stepSlidePostprocessing === "DONE" && (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div
+                  ref={outputRef}
+                  className="grid grid-cols-1 md:grid-cols-3 gap-6"
+                >
                   <VideoPlayer
                     sources={sources}
                     onBeforeNext={() => {

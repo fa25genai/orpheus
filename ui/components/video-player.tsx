@@ -64,11 +64,10 @@ export default function VideoPlayer({
     const video = videoRef.current;
     if (!video) return;
 
-    video.load();
     if (isPlaying) {
-      video.play();
+      video.play().catch(() => {}); // in case autoplay is blocked
     }
-  }, [currentIndex]);
+  }, [currentIndex, isPlaying]);
 
   return (
     <Card
@@ -81,16 +80,11 @@ export default function VideoPlayer({
       <video
         ref={videoRef}
         className="w-full h-full object-cover rounded-2xl"
-        preload="none"
+        src={sources[currentIndex]} // 👈 directly bind here
         autoPlay
+        preload="auto"
         onEnded={handleEnded}
-      >
-        {sources[currentIndex] ? (
-          <source src={sources[currentIndex]} type="video/mp4" />
-        ) : null}
-        {/*<source src={sources[currentIndex]} type="video/mp4" />*/}
-        {/*Your browser does not support the video tag.*/}
-      </video>
+      />
 
       {/* Overlay controls */}
       <div

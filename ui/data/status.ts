@@ -8,7 +8,10 @@ export const mockStatus: Status = {
   stepSlideStructureGeneration: "IN_PROGRESS",
   stepSlideGeneration: 0,
   stepSlidePostprocessing: "DONE",
-  stepsAvatarGeneration: [{video: "DONE", audio: "DONE"}],
+  stepsAvatarGeneration: [
+    {video: "DONE", audio: "DONE"},
+    {video: "DONE", audio: "DONE"},
+  ],
   lectureSummary: "string",
   slideStructure: {
     pages: [
