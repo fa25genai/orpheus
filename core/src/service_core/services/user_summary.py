@@ -17,7 +17,7 @@ def extract_text_content(data: Dict[str, Any]) -> str:
         if isinstance(item, dict):
             if "content" in item:
                 texts.append(str(item["content"]))
-    return "\n".join(texts) 
+    return "\n".join(texts)
 
 
 def summarize_content_with_llama(retrieved_content: Dict[str, Any]) -> str:
@@ -25,12 +25,12 @@ def summarize_content_with_llama(retrieved_content: Dict[str, Any]) -> str:
     text_content = extract_text_content(retrieved_content)
     print("Text content to summarize:", text_content, flush=True)
     prompt = f"Summarize the following content in 3-4 sentences. Only return the summary, do not preface with any explanation or heading.\n\n{text_content}"
-    user_summary: str = ask_llm(prompt)  
+    user_summary: str = ask_llm(prompt)
     print("Generated summary:", user_summary, flush=True)
     return user_summary
 
 
-async def send_summary_to_endpoint(summary: str, client: httpx.AsyncClient) -> None:  
+async def send_summary_to_endpoint(summary: str, client: httpx.AsyncClient) -> None:
     summary_endpoint = "http://summary-receiver:9001/v1/summary"
     try:
         response = await client.post(

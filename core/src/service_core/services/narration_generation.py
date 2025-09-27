@@ -13,13 +13,13 @@
 #                                                                              #
 ################################################################################
 import json
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 from service_core.models.user_profile import UserProfile
-from service_core.services.services_models.slides import SlidesEnvelope
 from service_core.services.helpers.debug import debug_print, enable_debug
 from service_core.services.helpers.llm import getLLM
 from service_core.services.helpers.loaders import load_prompt
+from service_core.services.services_models.slides import SlidesEnvelope
 
 
 def generate_narrations(

@@ -4,6 +4,7 @@ import os
 from typing import Any, Dict, List, Union
 
 import httpx
+from dotenv import load_dotenv
 
 import service_core.services.fetch_mock_data as mock_service
 from service_core.impl.tracker import tracker
@@ -16,7 +17,6 @@ from service_core.services import (
 )
 from service_core.services.services_models.slides import SlidesEnvelope
 from service_core.services.user_summary import summarize_and_send
-from dotenv import load_dotenv
 
 load_dotenv()
 
@@ -105,13 +105,13 @@ def generate_voice_scripts(lecture_script: str, slides_data: SlidesEnvelope, use
         tasks: List[asyncio.Task[httpx.Response]] = []
         if DEBUG:
             for i in range(14):
-                voice_track= mock_service.create_voice_script(i)
+                voice_track = mock_service.create_voice_script(i)
                 print("Voice track: ", voice_track)
                 task = generate_avatar_video(voice_track, i, client)
                 if task:
                     tasks.append(task)
             return tasks
-        
+
         voice_track = narration_generation.generate_narrations(lecture_script, slides_data, user)
 
         slides = voice_track.get("slides", [])
@@ -162,7 +162,7 @@ async def process_prompt(prompt_id: str, prompt_request: PromptRequest) -> None:
             lecture_script = refined_output.get("lectureScript", "")
             slides_data = await generate_slides(prompt_request, prompt_id, lecture_script, refined_output, client)
             assert prompt_request.user_persona is not None, "User profile must be defined for voice scripts."
-            
+
             avatar_tasks: List[asyncio.Task[httpx.Response]] = generate_voice_scripts(
                 lecture_script,
                 slides_data,

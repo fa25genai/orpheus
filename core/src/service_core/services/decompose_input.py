@@ -50,7 +50,7 @@ def call_llama(prompt: str, model: Optional[str] = None, max_tokens: int = 512) 
     return str(text).strip()
 
 
-def llm_call(prompt: str) -> str: 
+def llm_call(prompt: str) -> str:
     if cfg.llama_api_key:
         return call_llama(prompt)
     raise RuntimeError("No valid LLM API key available (Llama)")
