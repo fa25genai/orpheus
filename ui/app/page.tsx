@@ -80,14 +80,23 @@ export default function Home() {
   }
 
   useEffect(() => {
-    async function loadVideos() {
-      const list = await fetchVideoList(
-        `http://localhost:3000/videos/${promptId}/`
-      );
-      setSources(list);
+    async function updateVideoSources() {
+      if (status?.stepSlidePostprocessing !== "DONE") return;
+
+      const baseUrl = `http://localhost:3000/videos/${promptId}/`;
+
+      const readyVideos: string[] = status.stepsAvatarGeneration
+        .map((step, index) =>
+          step.video === "DONE" ? `${baseUrl}${index}.mp4` : null
+        )
+        // needed to filter out all nulls
+        .filter((url): url is string => url !== null);
+
+      setSources(readyVideos);
     }
-    loadVideos();
-  }, [status]);
+
+    updateVideoSources();
+  }, [status, promptId]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({behavior: "smooth"});
@@ -120,7 +129,7 @@ export default function Home() {
           <GuideCards
             persona={personaLevel}
             guideText={guideText}
-            onSelect={(question) => handleSubmit(question, undefined as any)}
+            onSelect={(question) => handleSubmit(question, undefined)}
           />
           <ChatInput
             handleSubmit={handleSubmit}
@@ -150,9 +159,7 @@ export default function Home() {
                       slidevRef.current?.next();
                     }}
                   />
-                  ;
                   <Card className="p-8 bg-card border-border md:col-span-2">
-                    {/* URL is for now hardcoded. It will be replaced with the actual URL when the nginx server is integrated. */}
                     <SlidevEmbed
                       baseUrl={`http://localhost:30608/web/${promptId}`}
                       className="h-98"

@@ -8,7 +8,7 @@ type CustomVideoPlayerProps = {
   onBeforeNext?: (index: number) => void;
 };
 
-export default function CustomVideoPlayer({
+export default function VideoPlayer({
   sources,
   onBeforeNext,
 }: CustomVideoPlayerProps) {
