@@ -72,7 +72,7 @@ def generate_script(retrieved_content: Dict[str, Any]) -> Dict[str, Any]:
     return refined_output
 
 
-async def generate_slides(prompt_request: PromptRequest, prompt_id: str, lecture_script: str, refined_output: Dict[str, Any], client: httpx.AsyncClient) -> SlidesEnvelope:
+async def generate_slides(prompt_request: PromptRequest, prompt_id: str, lecture_script: str, refined_output: Dict[str, Any], client: httpx.AsyncClient) -> Dict[str, Any]:
     tracker.log("Generating slides")
 
     # FIX: [no-any-return], [no-untyped-call]
@@ -94,11 +94,11 @@ async def generate_slides(prompt_request: PromptRequest, prompt_id: str, lecture
         timeout=300.0,
     )
     slides_response.raise_for_status()
-    slides_data: SlidesEnvelope = slides_response.json()
+    slides_data: Dict[str, Any] = slides_response.json()
     return slides_data
 
 
-def generate_voice_scripts(lecture_script: str, slides_data: SlidesEnvelope, user: UserProfile, client: httpx.AsyncClient) -> List[asyncio.Task[httpx.Response]]:
+def generate_voice_scripts(lecture_script: str, slides_data: Dict[str, Any], user: UserProfile, client: httpx.AsyncClient) -> List[asyncio.Task[httpx.Response]]:
     tracker.log("Generating voice script")
     try:
         voice_track: Dict[str, Any]
@@ -160,7 +160,7 @@ async def process_prompt(prompt_id: str, prompt_request: PromptRequest) -> None:
 
             refined_output = generate_script(retrieved_content)
             lecture_script = refined_output.get("lectureScript", "")
-            slides_data = await generate_slides(prompt_request, prompt_id, lecture_script, refined_output, client)
+            slides_data: Dict[str, Any] = await generate_slides(prompt_request, prompt_id, lecture_script, refined_output, client)
             assert prompt_request.user_persona is not None, "User profile must be defined for voice scripts."
 
             avatar_tasks: List[asyncio.Task[httpx.Response]] = generate_voice_scripts(

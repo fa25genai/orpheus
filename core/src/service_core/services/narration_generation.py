@@ -24,7 +24,7 @@ from service_core.services.services_models.slides import SlidesEnvelope
 
 def generate_narrations(
     lecture_script: str,
-    example_slides: SlidesEnvelope,
+    example_slides: Dict[str, Any],
     user_profile: UserProfile,
     debug: bool = False,
 ) -> Dict[str, Any]:
@@ -89,11 +89,10 @@ def generate_narrations(
         narration_history += f"Slide {i + 1} Narration: {narration}\n"
         slide_messages.append(narration)
     # Prepare output data with actual user profile
-    output_data = {
+    output_data: Dict[str, Any] = {
         "slideMessages": slide_messages,
         "promptId": example_slides["promptId"],
         "courseId": user_profile.enrolled_courses[0] if user_profile.enrolled_courses else None,
         "userProfile": json.loads(user_profile.model_dump_json(by_alias=False, exclude_unset=True)),
     }
-    output_data = json.loads(output_data.model_dump_json(by_alias=True, exclude_unset=True))
     return output_data

@@ -89,7 +89,7 @@ def create_context(courseId, promptId, lectureScript, user: UserProfile) -> Dict
     print("Lecture script sent")
     return mock
 
-def create_slides() -> SlidesEnvelope:
+def create_slides() -> Dict[str, Any]:
     slide_bullets = SlidesEnvelope(
         promptId=str(uuid4()),
         status="IN_PROGRESS",
@@ -141,7 +141,7 @@ def create_slides() -> SlidesEnvelope:
             ]
         }
     )
-    return slide_bullets
+    return slide_bullets.model_dump() 
 
 def create_voice_script(index=0) -> Dict[str, Any]:
     slides=[
