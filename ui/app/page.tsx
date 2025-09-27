@@ -152,7 +152,7 @@ export default function Home() {
 
   async function fetchVideoList(baseUrl: string): Promise<string[]> {
   const sources: string[] = [];
-  let index = 1;
+  let index = 0;
 
   while (true) {
     const url = `${baseUrl}${index}.mp4`;
