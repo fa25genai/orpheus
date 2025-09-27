@@ -2,7 +2,8 @@ import asyncio
 import json
 import os
 from typing import Any, Dict, List, Union
-
+from service_status.models.status_patch import StatusPatch
+from service_status.models.step_status import StepStatus
 import httpx
 from dotenv import load_dotenv
 
@@ -26,9 +27,20 @@ AVATAR_API_URL = "http://avatar-video-producer:9000"
 STATUS_API_URL = "http://status-service:19910"
 DEBUG = int(os.environ.get("ORPHEUS_DEBUG", "1"))
 
+async def update_status(prompt_id: str, patch: StatusPatch, client: httpx.AsyncClient) -> None:
+    print(f"Updating status for {prompt_id} with patch: {patch.to_json()}", flush=True)
+    response = await client.patch(
+        f"{STATUS_API_URL}/status/{prompt_id}/update",
+        json=patch.to_json(),
+        timeout=300.0,
+    )
 
-async def decompose_inputs(prompt_request: PromptRequest) -> List[str]:
+
+async def decompose_inputs(prompt_request: PromptRequest, prompt_id: str, client: httpx.AsyncClient) -> List[str]:
     tracker.log("Decomposing inputs")
+    await update_status(prompt_id, StatusPatch(
+            stepUnderstanding=StepStatus.IN_PROGRESS
+        ), client)
 
     decomposed_questions: List[str]
     if DEBUG:
@@ -37,12 +49,17 @@ async def decompose_inputs(prompt_request: PromptRequest) -> List[str]:
 
     decomposed_questions = decompose_input.decompose_question(prompt_request.prompt).get("subqueries", [])
     # FIX: [no-any-return]
+    await update_status(prompt_id, StatusPatch(
+            stepUnderstanding=StepStatus.DONE
+        ), client)
     return decomposed_questions
 
 
-async def query_document_intelligence(subqueries: List[str], client: httpx.AsyncClient) -> Dict[str, Any]:
+async def query_document_intelligence(subqueries: List[str], client: httpx.AsyncClient, prompt_id: str) -> Dict[str, Any]:
     tracker.log("Querying document intelligence")
-
+    await update_status(prompt_id, StatusPatch(
+            stepLookup=StepStatus.IN_PROGRESS
+        ), client)
     if DEBUG:
         return mock_service.create_retrieved_content()
 
@@ -55,26 +72,41 @@ async def query_document_intelligence(subqueries: List[str], client: httpx.Async
     )
     di_response.raise_for_status()
     di_data: Dict[str, Any] = di_response.json()
+    await update_status(prompt_id, StatusPatch(
+            stepLookup=StepStatus.DONE
+        ), client)
     return di_data
 
 
-def generate_script(retrieved_content: Dict[str, Any]) -> Dict[str, Any]:
+def generate_script(retrieved_content: Dict[str, Any], prompt_id: str, client: httpx.AsyncClient) -> Dict[str, Any]:
     tracker.log("Generating script")
+    update_status(prompt_id, StatusPatch(
+            stepLectureScriptGeneration=StepStatus.IN_PROGRESS
+        ), client)
     try:
         if DEBUG:
             output: Dict[str, Any] = mock_service.create_script()
             return output
 
         refined_output: Dict[str, Any] = script_generation.generate_script(retrieved_content, mock_service.create_user())
+        update_status(prompt_id, StatusPatch(
+            stepLectureScriptGeneration=StepStatus.DONE
+        ))
     except Exception as e:
         print(e)
         refined_output = {}
+        update_status(prompt_id, StatusPatch(
+            stepLectureScriptGeneration=StepStatus.FAILED
+        ), client)
 
     return refined_output
 
 
 async def generate_slides(prompt_request: PromptRequest, prompt_id: str, lecture_script: str, refined_output: Dict[str, Any], client: httpx.AsyncClient) -> Dict[str, Any]:
     tracker.log("Generating slides")
+    await update_status(prompt_id, StatusPatch(
+            stepSlideStructureGeneration=StepStatus.IN_PROGRESS
+        ), client)
 
     # FIX: [no-any-return], [no-untyped-call]
     if DEBUG:
@@ -96,10 +128,13 @@ async def generate_slides(prompt_request: PromptRequest, prompt_id: str, lecture
     )
     slides_response.raise_for_status()
     slides_data: Dict[str, Any] = slides_response.json()
+    await update_status(prompt_id, StatusPatch(
+            stepSlideStructureGeneration=StepStatus.DONE
+        ), client)
     return slides_data
 
 
-def generate_voice_scripts(lecture_script: str, slides_data: Dict[str, Any], user: UserProfile, client: httpx.AsyncClient) -> List[asyncio.Task[httpx.Response]]:
+def generate_voice_scripts(lecture_script: str, slides_data: Dict[str, Any], user: UserProfile, client: httpx.AsyncClient, prompt_id: str) -> List[asyncio.Task[httpx.Response]]:
     tracker.log("Generating voice script")
     try:
         voice_track: Dict[str, Any]
@@ -124,6 +159,9 @@ def generate_voice_scripts(lecture_script: str, slides_data: Dict[str, Any], use
 
     except Exception as e:
         print("Error generating voice track:", e, flush=True)
+        update_status(prompt_id, StatusPatch(
+            stepsAvatarGeneration=StepStatus.FAILED
+        ), client)
         return []
 
 
@@ -154,12 +192,12 @@ def generate_avatar_video(voice_track: Dict[str, Any], index: int, client: httpx
 async def process_prompt(prompt_id: str, prompt_request: PromptRequest) -> None:
     async with httpx.AsyncClient() as client:
         try:
-            subqueries = await decompose_inputs(prompt_request)
-            retrieved_content = await query_document_intelligence(subqueries, client)
+            subqueries = await decompose_inputs(prompt_request, prompt_id, client)
+            retrieved_content = await query_document_intelligence(subqueries, client, prompt_id)
 
             asyncio.create_task(summarize_and_send(retrieved_content, client))
 
-            refined_output = generate_script(retrieved_content)
+            refined_output = generate_script(retrieved_content, prompt_id, client)
             lecture_script = refined_output.get("lectureScript", "")
             slides_data: Dict[str, Any] = await generate_slides(prompt_request, prompt_id, lecture_script, refined_output, client)
             assert prompt_request.user_persona is not None, "User profile must be defined for voice scripts."
@@ -169,6 +207,7 @@ async def process_prompt(prompt_id: str, prompt_request: PromptRequest) -> None:
                 slides_data,
                 prompt_request.user_persona,
                 client,
+                prompt_id
             )
 
             if avatar_tasks:

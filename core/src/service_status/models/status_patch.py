@@ -1,4 +1,3 @@
-
 # coding: utf-8
 
 """
@@ -20,7 +19,8 @@ import json
 
 from pydantic import BaseModel, ConfigDict, Field, StrictInt, StrictStr
 from typing import Any, ClassVar, Dict, List, Optional
-from service_core.impl.step_status import StepStatus
+from service_status.models.slide_structure import SlideStructure
+from service_status.models.step_status import StepStatus
 
 try:
     from typing import Self
@@ -104,3 +104,5 @@ class StatusPatch(BaseModel):
             "slideStructure": SlideStructure.from_dict(obj.get("slideStructure")) if obj.get("slideStructure") is not None else None
         })
         return _obj
+
+
