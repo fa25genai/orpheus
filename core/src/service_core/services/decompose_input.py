@@ -94,7 +94,7 @@ def decompose_question(question: str) -> Dict[str, Any]:
         if not isinstance(result["subqueries"], list):
             raise ValueError("subqueries must be an array")
 
-        return result  # FIX: [no-any-return]
+        return result
     except json.JSONDecodeError as e:
         # Try to extract JSON from the response
         start, end = raw_llm_output.find("{"), raw_llm_output.rfind("}")
@@ -104,7 +104,7 @@ def decompose_question(question: str) -> Dict[str, Any]:
                 required_keys = ["original_question", "subqueries"]
                 if not all(key in result for key in required_keys):
                     raise ValueError(f"Missing required keys in extracted JSON. Expected: {required_keys}, Got: {list(result.keys())}")
-                return result  # FIX: [no-any-return]
+                return result
             except json.JSONDecodeError:
                 pass
         raise RuntimeError(f"Failed to parse JSON from LLM output. JSON Error: {e}. Raw output: {raw_llm_output[:200]}...")
