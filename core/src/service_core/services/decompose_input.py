@@ -20,12 +20,19 @@ load_dotenv()
 # CONFIGURATION
 # -----------------------------
 class Config(BaseModel):
+    aws_access_key_id: str = os.environ.get("AWS_ACCESS_KEY_ID", "")
+    aws_secret_access_key: str = os.environ.get("AWS_SECRET_ACCESS_KEY", "")
+    aws_session_token: str = os.environ.get("AWS_SESSION_TOKEN", "")
+
     llama_api_key: str = os.environ.get("LLAMA_API_KEY", "")
     llama_model: str = os.environ.get("LLAMA_MODEL", "")
     llama_api_url: str = os.environ.get("LLAMA_API_URL", "")
 
+    access_key = aws_access_key_id if aws_access_key_id is not None else None
+    secret_access_key = aws_secret_access_key if aws_secret_access_key is not None else None
+    session_token = aws_session_token if aws_session_token is not None else None
 
-cfg = Config()
+config = Config()
 
 
 # -----------------------------
@@ -33,15 +40,15 @@ cfg = Config()
 # -----------------------------
 def call_llama(prompt: str, model: Optional[str] = None, max_tokens: int = 512) -> str:
     """Call Llama API via LangChain ChatOllama"""
-    model = model or cfg.llama_model
-    if not cfg.llama_api_key:
+    model = model or config.llama_model
+    if not config.llama_api_key:
         raise RuntimeError("LLAMA_API_KEY not set")
 
     # Initialize ChatOllama with custom endpoint and API key
     llm = ChatOllama(
         model=model,
-        base_url=cfg.llama_api_url,
-        headers={"Authorization": f"Bearer {cfg.llama_api_key}"},
+        base_url=config.llama_api_url,
+        headers={"Authorization": f"Bearer {config.llama_api_key}"},
     )
 
     # Generate response
@@ -51,7 +58,7 @@ def call_llama(prompt: str, model: Optional[str] = None, max_tokens: int = 512) 
 
 
 def llm_call(prompt: str) -> str:
-    if cfg.llama_api_key:
+    if config.llama_api_key:
         return call_llama(prompt)
     raise RuntimeError("No valid LLM API key available (Llama)")
 
