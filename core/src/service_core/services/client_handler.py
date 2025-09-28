@@ -2,8 +2,7 @@ import asyncio
 import json
 import os
 from typing import Any, Dict, List, Union
-from service_status.models.status_patch import StatusPatch
-from service_status.models.step_status import StepStatus
+
 import httpx
 from dotenv import load_dotenv
 
@@ -16,8 +15,9 @@ from service_core.services import (
     narration_generation,
     script_generation,
 )
-from service_core.services.services_models.slides import SlidesEnvelope
 from service_core.services.user_summary import summarize_content_with_llama
+from service_status.models.status_patch import StatusPatch
+from service_status.models.step_status import StepStatus
 
 load_dotenv()
 

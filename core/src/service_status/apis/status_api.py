@@ -1,14 +1,9 @@
 # coding: utf-8
 
-from typing import Dict, List  # noqa: F401
 import importlib
 import pkgutil
 import uuid
-
-from starlette.websockets import WebSocket, WebSocketDisconnect
-
-from service_status.apis.status_api_base import BaseStatusApi
-import service_status.impl
+from typing import Any, Dict, List  # noqa: F401
 
 from fastapi import (  # noqa: F401
     APIRouter,
@@ -25,12 +20,14 @@ from fastapi import (  # noqa: F401
     Security,
     status,
 )
-
-from service_status.models.extra_models import TokenModel  # noqa: F401
 from pydantic import Field, StrictStr
-from typing import Any
+from starlette.websockets import WebSocket, WebSocketDisconnect
 from typing_extensions import Annotated
+
+import service_status.impl
+from service_status.apis.status_api_base import BaseStatusApi
 from service_status.models.error import Error
+from service_status.models.extra_models import TokenModel  # noqa: F401
 from service_status.models.status import Status
 from service_status.models.status_patch import StatusPatch
 

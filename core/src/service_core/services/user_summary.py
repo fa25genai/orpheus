@@ -1,7 +1,5 @@
 from typing import Any, Dict
 
-import httpx
-
 from service_core.services.helpers.llm import ask_llm
 
 

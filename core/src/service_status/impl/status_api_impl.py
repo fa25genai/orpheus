@@ -1,4 +1,4 @@
-from pydantic import StrictStr, Field
+from pydantic import Field, StrictStr
 from typing_extensions import Annotated
 
 from service_status.apis.status_api_base import BaseStatusApi

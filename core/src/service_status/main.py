@@ -5,6 +5,7 @@ from typing import Any
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
 from service_status.apis.status_api import router as StatusApiRouter
 from service_status.impl.manager.status_manager import StatusManager
 

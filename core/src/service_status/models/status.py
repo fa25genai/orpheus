@@ -12,13 +12,14 @@ Do not edit the class manually.
 """  # noqa: E501
 
 from __future__ import annotations
+
+import json
 import pprint
 import re  # noqa: F401
-import json
-
-
-from pydantic import BaseModel, ConfigDict, Field, StrictInt, StrictStr
 from typing import Any, ClassVar, Dict, List, Optional
+
+from pydantic import BaseModel, Field, StrictInt, StrictStr
+
 from service_status.models.avatar_element_status import AvatarElementStatus
 from service_status.models.slide_structure import SlideStructure
 from service_status.models.step_status import StepStatus

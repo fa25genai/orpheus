@@ -1,13 +1,11 @@
 # coding: utf-8
 
-from typing import ClassVar, Dict, List, Tuple  # noqa: F401
+from typing import Any, ClassVar, Dict, List, Tuple  # noqa: F401
 
 from pydantic import Field, StrictStr
-from typing import Any
 from typing_extensions import Annotated
 
 from service_status.impl.manager.status_manager import StatusManager
-from service_status.models.error import Error
 from service_status.models.status import Status
 from service_status.models.status_patch import StatusPatch
 
