@@ -60,7 +60,13 @@ def llm_call(prompt: str) -> str:
 # Question decomposition
 # -----------------------------
 DECOMPOSE_PROMPT = textwrap.dedent("""
-...
+You are an assistant that decomposes a student's question into concise,
+retrieval-friendly sub-queries and a final answer plan.
+Respond in strict JSON with keys: original_question, subqueries, answer_plan.
+
+Rules:
+- Keep subqueries short and focused.
+- Do not add explanations outside JSON.
 """)
 
 def extract_json_from_markdown(question: str) -> str:
