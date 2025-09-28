@@ -17,9 +17,9 @@ RUN apt-get update && \
     git \
     nodejs \
     npm && \
-    rm -rf /var/lib/apt/lists/* && \
     apt-get autoremove --yes && \
     apt-get clean && \
+    rm -rf /var/lib/apt/lists/* && \
     rm -rf /tmp/* /var/tmp/*
 
 # Install Slidev and its dependencies
