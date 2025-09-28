@@ -131,11 +131,15 @@ async def generate_slides(prompt_request: PromptRequest, prompt_id: str, lecture
                 stepSlideStructureGeneration=StepStatus.IN_PROGRESS
             ), client)
 
+        if prompt_request.user_persona is None:
+                print("ERROR: User persona must be defined for processing.", flush=True)
+                raise ValueError("User persona must be defined")
+        
         slides_context = {
             "courseId": prompt_request.course_id,
             "promptId": str(prompt_id),
             "lectureScript": lecture_script,
-            "user": prompt_request.user_persona.to_dict() if prompt_request.user_persona else {},
+            "user": prompt_request.user_persona.to_dict(),
             "assets": refined_output.get("assets", ""),
         }
 
@@ -223,8 +227,8 @@ async def process_prompt(prompt_id: str, prompt_request: PromptRequest) -> None:
             slides_data: Dict[str, Any] = await generate_slides(prompt_request, prompt_id, lecture_script, refined_output, client)
 
             if prompt_request.user_persona is None:
-                tracker.log("ERROR: User profile must be defined for voice scripts.")
-                raise ValueError("User profile must be defined for voice scripts.")
+                tracker.log("ERROR: User persona must be defined for voice scripts.")
+                raise ValueError("User persona must be defined for voice scripts.")
 
             avatar_tasks: List[asyncio.Task[httpx.Response]] = await generate_voice_scripts(
                 lecture_script,
