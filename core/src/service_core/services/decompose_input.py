@@ -46,7 +46,7 @@ def call_llama(prompt: str, model: Optional[str] = None, max_tokens: int = 512) 
 
     # Generate response
     response = llm.invoke(prompt)
-    text: Union[str, Any] = getattr(response, "content", response)
+    text = getattr(response, "content", response)
     return str(text).strip()
 
 
