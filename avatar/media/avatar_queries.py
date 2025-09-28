@@ -49,8 +49,8 @@ def get_latest_audio_for_course_slot(
           .first()
     )
     if not avatar or not avatar.audios:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                            detail="No audio found for given courseId and slot")
+        print("[generate_audio] No audio found for given courseId and slot")
+        return None
     # pick latest audio
     return sorted(avatar.audios, key=lambda a: a.created_at or datetime.min, reverse=True)[0]
 

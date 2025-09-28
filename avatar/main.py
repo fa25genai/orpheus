@@ -319,8 +319,8 @@ def generate_audio(
         ref = avatar_queries.get_latest_audio_for_course_slot(db, course_id, slot)
         ref_path = Path(ref.file_path)
         if not ref_path.is_file():
-            print(f"[generate_audio] DB voice not found on disk: {ref_path}")
-            return None
+            print(f"[generate_audio] Taking Krusche audio sample (default)")
+            ref_path = Path("database/voice_sample/krusche_voice.mp3")
 
         # 2) Call TTS with the DB audio as voice_file
         is_debug = os.getenv("DEBUG", "not debug")
