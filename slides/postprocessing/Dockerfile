@@ -17,7 +17,10 @@ RUN apt-get update && \
     git \
     nodejs \
     npm && \
-    rm -rf /var/lib/apt/lists/*
+    apt-get autoremove --yes && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* && \
+    rm -rf /tmp/* /var/tmp/*
 
 # Install Slidev and its dependencies
 RUN npm install -g @pnpm/exe playwright-chromium && \
@@ -26,7 +29,8 @@ RUN npm install -g @pnpm/exe playwright-chromium && \
     cd /install/slidev && \
     pnpm install && \
     pnpm -w build && \
-    ln -s /install/slidev/packages/slidev/bin/slidev.mjs /usr/local/bin/slidev
+    ln -s /install/slidev/packages/slidev/bin/slidev.mjs /usr/local/bin/slidev && \
+    npm cache clean --force
 
 # Working directory and file copy
 WORKDIR /app
@@ -36,8 +40,7 @@ COPY pyproject.toml README.md ./
 # Add predefined sli.dev themes
 ADD themes/slidev-theme-tum-0.1.0.tgz /etc/slidev/themes/theme-tum/
 RUN cd /etc/slidev/themes/theme-tum/package && \
-    npm install && \
-    npm cache clean --force
+    npm install --no-cache
 
 # Install Python dependencies
 RUN poetry install --only main

@@ -13,13 +13,15 @@ Do not edit the class manually.
 """  # noqa: E501
 
 from __future__ import annotations
+
+import json
 import pprint
 import re  # noqa: F401
-import json
-
-
-from pydantic import BaseModel, ConfigDict, Field, StrictInt, StrictStr
 from typing import Any, ClassVar, Dict, List, Optional
+
+from pydantic import BaseModel, Field, StrictInt, StrictStr
+
+from service_status.models.slide_structure import SlideStructure
 from service_status.models.step_status import StepStatus
 
 try:
@@ -40,6 +42,7 @@ class StatusPatch(BaseModel):
     step_slide_postprocessing: Optional[StepStatus] = Field(default=None, alias="stepSlidePostprocessing")
     steps_avatar_generation: Optional[Dict[str, Any]] = Field(default=None, alias="stepsAvatarGeneration")
     lecture_summary: Optional[StrictStr] = Field(default=None, alias="lectureSummary")
+    slide_structure: Optional[SlideStructure] = Field(default=None, alias="slideStructure")
     __properties: ClassVar[List[str]] = ["stepUnderstanding", "stepLookup", "stepLectureScriptGeneration", "stepSlideStructureGeneration", "stepSlideGeneration", "stepSlidePostprocessing", "stepsAvatarGeneration", "lectureSummary", "slideStructure"]
 
     model_config = {
@@ -77,13 +80,10 @@ class StatusPatch(BaseModel):
             exclude={},
             exclude_none=True,
         )
-        # override the default output from pydantic by calling `to_dict()` of slide_structure
-        if self.slide_structure:
-            _dict['slideStructure'] = self.slide_structure.to_dict()
         return _dict
 
     @classmethod
-    def from_dict(cls, obj: Dict) -> Self:
+    def from_dict(cls, obj: Dict[str, Any]) -> Self:
         """Create an instance of StatusPatch from a dict"""
         if obj is None:
             return None
@@ -99,6 +99,6 @@ class StatusPatch(BaseModel):
             "stepSlideGeneration": obj.get("stepSlideGeneration"),
             "stepSlidePostprocessing": obj.get("stepSlidePostprocessing"),
             "stepsAvatarGeneration": obj.get("stepsAvatarGeneration"),
-            "lectureSummary": obj.get("lectureSummary"),
+            "lectureSummary": obj.get("lectureSummary")
         })
         return _obj

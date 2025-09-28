@@ -6,7 +6,7 @@ Simpler Python script: Question Refinement with Gemini/HuggingFace fallback
 import json
 import os
 import textwrap
-from typing import Any, Dict, Optional, Union  # Added Union for clarity
+from typing import Any, Dict, Optional
 
 from dotenv import load_dotenv
 from langchain_community.chat_models import ChatOllama
@@ -63,45 +63,51 @@ DECOMPOSE_PROMPT = textwrap.dedent("""
 ...
 """)
 
-
-def decompose_question(question: str) -> Dict[str, Any]:
+def extract_json_from_markdown(question: str) -> str:
     prompt = DECOMPOSE_PROMPT + "\n\nQuestion to analyze: " + json.dumps(question)
-    raw = llm_call(prompt)
+    raw_llm_output = llm_call(prompt) # e.g. still including markdown
 
     # Clean the response - remove any potential Markdown formatting
-    raw = raw.strip()
-    if raw.startswith("```json"):
-        raw = raw[7:]
-    if raw.startswith("```"):
-        raw = raw[3:]
-    if raw.endswith("```"):
-        raw = raw[:-3]
-    raw = raw.strip()
+    raw_llm_output = raw_llm_output.strip()
+    if raw_llm_output.startswith("```json"):
+        raw_llm_output = raw_llm_output[7:]
+    if raw_llm_output.startswith("```"):
+        raw_llm_output = raw_llm_output[3:]
+    if raw_llm_output.endswith("```"):
+        raw_llm_output = raw_llm_output[:-3]
+    raw_llm_output = raw_llm_output.strip()
 
-    result: Dict[str, Any] = {}
+    return raw_llm_output
+
+def decompose_question(question: str) -> Dict[str, Any]:
+    raw_llm_output: str = extract_json_from_markdown(question)
 
     try:
-        result = json.loads(raw)
+        questions_generated_from_user_query: Dict[str, Any] = json.loads(raw_llm_output)
         # Validate required keys
         required_keys = ["original_question", "subqueries"]
-        if not all(key in result for key in required_keys):
-            raise ValueError(f"Missing required keys. Expected: {required_keys}, Got: {list(result.keys())}")
+        if not all(key in questions_generated_from_user_query for key in required_keys):
+            raise ValueError(f"Missing required keys. Expected: {required_keys}, Got: {list(questions_generated_from_user_query.keys())}")
 
         # Ensure subqueries is a list
-        if not isinstance(result["subqueries"], list):
+        if not isinstance(questions_generated_from_user_query["subqueries"], list):
             raise ValueError("subqueries must be an array")
 
-        return result  # FIX: [no-any-return]
+        return questions_generated_from_user_query
     except json.JSONDecodeError as e:
+        # TODO extract to a method
+        # if we do not find the expected keys in the initial datastructure,
+        # we try to clean up the format and search again for the keys (e.g. there could be a space before the brackets, things like that)
         # Try to extract JSON from the response
-        start, end = raw.find("{"), raw.rfind("}")
+        start, end = raw_llm_output.find("{"), raw_llm_output.rfind("}")
         if start != -1 and end != -1:
             try:
+                questions_generated_from_user_query = json.loads(raw_llm_output[start: end + 1])
                 # Validate required keys for extracted JSON too
                 required_keys = ["original_question", "subqueries"]
-                if not all(key in result for key in required_keys):
-                    raise ValueError(f"Missing required keys in extracted JSON. Expected: {required_keys}, Got: {list(result.keys())}")
-                return result  # FIX: [no-any-return]
+                if not all(key in questions_generated_from_user_query for key in required_keys):
+                    raise ValueError(f"Missing required keys in extracted JSON. Expected: {required_keys}, Got: {list(questions_generated_from_user_query.keys())}")
+                return questions_generated_from_user_query
             except json.JSONDecodeError:
                 pass
-        raise RuntimeError(f"Failed to parse JSON from LLM output. JSON Error: {e}. Raw output: {raw[:200]}...")
+        raise RuntimeError(f"Failed to parse JSON from LLM output. JSON Error: {e}. Raw output: {raw_llm_output[:200]}...")

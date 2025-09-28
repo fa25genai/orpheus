@@ -2,8 +2,7 @@ import asyncio
 import json
 import os
 from typing import Any, Dict, List, Union
-from service_status.models.status_patch import StatusPatch
-from service_status.models.step_status import StepStatus
+
 import httpx
 from dotenv import load_dotenv
 
@@ -16,8 +15,9 @@ from service_core.services import (
     narration_generation,
     script_generation,
 )
-from service_core.services.services_models.slides import SlidesEnvelope
 from service_core.services.user_summary import summarize_content_with_llama
+from service_status.models.status_patch import StatusPatch
+from service_status.models.step_status import StepStatus
 
 load_dotenv()
 
@@ -29,7 +29,7 @@ DEBUG = int(os.environ.get("ORPHEUS_DEBUG", "1"))
 
 async def update_status(prompt_id: str, patch: StatusPatch, client: httpx.AsyncClient) -> None:
     print(f"Updating status for {prompt_id} with patch: {patch.to_json()}", flush=True)
-    response = await client.patch(
+    await client.patch(
         f"{STATUS_API_URL}/status/{prompt_id}/update",
         json=patch.to_dict(),
         timeout=300.0,
@@ -67,12 +67,12 @@ async def send_summary_to_endpoint(prompt_id: str, summary: str, client: httpx.A
     except Exception as e:
         print("Error sending summary to endpoint:", e, flush=True)
 
-async def summarize_and_send(prompt_id: str, content: Dict[str, Any], client: httpx.AsyncClient) -> None:
+async def summarize_and_send(prompt_id: str, content: List[Dict[str, Any]], client: httpx.AsyncClient) -> None:
     summary = summarize_content_with_llama(content)
     await send_summary_to_endpoint(prompt_id, summary, client)
 
 
-async def query_document_intelligence(subqueries: List[str], client: httpx.AsyncClient, prompt_id: str) -> Dict[str, Any]:
+async def query_document_intelligence(subqueries: List[str], client: httpx.AsyncClient, prompt_id: str) -> List[Dict[str, Any]]:
     tracker.log("Querying document intelligence")
     await update_status(prompt_id, StatusPatch(
             stepLookup=StepStatus.IN_PROGRESS
@@ -88,14 +88,14 @@ async def query_document_intelligence(subqueries: List[str], client: httpx.Async
         timeout=300.0,
     )
     di_response.raise_for_status()
-    di_data: Dict[str, Any] = di_response.json()
+    di_data: List[Dict[str, Any]] = di_response.json()
     await update_status(prompt_id, StatusPatch(
             stepLookup=StepStatus.DONE
         ), client)
     return di_data
 
 
-async def generate_script(retrieved_content: Dict[str, Any], prompt_id: str, client: httpx.AsyncClient) -> Dict[str, Any]:
+async def generate_script(retrieved_content: List[Dict[str, Any]], prompt_id: str, client: httpx.AsyncClient) -> Dict[str, Any]:
     tracker.log("Generating script")
     await update_status(prompt_id, StatusPatch(
             stepLectureScriptGeneration=StepStatus.IN_PROGRESS
@@ -199,7 +199,7 @@ async def avatar_video_producer(voice_track: Dict[str, Any], client: httpx.Async
         print("Error occured during avatar generation: ", e, flush=True)
         raise
 
-
+# TODO return Optional instead of response
 def generate_avatar_video(voice_track: Dict[str, Any], index: int, client: httpx.AsyncClient) -> Union[asyncio.Task[httpx.Response], None]:
     print(f"Calling Avatar API to generate video for slide {index}", flush=True)
     try:
@@ -211,8 +211,8 @@ def generate_avatar_video(voice_track: Dict[str, Any], index: int, client: httpx
 
 
 async def process_prompt(prompt_id: str, prompt_request: PromptRequest) -> None:
-    async with httpx.AsyncClient() as client:
-        try:
+    try:
+        async with httpx.AsyncClient() as client:
             subqueries = await decompose_inputs(prompt_request, prompt_id, client)
             retrieved_content = await query_document_intelligence(subqueries, client, prompt_id)
 
@@ -221,7 +221,10 @@ async def process_prompt(prompt_id: str, prompt_request: PromptRequest) -> None:
             refined_output = await generate_script(retrieved_content, prompt_id, client)
             lecture_script = refined_output.get("lectureScript", "")
             slides_data: Dict[str, Any] = await generate_slides(prompt_request, prompt_id, lecture_script, refined_output, client)
-            assert prompt_request.user_persona is not None, "User profile must be defined for voice scripts."
+
+            if prompt_request.user_persona is None:
+                tracker.log("ERROR: User profile must be defined for voice scripts.")
+                raise ValueError("User profile must be defined for voice scripts.")
 
             avatar_tasks: List[asyncio.Task[httpx.Response]] = await generate_voice_scripts(
                 lecture_script,
@@ -235,5 +238,5 @@ async def process_prompt(prompt_id: str, prompt_request: PromptRequest) -> None:
                 await asyncio.gather(*avatar_tasks)
 
             tracker.log(f"SUCCESS: Completed processing for {prompt_id}")
-        except Exception as e:
-            tracker.log(f"ERROR: Failed processing for {prompt_id}: {e}")
+    except Exception as e:
+        tracker.log(f"ERROR: Failed processing for {prompt_id}: {e}")

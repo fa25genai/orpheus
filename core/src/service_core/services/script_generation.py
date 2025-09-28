@@ -126,21 +126,21 @@ def generate_script_llm(retrieved_content: List[Dict[str, Any]], persona: Any) -
             continue
     raise RuntimeError("LLM did not produce valid JSON response")
 
-
-def generate_script(content: Dict[str, Any], persona: UserProfile) -> Dict[str, Any]:
+def generate_script(content: List[Dict[str, Any]], persona: UserProfile) -> Dict[str, Any]:
     retrieved_content: List[Dict[str, Any]] = convert_json_structure(content)
 
     # Create a lookup table for assets and a version of the content for the LLM
-    asset_lookup:Dict[str, Any] = {}
+    asset_lookup: Dict[str, Any] = {}
     retrieved_content_for_llm = copy.deepcopy(retrieved_content)
     for item in retrieved_content_for_llm:
         # print('a', flush=True)
-        if isinstance(item, dict): 
+        if isinstance(item, dict):
+            # TODO reduce complexity, reduce nesting
             if "assets" in item and isinstance(item["assets"], list):
                 # print('b', flush=True)
                 for asset in item["assets"]:
                     if isinstance(asset, dict) and "name" in asset:
-                            # Store the original asset data
+                        # Store the original asset data
                         asset_lookup[asset["name"]] = {"mimeType": asset.get("mimeType"), "data": asset.get("data")}
                         # Remove bulky data for the LLM call
                         asset.pop("mimeType", None)
