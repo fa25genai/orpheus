@@ -21,7 +21,9 @@ def get_executor(prompt_id: UUID) -> ThreadPoolExecutor:
 
 
 class CoreApiImpl(BaseCoreApi):  # type: ignore[no-untyped-call]
-    async def create_lecture_from_prompt(self, prompt_request: PromptRequest) -> PromptResponse:
+    async def create_lecture_from_prompt(
+        self, prompt_request: PromptRequest
+    ) -> PromptResponse:
         try:
             prompt_id = uuid4()
             # with ThreadPoolExecutor(max_workers=3) as executor:
@@ -40,7 +42,9 @@ class CoreApiImpl(BaseCoreApi):  # type: ignore[no-untyped-call]
         except ConnectionError as e:
             raise HTTPException(status_code=503, detail=f"Datastore error: {e}")
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {e}")
+            raise HTTPException(
+                status_code=500, detail=f"An unexpected error occurred: {e}"
+            )
 
 
 def process_prompt_handler(prompt_id: UUID, prompt_request: PromptRequest) -> None:
