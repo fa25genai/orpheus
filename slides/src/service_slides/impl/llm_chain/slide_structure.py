@@ -1,7 +1,7 @@
 from typing import Any, List, cast
 
 from langchain_core.language_models import BaseLanguageModel
-from langchain_core.output_parsers import PydanticOutputParser
+from langchain_core.output_parsers import PydanticOutputParser, StrOutputParser
 from langchain_core.prompts import (
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
@@ -14,12 +14,12 @@ from service_slides.clients.status.models.slide_structure import SlideStructure 
 from service_slides.impl.manager.layout_manager import LayoutDescription
 from service_slides.models.slide_item import SlideItem
 from service_slides.models.slide_structure import SlideStructure
-from langchain_core.output_parsers import StrOutputParser
 
 
 class DetailedSlideStructureItem(BaseModel):
     content: str = ""
     layout: str = "default"
+
 
 class DetailedSlideStructure(BaseModel):
     items: List[DetailedSlideStructureItem]
@@ -33,6 +33,7 @@ class DetailedSlideStructure(BaseModel):
         return SlideStructureStatus(
             pages=[SlideItemStatus(content=item.content) for item in self.items],
         )
+
 
 # ############################################################################################
 #    Stage 1: split the lecture script into logical chunks that can serve as candidate slides.
@@ -86,10 +87,11 @@ stage_1_prompt = ChatPromptTemplate.from_messages(
     ]
 )
 
+
 def _get_natural_structure(model: BaseLanguageModel[Any], lecture_script: str) -> str:
-    
     chain = stage_1_prompt | model | StrOutputParser()
     return chain.invoke({"lecture_script": lecture_script})
+
 
 # ##########################################################################
 #   Stage 2: turns naturally phrased chunks into structured slide candidates
@@ -170,6 +172,7 @@ stage_2_prompt = ChatPromptTemplate.from_messages(
     ]
 )
 
+
 def _get_typed_structure(
     model: BaseLanguageModel[Any],
     natural_slides: str,
@@ -181,16 +184,19 @@ def _get_typed_structure(
 
     chain = stage_2_prompt | model | parser
 
-    result = chain.invoke({
-        "natural_slides": natural_slides,
-        "layouts_description": layout_description,
-        "format_instructions": parser.get_format_instructions(),
-    })
+    result = chain.invoke(
+        {
+            "natural_slides": natural_slides,
+            "layouts_description": layout_description,
+            "format_instructions": parser.get_format_instructions(),
+        }
+    )
 
     # drop items with empty content
     result.items = [item for item in result.items if item.content.strip()]
 
     return result
+
 
 async def generate_slide_structure(
     model: BaseLanguageModel[Any],
