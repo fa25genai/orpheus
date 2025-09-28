@@ -633,4 +633,4 @@ class WeaviateGraphStore:
                         }
                     )
 
-        return {"content": content, "images": images}
+        return {"content": content, "images": []}
