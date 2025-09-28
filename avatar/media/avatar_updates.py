@@ -2,12 +2,12 @@
 from __future__ import annotations
 from typing import Optional
 from uuid import UUID
-from datetime import datetime
+from datetime import datetime, timezone
+from pathlib import Path
+import uuid
 
 from fastapi import HTTPException, status, UploadFile
 from sqlalchemy.orm import Session
-import uuid
-
 
 from .avatar_media import (
     Avatar,
@@ -21,6 +21,7 @@ from .avatar_media import (
     _save_upload,
     AVATARS_OUTPUT_DIR,
 )
+
 
 def _get_avatar_or_404(db: Session, course_id: UUID, slot: Optional[str]) -> Avatar:
     the_slot = _normalize_slot(slot) if slot is not None else CourseAvatarSlot.default
@@ -36,10 +37,14 @@ def _get_avatar_or_404(db: Session, course_id: UUID, slot: Optional[str]) -> Ava
         )
     return avatar
 
+
 def _latest_or_none(items):
     if not items:
         return None
-    return sorted(items, key=lambda x: x.created_at or datetime.min, reverse=True)[0]
+    # timezone-aware fallback so we don't mix aware/naive datetimes
+    epoch = datetime.min.replace(tzinfo=timezone.utc)
+    return sorted(items, key=lambda x: (x.created_at or epoch), reverse=True)[0]
+
 
 def replace_avatar_image(
     db: Session,
@@ -48,15 +53,21 @@ def replace_avatar_image(
     image_file: UploadFile,
     delete_previous: bool = True,
 ) -> AvatarCreatedResponse:
+    """
+    Replace the avatar's image for (course_id, slot).
+    Optionally deletes the previous latest image row + file.
+    """
     avatar = _get_avatar_or_404(db, course_id, slot)
-    saved_new_path = None
+    saved_new_path: Optional[Path] = None
 
     # capture old latest BEFORE adding the new one
     old_img = _latest_or_none(list(avatar.images))
 
     try:
+        # Save new file to disk
         saved_new_path = _save_upload(AVATARS_OUTPUT_DIR, UUID(avatar.avatar_id), image_file, kind="image")
 
+        # New DB row
         new_img = AvatarImage(
             id=str(uuid.uuid4()),
             avatar_id=avatar.avatar_id,
@@ -67,21 +78,27 @@ def replace_avatar_image(
         )
         db.add(new_img)
 
+        # Mark old row for deletion (unlink after commit)
         if delete_previous and old_img:
             db.delete(old_img)
-            try:
-                from pathlib import Path
-                Path(old_img.file_path).unlink(missing_ok=True)
-            except Exception:
-                pass
 
         db.commit()
-        db.refresh(avatar); db.refresh(new_img)
+
+        # Ensure collections reflect the commit before reading them
+        db.refresh(new_img)
+        db.expire(avatar, ["images", "audios"])
 
         latest_image = _latest_or_none(avatar.images)
         latest_audio = _latest_or_none(avatar.audios)
         if not latest_audio:
             raise HTTPException(status_code=404, detail="Avatar has no audio to pair with")
+
+        # After commit succeeded, best-effort unlink old file
+        if delete_previous and old_img:
+            try:
+                Path(old_img.file_path).unlink(missing_ok=True)
+            except Exception:
+                pass
 
         return AvatarCreatedResponse(
             avatarId=UUID(avatar.avatar_id),
@@ -102,7 +119,7 @@ def replace_avatar_image(
                 avatarId=UUID(avatar.avatar_id),
                 filePath=latest_audio.file_path,
                 mimeType=latest_audio.mime_type,
-                sizeBytes=latest_audio.size_bytes,
+                SizeBytes=latest_audio.size_bytes,
                 createdAt=latest_audio.created_at,
             ),
         )
@@ -116,6 +133,7 @@ def replace_avatar_image(
                 pass
         raise
 
+
 def replace_avatar_audio(
     db: Session,
     course_id: UUID,
@@ -123,14 +141,21 @@ def replace_avatar_audio(
     audio_file: UploadFile,
     delete_previous: bool = True,
 ) -> AvatarCreatedResponse:
+    """
+    Replace the avatar's audio for (course_id, slot).
+    Optionally deletes the previous latest audio row + file.
+    """
     avatar = _get_avatar_or_404(db, course_id, slot)
-    saved_new_path = None
+    saved_new_path: Optional[Path] = None
 
+    # capture old latest BEFORE adding the new one
     old_aud = _latest_or_none(list(avatar.audios))
 
     try:
+        # Save new file to disk
         saved_new_path = _save_upload(AVATARS_OUTPUT_DIR, UUID(avatar.avatar_id), audio_file, kind="audio")
 
+        # New DB row
         new_aud = AvatarAudio(
             id=str(uuid.uuid4()),
             avatar_id=avatar.avatar_id,
@@ -141,21 +166,27 @@ def replace_avatar_audio(
         )
         db.add(new_aud)
 
+        # Mark old row for deletion (unlink after commit)
         if delete_previous and old_aud:
             db.delete(old_aud)
-            try:
-                from pathlib import Path
-                Path(old_aud.file_path).unlink(missing_ok=True)
-            except Exception:
-                pass
 
         db.commit()
-        db.refresh(avatar); db.refresh(new_aud)
+
+        # Ensure collections reflect the commit before reading them
+        db.refresh(new_aud)
+        db.expire(avatar, ["images", "audios"])
 
         latest_image = _latest_or_none(avatar.images)
         latest_audio = _latest_or_none(avatar.audios)
         if not latest_image:
             raise HTTPException(status_code=404, detail="Avatar has no image to pair with")
+
+        # After commit succeeded, best-effort unlink old file
+        if delete_previous and old_aud:
+            try:
+                Path(old_aud.file_path).unlink(missing_ok=True)
+            except Exception:
+                pass
 
         return AvatarCreatedResponse(
             avatarId=UUID(avatar.avatar_id),
