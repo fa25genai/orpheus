@@ -294,7 +294,6 @@ def _purge_stale_jobs(now: Optional[datetime] = None) -> None:
 # imports you’ll need at top of file
 from pathlib import Path
 from sqlalchemy.orm import Session
-import media.avatar_queries as avatar_queries
 
 def generate_audio(
     slide_text: Optional[str],
