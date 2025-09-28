@@ -83,7 +83,6 @@ def ask_llm_with_model(prompt: str, ResponseModel: BaseModel) -> BaseModel:
     }
     debug_print(f"Final request body: {json.dumps(request_body, indent=2)}")
     not_done = True
-    validated = None
     while not_done:
         try:
             debug_print("Calling Bedrock Converse API...")
