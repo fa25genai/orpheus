@@ -206,8 +206,8 @@ def _save_upload_to_disk(avatar_id: UUID, upload: UploadFile) -> Path:
     tags=["avatar"],
 )
 def create_avatar(
-        file: Optional[UploadFile] = File(default=None),
-        db: Session = Depends(get_db),
+    file: Optional[UploadFile] = File(default=None),
+    db: Session = Depends(get_db),
 ) -> AvatarCreatedResponse:
     # Create avatar id and persist
     avatar_id = uuid.uuid4()
@@ -247,9 +247,9 @@ def create_avatar(
     tags=["avatar"],
 )
 def add_avatar_image(
-        avatarId: UUID,
-        file: UploadFile = File(...),
-        db: Session = Depends(get_db),
+    avatarId: UUID,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
 ) -> AvatarImageResponse:
     # Strict: avatar must exist
     avatar = db.get(Avatar, str(avatarId))
@@ -354,11 +354,11 @@ def _purge_stale_jobs(now: Optional[datetime] = None) -> None:
 
 
 def generate_audio(
-        voiceTrack: Optional[str] = "Hello students! I want you to drink coffee.",
-        voice_sample: str = "/app/database/voice_sample/krusche_voice.mp3",
-        prompt_id: Optional[UUID] = None,
-        user_profile: Optional[UserProfile] = None,
-        audio_counter: int = 0,
+    voiceTrack: Optional[str] = "Hello students! I want you to drink coffee.",
+    voice_sample: str = "/app/database/voice_sample/krusche_voice.mp3",
+    prompt_id: Optional[UUID] = None,
+    user_profile: Optional[UserProfile] = None,
+    audio_counter: int = 0,
 ) -> Optional[str]:
     """
     Generate a WAV file for one slide.
@@ -383,13 +383,16 @@ def generate_audio(
         data = {"voiceTrack": voiceTrack or "", "debug": str(is_debug).lower(), "promptId": prompt_id}
 
         print(f"[generate_audio] Posting to {audio_api_url}")
-        with vs_path.open("rb") as f, requests.post(
+        with (
+            vs_path.open("rb") as f,
+            requests.post(
                 audio_api_url,
                 data=data,
                 files={"voice_file": (vs_path.name, f, "audio/mpeg")},
                 timeout=(5, 600),
                 stream=True,
-        ) as resp:
+            ) as resp,
+        ):
             resp.raise_for_status()
             content_type = resp.headers.get("Content-Type", "").lower()
             if "application/json" in content_type:
@@ -427,11 +430,11 @@ def generate_audio(
 
 
 def generate_video(
-        audio_path: Optional[str] = None,
-        prompt_id: Optional[UUID] = None,
-        course_id: Optional[str] = None,
-        user_profile: Optional[UserProfile] = None,
-        video_counter: int = 0,
+    audio_path: Optional[str] = None,
+    prompt_id: Optional[UUID] = None,
+    course_id: Optional[str] = None,
+    user_profile: Optional[UserProfile] = None,
+    video_counter: int = 0,
 ) -> Optional[str]:
     """
     Render MP4 video for one slide using audio and a static image.
@@ -697,5 +700,6 @@ def get_generation_status(promptId: UUID) -> GenerationStatusResponse | JSONResp
         estimatedSecondsLeft=_eta_seconds(job),
         error=job.error,
     )
+
 
 # Run: uvicorn main:app --host 0.0.0.0 --port 8080 --reload

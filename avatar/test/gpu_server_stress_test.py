@@ -47,9 +47,8 @@ DEFAULT_VIDEO_URL = os.getenv(
 )
 
 # ---------- Embedded 1x1 PNG (black) for fallback ----------
-_ONE_BY_ONE_PNG = base64.b64decode(
-    b"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMB/kaKpGkAAAAASUVORK5CYII="
-)
+_ONE_BY_ONE_PNG = base64.b64decode(b"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMB/kaKpGkAAAAASUVORK5CYII=")
+
 
 # ---------- Utilities ----------
 def gen_wav_bytes(duration_s: float = 1.0, sample_rate: int = 16000, freq: float = 440.0) -> bytes:
@@ -67,13 +66,13 @@ def gen_wav_bytes(duration_s: float = 1.0, sample_rate: int = 16000, freq: float
 
     # fmt chunk
     buf.write(b"fmt ")
-    _write("<I", 16)            # Subchunk1Size (PCM)
-    _write("<H", 1)             # AudioFormat (PCM)
-    _write("<H", 1)             # NumChannels
-    _write("<I", sample_rate)   # SampleRate
+    _write("<I", 16)  # Subchunk1Size (PCM)
+    _write("<H", 1)  # AudioFormat (PCM)
+    _write("<H", 1)  # NumChannels
+    _write("<I", sample_rate)  # SampleRate
     _write("<I", sample_rate * 2)  # ByteRate (mono, 16-bit)
-    _write("<H", 2)             # BlockAlign
-    _write("<H", 16)            # BitsPerSample
+    _write("<H", 2)  # BlockAlign
+    _write("<H", 16)  # BitsPerSample
 
     # data chunk
     buf.write(b"data")
@@ -98,6 +97,7 @@ def gen_wav_bytes(duration_s: float = 1.0, sample_rate: int = 16000, freq: float
     buf.seek(0)
     return buf.read()
 
+
 def random_text() -> str:
     phrases = [
         "Hello students! I want you to drink coffee.",
@@ -108,8 +108,10 @@ def random_text() -> str:
     ]
     return random.choice(phrases)
 
+
 def jittered_uuid() -> str:
     return str(uuid.uuid4())
+
 
 class Stats:
     def __init__(self, label: str):
@@ -147,6 +149,7 @@ class Stats:
         lines.append(f"Latency (s): avg={avg:.3f}, p50={p50:.3f}, p90={p90:.3f}, p99={p99:.3f}")
         return "\n".join(lines)
 
+
 def percentile(data: List[float], p: float) -> float:
     if not data:
         return 0.0
@@ -158,9 +161,11 @@ def percentile(data: List[float], p: float) -> float:
         return s[int(k)]
     return s[f] * (c - k) + s[c] * (k - f)
 
+
 async def backoff_sleep(attempt: int):
-    base = min(2 ** attempt, 32)
+    base = min(2**attempt, 32)
     await asyncio.sleep(base * (0.5 + random.random() * 0.5))
+
 
 # ---------- Sample file manager (thread-safe counters) ----------
 class SampleSaver:
@@ -186,6 +191,7 @@ class SampleSaver:
                 return None
             self._v_count += 1
             return self.out_dir / f"sample-video-{self._v_count:03d}.mp4"
+
 
 # ---------- Workers ----------
 async def hit_audio(
@@ -255,6 +261,7 @@ async def hit_audio(
             if attempt > attempt_retries:
                 return
             await backoff_sleep(attempt)
+
 
 async def hit_video(
     session: aiohttp.ClientSession,
@@ -326,6 +333,7 @@ async def hit_video(
                 return
             await backoff_sleep(attempt)
 
+
 # ---------- Orchestration ----------
 async def run_load(
     audio_url: str,
@@ -357,19 +365,14 @@ async def run_load(
         # Audio tasks
         if voice_sample_path and os.path.isfile(voice_sample_path):
             for _ in range(n_audio):
-                tasks.append(asyncio.create_task(
-                    hit_audio(session, audio_url, voice_sample_path, audio_stats, sem, debug_flag, timeout_s, retries, saver=saver)
-                ))
+                tasks.append(asyncio.create_task(hit_audio(session, audio_url, voice_sample_path, audio_stats, sem, debug_flag, timeout_s, retries, saver=saver)))
         else:
             if n_audio > 0:
                 print("[WARN] Voice sample not found or not provided; skipping AUDIO tests.")
 
         # Video tasks
         for _ in range(n_video):
-            tasks.append(asyncio.create_task(
-                hit_video(session, video_url, video_stats, sem, debug_flag, timeout_s, retries,
-                          video_image_path=video_image_path, saver=saver)
-            ))
+            tasks.append(asyncio.create_task(hit_video(session, video_url, video_stats, sem, debug_flag, timeout_s, retries, video_image_path=video_image_path, saver=saver)))
 
         random.shuffle(tasks)
 
@@ -399,6 +402,7 @@ async def run_load(
     if saver and (save_audio_samples or save_video_samples):
         print(f"Saved samples in: {samples_dir.resolve()}")
 
+
 # ---------- CLI ----------
 def parse_args():
     p = argparse.ArgumentParser(description="Stress test GEN_AUDIO and GEN_VIDEO services (with optional sample saving).")
@@ -409,18 +413,14 @@ def parse_args():
     p.add_argument("--concurrency", type=int, default=20, help="Max concurrent requests (combined)")
     p.add_argument("--timeout", type=int, default=600, help="Per-request timeout seconds")
     p.add_argument("--retries", type=int, default=1, help="Retries per request on failure")
-    p.add_argument("--voice-sample", default="/app/database/voice_sample/krusche_voice.mp3",
-                   help="Path to voice sample MP3 for audio tests")
-    p.add_argument("--video-image", default=None,
-                   help="Optional path to a PNG image for video requests. Defaults to an embedded 1x1 PNG.")
-    p.add_argument("--save-audio-samples", type=int, default=0,
-                   help="Save up to N audio responses to disk (WAV). Default 0 (disabled).")
-    p.add_argument("--save-video-samples", type=int, default=0,
-                   help="Save up to N video responses to disk (MP4). Default 0 (disabled).")
-    p.add_argument("--samples-dir", default="./samples",
-                   help="Directory to write sample files into when saving is enabled.")
+    p.add_argument("--voice-sample", default="/app/database/voice_sample/krusche_voice.mp3", help="Path to voice sample MP3 for audio tests")
+    p.add_argument("--video-image", default=None, help="Optional path to a PNG image for video requests. Defaults to an embedded 1x1 PNG.")
+    p.add_argument("--save-audio-samples", type=int, default=0, help="Save up to N audio responses to disk (WAV). Default 0 (disabled).")
+    p.add_argument("--save-video-samples", type=int, default=0, help="Save up to N video responses to disk (MP4). Default 0 (disabled).")
+    p.add_argument("--samples-dir", default="./samples", help="Directory to write sample files into when saving is enabled.")
     p.add_argument("--debug", action="store_true", help="Send debug=true to services")
     return p.parse_args()
+
 
 def main():
     args = parse_args()
@@ -453,6 +453,7 @@ def main():
         )
     except KeyboardInterrupt:
         print("\nInterrupted.")
+
 
 if __name__ == "__main__":
     main()
