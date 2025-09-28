@@ -131,7 +131,7 @@ def generate_script(content: Dict[str, Any], persona: UserProfile) -> Dict[str, 
     retrieved_content: List[Dict[str, Any]] = convert_json_structure(content)
 
     # Create a lookup table for assets and a version of the content for the LLM
-    asset_lookup:Dict[str, Any] = {}
+    asset_lookup: Dict[str, Any] = {}
     retrieved_content_for_llm = copy.deepcopy(retrieved_content)
     for item in retrieved_content_for_llm:
         # print('a', flush=True)
