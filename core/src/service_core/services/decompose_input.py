@@ -31,9 +31,9 @@ class Config(BaseModel):
     llama_model: str | None = os.environ.get("LLAMA_MODEL", None)
     llama_api_url: str | None = os.environ.get("LLAMA_API_URL", None)
 
-    access_key = aws_access_key_id if aws_access_key_id is not None else None
-    secret_access_key = aws_secret_access_key if aws_secret_access_key is not None else None
-    session_token = aws_session_token if aws_session_token is not None else None
+    # access_key = aws_access_key_id if aws_access_key_id is not None else None
+    # secret_access_key = aws_secret_access_key if aws_secret_access_key is not None else None
+    # session_token = aws_session_token if aws_session_token is not None else None
 
 config = Config()
 
