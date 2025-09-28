@@ -96,6 +96,14 @@ class GenerationStatusResponse(BaseModel):
     estimatedSecondsLeft: int  # 0 when DONE/FAILED
     error: Optional[ErrorModel] = None
 
+class SlideTask(BaseModel):
+    promptId: UUID
+    courseId: str
+    userProfile: UserProfile
+    text: str
+    slideNo: int  # 1-based numbering
+    slot: Literal["default", "beginning", "ending"] = "default"
+
 
 
 # ---------------------------
