@@ -1,7 +1,7 @@
 "use client";
 import ChatInput from "@/components/chat-input";
 import GuideCards from "@/components/guide-cards";
-import {PersonaSelector} from "@/components/persona-selector";
+import {personas, PersonaSelector} from "@/components/persona-selector";
 import {Button} from "@/components/ui/button";
 import {guideText} from "@/data/text";
 import {PromptResponse} from "@/generated-api-clients/core";
@@ -31,7 +31,11 @@ export default function Home() {
   async function getPromptId(prompt: string) {
     try {
       const response: PromptResponse = await coreApi.createLectureFromPrompt({
-        promptRequest: {prompt, courseId: "IN001"},
+        promptRequest: {
+          prompt,
+          courseId: "IN001",
+          userPersona: personas.find((person) => person.id === personaLevel),
+        },
       });
       console.log("Received prompt ID:", response.promptId);
 
@@ -54,7 +58,7 @@ export default function Home() {
     const promptId = await getPromptId(input);
     if (promptId) setPromptId(promptId);
 
-    setMessages((prev) => [...prev, input]);
+    setMessages([input]);
     setPrompt("");
   }
 
