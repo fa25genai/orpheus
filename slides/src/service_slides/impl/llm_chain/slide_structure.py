@@ -1,7 +1,7 @@
 from typing import Any, List, cast
 
 from langchain_core.language_models import BaseLanguageModel
-from langchain_core.output_parsers import PydanticOutputParser, StrOutputParser
+from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.prompts import (
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
@@ -11,6 +11,7 @@ from pydantic import BaseModel
 
 from service_slides.clients.status.models.slide_structure import SlideItem as SlideItemStatus  # type: ignore[attr-defined]
 from service_slides.clients.status.models.slide_structure import SlideStructure as SlideStructureStatus
+from service_slides.impl.llm_chain.shared_llm import invoke_llm
 from service_slides.impl.manager.layout_manager import LayoutDescription
 from service_slides.models.slide_item import SlideItem
 from service_slides.models.slide_structure import SlideStructure
@@ -89,8 +90,8 @@ stage_1_prompt = ChatPromptTemplate.from_messages(
 
 
 def _get_natural_structure(model: BaseLanguageModel[Any], lecture_script: str) -> str:
-    chain = stage_1_prompt | model | StrOutputParser()
-    return chain.invoke({"lecture_script": lecture_script})
+    result = invoke_llm(model=model, prompt=stage_1_prompt, input_data={"lecture_script": lecture_script})
+    return cast(str, result)
 
 
 # ##########################################################################
@@ -183,14 +184,15 @@ def _get_typed_structure(
 
     layout_description = "\n".join([f'"{layout.name}" → Description: {layout.description}' for layout in available_layouts])
 
-    chain = stage_2_prompt | model | parser
-
-    result = chain.invoke(
-        {
+    result = invoke_llm(
+        model=model,
+        prompt=stage_2_prompt,
+        input_data={
             "natural_slides": natural_slides,
             "layouts_description": layout_description,
             "format_instructions": parser.get_format_instructions(),
-        }
+        },
+        parser=parser,
     )
 
     # drop items with empty content
