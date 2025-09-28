@@ -41,10 +41,14 @@ def convert_json_structure(content: List[Dict[str, Any]]) -> List[Dict[str, Any]
                 description = image_data.get("description", "untitled_image")
 
                 # Regex to extract MIME type and base64 data from the data URI
-                match = re.match(r"data:(?P<mime_type>[\w/]+);base64,(?P<data>.*)", image_str)
+                match = re.match(
+                    r"data:(?P<mime_type>[\w/]+);base64,(?P<data>.*)", image_str
+                )
 
                 if not match:
-                    print(f"Warning: Could not parse image data for '{description}'. Skipping.")
+                    print(
+                        f"Warning: Could not parse image data for '{description}'. Skipping."
+                    )
                     continue
 
                 image_info = match.groupdict()
@@ -53,7 +57,12 @@ def convert_json_structure(content: List[Dict[str, Any]]) -> List[Dict[str, Any]
 
                 filename = generate_filename_from_description(description, mime_type)
 
-                asset = {"name": filename, "assetDescription": description, "mimeType": mime_type, "data": base64_data}
+                asset = {
+                    "name": filename,
+                    "assetDescription": description,
+                    "mimeType": mime_type,
+                    "data": base64_data,
+                }
                 new_item["assets"].append(asset)
 
         output_data.append(new_item)

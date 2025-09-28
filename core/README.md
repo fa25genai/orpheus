@@ -32,7 +32,7 @@ Your Logic (**EDIT HERE**): All your business logic should be implemented in the
 1. Run the API Server
 
 ```
-poetry run uvicorn src.service_core.main:app --reload
+poetry run uvicorn service_core.main:app --reload
 ```
 
 The server will be available at `http://127.0.0.1:8000`.

@@ -98,9 +98,9 @@ def generate_narrations(
     output_data: Dict[str, Any] = {
         "slideMessages": slide_messages,
         "promptId": example_slides["promptId"],
-        "courseId": (
-            user_profile.enrolled_courses[0] if user_profile.enrolled_courses else None
-        ),
+        "courseId": user_profile.enrolled_courses[0]
+        if user_profile.enrolled_courses
+        else None,
         "userProfile": json.loads(
             user_profile.model_dump_json(by_alias=False, exclude_unset=True)
         ),
