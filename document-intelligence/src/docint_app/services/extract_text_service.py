@@ -8,6 +8,7 @@ from typing import List
 
 import ollama
 from pdf2image import convert_from_path
+from concurrent.futures import ThreadPoolExecutor
 from PIL import Image
 
 
@@ -62,12 +63,26 @@ class ExtractTextService:
             print(f"Details: {e}")
             return []
         texts = []
-        for i, page in enumerate(pages):
+
+        '''for i, page in enumerate(pages):
             slide_text_block = ""
             extracted_text = self.extract_text_from_slide(page)
             slide_text_block += extracted_text + "\n\n"
-            texts.append(slide_text_block)
-        self.save_texts_to_txt(texts, "lectureSlides/out.txt")
+            texts.append(slide_text_block)'''
+        
+        with ThreadPoolExecutor(len(pages)) as executor:
+            futures_with_index = []
+            for i, page in enumerate(pages):
+                future = executor.submit(self.extract_text_from_slide, page)
+                futures_with_index.append((future, i))
+            
+            for future,i in futures_with_index:
+                print(f"thread {i} executing")
+                slide_text_block = ""
+                extracted_text = future.result()
+                slide_text_block += extracted_text + "\n\n"
+                texts.append(slide_text_block)
+        #self.save_texts_to_txt(texts, "lectureSlides/out.txt")
         return texts
 
     @staticmethod
