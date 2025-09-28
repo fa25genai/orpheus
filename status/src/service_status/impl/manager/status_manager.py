@@ -51,7 +51,10 @@ class StatusManager:
                 for k, v in patch.steps_avatar_generation.items():
                     try:
                         idx = int(k)
-                        base.steps_avatar_generation[idx] = v
+                        if v.video is not None:
+                            base.steps_avatar_generation[idx].video = v.video
+                        if v.audio is not None:
+                            base.steps_avatar_generation[idx].audio = v.audio
                     except Exception as ex:
                         _log.error(
                             "Failed to convert steps avatar generation key '{}' to int: {}".format(

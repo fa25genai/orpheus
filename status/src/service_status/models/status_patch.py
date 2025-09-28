@@ -19,6 +19,8 @@ import json
 
 from pydantic import BaseModel, ConfigDict, Field, StrictInt, StrictStr
 from typing import Any, ClassVar, Dict, List, Optional
+
+from service_status.models.avatar_element_status_patch import AvatarElementStatusPatch
 from service_status.models.slide_structure import SlideStructure
 from service_status.models.step_status import StepStatus
 
@@ -38,7 +40,7 @@ class StatusPatch(BaseModel):
     step_slide_structure_generation: Optional[StepStatus] = Field(default=None, alias="stepSlideStructureGeneration")
     step_slide_generation: Optional[StrictInt] = Field(default=None, alias="stepSlideGeneration")
     step_slide_postprocessing: Optional[StepStatus] = Field(default=None, alias="stepSlidePostprocessing")
-    steps_avatar_generation: Optional[Dict[str, Any]] = Field(default=None, alias="stepsAvatarGeneration")
+    steps_avatar_generation: Optional[Dict[str, AvatarElementStatusPatch]] = Field(default=None, alias="stepsAvatarGeneration")
     lecture_summary: Optional[StrictStr] = Field(default=None, alias="lectureSummary")
     slide_structure: Optional[SlideStructure] = Field(default=None, alias="slideStructure")
     __properties: ClassVar[List[str]] = ["stepUnderstanding", "stepLookup", "stepLectureScriptGeneration", "stepSlideStructureGeneration", "stepSlideGeneration", "stepSlidePostprocessing", "stepsAvatarGeneration", "lectureSummary", "slideStructure"]
