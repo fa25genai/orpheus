@@ -318,16 +318,30 @@ def _purge_stale_jobs(now: Optional[datetime] = None) -> None:
 # Audio / Video Generators
 # ---------------------------
 
+import os
+from pathlib import Path
+from typing import Optional
+from uuid import UUID
+
+import requests
+from sqlalchemy.orm import Session
+
+# from your project:
+# from . import avatar_queries
+# from .models import UserProfile
+# from .paths import job_dir
+
+
 def generate_audio(
-        voiceTrack: Optional[str],
-        course_id: Union[str,UUID],
-        prompt_id: Optional[UUID],
-        user_profile: Optional[UserProfile],
-        audio_counter: int,
-        *,
-        db: Session,  # NEW: DB session
-        slot: str = "default",  # NEW: optional slot
-) -> Optional[str]:
+    voice_track: Optional[str],
+    course_id: str | UUID,
+    prompt_id: UUID | None,
+    user_profile: "UserProfile" | None,  # kept for signature parity; not used below
+    audio_counter: int,
+    *,
+    db: Session,
+    slot: str = "default",
+) -> str | None:
     """
     Generate a WAV file for one slide using the avatar audio stored in DB.
     Saves under /data/jobs/<promptId>/<N>.wav
@@ -343,32 +357,45 @@ def generate_audio(
 
     try:
         # 1) Fetch reference voice from DB by (course_id, slot)
-        ref = avatar_queries.get_latest_audio_for_course_slot(db, course_id, slot)
-        ref_path = Path(ref.file_path)
-        if not ref_path.is_file():
-            print(f"[generate_audio] DB voice not found on disk: {ref_path}")
-            print("[generate_audio] Default fallback: Using krusche_voice.mp3")
+        ref = avatar_queries.get_latest_audio_for_course_slot(db, str(course_id), slot)
+
+        # Choose reference file path (DB or fallback)
+        if not ref or not getattr(ref, "file_path", None):
+            print("[generate_audio] No DB voice found; using fallback sample.")
             ref_path = Path("/app/database/voice_sample/krusche_voice.mp3")
+        else:
+            ref_path = Path(ref.file_path)
+            if not ref_path.is_file():
+                print(f"[generate_audio] DB voice not found on disk: {ref_path}")
+                print("[generate_audio] Default fallback: Using krusche_voice.mp3")
+                ref_path = Path("/app/database/voice_sample/krusche_voice.mp3")
+
+        # Pick a sensible MIME type for the upload
+        suffix = ref_path.suffix.lower()
+        mime_type = "audio/wav" if suffix == ".wav" else "audio/mpeg"
 
         # 2) Call TTS with the DB audio as voice_file
-        is_debug = os.getenv("DEBUG", "").lower() in {"debug"}
-        data = {"voiceTrack": voiceTrack or "", "debug": str(is_debug).lower(), "promptId": prompt_id}
+        is_debug = os.getenv("DEBUG", "").lower() == "debug"
+        data = {
+            "voiceTrack": voice_track or "",
+            "debug": "true" if is_debug else "false",
+            "promptId": str(prompt_id),  # <-- ensure JSON/form-serializable
+        }
 
-        print(f"[generate_audio] Posting to {audio_api_url}")
-       with (
-            vs_path.open("rb") as f,
-            requests.post(
+        print(f"[generate_audio] Posting to {audio_api_url} with {ref_path}")
+        with ref_path.open("rb") as f:
+            resp = requests.post(
                 audio_api_url,
                 data=data,
-                files={"voice_file": (vs_path.name, f, "audio/mpeg")},
+                files={"voice_file": (ref_path.name, f, mime_type)},
                 timeout=(5, 600),
                 stream=True,
-            ) as resp,
-        ):
+            )
             resp.raise_for_status()
-            content_type = resp.headers.get("Content-Type", "").lower()
+
+            content_type = (resp.headers.get("Content-Type") or "").lower()
             if "application/json" in content_type:
-                # Try to parse the message to help debugging
+                # Unexpected JSON instead of audio -> log payload for debugging
                 try:
                     payload = resp.json()
                     print(f"[generate_audio] Unexpected JSON response: {payload}")
@@ -384,11 +411,14 @@ def generate_audio(
                         out.write(chunk)
                 out.flush()
                 os.fsync(out.fileno())
-            if tmp_path.stat().st_size == 0:
-                print("[generate_audio] Empty file received")
-                tmp_path.unlink(missing_ok=True)
-                return None
-            tmp_path.replace(wav_path)
+
+        # Validate size & finalize
+        if not tmp_path.exists() or tmp_path.stat().st_size == 0:
+            print("[generate_audio] Empty file received")
+            tmp_path.unlink(missing_ok=True)
+            return None
+
+        tmp_path.replace(wav_path)
         print(f"[generate_audio] OK -> {wav_path}")
         return str(wav_path)
 
