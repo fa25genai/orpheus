@@ -45,6 +45,8 @@ The following configuration options are available (using environment variables)
 
 | Environment Variable          | Description                                                                                         | Default value                        |
 |-------------------------------|-----------------------------------------------------------------------------------------------------|--------------------------------------|
+| `ORPHEUS_VERBOSE`             | Enable verbose logging.                                                                             |                                      |
+| `ORPHEUS_DEBUG`               | Replaces all LLM interactions with predefined stand-in data (independent of inputs).                |                                      |
 | `SPLITTING_MODEL`             | Name of the LLM, which should be used to perform distribution of the lecture content across slides. |                                      |
 | `SLIDESGEN_MODEL`             | Name of the LLM, which should be used to generate the slide content                                 |                                      |
 | `POSTPROCESSING_SERVICE_HOST` | Base URL of where to reach the **Slide Postprocessing Service**                                     | `http://slides-postprocessing:30607` |
