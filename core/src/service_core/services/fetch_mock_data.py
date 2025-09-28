@@ -159,7 +159,7 @@ def create_voice_script(index=0) -> Dict[str, Any]:
         courseId="cs001",
         voiceTrack=slides[index],
         slideNumber=index,
-        userProfile=create_user().model_dump(mode="json"),
+        userProfile=create_user(),
         metadata=""
     )
     # response = json.loads(voice_track_response.model_dump_json(by_alias=True, exclude_unset=True))
