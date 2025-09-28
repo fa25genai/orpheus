@@ -114,11 +114,14 @@ export default function Home() {
             guideText={guideText}
             onSelect={(question) => handleSubmit(question, undefined)}
           />
-          <ChatInput
-            handleSubmit={handleSubmit}
-            prompt={prompt}
-            setPrompt={setPrompt}
-          />
+
+          <div className="fixed bottom-20 right-0 left-0 mx-auto max-w-6xl">
+            <ChatInput
+              handleSubmit={handleSubmit}
+              prompt={prompt}
+              setPrompt={setPrompt}
+            />
+          </div>
         </section>
       )}
       {messages.length > 0 && (
