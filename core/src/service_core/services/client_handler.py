@@ -100,8 +100,8 @@ async def generate_script(retrieved_content: List[Dict[str, Any]], prompt_id: st
             ), client)
         
         if prompt_request.user_persona is None:
-                print("ERROR: User profile must be defined for processing.", flush=True)
-                raise ValueError("User profile must be defined")
+                print("ERROR: User persona must be defined for processing.", flush=True)
+                raise ValueError("User persona must be defined")
         
         if DEBUG:
             output: Dict[str, Any] = mock_service.create_script()
