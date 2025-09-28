@@ -41,6 +41,7 @@ VIDEO_ROOT = Path(os.getenv("VIDEO_ROOT", "/data/jobs")).resolve()
 PUBLIC_VIDEOS_BASE = os.getenv("PUBLIC_VIDEOS_BASE", "/videos/jobs")
 VIDEO_ROOT.mkdir(parents=True, exist_ok=True)
 
+
 # ---------------------------
 # Models
 # ---------------------------
@@ -205,8 +206,8 @@ def _save_upload_to_disk(avatar_id: UUID, upload: UploadFile) -> Path:
     tags=["avatar"],
 )
 def create_avatar(
-    file: Optional[UploadFile] = File(default=None),
-    db: Session = Depends(get_db),
+        file: Optional[UploadFile] = File(default=None),
+        db: Session = Depends(get_db),
 ) -> AvatarCreatedResponse:
     # Create avatar id and persist
     avatar_id = uuid.uuid4()
@@ -246,9 +247,9 @@ def create_avatar(
     tags=["avatar"],
 )
 def add_avatar_image(
-    avatarId: UUID,
-    file: UploadFile = File(...),
-    db: Session = Depends(get_db),
+        avatarId: UUID,
+        file: UploadFile = File(...),
+        db: Session = Depends(get_db),
 ) -> AvatarImageResponse:
     # Strict: avatar must exist
     avatar = db.get(Avatar, str(avatarId))
@@ -353,12 +354,12 @@ def _purge_stale_jobs(now: Optional[datetime] = None) -> None:
 
 
 def generate_audio(
-    slide_text: Optional[str] = "Hello students! I want you to drink coffee.",
-    course_id: Optional[str] = "course_123",
-    voice_sample: str = "/app/database/voice_sample/krusche_voice.mp3",
-    prompt_id: Optional[UUID] = None,
-    user_profile: Optional[UserProfile] = None,
-    audio_counter: int = 0,
+        slide_text: Optional[str] = "Hello students! I want you to drink coffee.",
+        course_id: Optional[str] = "course_123",
+        voice_sample: str = "/app/database/voice_sample/krusche_voice.mp3",
+        prompt_id: Optional[UUID] = None,
+        user_profile: Optional[UserProfile] = None,
+        audio_counter: int = 0,
 ) -> Optional[str]:
     """
     Generate a WAV file for one slide.
@@ -371,22 +372,50 @@ def generate_audio(
     audio_api_url = os.getenv("GEN_AUDIO", "http://localhost:7000/v1/audio/generate")
 
     job_folder = job_dir(prompt_id)
+    job_folder.mkdir(parents=True, exist_ok=True)
     wav_path = job_folder / f"{audio_counter}.wav"
 
     try:
-        if not Path(voice_sample).is_file():
+        vs_path = Path(voice_sample)
+        if not vs_path.is_file():
             print(f"[generate_audio] Voice sample not found: {voice_sample}")
             return None
+        is_debug = os.getenv("DEBUG", "").lower() in {"debug"}
+        data = {"slide_text": slide_text or "", "debug": str(is_debug).lower()}
 
-        with open(voice_sample, "rb") as f:
-            is_debug = os.getenv("DEBUG", "not debug")
-            data = {"slide_text": slide_text, "debug": is_debug}
-            files = {"voice_file": (os.path.basename(voice_sample), f, "audio/mpeg")}
-            print(f"[generate_audio] Posting to {audio_api_url}")
-            resp = requests.post(audio_api_url, data=data, files=files, timeout=(5, 600))
-        resp.raise_for_status()
+        print(f"[generate_audio] Posting to {audio_api_url}")
+        with vs_path.open("rb") as f, requests.post(
+                audio_api_url,
+                data=data,
+                files={"voice_file": (vs_path.name, f, "audio/mpeg")},
+                timeout=(5, 600),
+                stream=True,
+        ) as resp:
+            resp.raise_for_status()
+            content_type = resp.headers.get("Content-Type", "").lower()
+            if "application/json" in content_type:
+                # Try to parse the message to help debugging
+                try:
+                    payload = resp.json()
+                    print(f"[generate_audio] Unexpected JSON response: {payload}")
+                except Exception:
+                    print("[generate_audio] Unexpected JSON response (could not parse).")
+                return None
 
-        wav_path.write_bytes(resp.content)
+            # Write the binary WAV to disk in a temp file, then atomically move
+            tmp_path = wav_path.with_suffix(".wav.part")
+            with tmp_path.open("wb") as out:
+                for chunk in resp.iter_content(chunk_size=1024 * 256):
+                    if chunk:
+                        out.write(chunk)
+                out.flush()
+                os.fsync(out.fileno())
+            if tmp_path.stat().st_size == 0:
+                print("[generate_audio] Empty file received")
+                tmp_path.unlink(missing_ok=True)
+                return None
+            tmp_path.replace(wav_path)
+
         print(f"[generate_audio] OK -> {wav_path}")
         return str(wav_path)
 
@@ -399,11 +428,11 @@ def generate_audio(
 
 
 def generate_video(
-    audio_path: Optional[str] = None,
-    prompt_id: Optional[UUID] = None,
-    course_id: Optional[str] = None,
-    user_profile: Optional[UserProfile] = None,
-    video_counter: int = 0,
+        audio_path: Optional[str] = None,
+        prompt_id: Optional[UUID] = None,
+        course_id: Optional[str] = None,
+        user_profile: Optional[UserProfile] = None,
+        video_counter: int = 0,
 ) -> Optional[str]:
     """
     Render MP4 video for one slide using audio and a static image.
@@ -415,6 +444,8 @@ def generate_video(
 
     video_api_url = os.getenv("GEN_VIDEO", "http://localhost:8000/infer")
     job_folder = job_dir(prompt_id)
+    job_folder.mkdir(parents=True, exist_ok=True)
+
     temp_path = job_folder / f".{video_counter}.mp4.part"
     final_path = job_folder / f"{video_counter}.mp4"
 
@@ -429,16 +460,25 @@ def generate_video(
         print(f"[generate_video] Source image not found: {source_path}")
         return None
 
-    files = {
-        "audio": ("audio.wav", open(resolved_audio, "rb"), "audio/wav"),
-        "source": ("image.png", open(source_path, "rb"), "image/png"),
-    }
-    is_debug = os.getenv("DEBUG", "not debug")
+    is_debug = os.getenv("DEBUG", "").lower() in {"debug"}
     data = {"debug": is_debug}
 
     try:
         print(f"[generate_video] Posting to {video_api_url}")
-        with requests.post(video_api_url, files=files, data=data, stream=True, timeout=(5, 600)) as resp:
+        with (
+            open(resolved_audio, "rb") as audio_f,
+            open(source_path, "rb") as image_f,
+            requests.post(
+                video_api_url,
+                files={
+                    "audio": ("audio.wav", audio_f, "audio/wav"),
+                    "source": ("image.png", image_f, "image/png"),
+                },
+                data=data,
+                stream=True,
+                timeout=(5, 600),
+            ) as resp,
+        ):
             if resp.status_code >= 400:
                 print(f"[generate_video] HTTP {resp.status_code}: {resp.text[:200]}")
                 return None
@@ -453,6 +493,7 @@ def generate_video(
 
         if temp_path.stat().st_size == 0:
             print("[generate_video] empty file received")
+            temp_path.unlink(missing_ok=True)
             return None
 
         temp_path.replace(final_path)
@@ -465,12 +506,6 @@ def generate_video(
     except Exception as e:
         print(f"[generate_video] Unexpected error: {e}")
         return None
-    finally:
-        for v in files.values():
-            try:
-                v[1].close()
-            except Exception:
-                pass
 
 
 # ---------------------------
@@ -664,6 +699,5 @@ def get_generation_status(promptId: UUID) -> GenerationStatusResponse | JSONResp
         estimatedSecondsLeft=_eta_seconds(job),
         error=job.error,
     )
-
 
 # Run: uvicorn main:app --host 0.0.0.0 --port 8080 --reload
