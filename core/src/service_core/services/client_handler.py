@@ -4,7 +4,6 @@ from typing import Any, Dict, List, Union
 
 import httpx
 from dotenv import load_dotenv
-from pathlib import Path
 
 import service_core.services.fetch_mock_data as mock_service
 from service_core.impl.tracker import tracker
