@@ -23,8 +23,8 @@ from typing import Any, Dict, List, Tuple, cast
 
 from service_core.models.user_profile import UserProfile
 from service_core.services.helpers.handle_retrieved import convert_json_structure
-from service_core.services.helpers.llm import getLLM
-
+from service_core.services.helpers.llm import ask_llm_with_model
+from pydantic import BaseModel
 
 def try_parse_json(raw_response: str) -> Tuple[bool, Any]:
     """Try to parse JSON response, return (success, result)"""
@@ -89,11 +89,25 @@ def generate_script_llm(retrieved_content: List[Dict[str, Any]], persona: Any) -
     ]
     }}
     """
+    class Asset(BaseModel):
+        """
+        A model to represent a single asset, like an image or a video.
+        """
+        name: str
+        assetDescription: str
+
+    class Lecture(BaseModel):
+        """
+        A model to represent the entire lecture structure, including the script
+        and a list of associated assets.
+        """
+        lectureScript: str
+        assets: List[Asset]
     # print(prompt)
     max_retries = 3
     for attempt in range(max_retries):
         try:
-            raw_message = getLLM().invoke(prompt)
+            raw_message = ask_llm_with_model(prompt, Lecture)
             content_obj = getattr(raw_message, "content", raw_message)
             raw: str = str(content_obj)
             # print(f"\nBreak point (attempt {attempt + 1}): {raw}")

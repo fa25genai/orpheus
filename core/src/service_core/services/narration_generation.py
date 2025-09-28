@@ -17,15 +17,14 @@ from typing import Any, Dict
 
 from service_core.models.user_profile import UserProfile
 from service_core.services.helpers.debug import debug_print, enable_debug
-from service_core.services.helpers.llm import getLLM
+from service_core.services.helpers.llm import ask_llm
 from service_core.services.helpers.loaders import load_prompt
 
 
 def generate_narrations(
     lecture_script: str,
     example_slides: Dict[str, Any],
-    user_profile: UserProfile,
-    debug: bool = False,
+    user_profile: UserProfile
 ) -> Dict[str, Any]:
     """
     Generates narrations for lecture slides based on a script and user profile.
@@ -39,11 +38,6 @@ def generate_narrations(
     Returns:
         str: A JSON string containing the generated slide narrations.
     """
-
-    if debug:
-        enable_debug()
-
-    llm = getLLM()
 
     # slides_data = json.loads(example_slides.model_dump_json())
     pages = example_slides["structure"]["pages"]
@@ -78,8 +72,7 @@ def generate_narrations(
 
         # Join all parts with newlines
         prompt = "\n\n".join(prompt_parts)
-        response = llm.invoke(prompt)
-        narration = response.content
+        narration = ask_llm(prompt)
 
         debug_print(f"--- Slide {i + 1} ---")
         debug_print(f"Content: {page_content}")
