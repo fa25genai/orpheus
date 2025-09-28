@@ -15,7 +15,7 @@ class StatusManager:
     status_objects: typing.Dict[str, Status] = {}
     listeners: typing.Dict[str, typing.Dict[str, typing.Callable[[Status], Awaitable[None]]]]
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.status_objects = {}
         self.listeners = {}
         self.mutex = Lock()
