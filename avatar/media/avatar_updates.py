@@ -1,25 +1,26 @@
 # media/avatar_updates.py
 from __future__ import annotations
-from typing import Optional
-from uuid import UUID
+
+import uuid
 from datetime import datetime, timezone
 from pathlib import Path
-import uuid
+from typing import Optional
+from uuid import UUID
 
-from fastapi import HTTPException, status, UploadFile
+from fastapi import HTTPException, UploadFile, status
 from sqlalchemy.orm import Session
 
 from .avatar_media import (
+    AVATARS_OUTPUT_DIR,
     Avatar,
-    AvatarImage,
     AvatarAudio,
-    AvatarCreatedResponse,
-    AvatarImageResponse,
     AvatarAudioResponse,
+    AvatarCreatedResponse,
+    AvatarImage,
+    AvatarImageResponse,
     CourseAvatarSlot,
     _normalize_slot,
     _save_upload,
-    AVATARS_OUTPUT_DIR,
 )
 
 

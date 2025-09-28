@@ -1,20 +1,20 @@
 # media/avatar_queries.py
 from __future__ import annotations
+
+from datetime import datetime
 from typing import List, Optional, Union
 from uuid import UUID
-from datetime import datetime
-
 
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from .avatar_media import (
     Avatar,
-    AvatarImage,
-    AvatarAudio,    
-    AvatarCreatedResponse,
-    AvatarImageResponse,
+    AvatarAudio,
     AvatarAudioResponse,
+    AvatarCreatedResponse,
+    AvatarImage,
+    AvatarImageResponse,
     CourseAvatarSlot,
     _normalize_slot,
 )

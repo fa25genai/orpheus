@@ -1,20 +1,20 @@
 # avatar_media.py
 from __future__ import annotations
-import os, uuid, shutil
-from pathlib import Path
+
+import os
+import shutil
+import uuid
 from datetime import datetime
-from uuid import UUID
-from typing import Optional, Tuple
 from enum import Enum
+from pathlib import Path
+from typing import Optional
+from uuid import UUID
 
-from fastapi import UploadFile, HTTPException, status
+from fastapi import HTTPException, UploadFile, status
 from pydantic import BaseModel
-from sqlalchemy import String, DateTime, Text, Integer, ForeignKey, func
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship, Session
-
-from sqlalchemy import UniqueConstraint
+from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, UniqueConstraint, func, text
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy import text
+from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, relationship
 
 
 class CourseAvatarSlot(str, Enum):

@@ -1,6 +1,4 @@
 import os
-import shutil
-import uuid
 from collections.abc import Generator
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -9,21 +7,19 @@ from threading import Event, Thread
 from time import sleep
 from typing import Dict, List, Literal, Optional
 from uuid import UUID
-import media.avatar_updates as avatar_updates
 
 import requests
-from fastapi import Depends, FastAPI, File, HTTPException, Request, Response, UploadFile, status
-from fastapi import Form, Query
+from fastapi import Depends, FastAPI, File, Form, Query, Request, Response, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, StringConstraints
-from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, create_engine, func
-from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, relationship, sessionmaker
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session, sessionmaker
 from typing_extensions import Annotated
 
 import media.avatar_media as media
 import media.avatar_queries as avatar_queries
-
+import media.avatar_updates as avatar_updates
 
 app = FastAPI(title="Service Video-Generation APIs", version="0.1")
 origins = ["*"]
@@ -293,7 +289,9 @@ def _purge_stale_jobs(now: Optional[datetime] = None) -> None:
 
 # imports you’ll need at top of file
 from pathlib import Path
+
 from sqlalchemy.orm import Session
+
 
 def generate_audio(
     slide_text: Optional[str],
