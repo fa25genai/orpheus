@@ -196,7 +196,7 @@ def _get_typed_structure(
     # drop items with empty content
     result.items = [item for item in result.items if item.content.strip()]
 
-    return result
+    return cast(DetailedSlideStructure, result)
 
 
 async def generate_slide_structure(
@@ -212,4 +212,4 @@ async def generate_slide_structure(
 
     structured_slides = _get_typed_structure(model, natural_slides, available_layouts)
 
-    return cast(DetailedSlideStructure, structured_slides)
+    return structured_slides
