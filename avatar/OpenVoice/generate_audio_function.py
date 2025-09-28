@@ -260,6 +260,7 @@ def generate_audio(
         voiceTrack: str,
         *,
         user_profile: Optional[UserProfile] = None,
+        tmp_dir: Path,
         reference_voice_path: Path,
         promptId: str,
 ) -> str:
@@ -276,7 +277,7 @@ def generate_audio(
     deps_cfg = CFG["deps"]
 
     ckpt_converter = Path(paths["ckpt_converter"]).resolve()
-    output_dir = Path("./output").resolve()
+    output_dir = tmp_dir / "output"
     base_speakers_dir = Path(paths["base_speakers_dir"]).resolve()
     ses_dir = _speaker_embeddings_dir(base_speakers_dir, paths["ses_subdir"])
 
@@ -291,6 +292,7 @@ def generate_audio(
     tone_color_converter = _load_converter(ckpt_converter, device)
 
     if not reference_voice_path.exists():
+        print(f"ERROR: voice_file not found: {reference_voice_path}")
         raise HTTPException(status_code=400, detail=f"voice_file not found: {reference_voice_path}")
 
     target_se, _ = se_extractor.get_se(str(reference_voice_path), tone_color_converter, vad=True)
@@ -313,7 +315,7 @@ def generate_audio(
         return ""
 
     tmp_src = output_dir / "tmp.wav"
-    save_path = output_dir / f"{uuid.uuid4()}.wav"
+    save_path = output_dir / f"output.wav"
     success = False
 
     for speaker_key, speaker_id in speaker_ids.items():
@@ -345,20 +347,10 @@ def generate_audio(
             success = True
             print(f"✓ audio generated: {save_path}")
             break
-
-
         except Exception as e:
-
             print(f"[generation failed] speaker={speaker_key} error: {e}")
 
             continue
-
-    # Cleanup tmp file
-    try:
-        if tmp_src.exists():
-            tmp_src.unlink()
-    except Exception:
-        pass
 
     return str(save_path) if success else ""
 
@@ -399,6 +391,8 @@ async def generate_audio_endpoint(
     Returns the first generated WAV as a binary response (audio/wav).
     """
 
+    print(f"✓ request: voice_file={voice_file.filename} voiceTrack={'[present]' if voiceTrack else '[missing]'} debug={debug} promptId={promptId or '[none]'}")
+
     # Resolve texts
     if not voiceTrack:
         raise HTTPException(status_code=400, detail="Provide 'voiceTrack' input.")
@@ -412,9 +406,20 @@ async def generate_audio_endpoint(
             headers={"Cache-Control": "no-store"},
             # background tasks are not used in debug mode
         )
+    
     # Save uploaded MP3 to a temp path
     tmp_dir = Path(tempfile.mkdtemp(prefix="audio_gen_"))
+    print(f"✓ created temp dir {tmp_dir}")
     ref_mp3_path = tmp_dir / "reference.mp3"
+
+    def _cleanup():
+        try:
+            if tmp_dir.exists():
+                shutil.rmtree(tmp_dir, ignore_errors=True)
+                print(f"✓ cleaned up temp dir {tmp_dir}")
+        except Exception:
+            pass
+
     try:
         with ref_mp3_path.open("wb") as out_f:
             while True:
@@ -422,27 +427,21 @@ async def generate_audio_endpoint(
                 if not chunk:
                     break
                 out_f.write(chunk)
+        print(f"✓ saved uploaded voice_file to {ref_mp3_path}")
 
         # Call your internal generator (expects a file path for reference voice)
         path = generate_audio(
             voiceTrack=voiceTrack,
             user_profile=None,  # pass through if you support it via form later
+            tmp_dir=tmp_dir,
             reference_voice_path=ref_mp3_path,
             promptId=promptId
         )
 
         if not path:
+            _cleanup()
+            print("ERROR: audio generation produced no files.")
             raise HTTPException(status_code=500, detail="Audio generation produced no files.")
-
-        # Schedule temp cleanup after the response is sent
-        def _cleanup():
-            try:
-                if Path(path).exists():
-                    Path(path).unlink()
-                if tmp_dir.exists():
-                    shutil.rmtree(tmp_dir, ignore_errors=True)
-            except Exception:
-                pass
 
         background = BackgroundTasks()
         background.add_task(_cleanup)
@@ -458,14 +457,13 @@ async def generate_audio_endpoint(
 
     except HTTPException:
         # Re-raise FastAPI errors untouched
+        _cleanup()
+        print("ERROR: audio generation failed with HTTPException.")
         raise
     except Exception as e:
         # Cleanup temp dir on error
-        try:
-            if tmp_dir.exists():
-                shutil.rmtree(tmp_dir, ignore_errors=True)
-        except Exception:
-            pass
+        _cleanup()
+        print(f"ERROR: audio generation failed: {e}")
         raise HTTPException(status_code=500, detail=f"Audio generation failed: {e}")
 
 
