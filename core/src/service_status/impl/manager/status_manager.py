@@ -24,7 +24,7 @@ class StatusManager:
         async with self.mutex:
             return self._get_status_unsafe(prompt_id)
 
-    async def update_status(self, prompt_id: str, patch: StatusPatch):
+    async def update_status(self, prompt_id: str, patch: StatusPatch) -> None:
         async with self.mutex:
             base = self._get_status_unsafe(prompt_id)
 
@@ -60,14 +60,14 @@ class StatusManager:
 
     async def add_listener(
             self, prompt_id: str, reference: str, listener: typing.Callable[[Status], Awaitable[None]]
-    ):
+    ) -> None:
         async with self.mutex:
             if prompt_id not in self.listeners:
                 self.listeners[prompt_id] = {}
             self.listeners[prompt_id][reference] = listener
             await listener(self._get_status_unsafe(prompt_id))
 
-    async def remove_listener(self, prompt_id: str, reference: str):
+    async def remove_listener(self, prompt_id: str, reference: str) -> None:
         async with self.mutex:
             if prompt_id not in self.listeners:
                 return
