@@ -19,7 +19,7 @@ from service_core.services.user_summary import summarize_content_with_llama
 from service_status.models.status_patch import StatusPatch
 from service_status.models.step_status import StepStatus
 
-PROJECT_ROOT = Path(__name__).resolve().parent.parent
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DOTENV_PATH = PROJECT_ROOT / '.env'
 load_dotenv(dotenv_path=DOTENV_PATH)
 
@@ -27,7 +27,7 @@ DI_API_URL = "http://docint:25565"
 SLIDES_API_URL = "http://slides:30606"
 AVATAR_API_URL = "http://avatar-video-producer:9000"
 STATUS_API_URL = "http://status-service:19910"
-DEBUG = int(os.getenv("ORPHEUS_DEBUG", "2"))
+DEBUG = int(os.getenv("ORPHEUS_DEBUG", "1"))    #DEBUG enabled by default
 
 async def update_status(prompt_id: str, patch: StatusPatch, client: httpx.AsyncClient) -> None:
     print(f"Updating status for {prompt_id} with patch: {patch.to_json()}", flush=True)
