@@ -12,10 +12,10 @@
     "language": "EN_NEWEST"
   },
   "tts": {
-    "speed": 1.0,
-    "noise_scale": 0.667,
+    "speed": 0.9,
+    "noise_scale": 0.1,
     "noise_scale_w": 0.8,
-    "sdp_ratio": 0.5
+    "sdp_ratio": 0.8
   },
   "nlp": {
     "nltk_auto_download": true
@@ -31,6 +31,14 @@
   "defaults": {
     "voiceTrack": "Welcome to the course on AI.",
     "course_id": "course123",
-    "voice_file": "krusche_voice.mp3"
-  }
+    "voice_file": "krusche_voice.mp3",
+    "emotion" : "cheerful"
+  },
+  "emotions": {
+  "neutral": { "speed": 1.0, "noise_scale": 0.1, "noise_scale_w": 0.7, "sdp_ratio": 0.5 },
+  "cheerful": { "speed": 1.1, "noise_scale": 0.9, "noise_scale_w": 1.0, "sdp_ratio": 0.7 },
+  "angry": { "speed": 1.2, "noise_scale": 0.8, "noise_scale_w": 1.2, "sdp_ratio": 0.6 },
+  "sad": { "speed": 0.8, "noise_scale": 0.2, "noise_scale_w": 0.5, "sdp_ratio": 0.4 },
+  "surprised": { "speed": 1.1, "noise_scale": 1.0, "noise_scale_w": 1.1, "sdp_ratio": 0.9 }
+}
 }

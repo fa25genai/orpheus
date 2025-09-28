@@ -290,6 +290,22 @@ def generate_audio(
     language = runtime["language"]
 
     tone_color_converter = _load_converter(ckpt_converter, device)
+    
+    # Pick emotion (defaults to neutral)
+    emotion = CFG.get("defaults", {}).get("emotion", "neutral")
+    emotion_presets = CFG.get("emotions", {})
+    if emotion in emotion_presets:
+        emo_cfg = emotion_presets[emotion]
+        speed = emo_cfg["speed"]
+        noise_scale = emo_cfg["noise_scale"]
+        noise_scale_w = emo_cfg["noise_scale_w"]
+        sdp_ratio = emo_cfg["sdp_ratio"]
+    else:
+        # fallback to global tts settings
+        speed = float(tts_cfg["speed"])
+        noise_scale = float(tts_cfg["noise_scale"])
+        noise_scale_w = float(tts_cfg["noise_scale_w"])
+        sdp_ratio = float(tts_cfg["sdp_ratio"])
 
     if not reference_voice_path.exists():
         print(f"ERROR: voice_file not found: {reference_voice_path}")
@@ -299,11 +315,6 @@ def generate_audio(
 
     model = _load_tts(language=language, device=device)
     speaker_ids = model.hps.data.spk2id
-
-    speed = float(tts_cfg["speed"])
-    noise_scale = float(tts_cfg["noise_scale"])
-    noise_scale_w = float(tts_cfg["noise_scale_w"])
-    sdp_ratio = float(tts_cfg["sdp_ratio"])
 
     available_ses: Dict[str, Path] = {}
     for p in _iter_ses_files(ses_dir):
@@ -341,6 +352,7 @@ def generate_audio(
                 src_se=source_se,
                 tgt_se=target_se,
                 output_path=str(save_path),
+                tau = 0.5,
                 message="@MyShell",
             )
 
@@ -471,7 +483,7 @@ if __name__ == "__main__":
     import uvicorn
 
     uvicorn.run(
-        "app:app",
+        "generate_audio_function:app",
         host="0.0.0.0",
         port=8000,
         reload=True
