@@ -24,9 +24,9 @@ app = FastAPI(
     title="Document Intelligence API",
     description=(
         "API for the Orpheus document intelligence orchestration. "
-        "From the repository: \&quot;The Orpheus System transforms static slides into interactive lecture "
+        'From the repository: "The Orpheus System transforms static slides into interactive lecture '
         "videos with lifelike professor avatars, combining expressive narration, visual presence, and "
-        "dynamic content to create engaging, personalized learning experiences.\&quot; "
+        'dynamic content to create engaging, personalized learning experiences." '
         "License: MIT (see repository)."
     ),
     version="0.1.0",
