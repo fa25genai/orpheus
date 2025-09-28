@@ -21,19 +21,18 @@ import json
 
 
 from pydantic import BaseModel, ConfigDict, Field, StrictStr
-from typing import Any, ClassVar, Dict, List, Optional
+from typing import Any, ClassVar, Dict, List
 try:
     from typing import Self
 except ImportError:
     from typing_extensions import Self
 
-class ImageObject(BaseModel):
+class BatchRetrievalRequest(BaseModel):
     """
-    ImageObject
+    BatchRetrievalRequest
     """ # noqa: E501
-    image: Optional[StrictStr] = Field(default=None, description="Base64-encoded image in data URI format (e.g., 'data:image/jpeg;base64,/9j/4gIoSUNDX1BST0ZJTEUAAQEAAAIYAAAAAAIQAABtbnRyUkdCIFhZWi...').")
-    description: Optional[StrictStr] = Field(default=None, description="Short description of the image.")
-    __properties: ClassVar[List[str]] = ["image", "description"]
+    prompt_queries: List[StrictStr] = Field(description="Array of user queries or prompts.", alias="promptQueries")
+    __properties: ClassVar[List[str]] = ["promptQueries"]
 
     model_config = {
         "populate_by_name": True,
@@ -53,7 +52,7 @@ class ImageObject(BaseModel):
 
     @classmethod
     def from_json(cls, json_str: str) -> Self:
-        """Create an instance of ImageObject from a JSON string"""
+        """Create an instance of BatchRetrievalRequest from a JSON string"""
         return cls.from_dict(json.loads(json_str))
 
     def to_dict(self) -> Dict[str, Any]:
@@ -76,7 +75,7 @@ class ImageObject(BaseModel):
 
     @classmethod
     def from_dict(cls, obj: Dict) -> Self:
-        """Create an instance of ImageObject from a dict"""
+        """Create an instance of BatchRetrievalRequest from a dict"""
         if obj is None:
             return None
 
@@ -84,8 +83,7 @@ class ImageObject(BaseModel):
             return cls.model_validate(obj)
 
         _obj = cls.model_validate({
-            "image": obj.get("image"),
-            "description": obj.get("description")
+            "promptQueries": obj.get("promptQueries")
         })
         return _obj
 
