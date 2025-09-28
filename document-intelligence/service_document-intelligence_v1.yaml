@@ -58,6 +58,38 @@ paths:
         "415": 
           $ref: "#/components/responses/UnsupportedMediaType"
 
+  /v1/video/{courseId}:
+    post:
+      tags:
+        - docint
+      summary: uploads a video file
+      operationId: uploadsVideo
+      parameters:
+        - $ref: "#/components/parameters/CourseId"
+      requestBody:
+        required: true
+        content:
+          video/mp4:
+            schema:
+              type: string
+              format: binary
+              description: "Raw MP4 video file"
+      responses:
+        "201":
+          description: Successfully uploaded. Returns created video ID.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VideoUploadResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "413":
+          $ref: "#/components/responses/PayloadTooLarge"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
+
   /v1/delete/{documentId}:
     delete:
       tags:
@@ -100,6 +132,32 @@ paths:
         "404": 
           $ref: "#/components/responses/NotFound"
 
+  /v1/retrieval/{courseId}/batch:
+    post:
+      tags:
+        - docint
+      summary: Provides relevant textual content and images for multiple queries
+      operationId: retrievesBatchDataForGeneration
+      parameters:
+        - $ref: "#/components/parameters/CourseId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BatchRetrievalRequest"
+      responses:
+        "200":
+          description: "Batch content and images results."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BatchRetrievalResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
 components:
   parameters:
     CourseId:
@@ -125,7 +183,7 @@ components:
     PayloadTooLarge:
       description: Payload Too Large.
     UnsupportedMediaType:
-      description: Unsupported Media Type (only PDFs accepted).
+      description: Unsupported Media Type (only PDFs and MP4 videos accepted).
 
   schemas:
     UploadResponse:
@@ -135,6 +193,14 @@ components:
         documentId:
           type: string
           description: The ID of the stored document.
+
+    VideoUploadResponse:
+      type: object
+      required: [videoId]
+      properties:
+        videoId:
+          type: string
+          description: The ID of the stored video.
 
     RetrievalResponse:
       type: object
@@ -151,14 +217,33 @@ components:
             $ref: "#/components/schemas/ImageObject"
           description: "Array of image objects."
 
+    BatchRetrievalRequest:
+      type: object
+      required: [promptQueries]
+      properties:
+        promptQueries:
+          type: array
+          items:
+            type: string
+          description: "Array of user queries or prompts."
+
+    BatchRetrievalResponse:
+      type: object
+      required: [results]
+      properties:
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/RetrievalResponse"
+          description: "Array of retrieval responses, one for each input query."
+
     ImageObject:
       type: object
       properties:
         image:
           type: string
-          contentMediaType: image/*
-          contentEncoding: base64
-          description: "Base64-encoded image."
+          description: "Base64-encoded image in data URI format (e.g., 'data:image/jpeg;base64,/9j/4gIoSUNDX1BST0ZJTEUAAQEAAAIYAAAAAAIQAABtbnRyUkdCIFhZWi...')."
+          example: "data:image/jpeg;base64,/9j/4gIoSUNDX1BST0ZJTEUAAQEAAAIYAAAAAAIQAABtbnRyUkdCIFhZWi"
         description:
           type: string
           description: "Short description of the image."

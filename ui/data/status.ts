@@ -11,6 +11,9 @@ export const mockStatus: Status = {
   stepsAvatarGeneration: [
     {video: "DONE", audio: "DONE"},
     {video: "DONE", audio: "DONE"},
+    {video: "DONE", audio: "DONE"},
+    {video: "DONE", audio: "DONE"},
+    {video: "DONE", audio: "DONE"},
   ],
   lectureSummary: "string",
   slideStructure: {

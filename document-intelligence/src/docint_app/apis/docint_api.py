@@ -26,8 +26,11 @@ from docint_app.models.extra_models import TokenModel  # noqa: F401
 from pydantic import Field, StrictBytes, StrictStr
 from typing import Any, Tuple, Union
 from typing_extensions import Annotated
+from docint_app.models.batch_retrieval_request import BatchRetrievalRequest
+from docint_app.models.batch_retrieval_response import BatchRetrievalResponse
 from docint_app.models.retrieval_response import RetrievalResponse
 from docint_app.models.upload_response import UploadResponse
+from docint_app.models.video_upload_response import VideoUploadResponse
 
 
 router = APIRouter()
@@ -54,6 +57,26 @@ async def deletes_document(
     if not BaseDocintApi.subclasses:
         raise HTTPException(status_code=500, detail="Not implemented")
     return await BaseDocintApi.subclasses[0]().deletes_document(documentId)
+
+
+@router.post(
+    "/v1/retrieval/{courseId}/batch",
+    responses={
+        200: {"model": BatchRetrievalResponse, "description": "Batch content and images results."},
+        400: {"description": "Bad Request – missing file or parameters."},
+        404: {"description": "Not Found – resource not found."},
+    },
+    tags=["docint"],
+    summary="Provides relevant textual content and images for multiple queries",
+    response_model_by_alias=True,
+)
+async def retrieves_batch_data_for_generation(
+    courseId: Annotated[StrictStr, Field(description="The course ID.")] = Path(..., description="The course ID."),
+    batch_retrieval_request: BatchRetrievalRequest = Body(None, description=""),
+) -> BatchRetrievalResponse:
+    if not BaseDocintApi.subclasses:
+        raise HTTPException(status_code=500, detail="Not implemented")
+    return await BaseDocintApi.subclasses[0]().retrieves_batch_data_for_generation(courseId, batch_retrieval_request)
 
 
 @router.get(
@@ -83,7 +106,7 @@ async def retrieves_data_for_generation(
         400: {"description": "Bad Request – missing file or parameters."},
         404: {"description": "Not Found – resource not found."},
         413: {"description": "Payload Too Large."},
-        415: {"description": "Unsupported Media Type (only PDFs accepted)."},
+        415: {"description": "Unsupported Media Type (only PDFs and MP4 videos accepted)."},
     },
     tags=["docint"],
     summary="uploads a PDF document",
@@ -96,3 +119,25 @@ async def uploads_document(
     if not BaseDocintApi.subclasses:
         raise HTTPException(status_code=500, detail="Not implemented")
     return await BaseDocintApi.subclasses[0]().uploads_document(courseId, body)
+
+
+@router.post(
+    "/v1/video/{courseId}",
+    responses={
+        201: {"model": VideoUploadResponse, "description": "Successfully uploaded. Returns created video ID."},
+        400: {"description": "Bad Request – missing file or parameters."},
+        404: {"description": "Not Found – resource not found."},
+        413: {"description": "Payload Too Large."},
+        415: {"description": "Unsupported Media Type (only PDFs and MP4 videos accepted)."},
+    },
+    tags=["docint"],
+    summary="uploads a video file",
+    response_model_by_alias=True,
+)
+async def uploads_video(
+    courseId: Annotated[StrictStr, Field(description="The course ID.")] = Path(..., description="The course ID."),
+    body: Union[StrictBytes, StrictStr, Tuple[StrictStr, StrictBytes]] = Body(None, description=""),
+) -> VideoUploadResponse:
+    if not BaseDocintApi.subclasses:
+        raise HTTPException(status_code=500, detail="Not implemented")
+    return await BaseDocintApi.subclasses[0]().uploads_video(courseId, body)

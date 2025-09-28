@@ -11,11 +11,11 @@ WeaviateGraphStore — graph-first vector store wrapper (requests-based)
     - captionsText: text (optional fused image captions)
     - images: [SlideImage]  <-- cross-reference (graph edge)
 
-  SlideImage (image blobs; image vector optional later)
+  SlideImage (image b64 strings; image vector optional later)
     - courseId: text
     - documentId: text
     - slideNo: int
-    - imageBase64: blob
+    - imageBase64: text
     - description: text
 
 - Key ops:
@@ -202,7 +202,7 @@ class WeaviateGraphStore:
                         {"name": "courseId", "dataType": ["text"]},
                         {"name": "documentId", "dataType": ["text"]},
                         {"name": "slideNo", "dataType": ["int"]},
-                        {"name": "imageBase64", "dataType": ["blob"]},
+                        {"name": "imageBase64", "dataType": ["text"]},
                         {"name": "description", "dataType": ["text"]},
                         {"name": "createdAt", "dataType": ["date"]},
                         {"name": "modifiedAt", "dataType": ["date"]},
