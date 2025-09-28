@@ -227,7 +227,7 @@ async def generate_voice_scripts(lecture_script: str, slides_data: Dict[str, Any
         courseId=course_id,
         voiceTrack="",
         slideNumber=0,
-        userProfile=user.model_dump(mode="json")
+        userProfile=user
     )
         for index, slide_data in enumerate(slides):
             voice_track_request.slideNumber = index
