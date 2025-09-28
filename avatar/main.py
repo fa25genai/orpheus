@@ -24,7 +24,6 @@ from typing_extensions import Annotated
 import media.avatar_media as media
 import media.avatar_queries as avatar_queries
 
-
 app = FastAPI(title="Service Video-Generation APIs", version="0.1")
 origins = ["*"]
 
@@ -46,6 +45,7 @@ IMAGES_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 VIDEO_ROOT = Path(os.getenv("VIDEO_ROOT", "/data/jobs")).resolve()
 PUBLIC_VIDEOS_BASE = os.getenv("PUBLIC_VIDEOS_BASE", "/videos/jobs")
 VIDEO_ROOT.mkdir(parents=True, exist_ok=True)
+
 
 # ---------------------------
 # Models
@@ -78,6 +78,7 @@ class GenerateRequest(BaseModel):
     userProfile: UserProfile
     slot: Literal["default", "beginning", "ending"] = "default"  # NEW
 
+
 class ErrorModel(BaseModel):
     code: Optional[str] = None
     message: Optional[str] = None
@@ -96,6 +97,7 @@ class GenerationStatusResponse(BaseModel):
     estimatedSecondsLeft: int  # 0 when DONE/FAILED
     error: Optional[ErrorModel] = None
 
+
 class SlideTask(BaseModel):
     promptId: UUID
     courseId: str
@@ -103,7 +105,6 @@ class SlideTask(BaseModel):
     text: str
     slideNo: int  # 1-based numbering
     slot: Literal["default", "beginning", "ending"] = "default"
-
 
 
 # ---------------------------
@@ -156,12 +157,12 @@ def folder_url(prompt_id: UUID) -> str:
     tags=["avatar"],
 )
 def create_avatar(
-    name: Optional[str] = Form(None),
-    courseId: UUID = Form(...),
-    slot: Optional[str] = Form('default'),  # accepts "default", "beginning", "ending" (+ minor typos)
-    image_file: UploadFile = File(..., description="png/jpeg/webp"),
-    audio_file: UploadFile = File(..., description="mp3/wav/flac/webm"),
-    db: Session = Depends(get_db),
+        name: Optional[str] = Form(None),
+        courseId: UUID = Form(...),
+        slot: Optional[str] = Form('default'),  # accepts "default", "beginning", "ending" (+ minor typos)
+        image_file: UploadFile = File(..., description="png/jpeg/webp"),
+        audio_file: UploadFile = File(..., description="mp3/wav/flac/webm"),
+        db: Session = Depends(get_db),
 ) -> media.AvatarCreatedResponse:
     return media.create_avatar_with_media(
         db=db,
@@ -179,9 +180,9 @@ def create_avatar(
     tags=["avatar"],
 )
 def get_avatars_by_course_endpoint(
-    courseId: UUID,
-    slot: Optional[str] = Query(None, description="optional: default | beginning | ending"),
-    db: Session = Depends(get_db),
+        courseId: UUID,
+        slot: Optional[str] = Query(None, description="optional: default | beginning | ending"),
+        db: Session = Depends(get_db),
 ):
     return avatar_queries.get_avatars_by_course(db=db, course_id=courseId, slot=slot)
 
@@ -193,14 +194,15 @@ def get_avatars_by_course_endpoint(
     tags=["avatar"],
 )
 def replace_avatar_image_endpoint(
-    courseId: UUID,
-    slot: str,
-    image_file: UploadFile = File(..., description="png/jpeg/webp"),
-    db: Session = Depends(get_db),
+        courseId: UUID,
+        slot: str,
+        image_file: UploadFile = File(..., description="png/jpeg/webp"),
+        db: Session = Depends(get_db),
 ) -> media.AvatarCreatedResponse:
     return avatar_updates.replace_avatar_image(
         db=db, course_id=courseId, slot=slot, image_file=image_file, delete_previous=True
     )
+
 
 # Replace only AUDIO
 @app.post(
@@ -209,14 +211,16 @@ def replace_avatar_image_endpoint(
     tags=["avatar"],
 )
 def replace_avatar_audio_endpoint(
-    courseId: UUID,
-    slot: str,
-    audio_file: UploadFile = File(..., description="mp3/wav/flac/webm"),
-    db: Session = Depends(get_db),
+        courseId: UUID,
+        slot: str,
+        audio_file: UploadFile = File(..., description="mp3/wav/flac/webm"),
+        db: Session = Depends(get_db),
 ) -> media.AvatarCreatedResponse:
     return avatar_updates.replace_avatar_audio(
         db=db, course_id=courseId, slot=slot, audio_file=audio_file, delete_previous=True
     )
+
+
 # ---------------------------
 # In-memory job store & queue
 # ---------------------------
@@ -290,27 +294,23 @@ def _purge_stale_jobs(now: Optional[datetime] = None) -> None:
 # Audio / Video Generators
 # ---------------------------
 
-
-# imports you’ll need at top of file
-from pathlib import Path
-from sqlalchemy.orm import Session
-
 def generate_audio(
-    slide_text: Optional[str],
-    course_id: Optional[str],
-    prompt_id: Optional[UUID],
-    user_profile: Optional[UserProfile],
-    audio_counter: int,
-    *,
-    db: Session,                 # NEW: DB session
-    slot: str = "default",       # NEW: optional slot
+        slide_text: Optional[str],
+        course_id: Optional[str],
+        prompt_id: Optional[UUID],
+        user_profile: Optional[UserProfile],
+        audio_counter: int,
+        *,
+        db: Session,  # NEW: DB session
+        slot: str = "default",  # NEW: optional slot
 ) -> Optional[str]:
     """
     Generate a WAV file for one slide using the avatar audio stored in DB.
     Saves under /data/jobs/<promptId>/<N>.wav
     """
     if prompt_id is None:
-        print("[generate_audio] prompt_id is required"); return None
+        print("[generate_audio] prompt_id is required")
+        return None
 
     audio_api_url = os.getenv("GEN_AUDIO", "http://localhost:7000/v1/audio/generate")
     job_folder = job_dir(prompt_id)
@@ -322,7 +322,8 @@ def generate_audio(
         ref_path = Path(ref.file_path)
         if not ref_path.is_file():
             print(f"[generate_audio] DB voice not found on disk: {ref_path}")
-            return None
+            print(f"[generate_audio] Default fallback: Using krusche_voice.mp3")
+            ref_path = Path("/app/database/voice_sample/krusche_voice.mp3")
 
         # 2) Call TTS with the DB audio as voice_file
         is_debug = os.getenv("DEBUG", "not debug")
@@ -339,17 +340,20 @@ def generate_audio(
         return str(wav_path)
 
     except requests.RequestException as e:
-        print(f"[generate_audio] Request error: {e}"); return None
+        print(f"[generate_audio] Request error: {e}")
+        return None
     except Exception as e:
-        print(f"[generate_audio] Unexpected error: {e}"); return None
+        print(f"[generate_audio] Unexpected error: {e}")
+        return None
+
 
 def generate_video(
-    audio_path: Optional[str] = None,
-    prompt_id: Optional[UUID] = None,
-    course_id: Optional[str] = None,
-    user_profile: Optional[UserProfile] = None,
-    video_counter: int = 0,
-    source_image_path: Optional[str] = None,
+        audio_path: Optional[str] = None,
+        prompt_id: Optional[UUID] = None,
+        course_id: Optional[str] = None,
+        user_profile: Optional[UserProfile] = None,
+        video_counter: int = 0,
+        source_image_path: Optional[str] = None,
 ) -> Optional[str]:
     """
     Render MP4 video for one slide using audio and a static image.
@@ -497,7 +501,7 @@ def _worker_loop() -> None:
                     course_id=task.courseId,
                     user_profile=task.userProfile,
                     video_counter=task.slideNo,
-                    source_image_path=source_path,   # ✅ pass image path here
+                    source_image_path=source_path,  # ✅ pass image path here
                 )
 
         except Exception as e:
@@ -621,6 +625,5 @@ def get_generation_status(promptId: UUID) -> GenerationStatusResponse | JSONResp
         estimatedSecondsLeft=_eta_seconds(job),
         error=job.error,
     )
-
 
 # Run: uvicorn main:app --host 0.0.0.0 --port 8080 --reload
