@@ -23,25 +23,6 @@ load_dotenv()
 
 
 # -----------------------------
-# CONFIGURATION
-# -----------------------------
-class Config(BaseModel):
-    aws_access_key_id: str | None = os.environ.get("AWS_ACCESS_KEY_ID", None)
-    aws_secret_access_key: str | None = os.environ.get("AWS_SECRET_ACCESS_KEY", None)
-    aws_session_token: str | None = os.environ.get("AWS_SESSION_TOKEN", None)
-
-    llama_api_key: str | None = os.environ.get("LLAMA_API_KEY", None)
-    llama_model: str | None = os.environ.get("LLAMA_MODEL", None)
-    llama_api_url: str | None = os.environ.get("LLAMA_API_URL", None)
-
-    # access_key = aws_access_key_id if aws_access_key_id is not None else None
-    # secret_access_key = aws_secret_access_key if aws_secret_access_key is not None else None
-    # session_token = aws_session_token if aws_session_token is not None else None
-
-config = Config()
-
-
-# -----------------------------
 # Llama API helper
 # -----------------------------
 def call_llm(prompt: str, model: Optional[str] = None, max_tokens: int = 512) -> str:
@@ -60,9 +41,6 @@ def call_llm(prompt: str, model: Optional[str] = None, max_tokens: int = 512) ->
 
 def llm_call(prompt: str) -> str:
     return call_llm(prompt)
-    # if config.llama_api_key:
-    #     return call_llama(prompt)
-    # raise RuntimeError("No valid LLM API key available (Llama)")
 
 
 # -----------------------------
@@ -78,9 +56,10 @@ Rules:
 - Do not add explanations outside JSON.
 """)
 
+
 def extract_json_from_markdown(question: str) -> str:
     prompt = DECOMPOSE_PROMPT + "\n\nQuestion to analyze: " + json.dumps(question)
-    raw_llm_output = llm_call(prompt) # e.g. still including markdown
+    raw_llm_output = llm_call(prompt)  # e.g. still including markdown
 
     # Clean the response - remove any potential Markdown formatting
     raw_llm_output = raw_llm_output.strip()
@@ -94,6 +73,7 @@ def extract_json_from_markdown(question: str) -> str:
 
     return raw_llm_output
 
+
 def decompose_question(question: str) -> Dict[str, Any]:
     raw_llm_output: str = extract_json_from_markdown(question)
 
@@ -102,7 +82,9 @@ def decompose_question(question: str) -> Dict[str, Any]:
         # Validate required keys
         required_keys = ["original_question", "subqueries"]
         if not all(key in questions_generated_from_user_query for key in required_keys):
-            raise ValueError(f"Missing required keys. Expected: {required_keys}, Got: {list(questions_generated_from_user_query.keys())}")
+            raise ValueError(
+                f"Missing required keys. Expected: {required_keys}, Got: {list(questions_generated_from_user_query.keys())}"
+            )
 
         # Ensure subqueries is a list
         if not isinstance(questions_generated_from_user_query["subqueries"], list):
@@ -117,12 +99,20 @@ def decompose_question(question: str) -> Dict[str, Any]:
         start, end = raw_llm_output.find("{"), raw_llm_output.rfind("}")
         if start != -1 and end != -1:
             try:
-                questions_generated_from_user_query = json.loads(raw_llm_output[start: end + 1])
+                questions_generated_from_user_query = json.loads(
+                    raw_llm_output[start : end + 1]
+                )
                 # Validate required keys for extracted JSON too
                 required_keys = ["original_question", "subqueries"]
-                if not all(key in questions_generated_from_user_query for key in required_keys):
-                    raise ValueError(f"Missing required keys in extracted JSON. Expected: {required_keys}, Got: {list(questions_generated_from_user_query.keys())}")
+                if not all(
+                    key in questions_generated_from_user_query for key in required_keys
+                ):
+                    raise ValueError(
+                        f"Missing required keys in extracted JSON. Expected: {required_keys}, Got: {list(questions_generated_from_user_query.keys())}"
+                    )
                 return questions_generated_from_user_query
             except json.JSONDecodeError:
                 pass
-        raise RuntimeError(f"Failed to parse JSON from LLM output. JSON Error: {e}. Raw output: {raw_llm_output[:200]}...")
+        raise RuntimeError(
+            f"Failed to parse JSON from LLM output. JSON Error: {e}. Raw output: {raw_llm_output[:200]}..."
+        )
