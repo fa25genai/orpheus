@@ -41,7 +41,7 @@ config = Config()
 # -----------------------------
 # Llama API helper
 # -----------------------------
-def call_llama(prompt: str, model: Optional[str] = None, max_tokens: int = 512) -> str:
+def call_llm(prompt: str, model: Optional[str] = None, max_tokens: int = 512) -> str:
     """Call Llama API via LangChain ChatOllama"""
     # model = model or config.llama_model
     # if not config.llama_api_key:
@@ -56,7 +56,7 @@ def call_llama(prompt: str, model: Optional[str] = None, max_tokens: int = 512) 
 
     # https://eu-central-1.console.aws.amazon.com/bedrock/home?region=eu-central-1#/model-catalog
     llm = ChatBedrockConverse(
-        model="amazon.nova-micro-v1:0",  # or another supported model
+        model="anthropic.claude-sonnet-4-20250514-v1:0",  # or another supported model
         region_name="eu-central-1",         # set your AWS region
         aws_access_key_id=config.aws_access_key_id,
         aws_secret_access_key=config.aws_secret_access_key,
@@ -70,7 +70,7 @@ def call_llama(prompt: str, model: Optional[str] = None, max_tokens: int = 512) 
 
 
 def llm_call(prompt: str) -> str:
-    return call_llama(prompt)
+    return call_llm(prompt)
     # if config.llama_api_key:
     #     return call_llama(prompt)
     # raise RuntimeError("No valid LLM API key available (Llama)")
