@@ -1,4 +1,5 @@
 import os
+
 import shutil
 import uuid
 from collections.abc import Generator, Mapping
@@ -7,17 +8,21 @@ from pathlib import Path
 from queue import Queue
 from threading import Event, Thread
 from time import sleep
-from typing import Any, Dict, List, Literal, Optional
+from typing import Any, Dict, List, Literal, Optional, Union
 from uuid import UUID
 
 import requests
-from fastapi import Depends, FastAPI, File, HTTPException, Request, Response, UploadFile, status
+from fastapi import Depends, FastAPI, File, Form, Query, Request, Response, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, StringConstraints
-from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, create_engine, func
-from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, relationship, sessionmaker
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session, sessionmaker
 from typing_extensions import Annotated
+
+import media.avatar_media as media
+import media.avatar_queries as avatar_queries
+import media.avatar_updates as avatar_updates
 
 app = FastAPI(title="Service Video-Generation APIs", version="0.1")
 origins = ["*"]
@@ -105,6 +110,7 @@ class GenerateRequest(BaseModel):
     promptId: UUID
     courseId: str
     userProfile: UserProfile
+    slot: Literal["default", "beginning", "ending"] = "default"  # NEW
 
 
 class ErrorModel(BaseModel):
@@ -126,17 +132,13 @@ class GenerationStatusResponse(BaseModel):
     error: Optional[ErrorModel] = None
 
 
-class AvatarImagePayload(BaseModel):
-    id: UUID
-    filePath: str
-    mimeType: Optional[str] = None
-    sizeBytes: Optional[int] = None
-    createdAt: datetime
-
-
-class AvatarCreatedResponse(BaseModel):
-    avatarId: UUID
-    image: Optional[AvatarImagePayload] = None
+class SlideTask(BaseModel):
+    promptId: UUID
+    courseId: str
+    userProfile: UserProfile
+    text: str
+    slideNo: int  # 1-based numbering
+    slot: Literal["default", "beginning", "ending"] = "default"
 
 
 # ---------------------------
@@ -144,11 +146,11 @@ class AvatarCreatedResponse(BaseModel):
 # ---------------------------
 
 
-class Base(DeclarativeBase):
-    pass
-
-
-engine = create_engine(DATABASE_URL, future=True)
+engine = create_engine(
+    DATABASE_URL,
+    future=True,
+    connect_args={"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
+)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, future=True)
 
 
@@ -160,28 +162,9 @@ def get_db() -> Generator[Session, None, None]:
         db.close()
 
 
-class Avatar(Base):
-    __tablename__ = "avatars"
-    avatar_id: Mapped[str] = mapped_column(String(36), primary_key=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-    images: Mapped[list["AvatarImage"]] = relationship(back_populates="avatar", cascade="all, delete-orphan")
-
-
-class AvatarImage(Base):
-    __tablename__ = "avatar_images"
-    id: Mapped[str] = mapped_column(String(36), primary_key=True)
-    avatar_id: Mapped[str] = mapped_column(String(36), ForeignKey("avatars.avatar_id", ondelete="CASCADE"), index=True)
-    file_path: Mapped[str] = mapped_column(Text, nullable=False)  # absolute path on disk
-    mime_type: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
-    size_bytes: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    original_filename: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-    avatar: Mapped["Avatar"] = relationship(back_populates="images")
-
-
 @app.on_event("startup")
 def _startup_create_tables() -> None:
-    Base.metadata.create_all(engine)
+    media.Base.metadata.create_all(engine)
     _start_worker_once()
 
 
@@ -200,117 +183,75 @@ def folder_url(prompt_id: UUID) -> str:
 # Avatars API
 # ---------------------------
 
-ALLOWED_IMAGE_MIMES = {"image/png", "image/jpeg", "image/webp"}
-
-
-class AvatarImageResponse(BaseModel):
-    id: UUID
-    avatarId: UUID
-    filePath: str
-    mimeType: Optional[str] = None
-    sizeBytes: Optional[int] = None
-    createdAt: datetime
-
-
-def _ext_from_mime(mime: str) -> str:
-    return {"image/png": "png", "image/jpeg": "jpg", "image/webp": "webp"}.get(mime, "bin")
-
-
-def _save_upload_to_disk(avatar_id: UUID, upload: UploadFile) -> Path:
-    if upload.content_type not in ALLOWED_IMAGE_MIMES:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Unsupported image type: {upload.content_type}",
-        )
-    image_id = uuid.uuid4()
-    avatar_dir = IMAGES_OUTPUT_DIR / str(avatar_id)
-    avatar_dir.mkdir(parents=True, exist_ok=True)
-    ext = _ext_from_mime(upload.content_type or "")
-    target = avatar_dir / f"{image_id}.{ext}"
-    # stream copy to avoid loading entire file in memory
-    with target.open("wb") as out:
-        shutil.copyfileobj(upload.file, out)
-    return target
-
 
 @app.post(
     "/v1/avatars",
     status_code=201,
-    response_model=AvatarCreatedResponse,
+    response_model=media.AvatarCreatedResponse,
     tags=["avatar"],
 )
 def create_avatar(
-    file: Optional[UploadFile] = File(default=None),
-    db: Session = Depends(get_db),
-) -> AvatarCreatedResponse:
-    # Create avatar id and persist
-    avatar_id = uuid.uuid4()
-    db_avatar = Avatar(avatar_id=str(avatar_id))
-    db.add(db_avatar)
-
-    image_payload: Optional[AvatarImagePayload] = None
-    if file is not None:
-        saved_path = _save_upload_to_disk(avatar_id, file)
-        size = saved_path.stat().st_size
-        db_img = AvatarImage(
-            id=str(uuid.uuid4()),
-            avatar_id=str(avatar_id),
-            file_path=str(saved_path),
-            mime_type=file.content_type,
-            size_bytes=size,
-            original_filename=file.filename,
-        )
-        db.add(db_img)
-        db.flush()  # populate server defaults like created_at
-        image_payload = AvatarImagePayload(
-            id=UUID(db_img.id),
-            filePath=db_img.file_path,
-            mimeType=db_img.mime_type,
-            sizeBytes=db_img.size_bytes,
-            createdAt=db_img.created_at or datetime.now(timezone.utc),
-        )
-
-    db.commit()
-    return AvatarCreatedResponse(avatarId=avatar_id, image=image_payload)
+        name: Optional[str] = Form(None),
+        courseId: UUID = Form(...),
+        slot: Optional[str] = Form('default'),  # accepts "default", "beginning", "ending" (+ minor typos)
+        image_file: UploadFile = File(..., description="png/jpeg/webp"),
+        audio_file: UploadFile = File(..., description="mp3/wav/flac/webm"),
+        db: Session = Depends(get_db),
+) -> media.AvatarCreatedResponse:
+    return media.create_avatar_with_media(
+        db=db,
+        image_file=image_file,
+        audio_file=audio_file,
+        name=name,
+        course_id=courseId,
+        slot=slot,  # new
+    )
 
 
-@app.post(
-    "/v1/avatars/{avatarId}/images",
-    status_code=201,
-    response_model=AvatarImageResponse,
+@app.get(
+    "/v1/avatars/by-course/{courseId}",
+    response_model=List[media.AvatarCreatedResponse],
     tags=["avatar"],
 )
-def add_avatar_image(
-    avatarId: UUID,
-    file: UploadFile = File(...),
-    db: Session = Depends(get_db),
-) -> AvatarImageResponse:
-    # Strict: avatar must exist
-    avatar = db.get(Avatar, str(avatarId))
-    if not avatar:
-        raise HTTPException(status_code=404, detail="Avatar not found")
+def get_avatars_by_course_endpoint(
+        courseId: UUID,
+        slot: Optional[str] = Query(None, description="optional: default | beginning | ending"),
+        db: Session = Depends(get_db),
+) -> List[media.AvatarCreatedResponse]:
+    return avatar_queries.get_avatars_by_course(db=db, course_id=courseId, slot=slot)
 
-    saved_path = _save_upload_to_disk(avatarId, file)
-    size = saved_path.stat().st_size
-    db_img = AvatarImage(
-        id=str(uuid.uuid4()),
-        avatar_id=str(avatarId),
-        file_path=str(saved_path),
-        mime_type=file.content_type,
-        size_bytes=size,
-        original_filename=file.filename,
+
+# Replace only IMAGE
+@app.post(
+    "/v1/avatars/{courseId}/{slot}/image",
+    response_model=media.AvatarCreatedResponse,
+    tags=["avatar"],
+)
+def replace_avatar_image_endpoint(
+        courseId: UUID,
+        slot: str,
+        image_file: UploadFile = File(..., description="png/jpeg/webp"),
+        db: Session = Depends(get_db),
+) -> media.AvatarCreatedResponse:
+    return avatar_updates.replace_avatar_image(
+        db=db, course_id=courseId, slot=slot, image_file=image_file, delete_previous=True
     )
-    db.add(db_img)
-    db.commit()
-    db.refresh(db_img)
 
-    return AvatarImageResponse(
-        id=UUID(db_img.id),
-        avatarId=avatarId,
-        filePath=db_img.file_path,
-        mimeType=db_img.mime_type,
-        sizeBytes=db_img.size_bytes,
-        createdAt=db_img.created_at,
+
+# Replace only AUDIO
+@app.post(
+    "/v1/avatars/{courseId}/{slot}/audio",
+    response_model=media.AvatarCreatedResponse,
+    tags=["avatar"],
+)
+def replace_avatar_audio_endpoint(
+        courseId: UUID,
+        slot: str,
+        audio_file: UploadFile = File(..., description="mp3/wav/flac/webm"),
+        db: Session = Depends(get_db),
+) -> media.AvatarCreatedResponse:
+    return avatar_updates.replace_avatar_audio(
+        db=db, course_id=courseId, slot=slot, audio_file=audio_file, delete_previous=True
     )
 
 
@@ -335,15 +276,6 @@ JOBS: Dict[UUID, Job] = {}
 # Remove jobs after 24h of inactivity
 JOB_TTL = timedelta(hours=24)
 CLEANUP_INTERVAL_SECONDS = 900
-
-
-# FIFO Queue für einzelne Slides
-class SlideTask(BaseModel):
-    promptId: UUID
-    courseId: str
-    userProfile: UserProfile
-    text: str
-    slideNo: int  # 1-based numbering
 
 
 SLIDE_QUEUE: "Queue[SlideTask]" = Queue()
@@ -386,16 +318,18 @@ def _purge_stale_jobs(now: Optional[datetime] = None) -> None:
 # Audio / Video Generators
 # ---------------------------
 
-
 def generate_audio(
-    voiceTrack: Optional[str] = "Hello students! I want you to drink coffee.",
-    voice_sample: str = "/app/database/voice_sample/krusche_voice.mp3",
-    prompt_id: Optional[UUID] = None,
-    user_profile: Optional[UserProfile] = None,
-    audio_counter: int = 0,
+        voiceTrack: Optional[str],
+        course_id: Union[str,UUID],
+        prompt_id: Optional[UUID],
+        user_profile: Optional[UserProfile],
+        audio_counter: int,
+        *,
+        db: Session,  # NEW: DB session
+        slot: str = "default",  # NEW: optional slot
 ) -> Optional[str]:
     """
-    Generate a WAV file for one slide.
+    Generate a WAV file for one slide using the avatar audio stored in DB.
     Saves under /data/jobs/<promptId>/<N>.wav
     """
     if prompt_id is None:
@@ -403,21 +337,25 @@ def generate_audio(
         return None
 
     audio_api_url = os.getenv("GEN_AUDIO", "http://localhost:7000/v1/audio/generate")
-
     job_folder = job_dir(prompt_id)
     job_folder.mkdir(parents=True, exist_ok=True)
     wav_path = job_folder / f"{audio_counter}.wav"
 
     try:
-        vs_path = Path(voice_sample)
-        if not vs_path.is_file():
-            print(f"[generate_audio] Voice sample not found: {voice_sample}")
-            return None
+        # 1) Fetch reference voice from DB by (course_id, slot)
+        ref = avatar_queries.get_latest_audio_for_course_slot(db, course_id, slot)
+        ref_path = Path(ref.file_path)
+        if not ref_path.is_file():
+            print(f"[generate_audio] DB voice not found on disk: {ref_path}")
+            print("[generate_audio] Default fallback: Using krusche_voice.mp3")
+            ref_path = Path("/app/database/voice_sample/krusche_voice.mp3")
+
+        # 2) Call TTS with the DB audio as voice_file
         is_debug = os.getenv("DEBUG", "").lower() in {"debug"}
         data = {"voiceTrack": voiceTrack or "", "debug": str(is_debug).lower(), "promptId": prompt_id}
 
         print(f"[generate_audio] Posting to {audio_api_url}")
-        with (
+       with (
             vs_path.open("rb") as f,
             requests.post(
                 audio_api_url,
@@ -451,7 +389,6 @@ def generate_audio(
                 tmp_path.unlink(missing_ok=True)
                 return None
             tmp_path.replace(wav_path)
-
         print(f"[generate_audio] OK -> {wav_path}")
         return str(wav_path)
 
@@ -464,11 +401,12 @@ def generate_audio(
 
 
 def generate_video(
-    audio_path: Optional[str] = None,
-    prompt_id: Optional[UUID] = None,
-    course_id: Optional[str] = None,
-    user_profile: Optional[UserProfile] = None,
-    video_counter: int = 0,
+        audio_path: Optional[str] = None,
+        prompt_id: Optional[UUID] = None,
+        course_id: Optional[str] = None,
+        user_profile: Optional[UserProfile] = None,
+        video_counter: int = 0,
+        source_image_path: Optional[str] = None,
 ) -> Optional[str]:
     """
     Render MP4 video for one slide using audio and a static image.
@@ -491,7 +429,10 @@ def generate_video(
         return None
 
     # choose your static image
-    source_path = "/app/database/avatar_sample/image_michal.png"
+    source_path = source_image_path
+    if not source_path or not Path(source_path).is_file():
+        print(f"[generate_video] Source image not found: {source_path}")
+        source_path = "/app/database/avatar_sample/image_michal.png"
     if not Path(source_path).is_file():
         print(f"[generate_video] Source image not found: {source_path}")
         return None
@@ -563,13 +504,12 @@ def _cleanup_loop() -> None:
 def _worker_loop() -> None:
     print("[worker] started")
     while True:
-        task: SlideTask = SLIDE_QUEUE.get()  # blocking
+        task: SlideTask = SLIDE_QUEUE.get()
         pid = task.promptId
         now = _utcnow()
         _purge_stale_jobs(now)
         job = JOBS.get(pid)
 
-        # Sicherheit: Job-Eintrag muss existieren
         if not job:
             job = Job(
                 promptId=pid,
@@ -585,51 +525,66 @@ def _worker_loop() -> None:
         else:
             job.lastTouched = now
 
-        # Status/ETA Update vor Start dieses Slides
         job.status = "IN_PROGRESS"
         job.lastUpdated = now
         job.lastTouched = now
         _estimate_total_seconds_for_new_slide(job)
         JOBS[pid] = job
 
-        # Audio -> Video für genau diesen Slide
         try:
-            audio_done = False
-            video_started = False
-            video_done = False
-            _update_avatar_generation_step_status(pid, task.slideNo, audio="IN_PROGRESS")
-            aurl = generate_audio(
-                voiceTrack=task.text,
-                prompt_id=pid,
-                user_profile=task.userProfile,
-                audio_counter=task.slideNo,
-            )
-            if aurl:
-                _update_avatar_generation_step_status(pid, task.slideNo, audio="DONE")
-                audio_done = True
-                _update_avatar_generation_step_status(pid, task.slideNo, video="IN_PROGRESS")
-                video_started = True
-                vpath = generate_video(
+            with SessionLocal() as db:
+                audio_done = False
+                video_started = False
+                video_done = False
+                _update_avatar_generation_step_status(pid, task.slideNo, audio="IN_PROGRESS")
+                aurl = generate_audio(
+                    voiceTrack=task.text,
+                    course_id=task.courseId,
+                    prompt_id=pid,
+                    user_profile=task.userProfile,
+                    audio_counter=task.slideNo,
+                    db=db,
+                    slot=getattr(task, "slot", "default"),
+                )
+                if aurl:
+                  _update_avatar_generation_step_status(pid, task.slideNo, audio="DONE")
+                  audio_done = True
+                  _update_avatar_generation_step_status(pid, task.slideNo, video="IN_PROGRESS")
+                  video_started = True
+                  
+                  # fetch the image while DB session is open
+                  source_path = None
+                  try:
+                      img = avatar_queries.get_latest_image_for_course_slot(
+                          db, course_id=task.courseId, slot=getattr(task, "slot", "default")
+                      )
+                      source_path = img.file_path
+                  except Exception as e:
+                      print(f"[worker] no image for course/slot: {e!r}")
+                      source_path = None
+                      
+                  vpath = generate_video(
                     audio_path=aurl,
                     prompt_id=pid,
                     course_id=task.courseId,
                     user_profile=task.userProfile,
                     video_counter=task.slideNo,
-                )
-                if vpath:
+                    source_image_path=source_path,  # ✅ pass image path here
+                  )
+                  if vpath:
                     _update_avatar_generation_step_status(pid, task.slideNo, video="DONE")
                     video_done = True
-                else:
+                  else:
                     _update_avatar_generation_step_status(pid, task.slideNo, video="FAILED")
             else:
                 _update_avatar_generation_step_status(pid, task.slideNo, audio="FAILED")
+
         except Exception as e:
             if not audio_done:
                 _update_avatar_generation_step_status(pid, task.slideNo, audio="FAILED")
             if video_started and not video_done:
                 _update_avatar_generation_step_status(pid, task.slideNo, video="FAILED")
             print(f"[worker] error on slide {task.slideNo} for {pid}: {e!r}")
-            # mark job as failed but keep queue going for other jobs
             job = JOBS.get(pid)
             if job:
                 fail_time = _utcnow()
@@ -640,7 +595,6 @@ def _worker_loop() -> None:
                 JOBS[pid] = job
         finally:
             SLIDE_QUEUE.task_done()
-            # Nach jedem Slide die lastUpdated Zeit aktualisieren
             job = JOBS.get(pid)
             if job and job.status != "FAILED":
                 done_time = _utcnow()
@@ -720,6 +674,7 @@ def request_video_generation(payload: GenerateRequest, response: Response, reque
             userProfile=payload.userProfile,
             text=text,
             slideNo=slide_no,
+            slot=getattr(payload, "slot", "default"),  # NEW
         )
     )
 
@@ -749,6 +704,5 @@ def get_generation_status(promptId: UUID) -> GenerationStatusResponse | JSONResp
         estimatedSecondsLeft=_eta_seconds(job),
         error=job.error,
     )
-
 
 # Run: uvicorn main:app --host 0.0.0.0 --port 8080 --reload
