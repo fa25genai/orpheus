@@ -2,15 +2,13 @@ from __future__ import annotations
 
 # --- Standard library ---
 import os
-import shutil
-import uuid
 from collections.abc import Generator, Mapping
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from queue import Queue
 from threading import Event, Thread
 from time import sleep
-from typing import Any, Literal, Optional, Union
+from typing import Any, Dict, List, Literal, Optional
 from uuid import UUID
 
 # --- Third-party ---
@@ -24,16 +22,9 @@ from sqlalchemy.orm import Session, sessionmaker
 from typing_extensions import Annotated
 
 # --- Local package (works in both installed and in-repo runs) ---
-try:
-    # If project is installed (e.g., `poetry install` or `pip install -e .`)
-    from media import avatar_media as media
-    from media import avatar_queries
-    from media import avatar_updates
-except ImportError:  # pragma: no cover
-    # If run inside the package (e.g., `python -m yourpkg.main`)
-    from .media import avatar_media as media  # type: ignore
-    from .media import avatar_queries  # type: ignore
-    from .media import avatar_updates  # type: ignore
+# If project is installed (e.g., `poetry install` or `pip install -e .`)
+from media import avatar_media as media
+from media import avatar_queries, avatar_updates
 
 app = FastAPI(title="Service Video-Generation APIs", version="0.1")
 origins = ["*"]
@@ -157,11 +148,7 @@ class SlideTask(BaseModel):
 # ---------------------------
 
 
-engine = create_engine(
-    DATABASE_URL,
-    future=True,
-    connect_args={"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
-)
+engine = create_engine(DATABASE_URL, future=True, connect_args={"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {})
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, future=True)
 
 
@@ -202,12 +189,12 @@ def folder_url(prompt_id: UUID) -> str:
     tags=["avatar"],
 )
 def create_avatar(
-        name: Optional[str] = Form(None),
-        courseId: UUID = Form(...),
-        slot: Optional[str] = Form('default'),  # accepts "default", "beginning", "ending" (+ minor typos)
-        image_file: UploadFile = File(..., description="png/jpeg/webp"),
-        audio_file: UploadFile = File(..., description="mp3/wav/flac/webm"),
-        db: Session = Depends(get_db),
+    name: Optional[str] = Form(None),
+    courseId: UUID = Form(...),
+    slot: Optional[str] = Form("default"),  # accepts "default", "beginning", "ending" (+ minor typos)
+    image_file: UploadFile = File(..., description="png/jpeg/webp"),
+    audio_file: UploadFile = File(..., description="mp3/wav/flac/webm"),
+    db: Session = Depends(get_db),
 ) -> media.AvatarCreatedResponse:
     return media.create_avatar_with_media(
         db=db,
@@ -225,9 +212,9 @@ def create_avatar(
     tags=["avatar"],
 )
 def get_avatars_by_course_endpoint(
-        courseId: UUID,
-        slot: Optional[str] = Query(None, description="optional: default | beginning | ending"),
-        db: Session = Depends(get_db),
+    courseId: UUID,
+    slot: Optional[str] = Query(None, description="optional: default | beginning | ending"),
+    db: Session = Depends(get_db),
 ) -> List[media.AvatarCreatedResponse]:
     return avatar_queries.get_avatars_by_course(db=db, course_id=courseId, slot=slot)
 
@@ -239,14 +226,12 @@ def get_avatars_by_course_endpoint(
     tags=["avatar"],
 )
 def replace_avatar_image_endpoint(
-        courseId: UUID,
-        slot: str,
-        image_file: UploadFile = File(..., description="png/jpeg/webp"),
-        db: Session = Depends(get_db),
+    courseId: UUID,
+    slot: str,
+    image_file: UploadFile = File(..., description="png/jpeg/webp"),
+    db: Session = Depends(get_db),
 ) -> media.AvatarCreatedResponse:
-    return avatar_updates.replace_avatar_image(
-        db=db, course_id=courseId, slot=slot, image_file=image_file, delete_previous=True
-    )
+    return avatar_updates.replace_avatar_image(db=db, course_id=courseId, slot=slot, image_file=image_file, delete_previous=True)
 
 
 # Replace only AUDIO
@@ -256,14 +241,12 @@ def replace_avatar_image_endpoint(
     tags=["avatar"],
 )
 def replace_avatar_audio_endpoint(
-        courseId: UUID,
-        slot: str,
-        audio_file: UploadFile = File(..., description="mp3/wav/flac/webm"),
-        db: Session = Depends(get_db),
+    courseId: UUID,
+    slot: str,
+    audio_file: UploadFile = File(..., description="mp3/wav/flac/webm"),
+    db: Session = Depends(get_db),
 ) -> media.AvatarCreatedResponse:
-    return avatar_updates.replace_avatar_audio(
-        db=db, course_id=courseId, slot=slot, audio_file=audio_file, delete_previous=True
-    )
+    return avatar_updates.replace_avatar_audio(db=db, course_id=courseId, slot=slot, audio_file=audio_file, delete_previous=True)
 
 
 # ---------------------------
@@ -330,12 +313,11 @@ def _purge_stale_jobs(now: Optional[datetime] = None) -> None:
 # ---------------------------
 
 
-
 def generate_audio(
-    voice_track: Optional[str],
+    voiceTrack: Optional[str],
     course_id: str | UUID,
     prompt_id: UUID | None,
-    user_profile: "UserProfile" | None,  # kept for signature parity; not used below
+    user_profile: UserProfile,
     audio_counter: int,
     *,
     db: Session,
@@ -376,7 +358,7 @@ def generate_audio(
         # 2) Call TTS with the DB audio as voice_file
         is_debug = os.getenv("DEBUG", "").lower() == "debug"
         data = {
-            "voiceTrack": voice_track or "",
+            "voiceTrack": voiceTrack or "",
             "debug": "true" if is_debug else "false",
             "promptId": str(prompt_id),  # <-- ensure JSON/form-serializable
         }
@@ -430,12 +412,12 @@ def generate_audio(
 
 
 def generate_video(
-        audio_path: Optional[str] = None,
-        prompt_id: Optional[UUID] = None,
-        course_id: Optional[str] = None,
-        user_profile: Optional[UserProfile] = None,
-        video_counter: int = 0,
-        source_image_path: Optional[str] = None,
+    audio_path: Optional[str] = None,
+    prompt_id: Optional[UUID] = None,
+    course_id: Optional[str] = None,
+    user_profile: Optional[UserProfile] = None,
+    video_counter: int = 0,
+    source_image_path: Optional[str] = None,
 ) -> Optional[str]:
     """
     Render MP4 video for one slide using audio and a static image.
@@ -744,5 +726,6 @@ def get_generation_status(promptId: UUID) -> GenerationStatusResponse | JSONResp
         estimatedSecondsLeft=_eta_seconds(job),
         error=job.error,
     )
+
 
 # Run: uvicorn main:app --host 0.0.0.0 --port 8080 --reload

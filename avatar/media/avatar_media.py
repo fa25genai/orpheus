@@ -41,10 +41,12 @@ EXT = {
     "audio/webm": "webm",
 }
 
+
 # ----- SQLAlchemy models -----
 # If you already have a Base, remove this and from your_module import Base
 class Base(DeclarativeBase):
     pass
+
 
 class Avatar(Base):
     __tablename__ = "avatars"
@@ -67,12 +69,13 @@ class AvatarImage(Base):
     __tablename__ = "avatar_images"
     id: Mapped[str] = mapped_column(String(36), primary_key=True)
     avatar_id: Mapped[str] = mapped_column(String(36), ForeignKey("avatars.avatar_id", ondelete="CASCADE"), index=True)
-    file_path: Mapped[str] = mapped_column(Text, nullable=False)   # absolute path on disk (or CDN path if you prefer)
+    file_path: Mapped[str] = mapped_column(Text, nullable=False)  # absolute path on disk (or CDN path if you prefer)
     mime_type: Mapped[Optional[str]] = mapped_column(String(64))
     size_bytes: Mapped[Optional[int]] = mapped_column(Integer)
     original_filename: Mapped[Optional[str]] = mapped_column(String(255))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     avatar: Mapped["Avatar"] = relationship(back_populates="images")
+
 
 class AvatarAudio(Base):
     __tablename__ = "avatar_audios"
@@ -85,6 +88,7 @@ class AvatarAudio(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     avatar: Mapped["Avatar"] = relationship(back_populates="audios")
 
+
 # ----- Pydantic responses (optional but nice) -----
 class AvatarImageResponse(BaseModel):
     id: UUID
@@ -94,6 +98,7 @@ class AvatarImageResponse(BaseModel):
     sizeBytes: Optional[int] = None
     createdAt: datetime
 
+
 class AvatarAudioResponse(BaseModel):
     id: UUID
     avatarId: UUID
@@ -101,6 +106,7 @@ class AvatarAudioResponse(BaseModel):
     mimeType: Optional[str] = None
     sizeBytes: Optional[int] = None
     createdAt: datetime
+
 
 class AvatarCreatedResponse(BaseModel):
     avatarId: UUID
@@ -110,6 +116,7 @@ class AvatarCreatedResponse(BaseModel):
     createdAt: datetime
     image: AvatarImageResponse
     audio: AvatarAudioResponse
+
 
 # ----- file helpers -----
 def _save_upload(root: Path, avatar_id: UUID, upload: UploadFile, kind: str) -> Path:
@@ -134,6 +141,7 @@ def _save_upload(root: Path, avatar_id: UUID, upload: UploadFile, kind: str) -> 
         shutil.copyfileobj(upload.file, out)
     return target
 
+
 # --- tiny helper to accept minor typos like 'defualt' and 'begining' ---
 def _normalize_slot(value: Optional[str]) -> CourseAvatarSlot:
     if not value:
@@ -151,6 +159,7 @@ def _normalize_slot(value: Optional[str]) -> CourseAvatarSlot:
         return CourseAvatarSlot(v)
     except ValueError:
         raise HTTPException(status_code=400, detail=f"slot must be one of: {', '.join(s.value for s in CourseAvatarSlot)}")
+
 
 # ----- service function (call from your route) -----
 def create_avatar_with_media(
@@ -171,7 +180,7 @@ def create_avatar_with_media(
             avatar_id=str(avatar_uuid),
             name=name,
             course_id=str(course_id),
-            slot=the_slot.value,                           # <--- save
+            slot=the_slot.value,  # <--- save
         )
         db.add(avatar)
         db.flush()
@@ -207,7 +216,7 @@ def create_avatar_with_media(
             avatarId=UUID(avatar.avatar_id),
             name=avatar.name,
             courseId=UUID(avatar.course_id) if avatar.course_id else None,
-            slot=CourseAvatarSlot(avatar.slot),            # <--- expose in response
+            slot=CourseAvatarSlot(avatar.slot),  # <--- expose in response
             createdAt=avatar.created_at,
             image=AvatarImageResponse(
                 id=UUID(img.id),

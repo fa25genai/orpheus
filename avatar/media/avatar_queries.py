@@ -20,34 +20,17 @@ from .avatar_media import (
 )
 
 
-def get_latest_image_for_course_slot(
-    db: Session,
-    course_id: Union[str, UUID],
-    slot: Optional[str]
-) -> AvatarImage:
+def get_latest_image_for_course_slot(db: Session, course_id: Union[str, UUID], slot: Optional[str]) -> AvatarImage:
     the_slot = _normalize_slot(slot) if slot is not None else _normalize_slot("default")
-    avatar = (
-        db.query(Avatar)
-          .filter(Avatar.course_id == str(course_id), Avatar.slot == the_slot.value)
-          .first()
-    )
+    avatar = db.query(Avatar).filter(Avatar.course_id == str(course_id), Avatar.slot == the_slot.value).first()
     if not avatar or not avatar.images:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                            detail="No image found for given courseId and slot")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No image found for given courseId and slot")
     return sorted(avatar.images, key=lambda i: i.created_at or datetime.min, reverse=True)[0]
 
 
-def get_latest_audio_for_course_slot(
-        db: Session,
-        course_id: Union[str, UUID],
-        slot: Optional[str]
-    ) -> AvatarAudio:
+def get_latest_audio_for_course_slot(db: Session, course_id: Union[str, UUID], slot: Optional[str]) -> AvatarAudio:
     the_slot = _normalize_slot(slot) if slot is not None else _normalize_slot("default")
-    avatar = (
-        db.query(Avatar)
-          .filter(Avatar.course_id == str(course_id), Avatar.slot == the_slot.value)
-          .first()
-    )
+    avatar = db.query(Avatar).filter(Avatar.course_id == str(course_id), Avatar.slot == the_slot.value).first()
     if not avatar or not getattr(avatar, "audios", None):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

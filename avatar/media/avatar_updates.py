@@ -26,11 +26,7 @@ from .avatar_media import (
 
 def _get_avatar_or_404(db: Session, course_id: UUID, slot: Optional[str]) -> Avatar:
     the_slot = _normalize_slot(slot) if slot is not None else CourseAvatarSlot.default
-    avatar = (
-        db.query(Avatar)
-        .filter(Avatar.course_id == str(course_id), Avatar.slot == the_slot.value)
-        .first()
-    )
+    avatar = db.query(Avatar).filter(Avatar.course_id == str(course_id), Avatar.slot == the_slot.value).first()
     if not avatar:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -40,6 +36,7 @@ def _get_avatar_or_404(db: Session, course_id: UUID, slot: Optional[str]) -> Ava
 
 
 # ---- Non-generic "latest" helpers (avoid TypeVar/Protocol headaches with mypy) ----
+
 
 def _ts(dt: Optional[datetime]) -> float:
     """Return a comparable timestamp, handling None and aware/naive datetimes."""
@@ -66,6 +63,7 @@ def _latest_audio_or_none(items: Sequence[AvatarAudio] | list[AvatarAudio]) -> O
 
 # ---- Public operations ----
 
+
 def replace_avatar_image(
     db: Session,
     course_id: UUID,
@@ -81,15 +79,11 @@ def replace_avatar_image(
     saved_new_path: Optional[Path] = None
 
     # capture old latest BEFORE adding the new one
-    old_img: Optional[AvatarImage] = _latest_image_or_none(
-        cast(Sequence[AvatarImage], list(avatar.images))
-    )
+    old_img: Optional[AvatarImage] = _latest_image_or_none(cast(Sequence[AvatarImage], list(avatar.images)))
 
     try:
         # Save new file to disk
-        saved_new_path = _save_upload(
-            AVATARS_OUTPUT_DIR, UUID(avatar.avatar_id), image_file, kind="image"
-        )
+        saved_new_path = _save_upload(AVATARS_OUTPUT_DIR, UUID(avatar.avatar_id), image_file, kind="image")
 
         # New DB row
         new_img = AvatarImage(
@@ -112,12 +106,8 @@ def replace_avatar_image(
         db.refresh(new_img)
         db.expire(avatar, ["images", "audios"])
 
-        latest_image: Optional[AvatarImage] = _latest_image_or_none(
-            cast(Sequence[AvatarImage], avatar.images)
-        )
-        latest_audio: Optional[AvatarAudio] = _latest_audio_or_none(
-            cast(Sequence[AvatarAudio], avatar.audios)
-        )
+        latest_image: Optional[AvatarImage] = _latest_image_or_none(cast(Sequence[AvatarImage], avatar.images))
+        latest_audio: Optional[AvatarAudio] = _latest_audio_or_none(cast(Sequence[AvatarAudio], avatar.audios))
 
         if latest_image is None:
             # We just added one; if it's still None, something is inconsistent.
@@ -182,15 +172,11 @@ def replace_avatar_audio(
     saved_new_path: Optional[Path] = None
 
     # capture old latest BEFORE adding the new one
-    old_aud: Optional[AvatarAudio] = _latest_audio_or_none(
-        cast(Sequence[AvatarAudio], list(avatar.audios))
-    )
+    old_aud: Optional[AvatarAudio] = _latest_audio_or_none(cast(Sequence[AvatarAudio], list(avatar.audios)))
 
     try:
         # Save new file to disk
-        saved_new_path = _save_upload(
-            AVATARS_OUTPUT_DIR, UUID(avatar.avatar_id), audio_file, kind="audio"
-        )
+        saved_new_path = _save_upload(AVATARS_OUTPUT_DIR, UUID(avatar.avatar_id), audio_file, kind="audio")
 
         # New DB row
         new_aud = AvatarAudio(
@@ -213,12 +199,8 @@ def replace_avatar_audio(
         db.refresh(new_aud)
         db.expire(avatar, ["images", "audios"])
 
-        latest_image: Optional[AvatarImage] = _latest_image_or_none(
-            cast(Sequence[AvatarImage], avatar.images)
-        )
-        latest_audio: Optional[AvatarAudio] = _latest_audio_or_none(
-            cast(Sequence[AvatarAudio], avatar.audios)
-        )
+        latest_image: Optional[AvatarImage] = _latest_image_or_none(cast(Sequence[AvatarImage], avatar.images))
+        latest_audio: Optional[AvatarAudio] = _latest_audio_or_none(cast(Sequence[AvatarAudio], avatar.audios))
 
         if latest_audio is None:
             # We just added one; if it's still None, something is inconsistent.
