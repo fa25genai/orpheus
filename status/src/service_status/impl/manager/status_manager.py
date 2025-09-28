@@ -13,11 +13,9 @@ _log = logging.getLogger("status_manager")
 
 class StatusManager:
     status_objects: typing.Dict[str, Status] = {}
-    listeners: typing.Dict[
-        str, typing.Dict[str, typing.Callable[[Status], Awaitable[None]]]
-    ]
+    listeners: typing.Dict[str, typing.Dict[str, typing.Callable[[Status], Awaitable[None]]]]
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.status_objects = {}
         self.listeners = {}
         self.mutex = Lock()
@@ -26,7 +24,7 @@ class StatusManager:
         async with self.mutex:
             return self._get_status_unsafe(prompt_id)
 
-    async def update_status(self, prompt_id: str, patch: StatusPatch):
+    async def update_status(self, prompt_id: str, patch: StatusPatch) -> None:
         async with self.mutex:
             base = self._get_status_unsafe(prompt_id)
 
@@ -34,12 +32,10 @@ class StatusManager:
                 if v is not None and k != "steps_avatar_generation":
                     base.__dict__[k] = v
 
-            if base.slide_structure is not None and len(
-                base.steps_avatar_generation
-            ) < len(base.slide_structure.pages):
-                for i in range(
-                    len(base.slide_structure.pages) - len(base.steps_avatar_generation)
-                ):
+            if base.slide_structure is not None and len(base.steps_avatar_generation) < len(
+                base.slide_structure.pages
+            ):
+                for i in range(len(base.slide_structure.pages) - len(base.steps_avatar_generation)):
                     base.steps_avatar_generation.append(
                         AvatarElementStatus(
                             audio=StepStatus.NOT_STARTED,
@@ -74,14 +70,14 @@ class StatusManager:
         prompt_id: str,
         reference: str,
         listener: typing.Callable[[Status], Awaitable[None]],
-    ):
+    ) -> None:
         async with self.mutex:
             if prompt_id not in self.listeners:
                 self.listeners[prompt_id] = {}
             self.listeners[prompt_id][reference] = listener
             await listener(self._get_status_unsafe(prompt_id))
 
-    async def remove_listener(self, prompt_id: str, reference: str):
+    async def remove_listener(self, prompt_id: str, reference: str) -> None:
         async with self.mutex:
             if prompt_id not in self.listeners:
                 return

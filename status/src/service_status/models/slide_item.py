@@ -1,5 +1,6 @@
 # coding: utf-8
 
+
 """
 Answer Generation Service API
 
@@ -17,7 +18,7 @@ import re  # noqa: F401
 import json
 
 
-from pydantic import BaseModel, ConfigDict, Field, StrictStr
+from pydantic import BaseModel, Field, StrictStr
 from typing import Any, ClassVar, Dict, List
 
 try:
@@ -74,7 +75,7 @@ class SlideItem(BaseModel):
         return _dict
 
     @classmethod
-    def from_dict(cls, obj: Dict) -> Self:
+    def from_dict(cls, obj: Dict[str, Any]) -> Self:
         """Create an instance of SlideItem from a dict"""
         if obj is None:
             return None

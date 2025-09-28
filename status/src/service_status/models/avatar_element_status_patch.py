@@ -17,7 +17,7 @@ import re  # noqa: F401
 import json
 
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel
 from typing import Any, ClassVar, Dict, List, Optional
 from service_status.models.step_status import StepStatus
 
@@ -74,7 +74,7 @@ class AvatarElementStatusPatch(BaseModel):
         return _dict
 
     @classmethod
-    def from_dict(cls, obj: Dict) -> Self:
+    def from_dict(cls, obj: Dict[str, Any]) -> Self:
         """Create an instance of AvatarElementStatusPatch from a dict"""
         if obj is None:
             return None

@@ -17,8 +17,8 @@ import re  # noqa: F401
 import json
 
 
-from pydantic import BaseModel, ConfigDict
-from typing import Any, ClassVar, Dict, List, Optional
+from pydantic import BaseModel
+from typing import Any, ClassVar, Dict, List
 from service_status.models.slide_item import SlideItem
 
 try:
@@ -32,7 +32,7 @@ class SlideStructure(BaseModel):
     High-level structure of the slide deck returned early for UI and navigation
     """  # noqa: E501
 
-    pages: Optional[List[SlideItem]] = None
+    pages: List[SlideItem] = []
     __properties: ClassVar[List[str]] = ["pages"]
 
     model_config = {
@@ -80,7 +80,7 @@ class SlideStructure(BaseModel):
         return _dict
 
     @classmethod
-    def from_dict(cls, obj: Dict) -> Self:
+    def from_dict(cls, obj: Dict[str, Any]) -> Self:
         """Create an instance of SlideStructure from a dict"""
         if obj is None:
             return None
@@ -88,7 +88,11 @@ class SlideStructure(BaseModel):
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
 
-        _obj = cls.model_validate({
-            "pages": [SlideItem.from_dict(_item) for _item in obj.get("pages")] if obj.get("pages") is not None else None
-        })
+        _obj = cls.model_validate(
+            {
+                "pages": [SlideItem.from_dict(_item) for _item in pages]
+                if (pages := obj.get("pages")) is not None
+                else None
+            }
+        )
         return _obj
