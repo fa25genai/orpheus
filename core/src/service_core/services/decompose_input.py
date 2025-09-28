@@ -9,7 +9,10 @@ import textwrap
 from typing import Any, Dict, Optional
 
 from dotenv import load_dotenv
-from langchain_community.chat_models import ChatOllama
+from langchain_aws import ChatBedrockConverse
+# from langchain_community.chat_models import ChatOllama
+from langchain_community.chat_models import BedrockChat
+
 from pydantic import BaseModel
 
 # Load environment variables from .env file
@@ -20,13 +23,13 @@ load_dotenv()
 # CONFIGURATION
 # -----------------------------
 class Config(BaseModel):
-    aws_access_key_id: str = os.environ.get("AWS_ACCESS_KEY_ID", "")
-    aws_secret_access_key: str = os.environ.get("AWS_SECRET_ACCESS_KEY", "")
-    aws_session_token: str = os.environ.get("AWS_SESSION_TOKEN", "")
+    aws_access_key_id: str | None = os.environ.get("AWS_ACCESS_KEY_ID", None)
+    aws_secret_access_key: str | None = os.environ.get("AWS_SECRET_ACCESS_KEY", None)
+    aws_session_token: str | None = os.environ.get("AWS_SESSION_TOKEN", None)
 
-    llama_api_key: str = os.environ.get("LLAMA_API_KEY", "")
-    llama_model: str = os.environ.get("LLAMA_MODEL", "")
-    llama_api_url: str = os.environ.get("LLAMA_API_URL", "")
+    llama_api_key: str | None = os.environ.get("LLAMA_API_KEY", None)
+    llama_model: str | None = os.environ.get("LLAMA_MODEL", None)
+    llama_api_url: str | None = os.environ.get("LLAMA_API_URL", None)
 
     access_key = aws_access_key_id if aws_access_key_id is not None else None
     secret_access_key = aws_secret_access_key if aws_secret_access_key is not None else None
@@ -45,10 +48,19 @@ def call_llama(prompt: str, model: Optional[str] = None, max_tokens: int = 512) 
         raise RuntimeError("LLAMA_API_KEY not set")
 
     # Initialize ChatOllama with custom endpoint and API key
-    llm = ChatOllama(
-        model=model,
-        base_url=config.llama_api_url,
-        headers={"Authorization": f"Bearer {config.llama_api_key}"},
+    # llm = ChatOllama(
+    #     model=model,
+    #     base_url=config.llama_api_url,
+    #     headers={"Authorization": f"Bearer {config.llama_api_key}"},
+    # )
+
+    # https://eu-central-1.console.aws.amazon.com/bedrock/home?region=eu-central-1#/model-catalog
+    llm = ChatBedrockConverse(
+        model="amazon.nova-micro-v1:0",  # or another supported model
+        region_name="eu-central-1",         # set your AWS region
+        aws_access_key_id=config.aws_access_key_id,
+        aws_secret_access_key=config.aws_secret_access_key,
+        aws_session_token=config.aws_session_token,
     )
 
     # Generate response
