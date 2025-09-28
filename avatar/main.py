@@ -18,6 +18,7 @@ from pydantic import BaseModel, Field, StringConstraints
 from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, create_engine, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, relationship, sessionmaker
 from typing_extensions import Annotated
+import media.avatar_media as media
 
 app = FastAPI(title="Service Video-Generation APIs", version="0.1")
 origins = ["*"]
@@ -109,8 +110,6 @@ class AvatarCreatedResponse(BaseModel):
 # ---------------------------
 
 
-class Base(DeclarativeBase):
-    pass
 
 
 engine = create_engine(DATABASE_URL, future=True)
@@ -125,28 +124,19 @@ def get_db() -> Generator[Session, None, None]:
         db.close()
 
 
-class Avatar(Base):
-    __tablename__ = "avatars"
-    avatar_id: Mapped[str] = mapped_column(String(36), primary_key=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-    images: Mapped[list["AvatarImage"]] = relationship(back_populates="avatar", cascade="all, delete-orphan")
 
-
-class AvatarImage(Base):
-    __tablename__ = "avatar_images"
-    id: Mapped[str] = mapped_column(String(36), primary_key=True)
-    avatar_id: Mapped[str] = mapped_column(String(36), ForeignKey("avatars.avatar_id", ondelete="CASCADE"), index=True)
-    file_path: Mapped[str] = mapped_column(Text, nullable=False)  # absolute path on disk
-    mime_type: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
-    size_bytes: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    original_filename: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-    avatar: Mapped["Avatar"] = relationship(back_populates="images")
+class AvatarImageResponse(BaseModel):
+    id: UUID
+    avatarId: UUID
+    filePath: str
+    mimeType: Optional[str] = None
+    sizeBytes: Optional[int] = None
+    createdAt: datetime
 
 
 @app.on_event("startup")
 def _startup_create_tables() -> None:
-    Base.metadata.create_all(engine)
+    media.Base.metadata.create_all(engine)
     _start_worker_once()
 
 
@@ -167,14 +157,6 @@ def folder_url(prompt_id: UUID) -> str:
 
 ALLOWED_IMAGE_MIMES = {"image/png", "image/jpeg", "image/webp"}
 
-
-class AvatarImageResponse(BaseModel):
-    id: UUID
-    avatarId: UUID
-    filePath: str
-    mimeType: Optional[str] = None
-    sizeBytes: Optional[int] = None
-    createdAt: datetime
 
 
 def _ext_from_mime(mime: str) -> str:
