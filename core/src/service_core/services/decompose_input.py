@@ -102,7 +102,7 @@ def decompose_question(question: str) -> Dict[str, Any]:
         start, end = raw_llm_output.find("{"), raw_llm_output.rfind("}")
         if start != -1 and end != -1:
             try:
-                questions_generated_from_user_query: Dict[str, Any] = json.loads(raw_llm_output[start: end + 1])
+                questions_generated_from_user_query = json.loads(raw_llm_output[start: end + 1])
                 # Validate required keys for extracted JSON too
                 required_keys = ["original_question", "subqueries"]
                 if not all(key in questions_generated_from_user_query for key in required_keys):
