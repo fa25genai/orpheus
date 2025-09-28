@@ -1,16 +1,13 @@
-import os
+import base64
 import glob
-import torch
 import hashlib
-import librosa
-import base64
+import os
 from glob import glob
-import numpy as np
-from pydub import AudioSegment
-from faster_whisper import WhisperModel
-import hashlib
-import base64
+
 import librosa
+import numpy as np
+from faster_whisper import WhisperModel
+from pydub import AudioSegment
 from whisper_timestamped.transcribe import get_audio_tensor, get_vad_segments
 
 model_size = "medium"

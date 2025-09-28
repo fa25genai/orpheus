@@ -1,7 +1,7 @@
 from __future__ import division
-import numpy as np
-import torch
+
 import cv2
+import numpy as np
 from skimage import transform as trans
 
 from ..utils.load_model import load_model

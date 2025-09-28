@@ -1,6 +1,6 @@
+import cv2
 import filetype
 import imageio
-import cv2
 
 
 def is_image(file_path):

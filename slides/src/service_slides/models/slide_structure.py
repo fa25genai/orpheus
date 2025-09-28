@@ -12,12 +12,13 @@ Do not edit the class manually.
 """  # noqa: E501
 
 from __future__ import annotations
-import pprint
-import json
 
+import json
+import pprint
+from typing import Any, ClassVar, Dict, List, Optional
 
 from pydantic import BaseModel
-from typing import Any, ClassVar, Dict, List, Optional
+
 from service_slides.models.slide_item import SlideItem
 
 try:
@@ -87,11 +88,10 @@ class SlideStructure(BaseModel):
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
 
-        _obj = cls.model_validate(
-            {
-                "pages": [SlideItem.from_dict(_item) for _item in pages_data]
-                if (pages_data := obj.get("pages")) is not None
-                else None
-            }
-        )
+        pages_data = obj.get("pages")
+        if pages_data is not None:
+            pages = [SlideItem.from_dict(_item) for _item in pages_data]
+        else:
+            pages = None
+        _obj = cls.model_validate({"pages": pages})
         return _obj

@@ -23,11 +23,7 @@ A client can:
 
 The following configuration options are available (using environment variables)
 
-| Environment Variable          | Description                                                                                         | Default value                        |
-|-------------------------------|-----------------------------------------------------------------------------------------------------|--------------------------------------|
-| `SPLITTING_MODEL`             | Name of the LLM, which should be used to perform distribution of the lecture content across slides. |                                      |
-| `SLIDESGEN_MODEL`             | Name of the LLM, which should be used to generate the slide content                                 |                                      |
-| `POSTPROCESSING_SERVICE_HOST` | Base URL of where to reach the **Slide Postprocessing Service**                                     | `http://slides-postprocessing:30607` |
-
-Depending on the selected LLM models, the appropriate environment variables with API secrets have to be defined as well.
-Please refer to the [.env.example](.env.example) file for further details.
+| Environment Variable       | Description                                                                                                         | Default value                  |
+|----------------------------|---------------------------------------------------------------------------------------------------------------------|--------------------------------|
+| `SLIDES_DELIVERY_BASE_URL` | Base URL of the shared directory on the **Generated Slides Service**                                                | `http://slides-delivery:30608` |
+| `SLIDE_STORAGE_BASE_PATH`  | Local file path where the files are stored. This is the path that has to be mounted to **Generated Slides Service** | `/etc/orpheus/slides/storage`  |

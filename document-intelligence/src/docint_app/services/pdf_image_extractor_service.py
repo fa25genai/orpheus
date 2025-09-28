@@ -1,14 +1,19 @@
 """
 PDF Image Extraction Service using PyMuPDF
 """
+
 import base64
 from io import BytesIO
-from typing import List, Dict, Any
 from pathlib import Path
+from typing import Dict, List
+
 import fitz  # PyMuPDF
 from PIL import Image, ImageStat
+
+
 class PDFImageExtractorService:
     """Service for extracting images from PDF documents."""
+
     def __init__(self, darkness_threshold: int = 30, variance_threshold: int = 15):
         """
         Initialize the PDF image extractor service.
@@ -18,7 +23,7 @@ class PDFImageExtractorService:
         """
         self.darkness_threshold = darkness_threshold
         self.variance_threshold = variance_threshold
-        
+
     def _is_black_square(self, img_bytes: bytes) -> bool:
         """
         Heuristic for detecting black squares (e.g., code block placeholders).
@@ -30,12 +35,11 @@ class PDFImageExtractorService:
         try:
             image = Image.open(BytesIO(img_bytes)).convert("L")
             stat = ImageStat.Stat(image)
-            return (stat.mean[0] < self.darkness_threshold and
-                   stat.stddev[0] < self.variance_threshold)
+            return stat.mean[0] < self.darkness_threshold and stat.stddev[0] < self.variance_threshold
         except Exception as e:
             print(f"Error checking if image is black square: {e}")
             return False
-        
+
     def extract_images_grouped(self, pdf_path: str) -> List[List[Dict[str, str]]]:
         """
         Extract images from PDF grouped by pages.
@@ -73,9 +77,7 @@ class PDFImageExtractorService:
                             print(f"    [Bild {img_index}] Schwarzes Kästchen erkannt → übersprungen")
                             continue
                         print(f"    [Bild {img_index}] extrahiert (Größe: {len(img_bytes)} Bytes)")
-                        page_items.append({
-                            "data": f"data:image/{info['ext']};base64,{base64.b64encode(img_bytes).decode('utf-8')}"
-                        })
+                        page_items.append({"data": f"data:image/{info['ext']};base64,{base64.b64encode(img_bytes).decode('utf-8')}"})
                     except Exception as e:
                         print(f"    [Bild {img_index}] Fehler beim Extrahieren: {e}")
                         continue
@@ -87,7 +89,8 @@ class PDFImageExtractorService:
         total_images = sum(len(p) for p in result)
         print(f"\nExtraktion abgeschlossen. Seiten: {len(result)} | Bilder insgesamt: {total_images}")
         return result
-    
+
+
 def get_pdf_image_extractor_service() -> PDFImageExtractorService:
     """Factory function to get PDFImageExtractorService instance."""
     return PDFImageExtractorService()

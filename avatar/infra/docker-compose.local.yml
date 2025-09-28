@@ -23,6 +23,7 @@ services:
       dockerfile: Dockerfile
     environment:
       VIDEO_ROOT: "/data/jobs"
+      DEBUG: "not debug"
       PUBLIC_VIDEOS_BASE: "/videos/jobs"
       GEN_AUDIO: "http://localhost:7000/v1/audio/generate"
       GEN_VIDEO: "http://localhost:8000/infer"

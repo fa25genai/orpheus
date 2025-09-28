@@ -12,12 +12,12 @@ Do not edit the class manually.
 """  # noqa: E501
 
 from __future__ import annotations
-import pprint
-import json
 
+import json
+import pprint
+from typing import Any, ClassVar, Dict, List, Optional, Union
 
 from pydantic import BaseModel, Field, StrictBytes, StrictStr
-from typing import Any, ClassVar, Dict, List, Optional, Union
 
 try:
     from typing import Self
@@ -31,12 +31,8 @@ class RequestSlideGenerationRequestAssetsInner(BaseModel):
     """  # noqa: E501
 
     name: Optional[StrictStr] = Field(default=None, description="File name of the asset")
-    asset_description: StrictStr = Field(
-        description="Plain text description of the asset/it's contents", alias="assetDescription"
-    )
-    mime_type: StrictStr = Field(
-        description="MIME-Type name of the file type (e.g. image/png)", alias="mimeType"
-    )
+    asset_description: StrictStr = Field(description="Plain text description of the asset/it's contents", alias="assetDescription")
+    mime_type: StrictStr = Field(description="MIME-Type name of the file type (e.g. image/png)", alias="mimeType")
     data: Union[StrictBytes, StrictStr] = Field(description="Base64 encoded raw data of the asset")
     __properties: ClassVar[List[str]] = ["name", "assetDescription", "mimeType", "data"]
 

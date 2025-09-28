@@ -1,10 +1,10 @@
 import copy
 import random
+
 import numpy as np
 from scipy.special import softmax
 
 from ..models.stitch_network import StitchNetwork
-
 
 """
 # __init__

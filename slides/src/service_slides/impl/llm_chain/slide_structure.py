@@ -1,17 +1,20 @@
-from typing import List, Any, cast
+from typing import Any, List, cast
+
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.prompts import (
     ChatPromptTemplate,
-    SystemMessagePromptTemplate,
     HumanMessagePromptTemplate,
+    SystemMessagePromptTemplate,
 )
 from pydantic import BaseModel, Field
 
+from service_slides.clients.status.models.slide_structure import SlideItem as SlideItemStatus  # type: ignore[attr-defined]
+from service_slides.clients.status.models.slide_structure import SlideStructure as SlideStructureStatus
 from service_slides.impl.llm_chain.shared_llm import invoke_llm
+from service_slides.impl.manager.layout_manager import LayoutDescription
 from service_slides.models.slide_item import SlideItem
 from service_slides.models.slide_structure import SlideStructure
-from service_slides.impl.manager.layout_manager import LayoutDescription
 
 
 class DetailedSlideStructureItem(BaseModel):
@@ -24,12 +27,7 @@ class DetailedSlideStructureItem(BaseModel):
             "Each chunk should represent one coherent idea and stand alone without referencing other chunks."
         )
     )
-    layout: str = Field(
-        description=(
-            "The name of the layout template to use for this slide. Choose the best fitting layout from the provided list of available layouts. "
-            "Do not invent layouts, only pick one that is guaranteed to exist."
-        )
-    )
+    layout: str = Field(description=("The name of the layout template to use for this slide. Choose the best fitting layout from the provided list of available layouts. Do not invent layouts, only pick one that is guaranteed to exist."))
 
 
 class DetailedSlideStructure(BaseModel):
@@ -43,6 +41,11 @@ class DetailedSlideStructure(BaseModel):
             pages=[SlideItem(content=item.content) for item in self.items],
         )
 
+    def as_simple_slide_structure_status(self) -> SlideStructureStatus:
+        return SlideStructureStatus(
+            pages=[SlideItemStatus(content=item.content) for item in self.items],
+        )
+
 
 async def generate_slide_structure(
     model: BaseLanguageModel[Any],
@@ -54,12 +57,7 @@ async def generate_slide_structure(
     that can serve as candidate slides. No optimization beyond chunking.
     """
 
-    layouts_description = "\n".join(
-        [
-            f"- Name: '{layout.name}', Description: {layout.description}"
-            for layout in available_layouts
-        ]
-    )
+    layouts_description = "\n".join([f"- Name: '{layout.name}', Description: {layout.description}" for layout in available_layouts])
 
     parser = PydanticOutputParser(pydantic_object=DetailedSlideStructure)
 

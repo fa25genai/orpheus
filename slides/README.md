@@ -29,11 +29,32 @@ Upon completion, it will also provide the URL to access the content.
 npx @openapitools/openapi-generator-cli generate -i ../api/slide_postprocessing_service.yaml -g python -o gen_client --package-name service_slides.clients.postprocessing --library asyncio
 ```
 
+## Local Setup
+
+```bash
+cd slides
+poetry install
+```
+
+## Quality Checks
+
+```bash
+poetry run ruff check .
+poetry run mypy src
+```
+
 ## Configuration
 
 The following configuration options are available (using environment variables)
 
-| Environment Variable       | Description                                                                                                         | Default value                  |
-|----------------------------|---------------------------------------------------------------------------------------------------------------------|--------------------------------|
-| `SLIDES_DELIVERY_BASE_URL` | Base URL of the shared directory on the **Generated Slides Service**                                                | `http://slides-delivery:30608` |
-| `SLIDE_STORAGE_BASE_PATH`  | Local file path where the files are stored. This is the path that has to be mounted to **Generated Slides Service** | `/etc/orpheus/slides/storage`  |
+| Environment Variable          | Description                                                                                         | Default value                        |
+|-------------------------------|-----------------------------------------------------------------------------------------------------|--------------------------------------|
+| `ORPHEUS_VERBOSE`             | Enable verbose logging.                                                                             |                                      |
+| `ORPHEUS_DEBUG`               | Replaces all LLM interactions with predefined stand-in data (independent of inputs).                |                                      |
+| `SPLITTING_MODEL`             | Name of the LLM, which should be used to perform distribution of the lecture content across slides. |                                      |
+| `SLIDESGEN_MODEL`             | Name of the LLM, which should be used to generate the slide content                                 |                                      |
+| `POSTPROCESSING_SERVICE_HOST` | Base URL of where to reach the **Slide Postprocessing Service**                                     | `http://slides-postprocessing:30607` |
+| `STATUS_SERVICE_HOST`         | Base URL of where to reach the **Generation Status Service**                                        | `http://status-service:19910`        |
+
+Depending on the selected LLM models, the appropriate environment variables with API secrets have to be defined as well.
+Please refer to the [.env.example](.env.example) file for further details.
