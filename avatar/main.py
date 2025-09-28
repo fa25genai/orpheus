@@ -37,6 +37,9 @@ DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./app.db")
 IMAGES_OUTPUT_DIR = Path(os.getenv("IMAGES_OUTPUT_DIR", "data/avatars")).resolve()
 IMAGES_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
+GEN_VIDEO = os.getenv("GEN_VIDEO", "http://localhost:8000/infer")
+EMOTION_DEFAULT = os.getenv("EMOTION_DEFAULT", "neutral")
+EMOTION_INTENSITY_DEFAULT = float(os.getenv("EMOTION_INTENSITY_DEFAULT", "0.7"))
 VIDEO_ROOT = Path(os.getenv("VIDEO_ROOT", "/data/jobs")).resolve()
 PUBLIC_VIDEOS_BASE = os.getenv("PUBLIC_VIDEOS_BASE", "/videos/jobs")
 VIDEO_ROOT.mkdir(parents=True, exist_ok=True)
@@ -444,7 +447,9 @@ def generate_video(
         print("[generate_video] prompt_id and video_counter are required")
         return None
 
-    video_api_url = os.getenv("GEN_VIDEO", "http://localhost:8000/infer")
+    # Use the same env-driven endpoint you already had
+    video_api_url = os.getenv("GEN_VIDEO", GEN_VIDEO)
+
     job_folder = job_dir(prompt_id)
     job_folder.mkdir(parents=True, exist_ok=True)
 
@@ -456,36 +461,27 @@ def generate_video(
         print(f"[generate_video] Audio file not found: {resolved_audio}")
         return None
 
-    # choose your static image
+    # your static image
     source_path = "/app/database/avatar_sample/image_michal.png"
     if not Path(source_path).is_file():
         print(f"[generate_video] Source image not found: {source_path}")
         return None
 
-    is_debug = os.getenv("DEBUG", "").lower() in {"debug"}
+    files = {
+        "audio": ("audio.wav", open(resolved_audio, "rb"), "audio/wav"),
+        "source": ("image.png", open(source_path, "rb"), "image/png"),
+    }
+    is_debug = os.getenv("DEBUG", "not debug")
     data = {"debug": is_debug}
 
     try:
         print(f"[generate_video] Posting to {video_api_url}")
-        with (
-            open(resolved_audio, "rb") as audio_f,
-            open(source_path, "rb") as image_f,
-            requests.post(
-                video_api_url,
-                files={
-                    "audio": ("audio.wav", audio_f, "audio/wav"),
-                    "source": ("image.png", image_f, "image/png"),
-                },
-                data=data,
-                stream=True,
-                timeout=(5, 600),
-            ) as resp,
-        ):
+        with requests.post(video_api_url, files=files, data=data, stream=True, timeout=(5, 600)) as resp:
             if resp.status_code >= 400:
                 print(f"[generate_video] HTTP {resp.status_code}: {resp.text[:200]}")
                 return None
 
-            # Stream MP4 to temp file
+            # Stream MP4 to temp file (unchanged)
             with temp_path.open("wb") as f:
                 for chunk in resp.iter_content(chunk_size=1024 * 256):
                     if chunk:
@@ -508,6 +504,12 @@ def generate_video(
     except Exception as e:
         print(f"[generate_video] Unexpected error: {e}")
         return None
+    finally:
+        for v in files.values():
+            try:
+                v[1].close()
+            except Exception:
+                pass
 
 
 # ---------------------------

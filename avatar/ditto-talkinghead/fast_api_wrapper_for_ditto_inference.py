@@ -113,6 +113,30 @@ def run_inference(
 
     return output_path
 
+# --- Emotion helper (label -> (T, D) emo matrix) ---
+def build_emo_from_label(label: str, intensity: float, length: int, dims: int):
+    """
+    Return a (length, dims) list-of-lists suitable for setup_kwargs['emo'].
+    Heuristics are fine for an MVP; tune values later.
+    """
+    label = (label or "neutral").lower()
+    proto = {
+        "neutral":   [0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0],
+        "happy":     [0.8, -0.1,  0.2, -0.1,  0.1,  0.2,  0.1,  0.1],
+        "sad":       [-0.6, 0.4, -0.2,  0.3,  0.1, -0.1, -0.1, -0.2],
+        "angry":     [-0.2, 0.7, -0.1,  0.4,  0.2,  0.3, -0.2,  0.1],
+        "surprised": [0.2, -0.2,  0.6, -0.3,  0.0,  0.8,  0.2,  0.2],
+        "serious":   [0.0,  0.2, -0.1,  0.2,  0.0, -0.1,  0.0,  0.0],
+    }.get(label, [0.0] * dims)
+
+    if len(proto) != dims:
+        proto = (proto + [0.0] * dims)[:dims]
+
+    v = [p * float(intensity) for p in proto]
+    return [v[:] for _ in range(length)]
+
+
+
 
 # -----------------------------
 # API layer
@@ -142,16 +166,13 @@ app = FastAPI(title="Ditto Inference API", version="1.0.0")
 _SDK: Optional[StreamSDK] = None
 _sdk_lock = threading.Lock()
 
+# Globals for emotion control
+_EMO_SHAPE = (600, 8)    # safe fallback
+_USE_EMO = True          # assume enabled; corrected from cfg at startup
 
 @app.on_event("startup")
 def _init_sdk():
-    """Initialize StreamSDK once at startup.
-
-    Configure via environment variables:
-    - DITTO_DATA_ROOT: path to model directory (default: ./checkpoints/ditto_trt_Ampere_Plus)
-    - DITTO_CFG_PKL: path to cfg pkl (default: ./checkpoints/ditto_cfg/v0.4_hubert_cfg_trt.pkl)
-    """
-    global _SDK
+    global _SDK, _EMO_SHAPE, _USE_EMO
     data_root = os.getenv("DITTO_DATA_ROOT", "./checkpoints/ditto_pytorch")
     cfg_pkl = os.getenv("DITTO_CFG_PKL", "./checkpoints/ditto_cfg/v0.4_hubert_cfg_pytorch.pkl")
 
@@ -161,6 +182,17 @@ def _init_sdk():
         raise RuntimeError(f"Config pkl not found: {cfg_pkl}")
 
     _SDK = StreamSDK(cfg_pkl, data_root)
+
+    # Try to read emo shape & use_emo from the cfg
+    try:
+        cfg = load_pkl(cfg_pkl)
+        emo_arr = cfg.get("default_kwargs", {}).get("emo", None)
+        if hasattr(emo_arr, "shape"):
+            _EMO_SHAPE = tuple(int(x) for x in emo_arr.shape)  # e.g. (600, 8)
+        _USE_EMO = bool(cfg.get("audio2motion_cfg", {}).get("use_emo", True))
+    except Exception:
+        # keep fallbacks if cfg probing fails
+        pass
 
 
 @app.get("/health")
@@ -174,7 +206,8 @@ async def infer(
     source: UploadFile = File(..., description="Source image or video"),
     background_tasks: BackgroundTasks = BackgroundTasks(),
     debug: str = Form("not debug", description="is debug?"),
-    
+    emotion: Optional[str] = Form(None, description="neutral|happy|sad|angry|surprised|serious"),
+    intensity: Optional[float] = Form(0.7, description="0..1 scaling for emotion strength"),
 ):
     global _SDK
     if _SDK is None:
@@ -209,6 +242,15 @@ async def infer(
             while chunk := await source.read(1024 * 1024):
                 f.write(chunk)
 
+        setup_kwargs = {}
+        if _USE_EMO:
+            T, D = _EMO_SHAPE   # set at startup from cfg or fallback (e.g. 600, 8)
+            setup_kwargs["emo"] = build_emo_from_label(
+                emotion or "neutral",
+                float(intensity or 0.7),
+                T, D
+            )
+
         # Run inference
         with _sdk_lock:
             final_path = run_inference(
@@ -216,7 +258,7 @@ async def infer(
                 audio_path=audio_tmp,
                 source_path=source_tmp,
                 output_path=output_tmp,
-                more_kwargs={"setup_kwargs": {}, "run_kwargs": {}},
+                more_kwargs={"setup_kwargs": setup_kwargs, "run_kwargs": {}},
             )
 
         # schedule cleanup AFTER response is sent

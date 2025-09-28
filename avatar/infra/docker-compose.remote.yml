@@ -29,6 +29,8 @@ services:
       PUBLIC_VIDEOS_BASE: "/videos/jobs"
       GEN_AUDIO: "https://gpu.aet.cit.tum.de/avatar/audio/v1/audio/generate"
       GEN_VIDEO: "https://gpu.aet.cit.tum.de/avatar/video/infer"
+      EMOTION_DEFAULT: "happy"           # neutral|happy|sad|angry|surprised|serious ...
+      EMOTION_INTENSITY_DEFAULT: "1"   # 0..1
     volumes:
       - avatar_file_storage:/data
     networks: [avatar_network]
