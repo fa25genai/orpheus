@@ -92,20 +92,25 @@ async def query_document_intelligence(subqueries: List[str], client: httpx.Async
     return di_data
 
 
-async def generate_script(retrieved_content: List[Dict[str, Any]], prompt_id: str, client: httpx.AsyncClient) -> Dict[str, Any]:
+async def generate_script(retrieved_content: List[Dict[str, Any]], prompt_id: str, prompt_request: PromptRequest, client: httpx.AsyncClient) -> Dict[str, Any]:
     try:
         tracker.log("Generating script")
         await update_status(prompt_id, StatusPatch(
                 stepLectureScriptGeneration=StepStatus.IN_PROGRESS
             ), client)
+        
+        if prompt_request.user_persona is None:
+                print("ERROR: User profile must be defined for processing.", flush=True)
+                raise ValueError("User profile must be defined")
+        
         if DEBUG:
             output: Dict[str, Any] = mock_service.create_script()
             await update_status(prompt_id, StatusPatch(
                 stepLectureScriptGeneration=StepStatus.DONE
             ), client)
             return output
-
-        refined_output: Dict[str, Any] = script_generation.generate_script(retrieved_content, mock_service.create_user())
+    
+        refined_output: Dict[str, Any] = script_generation.generate_script(retrieved_content, prompt_request.user_persona)
         await update_status(prompt_id, StatusPatch(
             stepLectureScriptGeneration=StepStatus.DONE
         ), client)
@@ -211,7 +216,7 @@ async def process_prompt(prompt_id: str, prompt_request: PromptRequest) -> None:
 
             asyncio.create_task(summarize_and_send(prompt_id, retrieved_content, client))
 
-            refined_output = await generate_script(retrieved_content, prompt_id, client)
+            refined_output = await generate_script(retrieved_content, prompt_id, prompt_request, client)
             lecture_script = refined_output.get("lectureScript", "")
             slides_data: Dict[str, Any] = await generate_slides(prompt_request, prompt_id, lecture_script, refined_output, client)
 
