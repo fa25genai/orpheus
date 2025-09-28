@@ -80,31 +80,34 @@ def extract_json_from_markdown(question: str) -> str:
     return raw_llm_output
 
 def decompose_question(question: str) -> Dict[str, Any]:
-    result: Dict[str, Any] = {}
     raw_llm_output: str = extract_json_from_markdown(question)
 
     try:
-        result = json.loads(raw_llm_output)
+        questions_generated_from_user_query: Dict[str, Any] = json.loads(raw_llm_output)
         # Validate required keys
         required_keys = ["original_question", "subqueries"]
-        if not all(key in result for key in required_keys):
-            raise ValueError(f"Missing required keys. Expected: {required_keys}, Got: {list(result.keys())}")
+        if not all(key in questions_generated_from_user_query for key in required_keys):
+            raise ValueError(f"Missing required keys. Expected: {required_keys}, Got: {list(questions_generated_from_user_query.keys())}")
 
         # Ensure subqueries is a list
-        if not isinstance(result["subqueries"], list):
+        if not isinstance(questions_generated_from_user_query["subqueries"], list):
             raise ValueError("subqueries must be an array")
 
-        return result
+        return questions_generated_from_user_query
     except json.JSONDecodeError as e:
+        # TODO extract to a method
+        # if we do not find the expected keys in the initial datastructure,
+        # we try to clean up the format and search again for the keys (e.g. there could be a space before the brackets, things like that)
         # Try to extract JSON from the response
         start, end = raw_llm_output.find("{"), raw_llm_output.rfind("}")
         if start != -1 and end != -1:
             try:
+                questions_generated_from_user_query: Dict[str, Any] = json.loads(raw_llm_output[start: end + 1])
                 # Validate required keys for extracted JSON too
                 required_keys = ["original_question", "subqueries"]
-                if not all(key in result for key in required_keys):
-                    raise ValueError(f"Missing required keys in extracted JSON. Expected: {required_keys}, Got: {list(result.keys())}")
-                return result
+                if not all(key in questions_generated_from_user_query for key in required_keys):
+                    raise ValueError(f"Missing required keys in extracted JSON. Expected: {required_keys}, Got: {list(questions_generated_from_user_query.keys())}")
+                return questions_generated_from_user_query
             except json.JSONDecodeError:
                 pass
         raise RuntimeError(f"Failed to parse JSON from LLM output. JSON Error: {e}. Raw output: {raw_llm_output[:200]}...")
