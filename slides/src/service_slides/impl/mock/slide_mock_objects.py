@@ -1,11 +1,10 @@
-import json
 import logging
 
 from service_slides.impl.llm_chain.slide_structure import DetailedSlideStructure, DetailedSlideStructureItem
 from service_slides.impl.manager.layout_manager import LayoutTemplate
 
-
 _log = logging.getLogger("mocks")
+
 
 def make_mock_slide_structure() -> DetailedSlideStructure:
     _log.warning("Using mocks for slide structure!")
