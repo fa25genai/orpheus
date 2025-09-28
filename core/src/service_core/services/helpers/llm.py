@@ -34,9 +34,7 @@ def ask_llm_with_model(prompt: str, ResponseModel: BaseModel) -> BaseModel:
         """
         # --- 1) Define Pydantic model and get JSON Schema ---
     debug_print("Starting structured response generation...")
-    debug_print(f"Got Pydantic model: {ResponseModel.__name__}")
     debug_print(f"Got user prompt: {prompt}")
-    debug_print(f"Generating structured response with model: {ResponseModel.__name__}")
     try:
         schema_json = ResponseModel.model_json_schema()
     except AttributeError:
@@ -136,7 +134,7 @@ def ask_llm_with_model(prompt: str, ResponseModel: BaseModel) -> BaseModel:
         except RuntimeError as e:
             debug_print("Error during LLM call or validation:", str(e))
             debug_print("Retrying the LLM call...")
-        except RuntimeError as e:
+        except ValidationError as e:
             debug_print("Error during LLM call or validation:", str(e))
             debug_print("Retrying the LLM call...")
         except Exception as e:
@@ -153,5 +151,5 @@ def ask_llm(prompt:str) -> str:
     Raises:
         RuntimeError: If the LLM call fails or the response cannot be validated.
     '''
-    response = ask_llm(prompt, StandardResponse)
+    response: StandardResponse = ask_llm_with_model(prompt, StandardResponse)
     return response.answer
