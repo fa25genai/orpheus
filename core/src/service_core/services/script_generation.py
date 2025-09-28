@@ -140,7 +140,7 @@ def generate_script(content: Dict[str, Any], persona: UserProfile) -> Dict[str, 
                 # print('b', flush=True)
                 for asset in item["assets"]:
                     if isinstance(asset, dict) and "name" in asset:
-                            # Store the original asset data
+                        # Store the original asset data
                         asset_lookup[asset["name"]] = {"mimeType": asset.get("mimeType"), "data": asset.get("data")}
                         # Remove bulky data for the LLM call
                         asset.pop("mimeType", None)
