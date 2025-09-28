@@ -10,9 +10,7 @@ from typing import Any, Dict, Optional
 import logging
 
 from dotenv import load_dotenv
-from langchain_aws import ChatBedrockConverse
 # from langchain_community.chat_models import ChatOllama
-from langchain_community.chat_models import BedrockChat
 
 from pydantic import BaseModel
 
