@@ -1,7 +1,5 @@
-import asyncio
 import logging
 import typing
-import uuid
 from asyncio import Lock
 from typing import Awaitable
 
@@ -94,16 +92,3 @@ class StatusManager:
             lectureSummary=None,
             slideStructure=None,
         )
-
-async def main():
-    status_manager = StatusManager()
-    id = uuid.uuid4()
-
-    async def send_status_update(status: Status):
-        print(status.to_json())
-
-    await status_manager.add_listener("abcdefg", str(id), send_status_update)
-    await status_manager.update_status("abcdefg", StatusPatch(stepUnderstanding=StepStatus.IN_PROGRESS))
-
-if __name__ == "__main__":
-    asyncio.run(main())
