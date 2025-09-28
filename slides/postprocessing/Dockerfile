@@ -45,6 +45,11 @@ RUN cd /etc/slidev/themes/theme-tum/package && \
 # Install Python dependencies
 RUN poetry install --only main
 
+# Clean up
+RUN apt-get autoremove --yes && \
+    apt-get clean && \
+    rm -rf /tmp/* /var/tmp/*
+
 EXPOSE 30607
 
 CMD ["poetry", "run", "uvicorn", "service_slides_postprocessing.main:app", "--host", "0.0.0.0", "--port", "30607"]

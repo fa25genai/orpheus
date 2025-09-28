@@ -1,7 +1,7 @@
 "use client";
 import ChatInput from "@/components/chat-input";
 import GuideCards from "@/components/guide-cards";
-import {PersonaSelector} from "@/components/persona-selector";
+import {personas, PersonaSelector} from "@/components/persona-selector";
 import {Button} from "@/components/ui/button";
 import {guideText} from "@/data/text";
 import {PromptResponse} from "@/generated-api-clients/core";
@@ -31,7 +31,12 @@ export default function Home() {
   async function getPromptId(prompt: string) {
     try {
       const response: PromptResponse = await coreApi.createLectureFromPrompt({
-        promptRequest: {prompt, courseId: "IN001"},
+        promptRequest: {
+          prompt,
+          courseId: "IN001",
+          userPersona: personas.find((person) => person.id === personaLevel)
+            ?.userProfile,
+        },
       });
       console.log("Received prompt ID:", response.promptId);
 
@@ -54,7 +59,7 @@ export default function Home() {
     const promptId = await getPromptId(input);
     if (promptId) setPromptId(promptId);
 
-    setMessages((prev) => [...prev, input]);
+    setMessages([input]);
     setPrompt("");
   }
 
@@ -62,11 +67,12 @@ export default function Home() {
     async function updateVideoSources() {
       if (status?.stepSlidePostprocessing !== "DONE") return;
 
-      const baseUrl = `http://localhost:3000/videos/jobs/${promptId}/`;
+      const baseUrl = `http://localhost:3000/videos/jobs/${promptId}`; //TODO: change to promptId
 
       const readyVideos: string[] = status.stepsAvatarGeneration
-        .map((step, index) =>
-          step.video === "DONE" ? `${baseUrl}${index}.mp4` : null
+        .map(
+          (step, index) =>
+            step.video === "DONE" ? `${baseUrl}${index}.mp4` : null // TODO: change to starting index 0
         )
         // needed to filter out all nulls
         .filter((url): url is string => url !== null);
@@ -161,13 +167,15 @@ export default function Home() {
           ))}
           <div ref={bottomRef}></div>
 
-          <div className="fixed bottom-4 right-0 left-0 mx-auto max-w-6xl">
-            <ChatInput
-              handleSubmit={handleSubmit}
-              prompt={prompt}
-              setPrompt={setPrompt}
-            />
-          </div>
+          {status?.stepSlidePostprocessing === "DONE" && (
+            <div className="fixed bottom-4 right-0 left-0 mx-auto max-w-6xl">
+              <ChatInput
+                handleSubmit={handleSubmit}
+                prompt={prompt}
+                setPrompt={setPrompt}
+              />
+            </div>
+          )}
         </section>
       )}
     </main>
