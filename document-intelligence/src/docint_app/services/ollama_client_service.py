@@ -3,7 +3,6 @@ from typing import Optional
 
 import ollama
 
-
 _instance: Optional[ollama.Client] = None
 
 
