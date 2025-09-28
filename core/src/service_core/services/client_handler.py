@@ -150,7 +150,7 @@ async def generate_slides(prompt_request: PromptRequest, prompt_id: str, lecture
             ), client)
         return slides_data
     except Exception as e:
-        print("Error when generating slides: ", e, flush=True)
+        print(f"Error generating slides for prompt {prompt_id}: {e}", flush=True)
         return {}
 
 
