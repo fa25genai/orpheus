@@ -104,7 +104,8 @@ Your job:
 - Read a set of slides written in Markdown (each slide starts with a single leading-level Markdown heading: lines beginning with "# ").
 - Convert them into a structured representation suitable for downstream processing.
 - For each slide, produce an item with:
-  1) content: A self-contained chunk that begins with a line of the form "Title: <slide title>" (where <slide title> is the heading text without the "#"). After that line, include the slide's body text verbatim and in order, preserving **all line breaks, punctuation, and formatting exactly**. Do not add, rephrase, or remove information.
+  1) content: A self-contained chunk that begins with a line of the form "Title: <slide title>" (where <slide title> is the heading text without the "#"). After that line, include the slide's body text verbatim and in order, preserving **all line breaks, punctuation, and formatting exactly**. 
+  Do not add, rephrase, or remove information.
   2) layout: The name of the layout template chosen strictly from the provided list of available layouts. Do not invent new layout names.
 
 Layout selection guidelines (apply in this order; choose the first that matches):
