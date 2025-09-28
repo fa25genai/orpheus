@@ -2,6 +2,7 @@ import asyncio
 import json
 import os
 from typing import Any, Dict, List, Union
+import logging
 
 import httpx
 from dotenv import load_dotenv
@@ -33,6 +34,8 @@ STATUS_API_URL = "http://status-service:19910"
 # STATUS_API_URL = "http://localhost:19910"
 
 DEBUG = int(os.environ.get("ORPHEUS_DEBUG", "0"))
+
+logger = logging.getLogger("Client Handler")
 
 async def update_status(prompt_id: str, patch: StatusPatch, client: httpx.AsyncClient) -> None:
     print(f"Updating status for {prompt_id} with patch: {patch.to_json()}", flush=True)
@@ -245,5 +248,5 @@ async def process_prompt(prompt_id: str, prompt_request: PromptRequest) -> None:
                 await asyncio.gather(*avatar_tasks)
 
             tracker.log(f"SUCCESS: Completed processing for {prompt_id}")
-    except Exception as e:
-        tracker.log(f"ERROR: Failed processing for {prompt_id}: {e}")
+    except Exception as exception:
+        logger.error(f"Failed processing for {prompt_id}: {exception}", exc_info = exception)
