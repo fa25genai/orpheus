@@ -199,7 +199,7 @@ async def avatar_video_producer(voice_track: Dict[str, Any], client: httpx.Async
         print("Error occured during avatar generation: ", e, flush=True)
         raise
 
-
+# TODO return Optional instead of response
 def generate_avatar_video(voice_track: Dict[str, Any], index: int, client: httpx.AsyncClient) -> Union[asyncio.Task[httpx.Response], None]:
     print(f"Calling Avatar API to generate video for slide {index}", flush=True)
     try:
