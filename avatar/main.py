@@ -11,7 +11,7 @@ from typing import Dict, List, Literal, Optional
 from uuid import UUID
 
 import requests
-from fastapi import Depends, FastAPI, File, HTTPException, Request, Response, UploadFile, status
+from fastapi import Depends, FastAPI, File, HTTPException, Request, Response, UploadFile, status, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, StringConstraints
@@ -110,8 +110,6 @@ class AvatarCreatedResponse(BaseModel):
 # ---------------------------
 
 
-
-
 engine = create_engine(DATABASE_URL, future=True)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, future=True)
 
@@ -122,16 +120,6 @@ def get_db() -> Generator[Session, None, None]:
         yield db
     finally:
         db.close()
-
-
-
-class AvatarImageResponse(BaseModel):
-    id: UUID
-    avatarId: UUID
-    filePath: str
-    mimeType: Optional[str] = None
-    sizeBytes: Optional[int] = None
-    createdAt: datetime
 
 
 @app.on_event("startup")
@@ -155,109 +143,27 @@ def folder_url(prompt_id: UUID) -> str:
 # Avatars API
 # ---------------------------
 
-ALLOWED_IMAGE_MIMES = {"image/png", "image/jpeg", "image/webp"}
-
-
-
-def _ext_from_mime(mime: str) -> str:
-    return {"image/png": "png", "image/jpeg": "jpg", "image/webp": "webp"}.get(mime, "bin")
-
-
-def _save_upload_to_disk(avatar_id: UUID, upload: UploadFile) -> Path:
-    if upload.content_type not in ALLOWED_IMAGE_MIMES:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Unsupported image type: {upload.content_type}",
-        )
-    image_id = uuid.uuid4()
-    avatar_dir = IMAGES_OUTPUT_DIR / str(avatar_id)
-    avatar_dir.mkdir(parents=True, exist_ok=True)
-    ext = _ext_from_mime(upload.content_type or "")
-    target = avatar_dir / f"{image_id}.{ext}"
-    # stream copy to avoid loading entire file in memory
-    with target.open("wb") as out:
-        shutil.copyfileobj(upload.file, out)
-    return target
-
 
 @app.post(
     "/v1/avatars",
     status_code=201,
-    response_model=AvatarCreatedResponse,
+    response_model=media.AvatarCreatedResponse,  # <-- use schema from media
     tags=["avatar"],
 )
 def create_avatar(
-    file: Optional[UploadFile] = File(default=None),
+    name: Optional[str] = Form(None),
+    courseId: Optional[UUID] = Form(None),
+    image_file: UploadFile = File(..., description="png/jpeg/webp"),
+    audio_file: UploadFile = File(..., description="mp3/wav/flac/webm"),
     db: Session = Depends(get_db),
-) -> AvatarCreatedResponse:
-    # Create avatar id and persist
-    avatar_id = uuid.uuid4()
-    db_avatar = Avatar(avatar_id=str(avatar_id))
-    db.add(db_avatar)
-
-    image_payload: Optional[AvatarImagePayload] = None
-    if file is not None:
-        saved_path = _save_upload_to_disk(avatar_id, file)
-        size = saved_path.stat().st_size
-        db_img = AvatarImage(
-            id=str(uuid.uuid4()),
-            avatar_id=str(avatar_id),
-            file_path=str(saved_path),
-            mime_type=file.content_type,
-            size_bytes=size,
-            original_filename=file.filename,
-        )
-        db.add(db_img)
-        db.flush()  # populate server defaults like created_at
-        image_payload = AvatarImagePayload(
-            id=UUID(db_img.id),
-            filePath=db_img.file_path,
-            mimeType=db_img.mime_type,
-            sizeBytes=db_img.size_bytes,
-            createdAt=db_img.created_at or datetime.now(timezone.utc),
-        )
-
-    db.commit()
-    return AvatarCreatedResponse(avatarId=avatar_id, image=image_payload)
-
-
-@app.post(
-    "/v1/avatars/{avatarId}/images",
-    status_code=201,
-    response_model=AvatarImageResponse,
-    tags=["avatar"],
-)
-def add_avatar_image(
-    avatarId: UUID,
-    file: UploadFile = File(...),
-    db: Session = Depends(get_db),
-) -> AvatarImageResponse:
-    # Strict: avatar must exist
-    avatar = db.get(Avatar, str(avatarId))
-    if not avatar:
-        raise HTTPException(status_code=404, detail="Avatar not found")
-
-    saved_path = _save_upload_to_disk(avatarId, file)
-    size = saved_path.stat().st_size
-    db_img = AvatarImage(
-        id=str(uuid.uuid4()),
-        avatar_id=str(avatarId),
-        file_path=str(saved_path),
-        mime_type=file.content_type,
-        size_bytes=size,
-        original_filename=file.filename,
-    )
-    db.add(db_img)
-    db.commit()
-    db.refresh(db_img)
-
-    return AvatarImageResponse(
-        id=UUID(db_img.id),
-        avatarId=avatarId,
-        filePath=db_img.file_path,
-        mimeType=db_img.mime_type,
-        sizeBytes=db_img.size_bytes,
-        createdAt=db_img.created_at,
+) -> media.AvatarCreatedResponse:
+    # Delegate all the work to the media module
+    return media.create_avatar_with_media(
+        db=db,
+        image_file=image_file,
+        audio_file=audio_file,
+        name=name,
+        course_id=courseId,
     )
 
 
