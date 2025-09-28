@@ -1,0 +1,35 @@
+# Base image for OpenVoice with dependencies and checkpoints installed
+FROM pytorch/pytorch:2.2.2-cuda11.8-cudnn8-runtime
+
+# Environment setup shared by downstream images
+ENV PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=0 \
+    DEBIAN_FRONTEND=noninteractive \
+    PATH=/root/.local/bin:$PATH
+
+# OS-level dependencies required for OpenVoice
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git \
+    wget \
+    ffmpeg \
+    curl \
+    libsndfile1 \
+    unzip \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Pull and install OpenVoice and related Python dependencies
+WORKDIR /app
+RUN git clone https://github.com/myshell-ai/OpenVoice.git
+WORKDIR /app/OpenVoice
+
+RUN pip install "numpy<2.0" \
+    && pip install -e . \
+    && pip install git+https://github.com/myshell-ai/MeloTTS.git \
+    && pip install fastapi uvicorn orjson \
+    && python -m unidic download
+
+# Download and extract checkpoints
+RUN wget https://myshell-public-repo-host.s3.amazonaws.com/openvoice/checkpoints_v2_0417.zip \
+    && unzip checkpoints_v2_0417.zip \
+    && rm checkpoints_v2_0417.zip
