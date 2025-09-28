@@ -101,7 +101,7 @@ async def summarize_and_send(prompt_id: str, content: List[Dict[str, Any]], clie
 
 
 async def query_document_intelligence(
-    subqueries: List[str], client: httpx.AsyncClient, prompt_id: str
+    subqueries: List[str], client: httpx.AsyncClient, prompt_id: str, prompt_request: PromptRequest
 ) -> List[Dict[str, Any]]:
     tracker.log("Querying document intelligence")
     await update_status(prompt_id, StatusPatch(
@@ -114,8 +114,8 @@ async def query_document_intelligence(
     subquery_for_api = subqueries[0] if subqueries else ""
 
     di_response = await client.get(
-        f"{DI_API_URL}/v1/retrieval/abc",
-        params={"courseId": "abc", "promptQuery": str(subquery_for_api)},
+        f"{DI_API_URL}/v1/retrieval/{prompt_request.course_id}",
+        params={"promptQuery": str(subquery_for_api)},
         timeout=300.0,
     )
     di_response.raise_for_status()
@@ -278,7 +278,7 @@ async def process_prompt(prompt_id: str, prompt_request: PromptRequest) -> None:
         async with httpx.AsyncClient() as client:
             subqueries = await decompose_inputs(prompt_request, prompt_id, client)
             retrieved_content = await query_document_intelligence(
-                subqueries, client, prompt_id
+                subqueries, client, prompt_id, prompt_request
             )
 
             asyncio.create_task(
