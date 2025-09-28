@@ -33,7 +33,7 @@ const SlidevEmbed = forwardRef<SlidevEmbedHandle, SlidevEmbedProps>(
 
     useImperativeHandle(ref, () => ({
       goToSlide(slide: number) {
-          post(createMessage({type: "slide.navigate", value: slide}));
+          post(createMessage({type: "slide.navigate", slideNbr: slide}));
       },
       next() {
           post(createMessage({type: "slide.next"}));
