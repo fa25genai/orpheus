@@ -31,7 +31,7 @@ async def update_status(prompt_id: str, patch: StatusPatch, client: httpx.AsyncC
     print(f"Updating status for {prompt_id} with patch: {patch.to_json()}", flush=True)
     response = await client.patch(
         f"{STATUS_API_URL}/status/{prompt_id}/update",
-        json=patch.to_json(),
+        json=patch.to_dict(),
         timeout=300.0,
     )
 
