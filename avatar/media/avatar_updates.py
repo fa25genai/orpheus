@@ -119,7 +119,7 @@ def replace_avatar_image(
                 avatarId=UUID(avatar.avatar_id),
                 filePath=latest_audio.file_path,
                 mimeType=latest_audio.mime_type,
-                SizeBytes=latest_audio.size_bytes,
+                sizeBytes=latest_audio.size_bytes,
                 createdAt=latest_audio.created_at,
             ),
         )
