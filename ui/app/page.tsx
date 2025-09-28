@@ -34,7 +34,7 @@ export default function Home() {
         promptRequest: {
           prompt,
           courseId: "IN001",
-          userPersona: personas.find((person) => person.id === personaLevel),
+          userPersona: personas.find((person) => person.id === personaLevel)?.userProfile,
         },
       });
       console.log("Received prompt ID:", response.promptId);
