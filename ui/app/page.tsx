@@ -15,7 +15,8 @@ import {StatusDisplayer} from "@/components/status-displayer";
 import VideoPlayer from "@/components/video-player";
 import {Card} from "@/components/ui/card";
 import SlidevEmbed, {SlidevEmbedHandle} from "@/components/slidev-embed";
-import {useStatus} from "@/hooks/use-status";
+import { mockStatus } from "@/data/status";
+// TODO: import {useStatus} from "@/hooks/use-status";
 
 export default function Home() {
   const [personaLevel, setPersonaLevel] = useState<PersonaLevel>("beginner");
@@ -23,7 +24,7 @@ export default function Home() {
   const [prompt, setPrompt] = useState<string>("");
   const [promptId, setPromptId] = useState<string>("");
   const [sources, setSources] = useState<string[]>([]);
-  const status = useStatus(promptId);
+  const status = mockStatus;//TODO: useStatus(promptId);
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const slidevRef = useRef<SlidevEmbedHandle>(null);
@@ -67,11 +68,12 @@ export default function Home() {
     async function updateVideoSources() {
       if (status?.stepSlidePostprocessing !== "DONE") return;
 
-      const baseUrl = `http://localhost:3000/videos/jobs/${promptId}/`;
+      const baseUrl = `http://127.0.0.1:8080/videos/`; //TODO: change to promptId
 
       const readyVideos: string[] = status.stepsAvatarGeneration
-        .map((step, index) =>
-          step.video === "DONE" ? `${baseUrl}${index}.mp4` : null
+        .map(
+          (step, index) =>
+            step.video === "DONE" ? `${baseUrl}${index}.mp4` : null // TODO: change to starting index 0
         )
         // needed to filter out all nulls
         .filter((url): url is string => url !== null);
@@ -155,7 +157,7 @@ export default function Home() {
                   />
                   <Card className="p-8 bg-card border-border md:col-span-2">
                     <SlidevEmbed
-                      baseUrl={`http://localhost:30608/web/${promptId}`}
+                      baseUrl={`http://localhost:30608/web/0333e664-e562-4122-982b-8af771ae6afc`}
                       className="h-98"
                       ref={slidevRef}
                     />
