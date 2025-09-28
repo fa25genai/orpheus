@@ -73,12 +73,12 @@ export function StatusDisplayer({status}: StatusDisplayerProps) {
             {status.stepsAvatarGeneration.map((step, index) => (
               <div key={index} className="space-y-1">
                 <StepItem
-                  title={`Avatar ${index + 1} - Video`}
-                  state={step.video as StepStatus}
-                />
-                <StepItem
                   title={`Avatar ${index + 1} - Audio`}
                   state={step.audio as StepStatus}
+                />
+                <StepItem
+                  title={`Avatar ${index + 1} - Video`}
+                  state={step.video as StepStatus}
                 />
               </div>
             ))}
