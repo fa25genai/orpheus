@@ -21,6 +21,9 @@ from service_slides.models.request_slide_generation_request import RequestSlideG
 from src.service_slides.impl.helper.gen_slide_content import generate_slide_content_or_mock
 from src.service_slides.impl.helper.gen_slide_structure import generate_slide_structure_or_mock
 
+from src.service_slides.impl.helper.gen_slide_content import generate_slide_content_or_mock
+from src.service_slides.impl.helper.gen_slide_structure import generate_slide_structure_or_mock
+
 _log = getLogger("slides_impl")
 
 

@@ -1,3 +1,4 @@
+from src.service_slides.impl.llm_chain.slide_structure import DetailedSlideStructureItem, DetailedSlideStructure
 from src.service_slides.impl.llm_chain.slide_structure import DetailedSlideStructure, DetailedSlideStructureItem
 from src.service_slides.impl.manager.layout_manager import LayoutTemplate
 

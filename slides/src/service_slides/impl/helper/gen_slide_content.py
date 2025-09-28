@@ -7,6 +7,10 @@ from src.service_slides.impl.llm_chain.slide_content import generate_single_slid
 from src.service_slides.impl.manager.layout_manager import LayoutTemplate
 from src.service_slides.impl.mock.slide_mock_objects import make_mock_slide_content
 from src.service_slides.models.request_slide_generation_request_assets_inner import RequestSlideGenerationRequestAssetsInner
+from langchain_core.language_models.base import BaseLanguageModel
+from src.service_slides.models.request_slide_generation_request_assets_inner import \
+    RequestSlideGenerationRequestAssetsInner
+
 
 ORPHEUS_DEBUG = os.getenv("ORPHEUS_DEBUG", "false").lower() in ("1", "true", "yes")
 
