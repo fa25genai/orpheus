@@ -124,38 +124,33 @@ async def generate_script(retrieved_content: List[Dict[str, Any]], prompt_id: st
 
 async def generate_slides(prompt_request: PromptRequest, prompt_id: str, lecture_script: str, refined_output: Dict[str, Any], client: httpx.AsyncClient) -> Dict[str, Any]:
     tracker.log("Generating slides")
-    await update_status(prompt_id, StatusPatch(
-            stepSlideStructureGeneration=StepStatus.IN_PROGRESS
-        ), client)
-
-    # FIX: [no-any-return], [no-untyped-call]
-    if DEBUG:
-        output = mock_service.create_slides()
+    try:
         await update_status(prompt_id, StatusPatch(
-            stepSlideStructureGeneration=StepStatus.DONE
-        ), client)
-        return output
+                stepSlideStructureGeneration=StepStatus.IN_PROGRESS
+            ), client)
 
-    slides_context = {
-        "courseId": prompt_request.course_id,
-        "promptId": str(prompt_id),
-        "lectureScript": lecture_script,
-        # FIX: [no-untyped-call]
-        "user": json.loads(mock_service.create_user().model_dump_json(by_alias=True, exclude_unset=True)),
-        "assets": refined_output.get("assets", ""),
-    }
+        slides_context = {
+            "courseId": prompt_request.course_id,
+            "promptId": str(prompt_id),
+            "lectureScript": lecture_script,
+            # "user": json.loads(mock_service.create_user().model_dump_json(by_alias=True, exclude_unset=True)),
+            "user": prompt_request.user_persona.to_dict(),
+            "assets": refined_output.get("assets", ""),
+        }
 
-    slides_response = await client.post(
-        f"{SLIDES_API_URL}/v1/slides/generate",
-        json=slides_context,
-        timeout=300.0,
-    )
-    slides_response.raise_for_status()
-    slides_data: Dict[str, Any] = slides_response.json()
-    await update_status(prompt_id, StatusPatch(
-            stepSlideStructureGeneration=StepStatus.DONE
-        ), client)
-    return slides_data
+        slides_response = await client.post(
+            f"{SLIDES_API_URL}/v1/slides/generate",
+            json=slides_context,
+            timeout=300.0,
+        )
+        slides_response.raise_for_status()
+        slides_data: Dict[str, Any] = slides_response.json()
+        await update_status(prompt_id, StatusPatch(
+                stepSlideStructureGeneration=StepStatus.DONE
+            ), client)
+        return slides_data
+    except Exception as e:
+        print("Error when generating slides: ", e, flush=True)
 
 
 async def generate_voice_scripts(lecture_script: str, slides_data: Dict[str, Any], user: UserProfile, client: httpx.AsyncClient, prompt_id: str) -> List[asyncio.Task[httpx.Response]]:
