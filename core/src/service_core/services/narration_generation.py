@@ -88,7 +88,7 @@ def generate_narrations(
 
         narration_history += f"Slide {i + 1} Narration: {narration}\n"
         slide_messages.append(narration)
-    # Prepare output data with actual user profile
+    # Prepare output data with the actual user profile
     output_data: Dict[str, Any] = {
         "slideMessages": slide_messages,
         "promptId": example_slides["promptId"],

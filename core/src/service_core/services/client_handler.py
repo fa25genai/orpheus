@@ -221,7 +221,10 @@ async def process_prompt(prompt_id: str, prompt_request: PromptRequest) -> None:
             refined_output = await generate_script(retrieved_content, prompt_id, client)
             lecture_script = refined_output.get("lectureScript", "")
             slides_data: Dict[str, Any] = await generate_slides(prompt_request, prompt_id, lecture_script, refined_output, client)
-            assert prompt_request.user_persona is not None, "User profile must be defined for voice scripts."
+
+            if prompt_request.user_persona is None:
+                tracker.log("ERROR: User profile must be defined for voice scripts.")
+                raise ValueError("User profile must be defined for voice scripts.")
 
             avatar_tasks: List[asyncio.Task[httpx.Response]] = await generate_voice_scripts(
                 lecture_script,
