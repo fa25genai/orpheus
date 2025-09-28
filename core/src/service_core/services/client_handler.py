@@ -29,7 +29,7 @@ DEBUG = int(os.environ.get("ORPHEUS_DEBUG", "1"))
 
 async def update_status(prompt_id: str, patch: StatusPatch, client: httpx.AsyncClient) -> None:
     print(f"Updating status for {prompt_id} with patch: {patch.to_json()}", flush=True)
-    response = await client.patch(
+    await client.patch(
         f"{STATUS_API_URL}/status/{prompt_id}/update",
         json=patch.to_dict(),
         timeout=300.0,
