@@ -3,13 +3,10 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import Any, ClassVar, Tuple  # noqa: F401
 
 from langchain_core.language_models import BaseLanguageModel
-from pydantic import Field, StrictStr
-from typing_extensions import Annotated
 
 from service_slides.impl.manager.job_manager import JobManager
 from service_slides.impl.manager.layout_manager import LayoutManager
 from service_slides.models.generation_accepted_response import GenerationAcceptedResponse
-from service_slides.models.generation_status_response import GenerationStatusResponse
 from service_slides.models.request_slide_generation_request import RequestSlideGenerationRequest
 
 
@@ -19,13 +16,6 @@ class BaseSlidesApi:
     def __init_subclass__(cls: Any, **kwargs) -> None:  # type: ignore
         super().__init_subclass__(**kwargs)
         BaseSlidesApi.subclasses = BaseSlidesApi.subclasses + (cls,)
-
-    async def get_generation_status(
-        self,
-        promptId: Annotated[StrictStr, Field(description="The promptId returned by /v1/slides/generate")],
-        job_manager: JobManager,
-    ) -> GenerationStatusResponse:
-        raise NotImplementedError
 
     async def request_slide_generation(
         self,
