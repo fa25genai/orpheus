@@ -5,7 +5,7 @@ Extract Text Service using Ollama API
 import io
 import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import List, Optional
+from typing import Any, List, Optional
 
 import ollama
 from pdf2image import convert_from_path
@@ -70,7 +70,7 @@ class ExtractTextService:
             return []
 
         # Parallelize text extraction from pages
-        def extract_from_page(page_data):
+        def extract_from_page(page_data: tuple[int, Any]) -> tuple[int, str]:
             i, page = page_data
             print(f"Processing page {i + 1}")
             extracted_text = self.extract_text_from_slide(page)

@@ -2,13 +2,13 @@
 Embedding Service using Ollama API
 """
 
-from typing import List, Optional
+from typing import List, Optional, cast
 
 from docint_app.services.ollama_client_service import get_ollama_client
 
 
 class EmbeddingService:
-    def __init__(self):
+    def __init__(self) -> None:
         self.client = get_ollama_client()
         self.model = "nomic-embed-text:latest"
 
@@ -27,7 +27,7 @@ class EmbeddingService:
         response = self.client.embeddings(model=self.model, prompt=text)
         print(f"Received embedding of dimension {len(response['embedding'])}")
         print(f"Response: {response}")
-        return response["embedding"]
+        return cast(List[float], response["embedding"])
 
     def embed_batch(self, texts: List[str]) -> List[List[float]]:
         """
