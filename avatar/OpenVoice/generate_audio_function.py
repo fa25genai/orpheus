@@ -2,6 +2,7 @@ import os
 import shutil
 import sys
 import tempfile
+import uuid
 from pathlib import Path
 from typing import Dict, List, Literal, Optional
 
@@ -114,7 +115,7 @@ def load_config() -> dict:
             "description": (raw.get("server") or {}).get("description", "API for the Orpheus audio generation."),
         },
         "defaults": {
-            "slide_texts": (raw.get("defaults") or {}).get("slide_texts", []),
+            "voiceTrack": (raw.get("defaults") or {}).get("voiceTrack", "Hello students! I want you to drink coffee."),
             "course_id": (raw.get("defaults") or {}).get("course_id", ""),
             "voice_file": (raw.get("defaults") or {}).get("voice_file", "")
         }
@@ -168,7 +169,7 @@ class UserProfile(BaseModel):
 
 
 class GenerateAudioRequest(BaseModel):
-    slide_texts: Optional[List[str]] = None
+    voiceTrack: Optional[str] = None
     course_id: Optional[str] = None
     voice_file: Optional[str] = None
     user_profile: Optional[UserProfile] = None
@@ -256,12 +257,12 @@ def _load_converter(ckpt_dir: Path, device: str) -> ToneColorConverter:
 
 
 def generate_audio(
-        slide_texts: List[str],
+        voiceTrack: str,
         *,
-        course_id: str,
         user_profile: Optional[UserProfile] = None,
         reference_voice_path: Path,
-) -> List[str]:
+        promptId: str,
+) -> str:
     """
     Create per-slide audio files from text using:
       1) Melo TTS (synthesis)
@@ -278,8 +279,6 @@ def generate_audio(
     output_dir = Path("./output").resolve()
     base_speakers_dir = Path(paths["base_speakers_dir"]).resolve()
     ses_dir = _speaker_embeddings_dir(base_speakers_dir, paths["ses_subdir"])
-    # reference_speaker_dir is configured but not directly used here
-    # ref_dir = Path(paths["reference_speaker_dir"]).resolve()
 
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -309,63 +308,59 @@ def generate_audio(
         key = p.stem.lower().replace("_", "-")
         available_ses[key] = p
 
-    audio_paths: List[str] = []
+    text = voiceTrack
+    if not text or not text.strip():
+        return ""
 
-    for i, text in enumerate(slide_texts):
-        if not text or not text.strip():
-            audio_paths.append("")
+    tmp_src = output_dir / "tmp.wav"
+    save_path = output_dir / f"{uuid.uuid4()}.wav"
+    success = False
+
+    for speaker_key, speaker_id in speaker_ids.items():
+        norm_key = str(speaker_key).lower().replace("_", "-")
+        ses_path = available_ses.get(norm_key)
+        if ses_path is None:
+            continue
+        try:
+            source_se = torch.load(ses_path, map_location=device)
+
+            model.tts_to_file(
+                text,
+                speaker_id,
+                str(tmp_src),
+                speed=speed,
+                noise_scale=noise_scale,
+                noise_scale_w=noise_scale_w,
+                sdp_ratio=sdp_ratio,
+            )
+
+            tone_color_converter.convert(
+                audio_src_path=str(tmp_src),
+                src_se=source_se,
+                tgt_se=target_se,
+                output_path=str(save_path),
+                message="@MyShell",
+            )
+
+            success = True
+            print(f"✓ audio generated: {save_path}")
+            break
+
+
+        except Exception as e:
+
+            print(f"[generation failed] speaker={speaker_key} error: {e}")
+
             continue
 
-        tmp_src = output_dir / f"tmp_{i}.wav"
-        save_path = output_dir / f"{course_id}_slide_{i + 1}.wav"
-        success = False
+    # Cleanup tmp file
+    try:
+        if tmp_src.exists():
+            tmp_src.unlink()
+    except Exception:
+        pass
 
-        for speaker_key, speaker_id in speaker_ids.items():
-            norm_key = str(speaker_key).lower().replace("_", "-")
-            ses_path = available_ses.get(norm_key)
-            if ses_path is None:
-                continue
-            try:
-                source_se = torch.load(ses_path, map_location=device)
-
-                model.tts_to_file(
-                    text,
-                    speaker_id,
-                    str(tmp_src),
-                    speed=speed,
-                    noise_scale=noise_scale,
-                    noise_scale_w=noise_scale_w,
-                    sdp_ratio=sdp_ratio,
-                )
-
-                tone_color_converter.convert(
-                    audio_src_path=str(tmp_src),
-                    src_se=source_se,
-                    tgt_se=target_se,
-                    output_path=str(save_path),
-                    message="@MyShell",
-                )
-
-                audio_paths.append(str(save_path))
-                success = True
-                print(f"✓ slide {i + 1}: {save_path}")
-                break
-
-            except Exception as e:
-                print(f"[slide {i + 1}] speaker={speaker_key} failed: {e}")
-                continue
-
-        if not success:
-            print(f"✗ slide {i + 1}: generation failed")
-            audio_paths.append("")
-
-        try:
-            if tmp_src.exists():
-                tmp_src.unlink()
-        except Exception:
-            pass
-
-    return audio_paths
+    return str(save_path) if success else ""
 
 
 @app.get("/health")
@@ -382,7 +377,7 @@ def health():
             "ses_subdir": CFG["paths"]["ses_subdir"],
         },
         "defaults_present": {
-            "slide_texts": bool(CFG["defaults"].get("slide_texts")),
+            "voiceTrack": bool(CFG["defaults"].get("voiceTrack")),
             "course_id": bool(CFG["defaults"].get("course_id")),
             "voice_file": bool(CFG["defaults"].get("voice_file"))
         }
@@ -392,40 +387,21 @@ def health():
 @app.post("/v1/audio/generate")
 async def generate_audio_endpoint(
         voice_file: UploadFile = File(..., description="Reference voice MP3 (raw file, not base64)"),
-        # Prefer slide_texts list; accept a single slide_text for convenience
-        slide_texts: Optional[List[str]] = Form(None, description="One or more slide texts"),
-        slide_text: Optional[str] = Form(None, description="Single slide text (alternative to slide_texts)"),
-        # Optional: allow course_id to be omitted; fall back to config default if needed
-        course_id: Optional[str] = Form(None),
-        debug: str = Form("not debug", description="is debug?")):
+        voiceTrack: Optional[str] = Form(None, description="Single slide text"),
+        debug: str = Form("not debug", description="is debug?"),
+        promptId: str = Form(None, description="Prompt ID"), ):
     """
     Accepts multipart/form-data:
       - voice_file: MP3 file upload
-      - slide_texts: repeated form field (or 'slide_text' once)
+      - voiceTrack: string with content
       - course_id: optional (falls back to config default)
 
     Returns the first generated WAV as a binary response (audio/wav).
     """
 
     # Resolve texts
-    if (not slide_texts or len(slide_texts) == 0) and not slide_text:
-        # fallback to CFG default only if you want; else require at least one text
-        default_texts = CFG["defaults"].get("slide_texts", [])
-        if not default_texts:
-            raise HTTPException(status_code=400, detail="Provide 'slide_texts' (can be repeated) or 'slide_text'.")
-        slide_texts = default_texts
-    elif not slide_texts:
-        slide_texts = [slide_text]
-
-    if not isinstance(slide_texts, list) or not all(isinstance(x, str) for x in slide_texts):
-        raise HTTPException(status_code=400, detail="'slide_texts' must be a list of strings.")
-
-    # Resolve course_id (optional -> default)
-    if not course_id:
-        course_id = CFG["defaults"].get("course_id", "")
-        # You can enforce it if absolutely required:
-        # if not course_id:
-        #     raise HTTPException(status_code=400, detail="course_id is required (provide or set default in config).")
+    if not voiceTrack:
+        raise HTTPException(status_code=400, detail="Provide 'voiceTrack' input.")
 
     if debug == 'debug':
         mock_path = Path(os.getenv("VOICE_GEN_DEBUG_WAV_PATH", "./debug/mock.wav"))
@@ -448,24 +424,21 @@ async def generate_audio_endpoint(
                 out_f.write(chunk)
 
         # Call your internal generator (expects a file path for reference voice)
-        # NOTE: this is your existing backend function you already have.
-        paths = generate_audio(
-            slide_texts=slide_texts,
-            course_id=course_id,
+        path = generate_audio(
+            voiceTrack=voiceTrack,
             user_profile=None,  # pass through if you support it via form later
             reference_voice_path=ref_mp3_path,
+            promptId=promptId
         )
 
-        # Pick the first valid WAV produced
-        first_path = next((Path(p) for p in paths if p and Path(p).exists()), None)
-        if not first_path:
+        if not path:
             raise HTTPException(status_code=500, detail="Audio generation produced no files.")
 
         # Schedule temp cleanup after the response is sent
         def _cleanup():
             try:
-                # If your output WAV is meant to be ephemeral, you can delete it here too:
-                # if first_path.exists(): first_path.unlink(missing_ok=True)
+                if Path(path).exists():
+                    Path(path).unlink()
                 if tmp_dir.exists():
                     shutil.rmtree(tmp_dir, ignore_errors=True)
             except Exception:
@@ -476,9 +449,9 @@ async def generate_audio_endpoint(
 
         # Stream WAV back to the client
         return FileResponse(
-            path=str(first_path),
+            path=str(path),
             media_type="audio/wav",
-            filename=first_path.name,
+            filename=path,
             headers={"Cache-Control": "no-store"},
             background=background,
         )

@@ -354,8 +354,7 @@ def _purge_stale_jobs(now: Optional[datetime] = None) -> None:
 
 
 def generate_audio(
-        slide_text: Optional[str] = "Hello students! I want you to drink coffee.",
-        course_id: Optional[str] = "course_123",
+        voiceTrack: Optional[str] = "Hello students! I want you to drink coffee.",
         voice_sample: str = "/app/database/voice_sample/krusche_voice.mp3",
         prompt_id: Optional[UUID] = None,
         user_profile: Optional[UserProfile] = None,
@@ -381,7 +380,7 @@ def generate_audio(
             print(f"[generate_audio] Voice sample not found: {voice_sample}")
             return None
         is_debug = os.getenv("DEBUG", "").lower() in {"debug"}
-        data = {"slide_text": slide_text or "", "debug": str(is_debug).lower()}
+        data = {"voiceTrack": voiceTrack or "", "debug": str(is_debug).lower(), "promptId": prompt_id}
 
         print(f"[generate_audio] Posting to {audio_api_url}")
         with vs_path.open("rb") as f, requests.post(
@@ -560,8 +559,7 @@ def _worker_loop() -> None:
         try:
             # TODO send status in progress for voice for audio with slide number (one based?) and pid
             aurl = generate_audio(
-                slide_text=task.text,
-                course_id=task.courseId,
+                voiceTrack=task.text,
                 prompt_id=pid,
                 user_profile=task.userProfile,
                 audio_counter=task.slideNo,
