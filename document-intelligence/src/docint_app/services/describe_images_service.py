@@ -8,12 +8,14 @@ from typing import Dict, List, Optional
 
 import ollama
 
+from docint_app.services.ollama_client_service import get_ollama_client
+
 
 class ImageDescriptionService:
     def __init__(self, base_url: str = "https://gpu.aet.cit.tum.de/ollama"):
         self.base_url = base_url.rstrip("/")
         self.model = "gemma3:27b"
-        self._client: Optional[ollama.Client] = None
+        self._client: Optional[ollama.Client] = get_ollama_client()
 
     @property
     def client(self) -> ollama.Client:
@@ -39,7 +41,7 @@ class ImageDescriptionService:
         prompt = "Explain the given image. Write the explanation into a single, continuous string. Do not include any formatting, markdown, or commentary. Provide ONLY the raw, extracted text."
 
         try:
-            image_bytes = base64.b64decode(base64_string)
+            image_bytes = base64.b64decode(base64_string.split(",")[-1])
         except Exception as e:
             print(f"Base64 decode error: {e}")
             return ""
@@ -97,6 +99,11 @@ class ImageDescriptionService:
         return out
 
 
+_instance: Optional[ImageDescriptionService] = None
+
+
 def get_image_description_service() -> ImageDescriptionService:
-    """Factory function to get ImageDescriptionService instance."""
-    return ImageDescriptionService()
+    global _instance
+    if _instance is None:
+        _instance = ImageDescriptionService()
+    return _instance
