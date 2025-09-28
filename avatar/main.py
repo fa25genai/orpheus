@@ -11,14 +11,19 @@ from typing import Dict, List, Literal, Optional
 from uuid import UUID
 
 import requests
-from fastapi import Depends, FastAPI, File, HTTPException, Request, Response, UploadFile, status, Form
+from fastapi import Depends, FastAPI, File, HTTPException, Request, Response, UploadFile, status
+from fastapi import Form, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, StringConstraints
 from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, create_engine, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, relationship, sessionmaker
 from typing_extensions import Annotated
+
 import media.avatar_media as media
+import media.avatar_queries as avatar_queries
+import media.avatar_updates as avatar_updates
+
 
 app = FastAPI(title="Service Video-Generation APIs", version="0.1")
 origins = ["*"]
@@ -71,7 +76,7 @@ class GenerateRequest(BaseModel):
     promptId: UUID
     courseId: str
     userProfile: UserProfile
-
+    slot: Literal["default", "beginning", "ending"] = "default"  # NEW
 
 class ErrorModel(BaseModel):
     code: Optional[str] = None
@@ -91,18 +96,6 @@ class GenerationStatusResponse(BaseModel):
     estimatedSecondsLeft: int  # 0 when DONE/FAILED
     error: Optional[ErrorModel] = None
 
-
-class AvatarImagePayload(BaseModel):
-    id: UUID
-    filePath: str
-    mimeType: Optional[str] = None
-    sizeBytes: Optional[int] = None
-    createdAt: datetime
-
-
-class AvatarCreatedResponse(BaseModel):
-    avatarId: UUID
-    image: Optional[AvatarImagePayload] = None
 
 
 # ---------------------------
@@ -152,7 +145,7 @@ def folder_url(prompt_id: UUID) -> str:
 )
 def create_avatar(
     name: Optional[str] = Form(None),
-    courseId: Optional[UUID] = Form(None),
+    courseId: UUID = Form(...),
     slot: Optional[str] = Form('default'),  # accepts "default", "beginning", "ending" (+ minor typos)
     image_file: UploadFile = File(..., description="png/jpeg/webp"),
     audio_file: UploadFile = File(..., description="mp3/wav/flac/webm"),
@@ -168,6 +161,50 @@ def create_avatar(
     )
 
 
+@app.get(
+    "/v1/avatars/by-course/{courseId}",
+    response_model=List[media.AvatarCreatedResponse],
+    tags=["avatar"],
+)
+def get_avatars_by_course_endpoint(
+    courseId: UUID,
+    slot: Optional[str] = Query(None, description="optional: default | beginning | ending"),
+    db: Session = Depends(get_db),
+):
+    return avatar_queries.get_avatars_by_course(db=db, course_id=courseId, slot=slot)
+
+
+# Replace only IMAGE
+@app.post(
+    "/v1/avatars/{courseId}/{slot}/image",
+    response_model=media.AvatarCreatedResponse,
+    tags=["avatar"],
+)
+def replace_avatar_image_endpoint(
+    courseId: UUID,
+    slot: str,
+    image_file: UploadFile = File(..., description="png/jpeg/webp"),
+    db: Session = Depends(get_db),
+) -> media.AvatarCreatedResponse:
+    return avatar_updates.replace_avatar_image(
+        db=db, course_id=courseId, slot=slot, image_file=image_file, delete_previous=True
+    )
+
+# Replace only AUDIO
+@app.post(
+    "/v1/avatars/{courseId}/{slot}/audio",
+    response_model=media.AvatarCreatedResponse,
+    tags=["avatar"],
+)
+def replace_avatar_audio_endpoint(
+    courseId: UUID,
+    slot: str,
+    audio_file: UploadFile = File(..., description="mp3/wav/flac/webm"),
+    db: Session = Depends(get_db),
+) -> media.AvatarCreatedResponse:
+    return avatar_updates.replace_avatar_audio(
+        db=db, course_id=courseId, slot=slot, audio_file=audio_file, delete_previous=True
+    )
 # ---------------------------
 # In-memory job store & queue
 # ---------------------------
@@ -198,6 +235,7 @@ class SlideTask(BaseModel):
     userProfile: UserProfile
     text: str
     slideNo: int  # 1-based numbering
+    slot: Literal["default", "beginning", "ending"] = "default"  # NEW
 
 
 SLIDE_QUEUE: "Queue[SlideTask]" = Queue()
@@ -241,51 +279,58 @@ def _purge_stale_jobs(now: Optional[datetime] = None) -> None:
 # ---------------------------
 
 
+# imports you’ll need at top of file
+from pathlib import Path
+from sqlalchemy.orm import Session
+import media.avatar_queries as avatar_queries
+
 def generate_audio(
-    slide_text: Optional[str] = "Hello students! I want you to drink coffee.",
-    course_id: Optional[str] = "course_123",
-    voice_sample: str = "/app/database/voice_sample/krusche_voice.mp3",
-    prompt_id: Optional[UUID] = None,
-    user_profile: Optional[UserProfile] = None,
-    audio_counter: int = 0,
+    slide_text: Optional[str],
+    course_id: Optional[str],
+    prompt_id: Optional[UUID],
+    user_profile: Optional[UserProfile],
+    audio_counter: int,
+    *,
+    db: Session,                 # NEW: DB session
+    slot: str = "default",       # NEW: optional slot
 ) -> Optional[str]:
     """
-    Generate a WAV file for one slide.
+    Generate a WAV file for one slide using the avatar audio stored in DB.
     Saves under /data/jobs/<promptId>/<N>.wav
     """
     if prompt_id is None:
-        print("[generate_audio] prompt_id is required")
-        return None
+        print("[generate_audio] prompt_id is required"); return None
 
     audio_api_url = os.getenv("GEN_AUDIO", "http://localhost:7000/v1/audio/generate")
-
     job_folder = job_dir(prompt_id)
     wav_path = job_folder / f"{audio_counter}.wav"
 
     try:
-        if not Path(voice_sample).is_file():
-            print(f"[generate_audio] Voice sample not found: {voice_sample}")
+        # 1) Fetch reference voice from DB by (course_id, slot)
+        ref = avatar_queries.get_latest_audio_for_course_slot(db, course_id, slot)
+        ref_path = Path(ref.file_path)
+        if not ref_path.is_file():
+            print(f"[generate_audio] DB voice not found on disk: {ref_path}")
             return None
 
-        with open(voice_sample, "rb") as f:
-            is_debug = os.getenv("DEBUG", "not debug")
-            data = {"slide_text": slide_text, "debug": is_debug}
-            files = {"voice_file": (os.path.basename(voice_sample), f, "audio/mpeg")}
+        # 2) Call TTS with the DB audio as voice_file
+        is_debug = os.getenv("DEBUG", "not debug")
+        data = {"slide_text": slide_text, "debug": is_debug}
+        with ref_path.open("rb") as f:
+            files = {"voice_file": (ref_path.name, f, ref.mime_type or "audio/mpeg")}
             print(f"[generate_audio] Posting to {audio_api_url}")
             resp = requests.post(audio_api_url, data=data, files=files, timeout=(5, 600))
         resp.raise_for_status()
 
+        # 3) Save returned WAV
         wav_path.write_bytes(resp.content)
         print(f"[generate_audio] OK -> {wav_path}")
         return str(wav_path)
 
     except requests.RequestException as e:
-        print(f"[generate_audio] Request error: {e}")
-        return None
+        print(f"[generate_audio] Request error: {e}"); return None
     except Exception as e:
-        print(f"[generate_audio] Unexpected error: {e}")
-        return None
-
+        print(f"[generate_audio] Unexpected error: {e}"); return None
 
 def generate_video(
     audio_path: Optional[str] = None,
@@ -381,7 +426,7 @@ def _cleanup_loop() -> None:
 def _worker_loop() -> None:
     print("[worker] started")
     while True:
-        task: SlideTask = SLIDE_QUEUE.get()  # blocking
+        task: SlideTask = SLIDE_QUEUE.get()
         pid = task.promptId
         now = _utcnow()
         _purge_stale_jobs(now)
@@ -413,13 +458,17 @@ def _worker_loop() -> None:
         # Audio -> Video für genau diesen Slide
         try:
             # TODO send status in progress for voice for audio with slide number (one based?) and pid
-            aurl = generate_audio(
-                slide_text=task.text,
-                course_id=task.courseId,
-                prompt_id=pid,
-                user_profile=task.userProfile,
-                audio_counter=task.slideNo,
-            )
+            with SessionLocal() as db:
+                aurl = generate_audio(
+                    slide_text=task.text,
+                    course_id=task.courseId,
+                    prompt_id=pid,
+                    user_profile=task.userProfile,
+                    audio_counter=task.slideNo,
+                    db=db,                                  # NEW
+                    slot=getattr(task, "slot", "default"),  # NEW (optional)
+                )
+
             # TODO send status done for voice with slide number (one based?) and pid
             if aurl:
                 # TODO send status in progress for video for audio with slide number (one based?) and pid
@@ -524,6 +573,7 @@ def request_video_generation(payload: GenerateRequest, response: Response, reque
             userProfile=payload.userProfile,
             text=text,
             slideNo=slide_no,
+            slot=getattr(payload, "slot", "default"),  # NEW
         )
     )
 

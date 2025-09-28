@@ -14,6 +14,8 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship,
 
 from sqlalchemy import UniqueConstraint
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy import text
+
 
 class CourseAvatarSlot(str, Enum):
     default = "default"
@@ -54,8 +56,8 @@ class Avatar(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     name: Mapped[Optional[str]] = mapped_column(String(120), nullable=True, index=True)
-    course_id: Mapped[Optional[str]] = mapped_column(String(36), nullable=True, index=True)
-    slot: Mapped[str] = mapped_column(String(16), nullable=False, index=True, default=CourseAvatarSlot.default.value)
+    course_id: Mapped[Optional[str]] = mapped_column(String(36), nullable=False, index=True)
+    slot: Mapped[str] = mapped_column(String(16), nullable=False, index=True, default=CourseAvatarSlot.default.value, server_default=text("'default'"))
 
     images: Mapped[list["AvatarImage"]] = relationship(back_populates="avatar", cascade="all, delete-orphan")
     audios: Mapped[list["AvatarAudio"]] = relationship(back_populates="avatar", cascade="all, delete-orphan")
@@ -155,8 +157,8 @@ def create_avatar_with_media(
     db: Session,
     image_file: UploadFile,
     audio_file: UploadFile,
+    course_id: UUID,
     name: Optional[str] = None,
-    course_id: Optional[UUID] = None,
     slot: Optional[str] = None,  # <--- new
 ) -> AvatarCreatedResponse:
     avatar_uuid = uuid.uuid4()
@@ -168,7 +170,7 @@ def create_avatar_with_media(
         avatar = Avatar(
             avatar_id=str(avatar_uuid),
             name=name,
-            course_id=str(course_id) if course_id else None,
+            course_id=str(course_id),
             slot=the_slot.value,                           # <--- save
         )
         db.add(avatar)
