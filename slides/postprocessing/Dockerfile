@@ -10,40 +10,42 @@ RUN pip install "poetry==$POETRY_VERSION"
 # === Stage 2: Image with application code and dependencies ===
 FROM poetry-base
 
-# Install slidev executable (requires node)
+# Install system dependencies, including Node.js, npm, and git
 ENV DEBIAN_FRONTEND="noninteractive"
-RUN apt-get update ;\
-    apt-get install -y npm git ;\
-    apt-get clean autoclean ;\
-    apt-get autoremove --yes ;\
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    git \
+    nodejs \
+    npm && \
+    rm -rf /var/lib/apt/lists/*
 
-RUN npm install -g @pnpm/exe ;\
-    npm install -g playwright-chromium ;\
-    npx playwright install-deps ;\
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* ;\
-    apt-get clean autoclean ;\
-    apt-get autoremove --yes ;\
-    npm cache clean --force
+# Install Slidev and its dependencies
+RUN npm install -g @pnpm/exe playwright-chromium && \
+    npx playwright install-deps && \
+    git clone https://github.com/fa25genai/slidev.git /install/slidev/ && \
+    cd /install/slidev && \
+    pnpm install && \
+    pnpm -w build && \
+    ln -s /install/slidev/packages/slidev/bin/slidev.mjs /usr/local/bin/slidev
 
-RUN git clone https://github.com/fa25genai/slidev.git /install/slidev/ ;\
-    cd /install/slidev ;\
-    pnpm install ;\
-    pnpm -w build ;\
-    ln -s /install/slidev/packages/slidev/bin/slidev.mjs /usr/local/bin/slidev ;\
-    npm cache clean --force
-
+# Working directory and file copy
 WORKDIR /app
 COPY src src
 COPY pyproject.toml README.md ./
 
 # Add predefined sli.dev themes
 ADD themes/slidev-theme-tum-0.1.0.tgz /etc/slidev/themes/theme-tum/
-RUN cd /etc/slidev/themes/theme-tum/package ; \
-    npm install ; \
+RUN cd /etc/slidev/themes/theme-tum/package && \
+    npm install && \
     npm cache clean --force
 
+# Install Python dependencies
 RUN poetry install --only main
+
+# Clean up
+RUN apt-get autoremove --yes && \
+    apt-get clean && \
+    rm -rf /tmp/* /var/tmp/*
 
 EXPOSE 30607
 

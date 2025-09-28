@@ -78,9 +78,9 @@ async def query_document_intelligence(subqueries: List[str], client: httpx.Async
     return di_data
 
 
-def generate_script(retrieved_content: Dict[str, Any], prompt_id: str, client: httpx.AsyncClient) -> Dict[str, Any]:
+async def generate_script(retrieved_content: Dict[str, Any], prompt_id: str, client: httpx.AsyncClient) -> Dict[str, Any]:
     tracker.log("Generating script")
-    update_status(prompt_id, StatusPatch(
+    await update_status(prompt_id, StatusPatch(
             stepLectureScriptGeneration=StepStatus.IN_PROGRESS
         ), client)
     try:
@@ -89,13 +89,13 @@ def generate_script(retrieved_content: Dict[str, Any], prompt_id: str, client: h
             return output
 
         refined_output: Dict[str, Any] = script_generation.generate_script(retrieved_content, mock_service.create_user())
-        update_status(prompt_id, StatusPatch(
+        await update_status(prompt_id, StatusPatch(
             stepLectureScriptGeneration=StepStatus.DONE
-        ))
+        ), client)
     except Exception as e:
         print(e)
         refined_output = {}
-        update_status(prompt_id, StatusPatch(
+        await update_status(prompt_id, StatusPatch(
             stepLectureScriptGeneration=StepStatus.FAILED
         ), client)
 
@@ -134,7 +134,7 @@ async def generate_slides(prompt_request: PromptRequest, prompt_id: str, lecture
     return slides_data
 
 
-def generate_voice_scripts(lecture_script: str, slides_data: Dict[str, Any], user: UserProfile, client: httpx.AsyncClient, prompt_id: str) -> List[asyncio.Task[httpx.Response]]:
+async def generate_voice_scripts(lecture_script: str, slides_data: Dict[str, Any], user: UserProfile, client: httpx.AsyncClient, prompt_id: str) -> List[asyncio.Task[httpx.Response]]:
     tracker.log("Generating voice script")
     try:
         voice_track: Dict[str, Any]
@@ -159,7 +159,7 @@ def generate_voice_scripts(lecture_script: str, slides_data: Dict[str, Any], use
 
     except Exception as e:
         print("Error generating voice track:", e, flush=True)
-        update_status(prompt_id, StatusPatch(
+        await update_status(prompt_id, StatusPatch(
             stepsAvatarGeneration=StepStatus.FAILED
         ), client)
         return []
@@ -197,12 +197,12 @@ async def process_prompt(prompt_id: str, prompt_request: PromptRequest) -> None:
 
             asyncio.create_task(summarize_and_send(retrieved_content, client))
 
-            refined_output = generate_script(retrieved_content, prompt_id, client)
+            refined_output = await generate_script(retrieved_content, prompt_id, client)
             lecture_script = refined_output.get("lectureScript", "")
             slides_data: Dict[str, Any] = await generate_slides(prompt_request, prompt_id, lecture_script, refined_output, client)
             assert prompt_request.user_persona is not None, "User profile must be defined for voice scripts."
 
-            avatar_tasks: List[asyncio.Task[httpx.Response]] = generate_voice_scripts(
+            avatar_tasks: List[asyncio.Task[httpx.Response]] = await generate_voice_scripts(
                 lecture_script,
                 slides_data,
                 prompt_request.user_persona,
