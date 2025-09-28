@@ -96,11 +96,11 @@ async def query_document_intelligence(subqueries: List[str], client: httpx.Async
 
 
 async def generate_script(retrieved_content: List[Dict[str, Any]], prompt_id: str, client: httpx.AsyncClient) -> Dict[str, Any]:
-    tracker.log("Generating script")
-    await update_status(prompt_id, StatusPatch(
-            stepLectureScriptGeneration=StepStatus.IN_PROGRESS
-        ), client)
     try:
+        tracker.log("Generating script")
+        await update_status(prompt_id, StatusPatch(
+                stepLectureScriptGeneration=StepStatus.IN_PROGRESS
+            ), client)
         if DEBUG:
             output: Dict[str, Any] = mock_service.create_script()
             await update_status(prompt_id, StatusPatch(
