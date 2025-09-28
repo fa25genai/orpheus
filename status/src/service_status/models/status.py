@@ -16,8 +16,7 @@ import pprint
 import re  # noqa: F401
 import json
 
-
-from pydantic import BaseModel, ConfigDict, Field, StrictInt, StrictStr
+from pydantic import BaseModel, Field, StrictInt, StrictStr
 from typing import Any, ClassVar, Dict, List, Optional
 from service_status.models.avatar_element_status import AvatarElementStatus
 from service_status.models.slide_structure import SlideStructure
@@ -42,8 +41,18 @@ class Status(BaseModel):
     step_slide_postprocessing: StepStatus = Field(alias="stepSlidePostprocessing")
     steps_avatar_generation: List[AvatarElementStatus] = Field(alias="stepsAvatarGeneration")
     lecture_summary: Optional[StrictStr] = Field(default=None, alias="lectureSummary")
-    slide_structure: Optional[List[SlideStructure]] = Field(default=None, alias="slideStructure")
-    __properties: ClassVar[List[str]] = ["stepUnderstanding", "stepLookup", "stepLectureScriptGeneration", "stepSlideStructureGeneration", "stepSlideGeneration", "stepSlidePostprocessing", "stepsAvatarGeneration", "lectureSummary", "slideStructure"]
+    slide_structure: Optional[SlideStructure] = Field(default=None, alias="slideStructure")
+    __properties: ClassVar[List[str]] = [
+        "stepUnderstanding",
+        "stepLookup",
+        "stepLectureScriptGeneration",
+        "stepSlideStructureGeneration",
+        "stepSlideGeneration",
+        "stepSlidePostprocessing",
+        "stepsAvatarGeneration",
+        "lectureSummary",
+        "slideStructure",
+    ]
 
     model_config = {
         "populate_by_name": True,
@@ -86,14 +95,14 @@ class Status(BaseModel):
             for _item in self.steps_avatar_generation:
                 if _item:
                     _items.append(_item.to_dict())
-            _dict['stepsAvatarGeneration'] = _items
+            _dict["stepsAvatarGeneration"] = _items
         # override the default output from pydantic by calling `to_dict()` of slide_structure
         if self.slide_structure:
-            _dict['slideStructure'] = self.slide_structure.to_dict()
+            _dict["slideStructure"] = self.slide_structure.to_dict()
         return _dict
 
     @classmethod
-    def from_dict(cls, obj: Dict) -> Self:
+    def from_dict(cls, obj: Dict[str, Any]) -> Self:
         """Create an instance of Status from a dict"""
         if obj is None:
             return None
@@ -101,15 +110,23 @@ class Status(BaseModel):
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
 
-        _obj = cls.model_validate({
-            "stepUnderstanding": obj.get("stepUnderstanding"),
-            "stepLookup": obj.get("stepLookup"),
-            "stepLectureScriptGeneration": obj.get("stepLectureScriptGeneration"),
-            "stepSlideStructureGeneration": obj.get("stepSlideStructureGeneration"),
-            "stepSlideGeneration": obj.get("stepSlideGeneration"),
-            "stepSlidePostprocessing": obj.get("stepSlidePostprocessing"),
-            "stepsAvatarGeneration": [AvatarElementStatus.from_dict(_item) for _item in obj.get("stepsAvatarGeneration")] if obj.get("stepsAvatarGeneration") is not None else None,
-            "lectureSummary": obj.get("lectureSummary"),
-            "slideStructure": SlideStructure.from_dict(obj.get("slideStructure")) if obj.get("slideStructure") is not None else None
-        })
+        _obj = cls.model_validate(
+            {
+                "stepUnderstanding": obj.get("stepUnderstanding"),
+                "stepLookup": obj.get("stepLookup"),
+                "stepLectureScriptGeneration": obj.get("stepLectureScriptGeneration"),
+                "stepSlideStructureGeneration": obj.get("stepSlideStructureGeneration"),
+                "stepSlideGeneration": obj.get("stepSlideGeneration"),
+                "stepSlidePostprocessing": obj.get("stepSlidePostprocessing"),
+                "stepsAvatarGeneration": [AvatarElementStatus.from_dict(_item) for _item in stAG]
+                if (stAG := obj.get("stepsAvatarGeneration")) is not None
+                else []
+                if obj.get("stepsAvatarGeneration") is not None
+                else None,
+                "lectureSummary": obj.get("lectureSummary"),
+                "slideStructure": SlideStructure.from_dict(slStr)
+                if (slStr := obj.get("slideStructure")) is not None
+                else None,
+            }
+        )
         return _obj

@@ -172,6 +172,8 @@ components:
     SlideStructure:
       type: object
       description: "High-level structure of the slide deck returned early for UI and navigation"
+      required:
+        - pages
       properties:
         pages:
           type: array

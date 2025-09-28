@@ -17,7 +17,7 @@ import re  # noqa: F401
 import json
 
 
-from pydantic import BaseModel, ConfigDict, Field, StrictInt, StrictStr
+from pydantic import BaseModel, Field, StrictInt, StrictStr
 from typing import Any, ClassVar, Dict, List
 
 try:
@@ -73,7 +73,7 @@ class Error(BaseModel):
         return _dict
 
     @classmethod
-    def from_dict(cls, obj: Dict) -> Self:
+    def from_dict(cls, obj: Dict[str, Any]) -> Self:
         """Create an instance of Error from a dict"""
         if obj is None:
             return None

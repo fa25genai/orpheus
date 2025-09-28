@@ -17,8 +17,10 @@ import re  # noqa: F401
 import json
 
 
-from pydantic import BaseModel, ConfigDict, Field, StrictInt, StrictStr
+from pydantic import BaseModel, Field, StrictInt, StrictStr
 from typing import Any, ClassVar, Dict, List, Optional
+
+from service_status.models.avatar_element_status_patch import AvatarElementStatusPatch
 from service_status.models.slide_structure import SlideStructure
 from service_status.models.step_status import StepStatus
 
@@ -31,17 +33,36 @@ except ImportError:
 class StatusPatch(BaseModel):
     """
     StatusPatch
-    """ # noqa: E501
+    """  # noqa: E501
+
     step_understanding: Optional[StepStatus] = Field(default=None, alias="stepUnderstanding")
     step_lookup: Optional[StepStatus] = Field(default=None, alias="stepLookup")
-    step_lecture_script_generation: Optional[StepStatus] = Field(default=None, alias="stepLectureScriptGeneration")
-    step_slide_structure_generation: Optional[StepStatus] = Field(default=None, alias="stepSlideStructureGeneration")
+    step_lecture_script_generation: Optional[StepStatus] = Field(
+        default=None, alias="stepLectureScriptGeneration"
+    )
+    step_slide_structure_generation: Optional[StepStatus] = Field(
+        default=None, alias="stepSlideStructureGeneration"
+    )
     step_slide_generation: Optional[StrictInt] = Field(default=None, alias="stepSlideGeneration")
-    step_slide_postprocessing: Optional[StepStatus] = Field(default=None, alias="stepSlidePostprocessing")
-    steps_avatar_generation: Optional[Dict[str, Any]] = Field(default=None, alias="stepsAvatarGeneration")
+    step_slide_postprocessing: Optional[StepStatus] = Field(
+        default=None, alias="stepSlidePostprocessing"
+    )
+    steps_avatar_generation: Optional[Dict[str, AvatarElementStatusPatch]] = Field(
+        default=None, alias="stepsAvatarGeneration"
+    )
     lecture_summary: Optional[StrictStr] = Field(default=None, alias="lectureSummary")
     slide_structure: Optional[SlideStructure] = Field(default=None, alias="slideStructure")
-    __properties: ClassVar[List[str]] = ["stepUnderstanding", "stepLookup", "stepLectureScriptGeneration", "stepSlideStructureGeneration", "stepSlideGeneration", "stepSlidePostprocessing", "stepsAvatarGeneration", "lectureSummary", "slideStructure"]
+    __properties: ClassVar[List[str]] = [
+        "stepUnderstanding",
+        "stepLookup",
+        "stepLectureScriptGeneration",
+        "stepSlideStructureGeneration",
+        "stepSlideGeneration",
+        "stepSlidePostprocessing",
+        "stepsAvatarGeneration",
+        "lectureSummary",
+        "slideStructure",
+    ]
 
     model_config = {
         "populate_by_name": True,
@@ -80,11 +101,11 @@ class StatusPatch(BaseModel):
         )
         # override the default output from pydantic by calling `to_dict()` of slide_structure
         if self.slide_structure:
-            _dict['slideStructure'] = self.slide_structure.to_dict()
+            _dict["slideStructure"] = self.slide_structure.to_dict()
         return _dict
 
     @classmethod
-    def from_dict(cls, obj: Dict) -> Self:
+    def from_dict(cls, obj: Dict[str, Any]) -> Self:
         """Create an instance of StatusPatch from a dict"""
         if obj is None:
             return None
@@ -92,17 +113,21 @@ class StatusPatch(BaseModel):
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
 
-        _obj = cls.model_validate({
-            "stepUnderstanding": obj.get("stepUnderstanding"),
-            "stepLookup": obj.get("stepLookup"),
-            "stepLectureScriptGeneration": obj.get("stepLectureScriptGeneration"),
-            "stepSlideStructureGeneration": obj.get("stepSlideStructureGeneration"),
-            "stepSlideGeneration": obj.get("stepSlideGeneration"),
-            "stepSlidePostprocessing": obj.get("stepSlidePostprocessing"),
-            "stepsAvatarGeneration": obj.get("stepsAvatarGeneration"),
-            "lectureSummary": obj.get("lectureSummary"),
-            "slideStructure": SlideStructure.from_dict(obj.get("slideStructure")) if obj.get("slideStructure") is not None else None
-        })
+        _obj = cls.model_validate(
+            {
+                "stepUnderstanding": obj.get("stepUnderstanding"),
+                "stepLookup": obj.get("stepLookup"),
+                "stepLectureScriptGeneration": obj.get("stepLectureScriptGeneration"),
+                "stepSlideStructureGeneration": obj.get("stepSlideStructureGeneration"),
+                "stepSlideGeneration": obj.get("stepSlideGeneration"),
+                "stepSlidePostprocessing": obj.get("stepSlidePostprocessing"),
+                "stepsAvatarGeneration": obj.get("stepsAvatarGeneration"),
+                "lectureSummary": obj.get("lectureSummary"),
+                "slideStructure": SlideStructure.from_dict(slideStructure)
+                if (slideStructure := obj.get("slideStructure")) is not None
+                else None
+                if obj.get("slideStructure") is not None
+                else None,
+            }
+        )
         return _obj
-
-
