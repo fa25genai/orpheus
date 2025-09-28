@@ -25,7 +25,13 @@ class SlidevHelper:
         _log.debug("Invoking slidev command: %s", " ".join(cmd))
         return subprocess.run(cmd, cwd=work_dir).returncode == 0
 
-    def export_pdf(self, work_dir: str, source_path: str, output_file: str) -> bool:
-        cmd = ["slidev", "export", source_path, "--output", output_file]
+    def export_pdf(self, work_dir: str, source_path: str, output_file: str, theme_name: str) -> bool:
+        cmd = [
+            "slidev",
+            "export",
+            source_path,
+            "--output", output_file,
+            "--theme", theme_name
+        ]
         _log.debug("Invoking slidev command: %s", " ".join(cmd))
         return subprocess.run(cmd, cwd=work_dir).returncode == 0

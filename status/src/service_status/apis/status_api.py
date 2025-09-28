@@ -28,7 +28,6 @@ from fastapi import (  # noqa: F401
 
 from service_status.models.extra_models import TokenModel  # noqa: F401
 from pydantic import Field, StrictStr
-from typing import Any
 from typing_extensions import Annotated
 from service_status.models.error import Error
 from service_status.models.status import Status
@@ -37,7 +36,7 @@ from service_status.models.status_patch import StatusPatch
 router = APIRouter()
 
 ns_pkg = service_status.impl
-for _, name, _ in pkgutil.iter_modules(ns_pkg.__path__, ns_pkg.__name__ + "."):
+for _, name, _ in pkgutil.iter_modules(ns_pkg.__path__, ns_pkg.__name__ + "."):  # type: ignore
     importlib.import_module(name)
 
 
@@ -59,9 +58,10 @@ async def get_status(
     """Returns the current status of a generation job. If a job is unknown, then the initial status is returned. The current value is also subscribable by opening a websocket to &#x60;/status/{promptId}/live&#x60;. There the status object is pushed as it is described by this endpoint whenever it is updated."""
     if not BaseStatusApi.subclasses:
         raise HTTPException(status_code=500, detail="Not implemented")
-    return await BaseStatusApi.subclasses[0]().get_status(
+    status_obj = await BaseStatusApi.subclasses[0]().get_status(
         request.app.state.status_manager, promptId
     )
+    return status_obj  # type: ignore
 
 
 @router.patch(
@@ -86,7 +86,7 @@ async def update_status(
     """Takes a status update and applies it to the current status. If a status is unknown, it creates a new object for it."""
     if not BaseStatusApi.subclasses:
         raise HTTPException(status_code=500, detail="Not implemented")
-    return await BaseStatusApi.subclasses[0]().update_status(
+    await BaseStatusApi.subclasses[0]().update_status(
         request.app.state.status_manager, promptId, status_patch
     )
 
@@ -103,9 +103,9 @@ async def websocket_status(
     id = uuid.uuid4()
     status_manager = websocket.app.state.status_manager
 
-    async def send_status_update(status: Status):
+    async def send_status_update(status_obj: Status) -> None:
         try:
-            await websocket.send_text(status.model_dump_json())
+            await websocket.send_json(status_obj.model_dump(by_alias=True))
         except WebSocketDisconnect:
             status_manager.remove_listener(promptId, id)
 

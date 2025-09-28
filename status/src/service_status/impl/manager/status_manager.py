@@ -15,7 +15,7 @@ class StatusManager:
     status_objects: typing.Dict[str, Status] = {}
     listeners: typing.Dict[str, typing.Dict[str, typing.Callable[[Status], Awaitable[None]]]]
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.status_objects = {}
         self.listeners = {}
         self.mutex = Lock()
@@ -24,26 +24,33 @@ class StatusManager:
         async with self.mutex:
             return self._get_status_unsafe(prompt_id)
 
-    async def update_status(self, prompt_id: str, patch: StatusPatch):
+    async def update_status(self, prompt_id: str, patch: StatusPatch) -> None:
         async with self.mutex:
             base = self._get_status_unsafe(prompt_id)
 
-            for (k, v) in patch.__dict__.items():
+            for k, v in patch.__dict__.items():
                 if v is not None and k != "steps_avatar_generation":
                     base.__dict__[k] = v
 
-            if base.slide_structure is not None and len(base.steps_avatar_generation) < len(base.slide_structure.pages):
+            if base.slide_structure is not None and len(base.steps_avatar_generation) < len(
+                base.slide_structure.pages
+            ):
                 for i in range(len(base.slide_structure.pages) - len(base.steps_avatar_generation)):
-                    base.steps_avatar_generation.append(AvatarElementStatus(
-                        audio=StepStatus.NOT_STARTED,
-                        video=StepStatus.NOT_STARTED,
-                    ))
+                    base.steps_avatar_generation.append(
+                        AvatarElementStatus(
+                            audio=StepStatus.NOT_STARTED,
+                            video=StepStatus.NOT_STARTED,
+                        )
+                    )
 
             if patch.steps_avatar_generation is not None:
                 for k, v in patch.steps_avatar_generation.items():
                     try:
                         idx = int(k)
-                        base.steps_avatar_generation[idx] = v
+                        if v.video is not None:
+                            base.steps_avatar_generation[idx].video = v.video
+                        if v.audio is not None:
+                            base.steps_avatar_generation[idx].audio = v.audio
                     except Exception as ex:
                         _log.error(
                             "Failed to convert steps avatar generation key '{}' to int: {}".format(
@@ -59,15 +66,18 @@ class StatusManager:
                     await listener(base)
 
     async def add_listener(
-            self, prompt_id: str, reference: str, listener: typing.Callable[[Status], Awaitable[None]]
-    ):
+        self,
+        prompt_id: str,
+        reference: str,
+        listener: typing.Callable[[Status], Awaitable[None]],
+    ) -> None:
         async with self.mutex:
             if prompt_id not in self.listeners:
                 self.listeners[prompt_id] = {}
             self.listeners[prompt_id][reference] = listener
             await listener(self._get_status_unsafe(prompt_id))
 
-    async def remove_listener(self, prompt_id: str, reference: str):
+    async def remove_listener(self, prompt_id: str, reference: str) -> None:
         async with self.mutex:
             if prompt_id not in self.listeners:
                 return
