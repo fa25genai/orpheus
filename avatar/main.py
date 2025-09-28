@@ -147,23 +147,24 @@ def folder_url(prompt_id: UUID) -> str:
 @app.post(
     "/v1/avatars",
     status_code=201,
-    response_model=media.AvatarCreatedResponse,  # <-- use schema from media
+    response_model=media.AvatarCreatedResponse,
     tags=["avatar"],
 )
 def create_avatar(
     name: Optional[str] = Form(None),
     courseId: Optional[UUID] = Form(None),
+    slot: Optional[str] = Form('default'),  # accepts "default", "beginning", "ending" (+ minor typos)
     image_file: UploadFile = File(..., description="png/jpeg/webp"),
     audio_file: UploadFile = File(..., description="mp3/wav/flac/webm"),
     db: Session = Depends(get_db),
 ) -> media.AvatarCreatedResponse:
-    # Delegate all the work to the media module
     return media.create_avatar_with_media(
         db=db,
         image_file=image_file,
         audio_file=audio_file,
         name=name,
         course_id=courseId,
+        slot=slot,  # new
     )
 
 

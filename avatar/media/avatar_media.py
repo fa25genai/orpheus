@@ -5,11 +5,21 @@ from pathlib import Path
 from datetime import datetime
 from uuid import UUID
 from typing import Optional, Tuple
+from enum import Enum
 
 from fastapi import UploadFile, HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy import String, DateTime, Text, Integer, ForeignKey, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship, Session
+
+from sqlalchemy import UniqueConstraint
+from sqlalchemy.exc import IntegrityError
+
+class CourseAvatarSlot(str, Enum):
+    default = "default"
+    beginning = "beginning"
+    ending = "ending"
+
 
 # ----- Config -----
 AVATARS_OUTPUT_DIR = Path(os.getenv("AVATARS_OUTPUT_DIR", "data/avatars")).resolve()
@@ -36,15 +46,20 @@ class Base(DeclarativeBase):
 
 class Avatar(Base):
     __tablename__ = "avatars"
+    __table_args__ = (
+        UniqueConstraint("course_id", "slot", name="uq_course_slot"),  # at most 1 per slot per course
+    )
+
     avatar_id: Mapped[str] = mapped_column(String(36), primary_key=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
-    # optional metadata (keep or remove)
     name: Mapped[Optional[str]] = mapped_column(String(120), nullable=True, index=True)
     course_id: Mapped[Optional[str]] = mapped_column(String(36), nullable=True, index=True)
+    slot: Mapped[str] = mapped_column(String(16), nullable=False, index=True, default=CourseAvatarSlot.default.value)
 
     images: Mapped[list["AvatarImage"]] = relationship(back_populates="avatar", cascade="all, delete-orphan")
     audios: Mapped[list["AvatarAudio"]] = relationship(back_populates="avatar", cascade="all, delete-orphan")
+
 
 class AvatarImage(Base):
     __tablename__ = "avatar_images"
@@ -89,6 +104,7 @@ class AvatarCreatedResponse(BaseModel):
     avatarId: UUID
     name: Optional[str] = None
     courseId: Optional[UUID] = None
+    slot: CourseAvatarSlot = CourseAvatarSlot.default
     createdAt: datetime
     image: AvatarImageResponse
     audio: AvatarAudioResponse
@@ -116,6 +132,24 @@ def _save_upload(root: Path, avatar_id: UUID, upload: UploadFile, kind: str) -> 
         shutil.copyfileobj(upload.file, out)
     return target
 
+# --- tiny helper to accept minor typos like 'defualt' and 'begining' ---
+def _normalize_slot(value: Optional[str]) -> CourseAvatarSlot:
+    if not value:
+        return CourseAvatarSlot.default
+    v = value.strip().lower()
+    aliases = {
+        "defualt": "default",
+        "begining": "beginning",
+        "start": "beginning",
+        "end": "ending",
+        "final": "ending",
+    }
+    v = aliases.get(v, v)
+    try:
+        return CourseAvatarSlot(v)
+    except ValueError:
+        raise HTTPException(status_code=400, detail=f"slot must be one of: {', '.join(s.value for s in CourseAvatarSlot)}")
+
 # ----- service function (call from your route) -----
 def create_avatar_with_media(
     db: Session,
@@ -123,29 +157,26 @@ def create_avatar_with_media(
     audio_file: UploadFile,
     name: Optional[str] = None,
     course_id: Optional[UUID] = None,
+    slot: Optional[str] = None,  # <--- new
 ) -> AvatarCreatedResponse:
-    """
-    Creates avatar row + saves image/audio atomically (transaction).
-    Returns a typed AvatarCreatedResponse.
-    """
     avatar_uuid = uuid.uuid4()
     saved_paths: list[Path] = []
 
+    the_slot = _normalize_slot(slot)
+
     try:
-        # 1) parent
         avatar = Avatar(
             avatar_id=str(avatar_uuid),
             name=name,
             course_id=str(course_id) if course_id else None,
+            slot=the_slot.value,                           # <--- save
         )
         db.add(avatar)
         db.flush()
 
-        # 2) files
         img_path = _save_upload(AVATARS_OUTPUT_DIR, avatar_uuid, image_file, "image"); saved_paths.append(img_path)
         aud_path = _save_upload(AVATARS_OUTPUT_DIR, avatar_uuid, audio_file, "audio"); saved_paths.append(aud_path)
 
-        # 3) children
         img = AvatarImage(
             id=str(uuid.uuid4()),
             avatar_id=str(avatar_uuid),
@@ -170,6 +201,7 @@ def create_avatar_with_media(
             avatarId=UUID(avatar.avatar_id),
             name=avatar.name,
             courseId=UUID(avatar.course_id) if avatar.course_id else None,
+            slot=CourseAvatarSlot(avatar.slot),            # <--- expose in response
             createdAt=avatar.created_at,
             image=AvatarImageResponse(
                 id=UUID(img.id),
@@ -188,11 +220,16 @@ def create_avatar_with_media(
                 createdAt=aud.created_at,
             ),
         )
+    except IntegrityError:
+        db.rollback()
+        for p in saved_paths:
+            try: p.unlink(missing_ok=True)
+            except Exception: pass
+        # (course_id, slot) is already taken
+        raise HTTPException(status_code=409, detail="An avatar for this courseId and slot already exists.")
     except Exception:
         db.rollback()
         for p in saved_paths:
-            try:
-                p.unlink(missing_ok=True)
-            except Exception:
-                pass
+            try: p.unlink(missing_ok=True)
+            except Exception: pass
         raise
