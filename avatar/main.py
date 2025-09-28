@@ -1,5 +1,7 @@
-import os
+from __future__ import annotations
 
+# --- Standard library ---
+import os
 import shutil
 import uuid
 from collections.abc import Generator, Mapping
@@ -8,9 +10,10 @@ from pathlib import Path
 from queue import Queue
 from threading import Event, Thread
 from time import sleep
-from typing import Any, Dict, List, Literal, Optional, Union
+from typing import Any, Literal, Optional, Union
 from uuid import UUID
 
+# --- Third-party ---
 import requests
 from fastapi import Depends, FastAPI, File, Form, Query, Request, Response, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
@@ -20,9 +23,17 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 from typing_extensions import Annotated
 
-import media.avatar_media as media
-import media.avatar_queries as avatar_queries
-import media.avatar_updates as avatar_updates
+# --- Local package (works in both installed and in-repo runs) ---
+try:
+    # If project is installed (e.g., `poetry install` or `pip install -e .`)
+    from media import avatar_media as media
+    from media import avatar_queries
+    from media import avatar_updates
+except ImportError:  # pragma: no cover
+    # If run inside the package (e.g., `python -m yourpkg.main`)
+    from .media import avatar_media as media  # type: ignore
+    from .media import avatar_queries  # type: ignore
+    from .media import avatar_updates  # type: ignore
 
 app = FastAPI(title="Service Video-Generation APIs", version="0.1")
 origins = ["*"]
@@ -318,18 +329,6 @@ def _purge_stale_jobs(now: Optional[datetime] = None) -> None:
 # Audio / Video Generators
 # ---------------------------
 
-import os
-from pathlib import Path
-from typing import Optional
-from uuid import UUID
-
-import requests
-from sqlalchemy.orm import Session
-
-# from your project:
-# from . import avatar_queries
-# from .models import UserProfile
-# from .paths import job_dir
 
 
 def generate_audio(
