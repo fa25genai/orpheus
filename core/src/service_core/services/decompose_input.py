@@ -43,9 +43,9 @@ config = Config()
 # -----------------------------
 def call_llama(prompt: str, model: Optional[str] = None, max_tokens: int = 512) -> str:
     """Call Llama API via LangChain ChatOllama"""
-    model = model or config.llama_model
-    if not config.llama_api_key:
-        raise RuntimeError("LLAMA_API_KEY not set")
+    # model = model or config.llama_model
+    # if not config.llama_api_key:
+    #     raise RuntimeError("LLAMA_API_KEY not set")
 
     # Initialize ChatOllama with custom endpoint and API key
     # llm = ChatOllama(
@@ -70,9 +70,10 @@ def call_llama(prompt: str, model: Optional[str] = None, max_tokens: int = 512) 
 
 
 def llm_call(prompt: str) -> str:
-    if config.llama_api_key:
-        return call_llama(prompt)
-    raise RuntimeError("No valid LLM API key available (Llama)")
+    return call_llama(prompt)
+    # if config.llama_api_key:
+    #     return call_llama(prompt)
+    # raise RuntimeError("No valid LLM API key available (Llama)")
 
 
 # -----------------------------
