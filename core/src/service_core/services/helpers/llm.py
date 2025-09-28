@@ -150,5 +150,5 @@ def ask_llm(prompt: str) -> str:
     Raises:
         RuntimeError: If the LLM call fails or the response cannot be validated.
     '''
-    response: BaseModel = ask_llm_with_model(prompt, StandardResponse)
+    response = StandardResponse(ask_llm_with_model(prompt, StandardResponse))
     return response.answer
