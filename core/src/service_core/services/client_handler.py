@@ -134,7 +134,7 @@ async def generate_slides(prompt_request: PromptRequest, prompt_id: str, lecture
             "promptId": str(prompt_id),
             "lectureScript": lecture_script,
             # "user": json.loads(mock_service.create_user().model_dump_json(by_alias=True, exclude_unset=True)),
-            "user": prompt_request.user_persona.to_dict() if prompt_request.user_persona else {}, 
+            "user": prompt_request.user_persona.to_dict() if prompt_request.user_persona else {},
             "assets": refined_output.get("assets", ""),
         }
 
