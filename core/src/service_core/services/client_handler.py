@@ -152,6 +152,9 @@ async def generate_slides(prompt_request: PromptRequest, prompt_id: str, lecture
         return slides_data
     except Exception as e:
         print(f"Error generating slides for prompt {prompt_id}: {e}", flush=True)
+        await update_status(prompt_id, StatusPatch(
+            stepSlideStructureGeneration=StepStatus.FAILED
+        ), client)
         return {}
 
 
