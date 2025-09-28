@@ -163,4 +163,4 @@ def create_voice_script(index=0) -> Dict[str, Any]:
         metadata=""
     )
     # response = json.loads(voice_track_response.model_dump_json(by_alias=True, exclude_unset=True))
-    return voice_track_response
+    return voice_track_response.model_dump(mode="json")

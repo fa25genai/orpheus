@@ -17,6 +17,7 @@ from service_core.services import (
 from service_core.services.user_summary import summarize_content_with_llama
 from service_status.models.status_patch import StatusPatch
 from service_status.models.step_status import StepStatus
+from service_core.services.services_models.voice_track import VoiceTrackResponse
 
 load_dotenv()
 
@@ -171,7 +172,7 @@ async def generate_slides(prompt_request: PromptRequest, prompt_id: str, lecture
         return {}
 
 
-async def generate_voice_scripts(lecture_script: str, slides_data: Dict[str, Any], user: UserProfile, client: httpx.AsyncClient, prompt_id: str) -> List[asyncio.Task[httpx.Response]]:
+async def generate_voice_scripts(lecture_script: str, slides_data: Dict[str, Any], user: UserProfile, client: httpx.AsyncClient, prompt_id: str, course_id: str) -> List[asyncio.Task[httpx.Response]]:
     tracker.log("Generating voice script")
     try:
         voice_track: Dict[str, Any]
@@ -188,8 +189,17 @@ async def generate_voice_scripts(lecture_script: str, slides_data: Dict[str, Any
         voice_track = narration_generation.generate_narrations(lecture_script, slides_data, user)
 
         slides = voice_track.get("slideMessages", [])
+        voice_track_request = VoiceTrackResponse(
+        promptId=prompt_id,
+        courseId=course_id,
+        voiceTrack="",
+        slideNumber=0,
+        userProfile=user.model_dump(mode="json")
+    )
         for index, slide_data in enumerate(slides):
-            task = generate_avatar_video(slide_data, index, client)
+            voice_track_request.slideNumber = index
+            voice_track_request.voiceTrack = slide_data
+            task = generate_avatar_video(voice_track_request.model_dump(mode="json"), index, client)
             if task:
                 tasks.append(task)
         return tasks
@@ -244,7 +254,8 @@ async def process_prompt(prompt_id: str, prompt_request: PromptRequest) -> None:
                 slides_data,
                 prompt_request.user_persona,
                 client,
-                prompt_id
+                prompt_id,
+                prompt_request.course_id
             )
 
             if avatar_tasks:
