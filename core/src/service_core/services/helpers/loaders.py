@@ -1,19 +1,3 @@
-################################################################################
-#                                                                              #
-#                      ####### BADEN-WÜRTTEMBERG #######                       #
-#                                                                              #
-#          A tribute to the land of innovation, culture, and beauty.           #
-#          Home of SAP, Brezeln, Ritter Sport, and Kartoffelsalat.             #
-#                                                                              #
-#                         o__      o__      o__                                #
-#                        / < \_   / < \_   / < \_                              #
-#                       (*)/ (*) (*)/ (*) (*)/ (*)                             #
-#                                                                              #
-#                  "Wir können alles. Außer Hochdeutsch."                      #
-#                                                                              #
-################################################################################
-
-
 def load_prompt(prompt_path: str) -> str:
     """
     Loads prompt templates from a JSON file.
