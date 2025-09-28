@@ -211,8 +211,8 @@ def generate_avatar_video(voice_track: Dict[str, Any], index: int, client: httpx
 
 
 async def process_prompt(prompt_id: str, prompt_request: PromptRequest) -> None:
-    async with httpx.AsyncClient() as client:
-        try:
+    try:
+        async with httpx.AsyncClient() as client:
             subqueries = await decompose_inputs(prompt_request, prompt_id, client)
             retrieved_content = await query_document_intelligence(subqueries, client, prompt_id)
 
@@ -238,5 +238,5 @@ async def process_prompt(prompt_id: str, prompt_request: PromptRequest) -> None:
                 await asyncio.gather(*avatar_tasks)
 
             tracker.log(f"SUCCESS: Completed processing for {prompt_id}")
-        except Exception as e:
-            tracker.log(f"ERROR: Failed processing for {prompt_id}: {e}")
+    except Exception as e:
+        tracker.log(f"ERROR: Failed processing for {prompt_id}: {e}")

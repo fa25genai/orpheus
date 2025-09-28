@@ -135,7 +135,8 @@ def generate_script(content: Dict[str, Any], persona: UserProfile) -> Dict[str, 
     retrieved_content_for_llm = copy.deepcopy(retrieved_content)
     for item in retrieved_content_for_llm:
         # print('a', flush=True)
-        if isinstance(item, dict): 
+        if isinstance(item, dict):
+            # TODO reduce complexity, reduce nesting
             if "assets" in item and isinstance(item["assets"], list):
                 # print('b', flush=True)
                 for asset in item["assets"]:
