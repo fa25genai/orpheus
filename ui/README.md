@@ -60,6 +60,14 @@ Run the following command from the `ui` directory:
     -o ./generated-api-clients/document-intelligence
     ```
 
+    6. Generate them for status service
+    ```bash
+    pnpm exec openapi-generator-cli generate \
+    -i ../api/generation_status_service.yaml \
+    -g typescript-fetch \
+    -o ./generated-api-clients/status
+    ```
+
 ### Docker setup
 1. How to create the docker image
     ```bash

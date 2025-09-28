@@ -12,7 +12,5 @@ def get_postprocessing_api_config() -> PostprocessingConfiguration:
 
 def get_status_api_config() -> StatusConfiguration:
     return PostprocessingConfiguration(
-        host=os.environ.get("STATUS_SERVICE_HOST")
-        if "STATUS_SERVICE_HOST" in os.environ
-        else "http://status-service:19910",
+        host=os.environ.get("STATUS_SERVICE_HOST") if "STATUS_SERVICE_HOST" in os.environ else "http://status-service:19910",
     )

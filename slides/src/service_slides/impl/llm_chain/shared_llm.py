@@ -68,11 +68,10 @@ def create_base_model(model_name: str, temperature: float = 0.0, max_tokens: Opt
             "base_url": os.environ["OLLAMA_LLM_HOST"],
             "temperature": temperature,
             "keep_alive": "-1m",
+            "client_kwargs": {"headers": {"Authorization": f"Bearer {os.environ['OLLAMA_LLM_KEY']}"}}
         }
         if max_tokens:
             model_kwargs["max_tokens"] = max_tokens
-        if "OLLAMA_LLM_KEY" in os.environ:
-            model_kwargs["client_kwargs"] = {"headers": {"Authorization": f"Bearer {os.environ['OLLAMA_LLM_KEY']}"}}
         return OllamaLLM(**model_kwargs)  # type: ignore
 
     # Try AWS Bedrock last
@@ -86,7 +85,4 @@ def create_base_model(model_name: str, temperature: float = 0.0, max_tokens: Opt
             model_kwargs["max_tokens"] = max_tokens
         return ChatBedrockConverse(**model_kwargs)  # type: ignore
 
-    raise RuntimeError(
-        "No LLM providers available. Please set one of: OPENAI_API_KEY, GOOGLE_API_KEY, "
-        "OLLAMA_LLM_HOST, or AWS_BEARER_TOKEN_BEDROCK in your environment variables."
-    )
+    raise RuntimeError("No LLM providers available. Please set one of: OPENAI_API_KEY, GOOGLE_API_KEY, OLLAMA_LLM_HOST, or AWS_BEARER_TOKEN_BEDROCK in your environment variables.")

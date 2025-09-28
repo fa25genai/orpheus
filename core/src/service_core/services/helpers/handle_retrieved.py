@@ -27,13 +27,12 @@ def generate_filename_from_description(description: str, mime_type: str) -> str:
 
 # --- Helper function to try parsing JSON ---
 # --- Main Conversion Logic ---
-def convert_json_structure(retrieved_content: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+def convert_json_structure(content: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """
     Converts the input JSON to include an 'assets' key with image data.
     """
     output_data = []
-
-    for item in retrieved_content:
+    for item in content:
         new_item = {"content": item["content"], "assets": []}
 
         if "images" in item and item["images"]:
@@ -42,10 +41,14 @@ def convert_json_structure(retrieved_content: List[Dict[str, Any]]) -> List[Dict
                 description = image_data.get("description", "untitled_image")
 
                 # Regex to extract MIME type and base64 data from the data URI
-                match = re.match(r"data:(?P<mime_type>[\w/]+);base64,(?P<data>.*)", image_str)
+                match = re.match(
+                    r"data:(?P<mime_type>[\w/]+);base64,(?P<data>.*)", image_str
+                )
 
                 if not match:
-                    print(f"Warning: Could not parse image data for '{description}'. Skipping.")
+                    print(
+                        f"Warning: Could not parse image data for '{description}'. Skipping."
+                    )
                     continue
 
                 image_info = match.groupdict()
@@ -54,7 +57,12 @@ def convert_json_structure(retrieved_content: List[Dict[str, Any]]) -> List[Dict
 
                 filename = generate_filename_from_description(description, mime_type)
 
-                asset = {"name": filename, "assetDescription": description, "mimeType": mime_type, "data": base64_data}
+                asset = {
+                    "name": filename,
+                    "assetDescription": description,
+                    "mimeType": mime_type,
+                    "data": base64_data,
+                }
                 new_item["assets"].append(asset)
 
         output_data.append(new_item)
@@ -63,7 +71,7 @@ def convert_json_structure(retrieved_content: List[Dict[str, Any]]) -> List[Dict
 
 
 # --- Input Data ---
-retrieved_content: List[Dict[str, Any]] = [
+retrieved_content_mock: List[Dict[str, Any]] = [
     {
         "content": [
             "A for loop is a control flow statement for specifying iteration, which allows code to be executed repeatedly.",
@@ -91,6 +99,6 @@ retrieved_content: List[Dict[str, Any]] = [
 ]
 
 if __name__ == "__main__":
-    a = convert_json_structure(retrieved_content)
+    a = convert_json_structure(retrieved_content_mock)
     print("Conversion completed.")
     print(json.dumps(a, indent=4))

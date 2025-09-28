@@ -21,6 +21,11 @@ uvicorn = { extras = ["standard"], version = ">=0.36.0,<0.37.0" }
 openapi-generator = ">=1.0.6,<2.0.0"
 boto3 = ">=1.40.39,<2.0.0"
 httpx = "^0.27.0"
+boto3-stubs = "^1.40.40"
+langchain-openai = "^0.3.33"
+langchain-aws = "^0.2.33"
+langchain-google-genai = "^2.1.12"
+langchain-ollama = "^0.3.8"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "0.13.1"
@@ -38,6 +43,8 @@ exclude = [
     "src/service_core/apis",
     "src/service_core/models",
     "src/service_core/services/fetch_mock_data.py",
+    "src/service_status/apis",
+    "src/service_status/models",
 ]
 
 [tool.ruff.lint]
@@ -55,4 +62,4 @@ no_implicit_optional = true
 mypy_path = "src"
 namespace_packages = true
 explicit_package_bases = true
-exclude = "(src/service_core/apis|src/service_core/models|src/service_core/services/fetch_mock_data.py)"
+exclude = "(src/service_core/apis|src/service_core/models|src/service_core/services/fetch_mock_data.py|src/service_status/apis|src/service_status/models)"

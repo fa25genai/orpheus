@@ -4,19 +4,31 @@ import {Button} from "@/components/ui/button";
 import {Pause, Play, Volume2} from "lucide-react";
 
 type CustomVideoPlayerProps = {
-    sources: string[]
-    onBeforeNext?: (index: number) => void;
-}
+  sources: string[];
+  onBeforeNext?: (index: number) => void;
+};
 
-export default function CustomVideoPlayer({ sources, onBeforeNext }: CustomVideoPlayerProps) {
-  const videoRef = useRef<HTMLVideoElement | null>(null);
+export default function VideoPlayer({
+  sources,
+  onBeforeNext,
+}: CustomVideoPlayerProps) {
   const [isPlaying, setIsPlaying] = useState(true);
   const [showControls, setShowControls] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [playbackRate, setPlaybackRate] = useState(1);
+
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  const [active, setActive] = useState(0);
+  const videoRefs = [
+    useRef<HTMLVideoElement>(null),
+    useRef<HTMLVideoElement>(null),
+  ];
+
+  const getActiveVideo = () => videoRefs[active].current;
+
   const togglePlay = () => {
-    const video = videoRef.current;
+    const video = getActiveVideo();
     if (!video) return;
 
     if (isPlaying) {
@@ -28,9 +40,19 @@ export default function CustomVideoPlayer({ sources, onBeforeNext }: CustomVideo
   };
 
   const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const video = videoRef.current;
+    const video = getActiveVideo();
     if (video) {
       video.volume = parseFloat(e.target.value);
+    }
+  };
+
+  const handleSpeedChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const rate = parseFloat(e.target.value);
+    setPlaybackRate(rate);
+
+    const video = getActiveVideo();
+    if (video) {
+      video.playbackRate = rate;
     }
   };
 
@@ -42,16 +64,15 @@ export default function CustomVideoPlayer({ sources, onBeforeNext }: CustomVideo
   };
 
   const handleEnded = useCallback(() => {
-      if (currentIndex < sources.length - 1) {
-          onBeforeNext?.(currentIndex + 1)
-          setCurrentIndex((prev) => prev + 1)
-          setIsPlaying(true);
-      } else {
-          setIsPlaying(false);
-      }
+    if (currentIndex < sources.length - 1) {
+      onBeforeNext?.(currentIndex + 1);
+      setActive((prev) => (prev === 0 ? 1 : 0));
+      setCurrentIndex((prev) => prev + 1);
+      setIsPlaying(true);
+    } else {
+      setIsPlaying(false);
+    }
   }, [currentIndex, sources.length, onBeforeNext]);
-
-
 
   useEffect(() => {
     return () => {
@@ -59,15 +80,16 @@ export default function CustomVideoPlayer({ sources, onBeforeNext }: CustomVideo
     };
   }, []);
 
-    useEffect(() => {
-        const video = videoRef.current;
-        if (!video) return;
+  useEffect(() => {
+    const video = getActiveVideo();
+    if (!video) return;
 
-        video.load()
-        if (isPlaying) {
-            video.play()
-        }
-    }, [currentIndex]);
+    video.playbackRate = playbackRate; // keep speed synced
+
+    if (isPlaying) {
+      video.play().catch(() => {}); // in case autoplay is blocked
+    }
+  }, [currentIndex, isPlaying, playbackRate, active]);
 
   return (
     <Card
@@ -77,20 +99,23 @@ export default function CustomVideoPlayer({ sources, onBeforeNext }: CustomVideo
       onMouseLeave={() => setShowControls(false)}
     >
       {/* Video fills the card */}
-      <video
-        ref={videoRef}
-        className="w-full h-full object-cover rounded-2xl"
-        preload="none"
-        autoPlay
-        muted
-        onEnded={handleEnded}
-      >
-          {sources[currentIndex] ? (
-    <source src={sources[currentIndex]} type="video/mp4" />
-  ) : null}
-        {/*<source src={sources[currentIndex]} type="video/mp4" />*/}
-        {/*Your browser does not support the video tag.*/}
-      </video>
+      {[0, 1].map((i) => (
+        <video
+          key={i}
+          ref={videoRefs[i]}
+          className={`absolute inset-0 w-full h-full object-cover rounded-2xl ${
+            active === i ? "opacity-100" : "opacity-0"
+          }`}
+          src={
+            sources[
+              active === i ? currentIndex : (currentIndex + 1) % sources.length
+            ]
+          }
+          autoPlay={active === i}
+          preload="auto"
+          onEnded={handleEnded}
+        />
+      ))}
 
       {/* Overlay controls */}
       <div
@@ -98,9 +123,12 @@ export default function CustomVideoPlayer({ sources, onBeforeNext }: CustomVideo
           showControls ? "opacity-100" : "opacity-0 pointer-events-none"
         }`}
       >
+        {/* Play / Pause */}
         <Button variant="secondary" size="sm" onClick={togglePlay}>
           {isPlaying ? <Pause /> : <Play />}
         </Button>
+
+        {/* Volume */}
         <Volume2 className="text-white" />
         <input
           type="range"
@@ -111,6 +139,19 @@ export default function CustomVideoPlayer({ sources, onBeforeNext }: CustomVideo
           onChange={handleVolumeChange}
           className="w-32 accent-white"
         />
+
+        {/* Playback speed */}
+        <select
+          value={playbackRate}
+          onChange={handleSpeedChange}
+          className="bg-black/70 text-white rounded px-2 py-1 text-sm"
+        >
+          {[0.75, 1, 1.25, 1.5, 2, 3, 3.75].map((rate) => (
+            <option key={rate} value={rate}>
+              {rate}×
+            </option>
+          ))}
+        </select>
       </div>
     </Card>
   );

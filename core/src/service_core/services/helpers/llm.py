@@ -13,9 +13,11 @@
 #                                                                              #
 ################################################################################
 import os
+from typing import cast
 
 from dotenv import load_dotenv
 from langchain_community.chat_models import ChatOllama
+from langchain_core.messages import BaseMessage
 
 
 def getLLM() -> ChatOllama:
@@ -28,3 +30,10 @@ def getLLM() -> ChatOllama:
         headers={"Authorization": f"Bearer {api_key}"} if api_key else {},
     )
     return llm
+
+
+def ask_llm(prompt: str) -> str:
+    llm = getLLM()
+    response: BaseMessage = llm.invoke(prompt)
+
+    return cast(str, response.content)

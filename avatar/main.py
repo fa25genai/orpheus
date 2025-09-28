@@ -1,11 +1,14 @@
 import os
-from collections.abc import Generator
+
+import shutil
+import uuid
+from collections.abc import Generator, Mapping
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from queue import Queue
 from threading import Event, Thread
 from time import sleep
-from typing import Dict, List, Literal, Optional, Union
+from typing import Any, Dict, List, Literal, Optional, Union
 from uuid import UUID
 
 import requests
@@ -42,6 +45,40 @@ IMAGES_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 VIDEO_ROOT = Path(os.getenv("VIDEO_ROOT", "/data/jobs")).resolve()
 PUBLIC_VIDEOS_BASE = os.getenv("PUBLIC_VIDEOS_BASE", "/videos/jobs")
 VIDEO_ROOT.mkdir(parents=True, exist_ok=True)
+
+
+STATUS_SERVICE_HOST = os.getenv("STATUS_SERVICE_HOST", "http://localhost:19910")
+STATUS_SERVICE_TIMEOUT = (3, 15)
+
+
+def _status_service_url(prompt_id: UUID) -> str:
+    base = STATUS_SERVICE_HOST.rstrip("/")
+    return f"{base}/status/{prompt_id}/update"
+
+
+def _patch_status(prompt_id: UUID, payload: Mapping[str, Any]) -> None:
+    if not payload:
+        return
+    url = _status_service_url(prompt_id)
+    try:
+        resp = requests.patch(url, json=payload, timeout=STATUS_SERVICE_TIMEOUT)
+        if resp.status_code >= 400:
+            snippet = resp.text[:200] if resp.text else ""
+            print(f"[status] PATCH {url} -> {resp.status_code} {snippet}")
+    except requests.RequestException as exc:
+        print(f"[status] PATCH {url} failed: {exc}")
+
+
+def _update_avatar_generation_step_status(prompt_id: UUID, slide_index: int, *, audio: Optional[str] = None, video: Optional[str] = None) -> None:
+    step_payload: Dict[str, str] = {}
+    if audio is not None:
+        step_payload["audio"] = audio
+    if video is not None:
+        step_payload["video"] = video
+    if not step_payload:
+        return
+    payload = {"stepsAvatarGeneration": {str(slide_index): step_payload}}
+    _patch_status(prompt_id, payload)
 
 
 # ---------------------------
@@ -282,7 +319,7 @@ def _purge_stale_jobs(now: Optional[datetime] = None) -> None:
 # ---------------------------
 
 def generate_audio(
-        slide_text: Optional[str],
+        voiceTrack: Optional[str],
         course_id: Union[str,UUID],
         prompt_id: Optional[UUID],
         user_profile: Optional[UserProfile],
@@ -301,6 +338,7 @@ def generate_audio(
 
     audio_api_url = os.getenv("GEN_AUDIO", "http://localhost:7000/v1/audio/generate")
     job_folder = job_dir(prompt_id)
+    job_folder.mkdir(parents=True, exist_ok=True)
     wav_path = job_folder / f"{audio_counter}.wav"
 
     try:
@@ -313,16 +351,44 @@ def generate_audio(
             ref_path = Path("/app/database/voice_sample/krusche_voice.mp3")
 
         # 2) Call TTS with the DB audio as voice_file
-        is_debug = os.getenv("DEBUG", "not debug")
-        data = {"slide_text": slide_text, "debug": is_debug}
-        with ref_path.open("rb") as f:
-            files = {"voice_file": (ref_path.name, f, ref.mime_type or "audio/mpeg")}
-            print(f"[generate_audio] Posting to {audio_api_url}")
-            resp = requests.post(audio_api_url, data=data, files=files, timeout=(5, 600))
-        resp.raise_for_status()
+        is_debug = os.getenv("DEBUG", "").lower() in {"debug"}
+        data = {"voiceTrack": voiceTrack or "", "debug": str(is_debug).lower(), "promptId": prompt_id}
 
-        # 3) Save returned WAV
-        wav_path.write_bytes(resp.content)
+        print(f"[generate_audio] Posting to {audio_api_url}")
+       with (
+            vs_path.open("rb") as f,
+            requests.post(
+                audio_api_url,
+                data=data,
+                files={"voice_file": (vs_path.name, f, "audio/mpeg")},
+                timeout=(5, 600),
+                stream=True,
+            ) as resp,
+        ):
+            resp.raise_for_status()
+            content_type = resp.headers.get("Content-Type", "").lower()
+            if "application/json" in content_type:
+                # Try to parse the message to help debugging
+                try:
+                    payload = resp.json()
+                    print(f"[generate_audio] Unexpected JSON response: {payload}")
+                except Exception:
+                    print("[generate_audio] Unexpected JSON response (could not parse).")
+                return None
+
+            # Write the binary WAV to disk in a temp file, then atomically move
+            tmp_path = wav_path.with_suffix(".wav.part")
+            with tmp_path.open("wb") as out:
+                for chunk in resp.iter_content(chunk_size=1024 * 256):
+                    if chunk:
+                        out.write(chunk)
+                out.flush()
+                os.fsync(out.fileno())
+            if tmp_path.stat().st_size == 0:
+                print("[generate_audio] Empty file received")
+                tmp_path.unlink(missing_ok=True)
+                return None
+            tmp_path.replace(wav_path)
         print(f"[generate_audio] OK -> {wav_path}")
         return str(wav_path)
 
@@ -352,6 +418,8 @@ def generate_video(
 
     video_api_url = os.getenv("GEN_VIDEO", "http://localhost:8000/infer")
     job_folder = job_dir(prompt_id)
+    job_folder.mkdir(parents=True, exist_ok=True)
+
     temp_path = job_folder / f".{video_counter}.mp4.part"
     final_path = job_folder / f"{video_counter}.mp4"
 
@@ -368,16 +436,26 @@ def generate_video(
     if not Path(source_path).is_file():
         print(f"[generate_video] Source image not found: {source_path}")
         return None
-    files = {
-        "audio": ("audio.wav", open(resolved_audio, "rb"), "audio/wav"),
-        "source": ("image.png", open(source_path, "rb"), "image/png"),
-    }
-    is_debug = os.getenv("DEBUG", "not debug")
+
+    is_debug = os.getenv("DEBUG", "").lower() in {"debug"}
     data = {"debug": is_debug}
 
     try:
         print(f"[generate_video] Posting to {video_api_url}")
-        with requests.post(video_api_url, files=files, data=data, stream=True, timeout=(5, 600)) as resp:
+        with (
+            open(resolved_audio, "rb") as audio_f,
+            open(source_path, "rb") as image_f,
+            requests.post(
+                video_api_url,
+                files={
+                    "audio": ("audio.wav", audio_f, "audio/wav"),
+                    "source": ("image.png", image_f, "image/png"),
+                },
+                data=data,
+                stream=True,
+                timeout=(5, 600),
+            ) as resp,
+        ):
             if resp.status_code >= 400:
                 print(f"[generate_video] HTTP {resp.status_code}: {resp.text[:200]}")
                 return None
@@ -392,6 +470,7 @@ def generate_video(
 
         if temp_path.stat().st_size == 0:
             print("[generate_video] empty file received")
+            temp_path.unlink(missing_ok=True)
             return None
 
         temp_path.replace(final_path)
@@ -404,12 +483,6 @@ def generate_video(
     except Exception as e:
         print(f"[generate_video] Unexpected error: {e}")
         return None
-    finally:
-        for v in files.values():
-            try:
-                v[1].close()
-            except Exception:
-                pass
 
 
 # ---------------------------
@@ -460,8 +533,12 @@ def _worker_loop() -> None:
 
         try:
             with SessionLocal() as db:
+                audio_done = False
+                video_started = False
+                video_done = False
+                _update_avatar_generation_step_status(pid, task.slideNo, audio="IN_PROGRESS")
                 aurl = generate_audio(
-                    slide_text=task.text,
+                    voiceTrack=task.text,
                     course_id=task.courseId,
                     prompt_id=pid,
                     user_profile=task.userProfile,
@@ -469,29 +546,44 @@ def _worker_loop() -> None:
                     db=db,
                     slot=getattr(task, "slot", "default"),
                 )
-
-                # fetch the image while DB session is open
-                source_path = None
-                try:
-                    img = avatar_queries.get_latest_image_for_course_slot(
-                        db, course_id=task.courseId, slot=getattr(task, "slot", "default")
-                    )
-                    source_path = img.file_path
-                except Exception as e:
-                    print(f"[worker] no image for course/slot: {e!r}")
-                    source_path = None
-
-            if aurl:
-                generate_video(
+                if aurl:
+                  _update_avatar_generation_step_status(pid, task.slideNo, audio="DONE")
+                  audio_done = True
+                  _update_avatar_generation_step_status(pid, task.slideNo, video="IN_PROGRESS")
+                  video_started = True
+                  
+                  # fetch the image while DB session is open
+                  source_path = None
+                  try:
+                      img = avatar_queries.get_latest_image_for_course_slot(
+                          db, course_id=task.courseId, slot=getattr(task, "slot", "default")
+                      )
+                      source_path = img.file_path
+                  except Exception as e:
+                      print(f"[worker] no image for course/slot: {e!r}")
+                      source_path = None
+                      
+                  vpath = generate_video(
                     audio_path=aurl,
                     prompt_id=pid,
                     course_id=task.courseId,
                     user_profile=task.userProfile,
                     video_counter=task.slideNo,
                     source_image_path=source_path,  # ✅ pass image path here
-                )
+                  )
+                  if vpath:
+                    _update_avatar_generation_step_status(pid, task.slideNo, video="DONE")
+                    video_done = True
+                  else:
+                    _update_avatar_generation_step_status(pid, task.slideNo, video="FAILED")
+            else:
+                _update_avatar_generation_step_status(pid, task.slideNo, audio="FAILED")
 
         except Exception as e:
+            if not audio_done:
+                _update_avatar_generation_step_status(pid, task.slideNo, audio="FAILED")
+            if video_started and not video_done:
+                _update_avatar_generation_step_status(pid, task.slideNo, video="FAILED")
             print(f"[worker] error on slide {task.slideNo} for {pid}: {e!r}")
             job = JOBS.get(pid)
             if job:
