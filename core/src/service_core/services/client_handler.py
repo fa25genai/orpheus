@@ -1,5 +1,4 @@
 import asyncio
-import json
 import os
 from typing import Any, Dict, List, Union
 import logging
@@ -19,8 +18,10 @@ from service_core.services import (
 from service_core.services.user_summary import summarize_content_with_llama
 from service_status.models.status_patch import StatusPatch
 from service_status.models.step_status import StepStatus
+from service_core.services.services_models.voice_track import VoiceTrackResponse
 
 load_dotenv()
+
 
 DI_API_URL = "http://docint:25565"
 SLIDES_API_URL = "http://slides:30606"
@@ -33,7 +34,7 @@ STATUS_API_URL = "http://status-service:19910"
 # AVATAR_API_URL = "http://localhost:9000"
 # STATUS_API_URL = "http://localhost:19910"
 
-DEBUG = int(os.environ.get("ORPHEUS_DEBUG", "0"))
+DEBUG = int(os.getenv("ORPHEUS_DEBUG", "0"))    # DEBUG enabled by default
 
 logger = logging.getLogger("Client Handler")
 
@@ -86,22 +87,28 @@ async def send_summary_to_endpoint(
     except Exception as e:
         print("Error sending summary to endpoint:", e, flush=True)
 
+async def summarize_and_send(prompt_id: str, content: List[Dict[str, Any]], client: httpx.AsyncClient) -> None:
+    try:
+        summary: str
+        if DEBUG:
+            summary = "A for loop is a control flow statement that allows code to be executed repeatedly, typically used to iterate over sequences or iterable objects.\n\nIt features a basic syntax that specifies an item variable and an iterable collection of objects, such as a list or tuple.\n\nFor loops can be nested.\n\nThey often utilize functions like range() to generate number sequences.\n\nFlow control options include break to exit the loop prematurely, and continue to skip the current iteration.\n\nAn else block can be added, which executes after the loop finishes unless the loop was terminated by a break."
+            return        
+        summary = summarize_content_with_llama(content)
+        await send_summary_to_endpoint(prompt_id, summary, client)
+    except Exception as e:
+        print("Error occured when summarizing: ", e, flush=True)
 
-async def summarize_and_send(
-    prompt_id: str, content: List[Dict[str, Any]], client: httpx.AsyncClient
-) -> None:
-    summary = summarize_content_with_llama(content)
-    await send_summary_to_endpoint(prompt_id, summary, client)
 
 
 async def query_document_intelligence(
     subqueries: List[str], client: httpx.AsyncClient, prompt_id: str
 ) -> List[Dict[str, Any]]:
     tracker.log("Querying document intelligence")
-    await update_status(
-        prompt_id, StatusPatch(stepLookup=StepStatus.IN_PROGRESS), client
-    )
-    if DEBUG:
+    await update_status(prompt_id, StatusPatch(
+            stepLookup=StepStatus.IN_PROGRESS
+        ), client)
+    # if DEBUG:
+    if True:    # Remove when DI is ready with endpoint
         return mock_service.create_retrieved_content()
 
     subquery_for_api = subqueries[0] if subqueries else ""
@@ -113,20 +120,20 @@ async def query_document_intelligence(
     )
     di_response.raise_for_status()
     di_data: List[Dict[str, Any]] = di_response.json()
-    await update_status(prompt_id, StatusPatch(stepLookup=StepStatus.DONE), client)
     return di_data
 
 
-async def generate_script(
-    retrieved_content: List[Dict[str, Any]], prompt_id: str, client: httpx.AsyncClient
-) -> Dict[str, Any]:
-    tracker.log("Generating script")
-    await update_status(
-        prompt_id,
-        StatusPatch(stepLectureScriptGeneration=StepStatus.IN_PROGRESS),
-        client,
-    )
+async def generate_script(retrieved_content: List[Dict[str, Any]], prompt_id: str, prompt_request: PromptRequest, client: httpx.AsyncClient) -> Dict[str, Any]:
     try:
+        tracker.log("Generating script")
+        await update_status(prompt_id, StatusPatch(
+                stepLectureScriptGeneration=StepStatus.IN_PROGRESS
+            ), client)
+        
+        if prompt_request.user_persona is None:
+                print("ERROR: User persona must be defined for processing.", flush=True)
+                raise ValueError("User persona must be defined")
+        
         if DEBUG:
             output: Dict[str, Any] = mock_service.create_script()
             await update_status(
@@ -135,13 +142,11 @@ async def generate_script(
                 client,
             )
             return output
-
-        refined_output: Dict[str, Any] = script_generation.generate_script(
-            retrieved_content, mock_service.create_user()
-        )
-        await update_status(
-            prompt_id, StatusPatch(stepLectureScriptGeneration=StepStatus.DONE), client
-        )
+    
+        refined_output: Dict[str, Any] = script_generation.generate_script(retrieved_content, prompt_request.user_persona)
+        await update_status(prompt_id, StatusPatch(
+            stepLectureScriptGeneration=StepStatus.DONE
+        ), client)
     except Exception as e:
         print(e)
         refined_output = {}
@@ -162,53 +167,43 @@ async def generate_slides(
     client: httpx.AsyncClient,
 ) -> Dict[str, Any]:
     tracker.log("Generating slides")
-    await update_status(
-        prompt_id,
-        StatusPatch(stepSlideStructureGeneration=StepStatus.IN_PROGRESS),
-        client,
-    )
+    try:
+        await update_status(prompt_id, StatusPatch(
+                stepSlideStructureGeneration=StepStatus.IN_PROGRESS
+            ), client)
 
-    # FIX: [no-any-return], [no-untyped-call]
-    if DEBUG:
-        output = mock_service.create_slides()
-        await update_status(
-            prompt_id, StatusPatch(stepSlideStructureGeneration=StepStatus.DONE), client
+        if prompt_request.user_persona is None:
+                print("ERROR: User persona must be defined for processing.", flush=True)
+                raise ValueError("User persona must be defined")
+        
+        slides_context = {
+            "courseId": prompt_request.course_id,
+            "promptId": str(prompt_id),
+            "lectureScript": lecture_script,
+            "user": prompt_request.user_persona.model_dump(mode="json"),
+            "assets": refined_output.get("assets", ""),
+        }
+
+        slides_response = await client.post(
+            f"{SLIDES_API_URL}/v1/slides/generate",
+            json=slides_context,
+            timeout=300.0,
         )
-        return output
-
-    slides_context = {
-        "courseId": prompt_request.course_id,
-        "promptId": str(prompt_id),
-        "lectureScript": lecture_script,
-        # FIX: [no-untyped-call]
-        "user": json.loads(
-            mock_service.create_user().model_dump_json(
-                by_alias=True, exclude_unset=True
-            )
-        ),
-        "assets": refined_output.get("assets", ""),
-    }
-
-    slides_response = await client.post(
-        f"{SLIDES_API_URL}/v1/slides/generate",
-        json=slides_context,
-        timeout=300.0,
-    )
-    slides_response.raise_for_status()
-    slides_data: Dict[str, Any] = slides_response.json()
-    await update_status(
-        prompt_id, StatusPatch(stepSlideStructureGeneration=StepStatus.DONE), client
-    )
-    return slides_data
+        slides_response.raise_for_status()
+        slides_data: Dict[str, Any] = slides_response.json()
+        await update_status(prompt_id, StatusPatch(
+                stepSlideStructureGeneration=StepStatus.DONE
+            ), client)
+        return slides_data
+    except Exception as e:
+        print(f"Error generating slides for prompt {prompt_id}: {e}", flush=True)
+        await update_status(prompt_id, StatusPatch(
+            stepSlideStructureGeneration=StepStatus.FAILED
+        ), client)
+        return {}
 
 
-async def generate_voice_scripts(
-    lecture_script: str,
-    slides_data: Dict[str, Any],
-    user: UserProfile,
-    client: httpx.AsyncClient,
-    prompt_id: str,
-) -> List[asyncio.Task[httpx.Response]]:
+async def generate_voice_scripts(lecture_script: str, slides_data: Dict[str, Any], user: UserProfile, client: httpx.AsyncClient, prompt_id: str, course_id: str) -> List[asyncio.Task[httpx.Response]]:
     tracker.log("Generating voice script")
     try:
         voice_track: Dict[str, Any]
@@ -226,9 +221,18 @@ async def generate_voice_scripts(
             lecture_script, slides_data, user
         )
 
-        slides = voice_track.get("slides", [])
+        slides = voice_track.get("slideMessages", [])
+        voice_track_request = VoiceTrackResponse(
+        promptId=prompt_id,
+        courseId=course_id,
+        voiceTrack="",
+        slideNumber=0,
+        userProfile=user
+    )
         for index, slide_data in enumerate(slides):
-            task = generate_avatar_video(slide_data, index, client)
+            voice_track_request.slideNumber = index
+            voice_track_request.voiceTrack = slide_data
+            task = generate_avatar_video(voice_track_request.model_dump(mode="json"), index, client)
             if task:
                 tasks.append(task)
         return tasks
@@ -281,15 +285,15 @@ async def process_prompt(prompt_id: str, prompt_request: PromptRequest) -> None:
                 summarize_and_send(prompt_id, retrieved_content, client)
             )
 
-            refined_output = await generate_script(retrieved_content, prompt_id, client)
+            refined_output = await generate_script(retrieved_content, prompt_id, prompt_request, client)
             lecture_script = refined_output.get("lectureScript", "")
             slides_data: Dict[str, Any] = await generate_slides(
                 prompt_request, prompt_id, lecture_script, refined_output, client
             )
 
             if prompt_request.user_persona is None:
-                tracker.log("ERROR: User profile must be defined for voice scripts.")
-                raise ValueError("User profile must be defined for voice scripts.")
+                tracker.log("ERROR: User persona must be defined for voice scripts.")
+                raise ValueError("User persona must be defined for voice scripts.")
 
             avatar_tasks: List[
                 asyncio.Task[httpx.Response]
@@ -299,6 +303,7 @@ async def process_prompt(prompt_id: str, prompt_request: PromptRequest) -> None:
                 prompt_request.user_persona,
                 client,
                 prompt_id,
+                prompt_request.course_id
             )
 
             if avatar_tasks:

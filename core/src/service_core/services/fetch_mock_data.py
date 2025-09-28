@@ -138,21 +138,21 @@ def create_slides() -> Dict[str, Any]:
 
 def create_voice_script(index=0) -> Dict[str, Any]:
     slides=[
-            "Willkommen zur Vorlesung über For-Loops! Wir werden heute lernen, wie man Aktionen in Programmen wiederholt – ähnlich wie beim Wiederholen von Liegestützen beim Training. For-Loops ermöglichen es uns, Code effizienter und übersichtlicher zu gestalten.",
-            "Denken Sie an Liegestütze: Wir wiederholen eine Aktion so lange, bis ein Ziel erreicht ist. Dieses Prinzip nutzen wir auch in Programmen, um Aufgaben effizient zu automatisieren.",
-            "Stellen Sie sich vor, Sie müssen eine Aktion für jeden Benutzer in einem System ausführen. Oder eine Aufgabe wiederholt eine bestimmte Anzahl von Malen erledigen. Genau das ermöglicht uns ein For-Loop – die Wiederholung von Aktionen im Code.",
-            "Hier sehen Sie ein Beispiel für einen For-Loop in Java: `for (int i = 0; i < 10; i++) { System.out.println(i); }`. Dieser Loop startet bei 0 und wiederholt die Aktion, bis i den Wert 9 erreicht.",
-            "Was glauben Sie, welche Ausgabe dieses Programm erzeugt? Nehmen Sie sich einen Moment Zeit zum Nachdenken.",
-            "Die Ausgabe des Programms ist: 0, 1, 2, 3, 4, 5, 6, 7, 8, 9. Der Loop beginnt bei 0 und endet bei 9, da die Bedingung i < 10 ist.",
-            "Lassen Sie uns die Ausgabe genauer betrachten: Der Loop startet bei 0 und endet bei 9. Das bedeutet, dass die Aktion genau zehnmal ausgeführt wird.",
-            "Kommen wir nun zu den Elementen eines For-Loops. Ein For-Loop besteht aus drei Hauptbestandteilen: Initialisierung, Bedingung und Modifikation.",
-            "Das erste Element ist die Initialisierung. Hier wird der Startwert festgelegt, der für die erste Iteration des Loops verwendet wird.",
-            "Das zweite Element ist die Bedingung. Solange  diese Bedingung wahr ist, wird der Loop wiederholt. Diese Bedingung wird auch vor der ersten Iteration überprüft.",
-            "Das dritte Element ist die Modifikation. Hier wird der Wert verändert, damit wir schließlich zu einem Endzustand gelangen.",
-            "For-Loops bieten viele Vorteile: Sie reduzieren den Codeumfang, bieten eine prägnante Syntax zum Zählen und sind vielseitig einsetzbar.",
-            "For-Loops können für verschiedene Zwecke verwendet werden: zum Zählen, zum Durchlaufen eines Arrays oder zum periodischen Ausführen einer bestimmten Aktion.",
-            "Vielen Dank für Ihre Aufmerksamkeit!"
-        ]
+        "Welcome to this lecture on For-Loops! Today we will learn how to repeat actions in programs—similar to repeating push-ups during training. For-loops enable us to make code more efficient and streamlined.",
+        "Think of push-ups: We repeat an action until a goal is reached. We also use this principle in programs to efficiently automate tasks.",
+        "Imagine you need to execute an action for every user in a system. Or complete a task repeatedly a certain number of times. This is exactly what a For-Loop allows us to do—the repetition of actions in code.",
+        "Here you see an example of a Java For-Loop: `for (int i = 0; i < 10; i++) { System.out.println(i); }`. This loop starts at 0 and repeats the action until i reaches the value 9.",
+        "What output do you think this program produces? Take a moment to think.",
+        "The output of the program is: 0, 1, 2, 3, 4, 5, 6, 7, 8, 9. The loop starts at 0 and ends at 9 because the condition is i < 10.",
+        "Let's look more closely at the output: The loop starts at 0 and ends at 9. This means the action is executed exactly ten times.",
+        "Now, let's look at the elements of a For-Loop. A For-Loop consists of three main components: Initialization, Condition, and Modification.",
+        "The first element is the Initialization. Here, the starting value is set, which is used for the first iteration of the loop.",
+        "The second element is the Condition. As long as this condition is true, the loop is repeated. This condition is also checked before the first iteration.",
+        "The third element is the Modification. This alters the value so that we eventually reach a terminating state.",
+        "For-loops offer many advantages: They reduce code volume, offer concise syntax for counting, and are versatile.",
+        "For-loops can be used for various purposes: for counting, for iterating over an array, or for periodically executing a specific action.",
+        "Thank you for your attention!"
+    ]
     print("Slide: ", slides[index])
     voice_track_response = VoiceTrackResponse(
         promptId=create_slides()["promptId"],
@@ -162,5 +162,5 @@ def create_voice_script(index=0) -> Dict[str, Any]:
         userProfile=create_user(),
         metadata=""
     )
-    response = json.loads(voice_track_response.model_dump_json(by_alias=True, exclude_unset=True))
-    return response
+    # response = json.loads(voice_track_response.model_dump_json(by_alias=True, exclude_unset=True))
+    return voice_track_response.model_dump(mode="json")
