@@ -38,6 +38,8 @@ exclude = [
     "src/service_core/apis",
     "src/service_core/models",
     "src/service_core/services/fetch_mock_data.py",
+    "src/service_status/apis",
+    "src/service_status/models",
 ]
 
 [tool.ruff.lint]
@@ -55,4 +57,4 @@ no_implicit_optional = true
 mypy_path = "src"
 namespace_packages = true
 explicit_package_bases = true
-exclude = "(src/service_core/apis|src/service_core/models|src/service_core/services/fetch_mock_data.py)"
+exclude = "(src/service_core/apis|src/service_core/models|src/service_core/services/fetch_mock_data.py|src/service_status/apis|src/service_status/models)"
