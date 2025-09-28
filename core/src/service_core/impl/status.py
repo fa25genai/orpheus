@@ -80,9 +80,6 @@ class StatusPatch(BaseModel):
             exclude={},
             exclude_none=True,
         )
-        # override the default output from pydantic by calling `to_dict()` of slide_structure
-        if self.slide_structure:
-            _dict['slideStructure'] = self.slide_structure.to_dict()
         return _dict
 
     @classmethod
@@ -102,7 +99,6 @@ class StatusPatch(BaseModel):
             "stepSlideGeneration": obj.get("stepSlideGeneration"),
             "stepSlidePostprocessing": obj.get("stepSlidePostprocessing"),
             "stepsAvatarGeneration": obj.get("stepsAvatarGeneration"),
-            "lectureSummary": obj.get("lectureSummary"),
-            "slideStructure": SlideStructure.from_dict(obj.get("slideStructure")) if obj.get("slideStructure") is not None else None
+            "lectureSummary": obj.get("lectureSummary")
         })
         return _obj
