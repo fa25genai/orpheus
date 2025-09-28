@@ -16,7 +16,7 @@ import json
 from typing import Any, Dict
 
 from service_core.models.user_profile import UserProfile
-from service_core.services.helpers.debug import debug_print, enable_debug
+from service_core.services.helpers.debug import debug_print
 from service_core.services.helpers.llm import ask_llm
 from service_core.services.helpers.loaders import load_prompt
 
