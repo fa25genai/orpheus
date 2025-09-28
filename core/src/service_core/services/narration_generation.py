@@ -19,6 +19,7 @@ from service_core.models.user_profile import UserProfile
 from service_core.services.helpers.debug import debug_print, enable_debug
 from service_core.services.helpers.llm import getLLM
 from service_core.services.helpers.loaders import load_prompt
+from service_core.services.services_models.slides import SlidesEnvelope
 
 
 def generate_narrations(
@@ -88,7 +89,7 @@ def generate_narrations(
         narration_history += f"Slide {i + 1} Narration: {narration}\n"
         slide_messages.append(narration)
     # Prepare output data with actual user profile
-    output_data = {
+    output_data: Dict[str, Any] = {
         "slideMessages": slide_messages,
         "promptId": example_slides["promptId"],
         "courseId": user_profile.enrolled_courses[0] if user_profile.enrolled_courses else None,
@@ -97,5 +98,4 @@ def generate_narrations(
             )
         ),
     }
-
     return output_data

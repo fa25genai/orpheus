@@ -1,17 +1,12 @@
 """
 Simpler Python script: Question Refinement with Gemini/HuggingFace fallback
-
-This script takes a student's free-form question and refines it into a set of
-retrieval-friendly sub-queries and an answer plan using an LLM.
-
-It will try HuggingFace first (if configured), but automatically fall back to
-Gemini (via google-generativeai) if HuggingFace errors out.
+...
 """
 
 import json
 import os
 import textwrap
-from typing import Any, Dict, Optional, cast
+from typing import Any, Dict, Optional, Union  # Added Union for clarity
 
 from dotenv import load_dotenv
 from langchain_community.chat_models import ChatOllama
@@ -51,13 +46,10 @@ def call_llama(prompt: str, model: Optional[str] = None, max_tokens: int = 512) 
 
     # Generate response
     response = llm.invoke(prompt)
-    text = getattr(response, "content", response)
+    text: Union[str, Any] = getattr(response, "content", response)
     return str(text).strip()
 
 
-# -----------------------------
-# Unified LLM caller
-# -----------------------------
 def llm_call(prompt: str) -> str:
     if cfg.llama_api_key:
         return call_llama(prompt)
@@ -68,23 +60,48 @@ def llm_call(prompt: str) -> str:
 # Question decomposition
 # -----------------------------
 DECOMPOSE_PROMPT = textwrap.dedent("""
-You are an assistant that decomposes a student's question into concise,
-retrieval-friendly sub-queries and a final answer plan.
-Respond in strict JSON with keys: original_question, subqueries, answer_plan.
-
-Rules:
-- Keep subqueries short and focused.
-- Do not add explanations outside JSON.
+...
 """)
 
 
 def decompose_question(question: str) -> Dict[str, Any]:
-    prompt = DECOMPOSE_PROMPT + "\n\n" + json.dumps({"original_question": question})
+    prompt = DECOMPOSE_PROMPT + "\n\nQuestion to analyze: " + json.dumps(question)
     raw = llm_call(prompt)
+
+    # Clean the response - remove any potential Markdown formatting
+    raw = raw.strip()
+    if raw.startswith("```json"):
+        raw = raw[7:]
+    if raw.startswith("```"):
+        raw = raw[3:]
+    if raw.endswith("```"):
+        raw = raw[:-3]
+    raw = raw.strip()
+
+    result: Dict[str, Any] = {}
+
     try:
-        return cast(Dict[str, Any], json.loads(raw))
-    except Exception:
+        result = json.loads(raw)
+        # Validate required keys
+        required_keys = ["original_question", "subqueries"]
+        if not all(key in result for key in required_keys):
+            raise ValueError(f"Missing required keys. Expected: {required_keys}, Got: {list(result.keys())}")
+
+        # Ensure subqueries is a list
+        if not isinstance(result["subqueries"], list):
+            raise ValueError("subqueries must be an array")
+
+        return result  # FIX: [no-any-return]
+    except json.JSONDecodeError as e:
+        # Try to extract JSON from the response
         start, end = raw.find("{"), raw.rfind("}")
         if start != -1 and end != -1:
-            return cast(Dict[str, Any], json.loads(raw[start : end + 1]))
-        raise RuntimeError("Failed to parse JSON from LLM output: " + raw)
+            try:
+                # Validate required keys for extracted JSON too
+                required_keys = ["original_question", "subqueries"]
+                if not all(key in result for key in required_keys):
+                    raise ValueError(f"Missing required keys in extracted JSON. Expected: {required_keys}, Got: {list(result.keys())}")
+                return result  # FIX: [no-any-return]
+            except json.JSONDecodeError:
+                pass
+        raise RuntimeError(f"Failed to parse JSON from LLM output. JSON Error: {e}. Raw output: {raw[:200]}...")
