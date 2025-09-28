@@ -6,7 +6,7 @@ Simpler Python script: Question Refinement with Gemini/HuggingFace fallback
 import json
 import os
 import textwrap
-from typing import Any, Dict, Optional, Union  # Added Union for clarity
+from typing import Any, Dict, Optional
 
 from dotenv import load_dotenv
 from langchain_community.chat_models import ChatOllama
