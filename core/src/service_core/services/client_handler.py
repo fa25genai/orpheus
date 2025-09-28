@@ -17,7 +17,7 @@ from service_core.services import (
     script_generation,
 )
 from service_core.services.services_models.slides import SlidesEnvelope
-from service_core.services.user_summary import summarize_and_send
+from service_core.services.user_summary import summarize_content_with_llama
 
 load_dotenv()
 
@@ -45,6 +45,9 @@ async def decompose_inputs(prompt_request: PromptRequest, prompt_id: str, client
     decomposed_questions: List[str]
     if DEBUG:
         decomposed_questions = mock_service.create_decomposed_question().get("subqueries", [])
+        await update_status(prompt_id, StatusPatch(
+            stepUnderstanding=StepStatus.DONE
+        ), client)
         return decomposed_questions
 
     decomposed_questions = decompose_input.decompose_question(prompt_request.prompt).get("subqueries", [])
@@ -53,6 +56,20 @@ async def decompose_inputs(prompt_request: PromptRequest, prompt_id: str, client
             stepUnderstanding=StepStatus.DONE
         ), client)
     return decomposed_questions
+
+async def send_summary_to_endpoint(prompt_id: str, summary: str, client: httpx.AsyncClient) -> None:
+    
+    try:
+        await update_status(prompt_id, StatusPatch(
+            lectureSummary=summary
+        ), client)
+        print("Summary sent successfully", flush=True)
+    except Exception as e:
+        print("Error sending summary to endpoint:", e, flush=True)
+
+async def summarize_and_send(prompt_id: str, content: Dict[str, Any], client: httpx.AsyncClient) -> None:
+    summary = summarize_content_with_llama(content)
+    await send_summary_to_endpoint(prompt_id, summary, client)
 
 
 async def query_document_intelligence(subqueries: List[str], client: httpx.AsyncClient, prompt_id: str) -> Dict[str, Any]:
@@ -86,6 +103,9 @@ async def generate_script(retrieved_content: Dict[str, Any], prompt_id: str, cli
     try:
         if DEBUG:
             output: Dict[str, Any] = mock_service.create_script()
+            await update_status(prompt_id, StatusPatch(
+                stepLectureScriptGeneration=StepStatus.DONE
+            ), client)
             return output
 
         refined_output: Dict[str, Any] = script_generation.generate_script(retrieved_content, mock_service.create_user())
@@ -110,7 +130,11 @@ async def generate_slides(prompt_request: PromptRequest, prompt_id: str, lecture
 
     # FIX: [no-any-return], [no-untyped-call]
     if DEBUG:
-        return mock_service.create_slides()
+        output = mock_service.create_slides()
+        await update_status(prompt_id, StatusPatch(
+            stepSlideStructureGeneration=StepStatus.DONE
+        ), client)
+        return output
 
     slides_context = {
         "courseId": prompt_request.course_id,
@@ -159,9 +183,6 @@ async def generate_voice_scripts(lecture_script: str, slides_data: Dict[str, Any
 
     except Exception as e:
         print("Error generating voice track:", e, flush=True)
-        await update_status(prompt_id, StatusPatch(
-            stepsAvatarGeneration=StepStatus.FAILED
-        ), client)
         return []
 
 
@@ -195,7 +216,7 @@ async def process_prompt(prompt_id: str, prompt_request: PromptRequest) -> None:
             subqueries = await decompose_inputs(prompt_request, prompt_id, client)
             retrieved_content = await query_document_intelligence(subqueries, client, prompt_id)
 
-            asyncio.create_task(summarize_and_send(retrieved_content, client))
+            asyncio.create_task(summarize_and_send(prompt_id, retrieved_content, client))
 
             refined_output = await generate_script(retrieved_content, prompt_id, client)
             lecture_script = refined_output.get("lectureScript", "")

@@ -28,22 +28,3 @@ def summarize_content_with_llama(retrieved_content: Dict[str, Any]) -> str:
     user_summary: str = ask_llm(prompt)
     print("Generated summary:", user_summary, flush=True)
     return user_summary
-
-
-async def send_summary_to_endpoint(summary: str, client: httpx.AsyncClient) -> None:
-    summary_endpoint = "http://summary-receiver:9001/v1/summary"
-    try:
-        response = await client.post(
-            summary_endpoint,
-            json={"summary": summary},
-            timeout=60.0,
-        )
-        response.raise_for_status()
-        print("Summary sent successfully", flush=True)
-    except Exception as e:
-        print("Error sending summary to endpoint:", e, flush=True)
-
-
-async def summarize_and_send(content: Dict[str, Any], client: httpx.AsyncClient) -> None:
-    summary = summarize_content_with_llama(content)
-    await send_summary_to_endpoint(summary, client)
