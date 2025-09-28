@@ -1,0 +1,57 @@
+{
+  "test_metadata": {
+    "start_time": "2025-09-28T12:03:44.885854",
+    "test_name": "Ingestion Service Test",
+    "test_version": "1.0",
+    "description": "Test complete PDF ingestion pipeline",
+    "database_url": "http://localhost:28947",
+    "end_time": "2025-09-28T12:04:13.173518",
+    "duration_seconds": 28.287664
+  },
+  "processed_pdfs": [
+    {
+      "filename": "ITP2425 W10U03 Syntax trees.pdf",
+      "course_id": "ITP2425_W10U03_Syntax_trees",
+      "file_size_bytes": 835358,
+      "processing_start": "2025-09-28T12:03:44.891310",
+      "document_id": "ITP2425_W10U03_Syntax_trees_20250928_120344",
+      "success": true,
+      "error": null,
+      "slides_processed": 15,
+      "images_processed": 0,
+      "processing_end": "2025-09-28T12:03:49.925585"
+    },
+    {
+      "filename": "ITP2425 W10U01 Overview.pdf",
+      "course_id": "ITP2425_W10U01_Overview",
+      "file_size_bytes": 2069148,
+      "processing_start": "2025-09-28T12:03:49.929072",
+      "document_id": "ITP2425_W10U01_Overview_20250928_120349",
+      "success": true,
+      "error": null,
+      "slides_processed": 14,
+      "images_processed": 0,
+      "processing_end": "2025-09-28T12:04:08.488494"
+    },
+    {
+      "filename": "ITP2425 W10U02 Domain specific languages.pdf",
+      "course_id": "ITP2425_W10U02_Domain_specific_languages",
+      "file_size_bytes": 692054,
+      "processing_start": "2025-09-28T12:04:08.491917",
+      "document_id": "ITP2425_W10U02_Domain_specific_languages_20250928_120408",
+      "success": true,
+      "error": null,
+      "slides_processed": 21,
+      "images_processed": 0,
+      "processing_end": "2025-09-28T12:04:13.169034"
+    }
+  ],
+  "errors": [],
+  "statistics": {
+    "total_pdfs": 3,
+    "successful_uploads": 3,
+    "failed_uploads": 0,
+    "total_slides": 50,
+    "total_images": 0
+  }
+}
