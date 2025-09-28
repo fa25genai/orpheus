@@ -233,7 +233,9 @@ class RetrievalService:
         print(f"Health check completed: {health_status['status']}")
         return health_status
 
+
 _instance: Optional[RetrievalService] = None
+
 
 def get_retrieval_service() -> RetrievalService:
     global _instance

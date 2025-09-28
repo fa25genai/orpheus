@@ -8,7 +8,6 @@ from docint_app.services.ollama_client_service import get_ollama_client
 
 
 class EmbeddingService:
-
     def __init__(self):
         self.client = get_ollama_client()
         self.model = "nomic-embed-text:latest"
@@ -24,7 +23,7 @@ class EmbeddingService:
             List of float values representing the embedding vector
         """
         print("Generating embedding for text...")
-        
+
         response = self.client.embeddings(model=self.model, prompt=text)
         print(f"Received embedding of dimension {len(response['embedding'])}")
         print(f"Response: {response}")
@@ -46,7 +45,9 @@ class EmbeddingService:
             embeddings.append(embedding)
         return embeddings
 
+
 _instance: Optional[EmbeddingService] = None
+
 
 def get_embedding_service() -> EmbeddingService:
     global _instance

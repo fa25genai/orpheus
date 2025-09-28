@@ -10,7 +10,6 @@ from docint_app.services.embedding_service import get_embedding_service
 from docint_app.vectorstore.weaviate_graph_store import WeaviateGraphStore
 
 
-
 class _IngestResults(TypedDict):
     course_id: str
     document_id: str
@@ -159,7 +158,9 @@ class IngestionService:
 
         return results
 
+
 _instance: Optional[IngestionService] = None
+
 
 def get_ingestion_service() -> IngestionService:
     global _instance

@@ -90,7 +90,9 @@ class PDFImageExtractorService:
         print(f"\nExtraktion abgeschlossen. Seiten: {len(result)} | Bilder insgesamt: {total_images}")
         return result
 
+
 _instance: Optional[PDFImageExtractorService] = None
+
 
 def get_pdf_image_extractor_service() -> PDFImageExtractorService:
     global _instance

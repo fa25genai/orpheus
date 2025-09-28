@@ -68,23 +68,20 @@ class ExtractTextService:
             print("Error converting PDF to images. Ensure Poppler is installed and the path is correct.")
             print(f"Details: {e}")
             return []
-        
+
         # Parallelize text extraction from pages
         def extract_from_page(page_data):
             i, page = page_data
             print(f"Processing page {i + 1}")
             extracted_text = self.extract_text_from_slide(page)
             return i, extracted_text + "\n\n"
-        
+
         texts = [""] * len(pages)  # Pre-allocate list to maintain order
-        
+
         with ThreadPoolExecutor(max_workers=16) as executor:
             # Submit all tasks
-            future_to_page = {
-                executor.submit(extract_from_page, (i, page)): i 
-                for i, page in enumerate(pages)
-            }
-            
+            future_to_page = {executor.submit(extract_from_page, (i, page)): i for i, page in enumerate(pages)}
+
             # Collect results as they complete
             for future in as_completed(future_to_page):
                 try:
@@ -95,7 +92,7 @@ class ExtractTextService:
                     page_index = future_to_page[future]
                     print(f"Error processing page {page_index + 1}: {e}")
                     texts[page_index] = ""
-        
+
         print(f"Extracted text from {len(texts)} slides.")
         return texts
 
@@ -117,7 +114,9 @@ class ExtractTextService:
         except IOError as e:
             print(f"An error occurred while writing to the file: {e}")
 
-_instance : Optional[ExtractTextService] = None
+
+_instance: Optional[ExtractTextService] = None
+
 
 def get_extract_text_service() -> ExtractTextService:
     global _instance

@@ -98,7 +98,9 @@ class ImageDescriptionService:
 
         return out
 
+
 _instance: Optional[ImageDescriptionService] = None
+
 
 def get_image_description_service() -> ImageDescriptionService:
     global _instance
