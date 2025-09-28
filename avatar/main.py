@@ -9,6 +9,7 @@ from threading import Event, Thread
 from time import sleep
 from typing import Dict, List, Literal, Optional
 from uuid import UUID
+import media.avatar_updates as avatar_updates
 
 import requests
 from fastapi import Depends, FastAPI, File, HTTPException, Request, Response, UploadFile, status
@@ -22,7 +23,6 @@ from typing_extensions import Annotated
 
 import media.avatar_media as media
 import media.avatar_queries as avatar_queries
-import media.avatar_updates as avatar_updates
 
 
 app = FastAPI(title="Service Video-Generation APIs", version="0.1")
@@ -103,7 +103,11 @@ class GenerationStatusResponse(BaseModel):
 # ---------------------------
 
 
-engine = create_engine(DATABASE_URL, future=True)
+engine = create_engine(
+    DATABASE_URL,
+    future=True,
+    connect_args={"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
+)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, future=True)
 
 
@@ -338,6 +342,7 @@ def generate_video(
     course_id: Optional[str] = None,
     user_profile: Optional[UserProfile] = None,
     video_counter: int = 0,
+    source_image_path: Optional[str] = None,
 ) -> Optional[str]:
     """
     Render MP4 video for one slide using audio and a static image.
@@ -358,11 +363,13 @@ def generate_video(
         return None
 
     # choose your static image
-    source_path = "/app/database/avatar_sample/image_michal.png"
+    source_path = source_image_path
+    if not source_path or not Path(source_path).is_file():
+        print(f"[generate_video] Source image not found: {source_path}")
+        source_path = "/app/database/avatar_sample/image_michal.png"
     if not Path(source_path).is_file():
         print(f"[generate_video] Source image not found: {source_path}")
         return None
-
     files = {
         "audio": ("audio.wav", open(resolved_audio, "rb"), "audio/wav"),
         "source": ("image.png", open(source_path, "rb"), "image/png"),
@@ -432,7 +439,6 @@ def _worker_loop() -> None:
         _purge_stale_jobs(now)
         job = JOBS.get(pid)
 
-        # Sicherheit: Job-Eintrag muss existieren
         if not job:
             job = Job(
                 promptId=pid,
@@ -448,16 +454,13 @@ def _worker_loop() -> None:
         else:
             job.lastTouched = now
 
-        # Status/ETA Update vor Start dieses Slides
         job.status = "IN_PROGRESS"
         job.lastUpdated = now
         job.lastTouched = now
         _estimate_total_seconds_for_new_slide(job)
         JOBS[pid] = job
 
-        # Audio -> Video für genau diesen Slide
         try:
-            # TODO send status in progress for voice for audio with slide number (one based?) and pid
             with SessionLocal() as db:
                 aurl = generate_audio(
                     slide_text=task.text,
@@ -465,24 +468,33 @@ def _worker_loop() -> None:
                     prompt_id=pid,
                     user_profile=task.userProfile,
                     audio_counter=task.slideNo,
-                    db=db,                                  # NEW
-                    slot=getattr(task, "slot", "default"),  # NEW (optional)
+                    db=db,
+                    slot=getattr(task, "slot", "default"),
                 )
 
-            # TODO send status done for voice with slide number (one based?) and pid
+                # fetch the image while DB session is open
+                source_path = None
+                try:
+                    img = avatar_queries.get_latest_image_for_course_slot(
+                        db, course_id=task.courseId, slot=getattr(task, "slot", "default")
+                    )
+                    source_path = img.file_path
+                except Exception as e:
+                    print(f"[worker] no image for course/slot: {e!r}")
+                    source_path = None
+
             if aurl:
-                # TODO send status in progress for video for audio with slide number (one based?) and pid
                 generate_video(
                     audio_path=aurl,
                     prompt_id=pid,
                     course_id=task.courseId,
                     user_profile=task.userProfile,
                     video_counter=task.slideNo,
+                    source_image_path=source_path,   # ✅ pass image path here
                 )
-                # TODO send status done for video with slide number (one based?) and pid
+
         except Exception as e:
             print(f"[worker] error on slide {task.slideNo} for {pid}: {e!r}")
-            # mark job as failed but keep queue going for other jobs
             job = JOBS.get(pid)
             if job:
                 fail_time = _utcnow()
@@ -493,7 +505,6 @@ def _worker_loop() -> None:
                 JOBS[pid] = job
         finally:
             SLIDE_QUEUE.task_done()
-            # Nach jedem Slide die lastUpdated Zeit aktualisieren
             job = JOBS.get(pid)
             if job and job.status != "FAILED":
                 done_time = _utcnow()

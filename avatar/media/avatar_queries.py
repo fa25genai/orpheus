@@ -1,9 +1,8 @@
 # media/avatar_queries.py
 from __future__ import annotations
-from typing import List, Optional
+from typing import List, Optional, Union
 from uuid import UUID
 from datetime import datetime
-from typing import Union
 
 
 from fastapi import HTTPException, status
@@ -11,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from .avatar_media import (
     Avatar,
+    AvatarImage,
     AvatarAudio,    
     AvatarCreatedResponse,
     AvatarImageResponse,
@@ -18,6 +18,24 @@ from .avatar_media import (
     CourseAvatarSlot,
     _normalize_slot,
 )
+
+
+def get_latest_image_for_course_slot(
+    db: Session,
+    course_id: Union[str, UUID],
+    slot: Optional[str]
+) -> AvatarImage:
+    the_slot = _normalize_slot(slot) if slot is not None else _normalize_slot("default")
+    avatar = (
+        db.query(Avatar)
+          .filter(Avatar.course_id == str(course_id), Avatar.slot == the_slot.value)
+          .first()
+    )
+    if not avatar or not avatar.images:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail="No image found for given courseId and slot")
+    return sorted(avatar.images, key=lambda i: i.created_at or datetime.min, reverse=True)[0]
+
 
 def get_latest_audio_for_course_slot(
         db: Session,
