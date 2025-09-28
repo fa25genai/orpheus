@@ -48,7 +48,7 @@ async def lifespan(app: FastAPI) -> Any:
 
 
 logging.basicConfig(
-    level=logging.DEBUG if os.getenv("DEBUG") else logging.INFO,
+    level=logging.DEBUG if os.getenv("ORPHEUS_VERBOSE") else logging.INFO,
     format="%(asctime)s %(levelname)s %(name)s: %(message)s",
     datefmt="%m/%d/%Y %I:%M:%S %p",
 )

@@ -13,8 +13,8 @@ from service_slides.clients.postprocessing.api.postprocessing_api import Postpro
 from service_slides.clients.postprocessing.models.slideset_with_id import SlidesetWithId
 from service_slides.clients.postprocessing.models.store_slideset_request import StoreSlidesetRequest
 from service_slides.clients.status import StatusPatch, StepStatus
-from service_slides.impl.llm_chain.slide_content import generate_single_slide_content
-from service_slides.impl.llm_chain.slide_structure import generate_slide_structure
+from service_slides.impl.helper.gen_slide_content import generate_slide_content_or_mock
+from service_slides.impl.helper.gen_slide_structure import generate_slide_structure_or_mock
 from service_slides.impl.manager.job_manager import JobManager
 from service_slides.impl.manager.layout_manager import LayoutManager
 from service_slides.impl.status_helper import update_status
@@ -41,8 +41,8 @@ class SlidesApiImpl(BaseSlidesApi):
         await update_status(request_slide_generation_request.prompt_id, StatusPatch(stepSlideStructureGeneration=StepStatus.IN_PROGRESS))
 
         # 1. Generate the slide structure
-        structure = await generate_slide_structure(
-            model=splitting_model,
+        structure = await generate_slide_structure_or_mock(
+            splitting_model=splitting_model,
             lecture_script=request_slide_generation_request.lecture_script,
             available_layouts=await layout_manager.get_available_layouts(request_slide_generation_request.course_id),
         )
@@ -67,8 +67,8 @@ class SlidesApiImpl(BaseSlidesApi):
                 layout_template = asyncio.run(get_template())
 
                 # Generate slide content
-                slide_content = generate_single_slide_content(
-                    model=slidesgen_model,
+                slide_content = generate_slide_content_or_mock(
+                    slidesgen_model=slidesgen_model,
                     text=item_content,
                     layout_template=layout_template,
                     slide_number=slide_num,
