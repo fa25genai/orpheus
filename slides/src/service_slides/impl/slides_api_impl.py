@@ -21,6 +21,9 @@ from service_slides.impl.status_helper import update_status
 from service_slides.models.generation_accepted_response import GenerationAcceptedResponse
 from service_slides.models.request_slide_generation_request import RequestSlideGenerationRequest
 
+from src.service_slides.impl.helper.gen_slide_content import generate_slide_content_or_mock
+from src.service_slides.impl.helper.gen_slide_structure import generate_slide_structure_or_mock
+
 _log = getLogger("slides_impl")
 
 
@@ -41,11 +44,19 @@ class SlidesApiImpl(BaseSlidesApi):
         await update_status(request_slide_generation_request.prompt_id, StatusPatch(stepSlideStructureGeneration=StepStatus.IN_PROGRESS))
 
         # 1. Generate the slide structure
-        structure = await generate_slide_structure(
-            model=splitting_model,
+        structure = await generate_slide_structure_or_mock(
+            splitting_model=splitting_model,
             lecture_script=request_slide_generation_request.lecture_script,
             available_layouts=await layout_manager.get_available_layouts(request_slide_generation_request.course_id),
         )
+        # TODO remove when mock and ai generated slide struct works
+        # structure = await generate_slide_structure(
+        #     model=splitting_model,
+        #     lecture_script=request_slide_generation_request.lecture_script,
+        #     available_layouts=await layout_manager.get_available_layouts(
+        #         request_slide_generation_request.course_id
+        #     ),
+        # )
         _log.debug("Structure generated for request %s", request_slide_generation_request.prompt_id)
         await update_status(request_slide_generation_request.prompt_id, StatusPatch(stepSlideStructureGeneration=StepStatus.DONE, slideStructure=structure.as_simple_slide_structure_status()))
 
@@ -67,13 +78,21 @@ class SlidesApiImpl(BaseSlidesApi):
                 layout_template = asyncio.run(get_template())
 
                 # Generate slide content
-                slide_content = generate_single_slide_content(
-                    model=slidesgen_model,
+                slide_content = generate_slide_content_or_mock(
+                    slidesgen_model=slidesgen_model,
                     text=item_content,
                     layout_template=layout_template,
                     slide_number=slide_num,
                     assets=getattr(item, "assets", []),
                 )
+                # TODO remove when mock and ai generated slide content works
+                # slide_content = generate_single_slide_content(
+                #     model=slidesgen_model,
+                #     text=item_content,
+                #     layout_template=layout_template,
+                #     slide_number=slide_num,
+                #     assets=getattr(item, "assets", []),
+                # )
                 _log.debug(
                     "Slide number %d generated for request %s",
                     slide_num,
