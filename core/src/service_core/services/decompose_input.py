@@ -68,7 +68,7 @@ def decompose_question(question: str) -> Dict[str, Any]:
     prompt = DECOMPOSE_PROMPT + "\n\nQuestion to analyze: " + json.dumps(question)
     raw = llm_call(prompt)
 
-    # Clean the response - remove any potential markdown formatting
+    # Clean the response - remove any potential Markdown formatting
     raw = raw.strip()
     if raw.startswith("```json"):
         raw = raw[7:]
@@ -78,8 +78,10 @@ def decompose_question(question: str) -> Dict[str, Any]:
         raw = raw[:-3]
     raw = raw.strip()
 
+    result: Dict[str, Any] = {}
+
     try:
-        result: Dict[str, Any] = json.loads(raw)
+        result = json.loads(raw)
         # Validate required keys
         required_keys = ["original_question", "subqueries"]
         if not all(key in result for key in required_keys):
