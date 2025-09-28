@@ -136,12 +136,3 @@ def ask_llm(prompt: str) -> str:
     # `ask_llm_with_model` already returns a fully-formed `StandardResponse` object.
     response = ask_llm_with_model(prompt, StandardResponse)
     return response.answer
-
-
-if __name__ == "__main__":
-    # Example usage
-    try:
-        response = ask_llm("What is the capital of France?")
-        print(f"LLM Response: {response}")
-    except RuntimeError as e:
-        print(f"Error: {e}")
