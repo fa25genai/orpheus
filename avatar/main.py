@@ -1,28 +1,25 @@
 import os
-import shutil
-import uuid
 from collections.abc import Generator
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from queue import Queue
 from threading import Event, Thread
 from time import sleep
-from typing import Dict, List, Literal, Optional
+from typing import Dict, List, Literal, Optional, Union
 from uuid import UUID
-import media.avatar_updates as avatar_updates
 
 import requests
-from fastapi import Depends, FastAPI, File, HTTPException, Request, Response, UploadFile, status
-from fastapi import Form, Query
+from fastapi import Depends, FastAPI, File, Form, Query, Request, Response, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, StringConstraints
-from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, create_engine, func
-from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, relationship, sessionmaker
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session, sessionmaker
 from typing_extensions import Annotated
 
 import media.avatar_media as media
 import media.avatar_queries as avatar_queries
+import media.avatar_updates as avatar_updates
 
 app = FastAPI(title="Service Video-Generation APIs", version="0.1")
 origins = ["*"]
@@ -183,7 +180,7 @@ def get_avatars_by_course_endpoint(
         courseId: UUID,
         slot: Optional[str] = Query(None, description="optional: default | beginning | ending"),
         db: Session = Depends(get_db),
-):
+) -> List[media.AvatarCreatedResponse]:
     return avatar_queries.get_avatars_by_course(db=db, course_id=courseId, slot=slot)
 
 
@@ -244,16 +241,6 @@ JOB_TTL = timedelta(hours=24)
 CLEANUP_INTERVAL_SECONDS = 900
 
 
-# FIFO Queue für einzelne Slides
-class SlideTask(BaseModel):
-    promptId: UUID
-    courseId: str
-    userProfile: UserProfile
-    text: str
-    slideNo: int  # 1-based numbering
-    slot: Literal["default", "beginning", "ending"] = "default"  # NEW
-
-
 SLIDE_QUEUE: "Queue[SlideTask]" = Queue()
 _WORKER_STARTED = Event()
 _CLEANUP_STARTED = Event()
@@ -296,7 +283,7 @@ def _purge_stale_jobs(now: Optional[datetime] = None) -> None:
 
 def generate_audio(
         slide_text: Optional[str],
-        course_id: Optional[str],
+        course_id: Union[str,UUID],
         prompt_id: Optional[UUID],
         user_profile: Optional[UserProfile],
         audio_counter: int,
@@ -322,7 +309,7 @@ def generate_audio(
         ref_path = Path(ref.file_path)
         if not ref_path.is_file():
             print(f"[generate_audio] DB voice not found on disk: {ref_path}")
-            print(f"[generate_audio] Default fallback: Using krusche_voice.mp3")
+            print("[generate_audio] Default fallback: Using krusche_voice.mp3")
             ref_path = Path("/app/database/voice_sample/krusche_voice.mp3")
 
         # 2) Call TTS with the DB audio as voice_file

@@ -1,20 +1,20 @@
 # avatar_media.py
 from __future__ import annotations
-import os, uuid, shutil
-from pathlib import Path
+
+import os
+import shutil
+import uuid
 from datetime import datetime
-from uuid import UUID
-from typing import Optional, Tuple
 from enum import Enum
+from pathlib import Path
+from typing import Optional
+from uuid import UUID
 
-from fastapi import UploadFile, HTTPException, status
+from fastapi import HTTPException, UploadFile, status
 from pydantic import BaseModel
-from sqlalchemy import String, DateTime, Text, Integer, ForeignKey, func
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship, Session
-
-from sqlalchemy import UniqueConstraint
+from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, UniqueConstraint, func, text
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy import text
+from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, relationship
 
 
 class CourseAvatarSlot(str, Enum):
@@ -176,8 +176,10 @@ def create_avatar_with_media(
         db.add(avatar)
         db.flush()
 
-        img_path = _save_upload(AVATARS_OUTPUT_DIR, avatar_uuid, image_file, "image"); saved_paths.append(img_path)
-        aud_path = _save_upload(AVATARS_OUTPUT_DIR, avatar_uuid, audio_file, "audio"); saved_paths.append(aud_path)
+        img_path = _save_upload(AVATARS_OUTPUT_DIR, avatar_uuid, image_file, "image")
+        saved_paths.append(img_path)
+        aud_path = _save_upload(AVATARS_OUTPUT_DIR, avatar_uuid, audio_file, "audio")
+        saved_paths.append(aud_path)
 
         img = AvatarImage(
             id=str(uuid.uuid4()),
@@ -197,7 +199,9 @@ def create_avatar_with_media(
         )
         db.add_all([img, aud])
         db.commit()
-        db.refresh(avatar); db.refresh(img); db.refresh(aud)
+        db.refresh(avatar)
+        db.refresh(img)
+        db.refresh(aud)
 
         return AvatarCreatedResponse(
             avatarId=UUID(avatar.avatar_id),
@@ -225,13 +229,17 @@ def create_avatar_with_media(
     except IntegrityError:
         db.rollback()
         for p in saved_paths:
-            try: p.unlink(missing_ok=True)
-            except Exception: pass
+            try:
+                p.unlink(missing_ok=True)
+            except Exception:
+                pass
         # (course_id, slot) is already taken
         raise HTTPException(status_code=409, detail="An avatar for this courseId and slot already exists.")
     except Exception:
         db.rollback()
         for p in saved_paths:
-            try: p.unlink(missing_ok=True)
-            except Exception: pass
+            try:
+                p.unlink(missing_ok=True)
+            except Exception:
+                pass
         raise

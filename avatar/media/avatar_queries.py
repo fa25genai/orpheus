@@ -1,20 +1,20 @@
 # media/avatar_queries.py
 from __future__ import annotations
-from typing import List, Optional, Union
-from uuid import UUID
-from datetime import datetime
 
+from datetime import datetime
+from typing import List, Optional, Union, cast
+from uuid import UUID
 
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from .avatar_media import (
     Avatar,
-    AvatarImage,
-    AvatarAudio,    
-    AvatarCreatedResponse,
-    AvatarImageResponse,
+    AvatarAudio,
     AvatarAudioResponse,
+    AvatarCreatedResponse,
+    AvatarImage,
+    AvatarImageResponse,
     CourseAvatarSlot,
     _normalize_slot,
 )
@@ -48,10 +48,17 @@ def get_latest_audio_for_course_slot(
           .filter(Avatar.course_id == str(course_id), Avatar.slot == the_slot.value)
           .first()
     )
-    if not avatar or not avatar.audios:
-        print("[audio generation] No audio found for given courseId and slot")
+    if not avatar or not getattr(avatar, "audios", None):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No audio found for given courseId and slot",
+        )
+
+    # If the relationship isn't statically typed, cast it for mypy
+    audios: List[AvatarAudio] = cast(List[AvatarAudio], list(avatar.audios))
+
     # pick latest audio
-    return sorted(avatar.audios, key=lambda a: a.created_at or datetime.min, reverse=True)[0]
+    return sorted(audios, key=lambda a: a.created_at or datetime.min, reverse=True)[0]
 
 
 def get_avatars_by_course(
