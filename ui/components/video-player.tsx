@@ -1,7 +1,7 @@
 import {useRef, useState, useEffect, useCallback} from "react";
 import {Card} from "@/components/ui/card";
 import {Button} from "@/components/ui/button";
-import {Pause, Play, Volume2, Gauge} from "lucide-react"; // Gauge icon for speed
+import {Pause, Play, Volume2} from "lucide-react";
 
 type CustomVideoPlayerProps = {
   sources: string[];
@@ -15,7 +15,7 @@ export default function VideoPlayer({
   const [isPlaying, setIsPlaying] = useState(true);
   const [showControls, setShowControls] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [playbackRate, setPlaybackRate] = useState(1); // 🔥 speed state
+  const [playbackRate, setPlaybackRate] = useState(1);
 
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
