@@ -2,18 +2,18 @@
 Embedding Service using Ollama API
 """
 
-import os
-from typing import Any, Dict, List, cast
+from typing import List, Optional
 
-import httpx
+from docint_app.services.ollama_client_service import get_ollama_client
 
 
 class EmbeddingService:
-    def __init__(self, base_url: str = "https://gpu.aet.cit.tum.de/ollama"):
-        self.base_url = base_url.rstrip("/")
+
+    def __init__(self):
+        self.client = get_ollama_client()
         self.model = "nomic-embed-text:latest"
 
-    async def embed_text(self, text: str) -> List[float]:
+    def embed_text(self, text: str) -> List[float]:
         """
         Generate embeddings for a single text using Ollama API.
 
@@ -23,25 +23,14 @@ class EmbeddingService:
         Returns:
             List of float values representing the embedding vector
         """
-        api_key = os.getenv("OLLAMA_API_KEY")
-        if not api_key:
-            raise ValueError("OLLAMA_API_KEY environment variable is required")
+        print("Generating embedding for text...")
+        
+        response = self.client.embeddings(model=self.model, prompt=text)
+        print(f"Received embedding of dimension {len(response['embedding'])}")
+        print(f"Response: {response}")
+        return response["embedding"]
 
-        headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
-
-        async with httpx.AsyncClient() as client:
-            response = await client.post(
-                f"{self.base_url}/api/embeddings",
-                json={"model": self.model, "prompt": text},
-                headers=headers,
-                timeout=30.0,
-            )
-            response.raise_for_status()
-            data = cast(Dict[str, Any], response.json())
-            emb = cast(List[float], data.get("embedding", []))
-            return emb
-
-    async def embed_batch(self, texts: List[str]) -> List[List[float]]:
+    def embed_batch(self, texts: List[str]) -> List[List[float]]:
         """
         Generate embeddings for multiple texts.
 
@@ -53,10 +42,14 @@ class EmbeddingService:
         """
         embeddings = []
         for text in texts:
-            embedding = await self.embed_text(text)
+            embedding = self.embed_text(text)
             embeddings.append(embedding)
         return embeddings
 
+_instance: Optional[EmbeddingService] = None
 
 def get_embedding_service() -> EmbeddingService:
-    return EmbeddingService()
+    global _instance
+    if _instance is None:
+        _instance = EmbeddingService()
+    return _instance
