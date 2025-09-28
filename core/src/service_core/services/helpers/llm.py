@@ -122,7 +122,7 @@ def ask_llm_with_model(prompt: str, ResponseModel: BaseModel) -> BaseModel:
 
             # Validate with Pydantic
             try:
-                validated = ResponseModel(**parsed)
+                validated: BaseModel = ResponseModel(**parsed)
                 debug_print("Validated:", validated.model_dump_json())
                 not_done = False
 
@@ -150,5 +150,5 @@ def ask_llm(prompt: str) -> str:
     Raises:
         RuntimeError: If the LLM call fails or the response cannot be validated.
     '''
-    response: StandardResponse = ask_llm_with_model(prompt, StandardResponse)
+    response: BaseModel = ask_llm_with_model(prompt, StandardResponse)
     return response.answer
