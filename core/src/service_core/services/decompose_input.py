@@ -12,7 +12,6 @@ import logging
 from dotenv import load_dotenv
 # from langchain_community.chat_models import ChatOllama
 
-from pydantic import BaseModel
 
 from service_core.services.llm_chain.shared_llm import create_base_model
 
