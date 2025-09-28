@@ -127,7 +127,7 @@ def generate_script_llm(retrieved_content: List[Dict[str, Any]], persona: Any) -
     raise RuntimeError("LLM did not produce valid JSON response")
 
 
-def generate_script(content: Dict[str, Any], persona: UserProfile) -> Dict[str, Any]:
+def generate_script(content: List[Dict[str, Any]], persona: UserProfile) -> Dict[str, Any]:
     retrieved_content: List[Dict[str, Any]] = convert_json_structure(content)
 
     # Create a lookup table for assets and a version of the content for the LLM

@@ -42,7 +42,7 @@ def create_script() -> Dict[str, Any]:
     }
     return lecture_script
 
-def create_retrieved_content() -> Dict[str, Any]:
+def create_retrieved_content() -> List[Dict[str, Any]]:
     retrieved_content: List[Dict[str, Any]] = [
         {
             "content": [

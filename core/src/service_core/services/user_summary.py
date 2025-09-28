@@ -1,9 +1,9 @@
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 from service_core.services.helpers.llm import ask_llm
 
 
-def extract_text_content(data: Dict[str, Any]) -> str:
+def extract_text_content(data: List[Dict[str, Any]]) -> str:
     """Extract only the text content from a list of dicts, ignoring images or other fields."""
 
     if not isinstance(data, list):
@@ -18,7 +18,7 @@ def extract_text_content(data: Dict[str, Any]) -> str:
     return "\n".join(texts)
 
 
-def summarize_content_with_llama(retrieved_content: Dict[str, Any]) -> str:
+def summarize_content_with_llama(retrieved_content: List[Dict[str, Any]]) -> str:
     """Summarize only the text content from retrieved_content using Llama via llm_call."""
     text_content = extract_text_content(retrieved_content)
     print("Text content to summarize:", text_content, flush=True)

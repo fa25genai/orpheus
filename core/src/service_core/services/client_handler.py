@@ -67,12 +67,12 @@ async def send_summary_to_endpoint(prompt_id: str, summary: str, client: httpx.A
     except Exception as e:
         print("Error sending summary to endpoint:", e, flush=True)
 
-async def summarize_and_send(prompt_id: str, content: Dict[str, Any], client: httpx.AsyncClient) -> None:
+async def summarize_and_send(prompt_id: str, content: List[Dict[str, Any]], client: httpx.AsyncClient) -> None:
     summary = summarize_content_with_llama(content)
     await send_summary_to_endpoint(prompt_id, summary, client)
 
 
-async def query_document_intelligence(subqueries: List[str], client: httpx.AsyncClient, prompt_id: str) -> Dict[str, Any]:
+async def query_document_intelligence(subqueries: List[str], client: httpx.AsyncClient, prompt_id: str) -> List[Dict[str, Any]]:
     tracker.log("Querying document intelligence")
     await update_status(prompt_id, StatusPatch(
             stepLookup=StepStatus.IN_PROGRESS
@@ -88,7 +88,7 @@ async def query_document_intelligence(subqueries: List[str], client: httpx.Async
         timeout=300.0,
     )
     di_response.raise_for_status()
-    di_data: Dict[str, Any] = di_response.json()
+    di_data: List[Dict[str, Any]] = di_response.json()
     await update_status(prompt_id, StatusPatch(
             stepLookup=StepStatus.DONE
         ), client)

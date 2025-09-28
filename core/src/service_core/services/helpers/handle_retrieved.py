@@ -27,12 +27,11 @@ def generate_filename_from_description(description: str, mime_type: str) -> str:
 
 # --- Helper function to try parsing JSON ---
 # --- Main Conversion Logic ---
-def convert_json_structure(retrieved_content: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+def convert_json_structure(content: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """
     Converts the input JSON to include an 'assets' key with image data.
     """
     output_data = []
-
     for item in retrieved_content:
         new_item = {"content": item["content"], "assets": []}
 
