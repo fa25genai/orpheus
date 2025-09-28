@@ -89,9 +89,6 @@ async def query_document_intelligence(subqueries: List[str], client: httpx.Async
     )
     di_response.raise_for_status()
     di_data: List[Dict[str, Any]] = di_response.json()
-    await update_status(prompt_id, StatusPatch(
-            stepLookup=StepStatus.DONE
-        ), client)
     return di_data
 
 
