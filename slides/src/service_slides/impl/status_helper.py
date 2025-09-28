@@ -5,6 +5,7 @@ from service_slides.clients.status import ApiClient, ApiException, StatusApi, St
 
 _log = getLogger("status_update")
 
+
 async def update_status(prompt_id: str, patch: StatusPatch) -> None:
     try:
         async with ApiClient(get_status_api_config()) as api_client:
