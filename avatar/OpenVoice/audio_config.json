@@ -29,10 +29,7 @@
     "description": "API for the Orpheus audio generation."
   },
   "defaults": {
-    "slide_texts": [
-      "Welcome to the course on AI.",
-      "In this slide, we will discuss machine learning."
-    ],
+    "voiceTrack": "Welcome to the course on AI.",
     "course_id": "course123",
     "voice_file": "krusche_voice.mp3"
   }
