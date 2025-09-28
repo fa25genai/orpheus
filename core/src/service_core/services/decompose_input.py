@@ -63,25 +63,28 @@ DECOMPOSE_PROMPT = textwrap.dedent("""
 ...
 """)
 
-
-def decompose_question(question: str) -> Dict[str, Any]:
+def extract_json_from_markdown(question: str) -> str:
     prompt = DECOMPOSE_PROMPT + "\n\nQuestion to analyze: " + json.dumps(question)
-    raw = llm_call(prompt)
+    raw_llm_output = llm_call(prompt) # e.g. still including markdown
 
     # Clean the response - remove any potential Markdown formatting
-    raw = raw.strip()
-    if raw.startswith("```json"):
-        raw = raw[7:]
-    if raw.startswith("```"):
-        raw = raw[3:]
-    if raw.endswith("```"):
-        raw = raw[:-3]
-    raw = raw.strip()
+    raw_llm_output = raw_llm_output.strip()
+    if raw_llm_output.startswith("```json"):
+        raw_llm_output = raw_llm_output[7:]
+    if raw_llm_output.startswith("```"):
+        raw_llm_output = raw_llm_output[3:]
+    if raw_llm_output.endswith("```"):
+        raw_llm_output = raw_llm_output[:-3]
+    raw_llm_output = raw_llm_output.strip()
 
+    return raw_llm_output
+
+def decompose_question(question: str) -> Dict[str, Any]:
     result: Dict[str, Any] = {}
+    raw_llm_output: str = extract_json_from_markdown(question)
 
     try:
-        result = json.loads(raw)
+        result = json.loads(raw_llm_output)
         # Validate required keys
         required_keys = ["original_question", "subqueries"]
         if not all(key in result for key in required_keys):
@@ -94,7 +97,7 @@ def decompose_question(question: str) -> Dict[str, Any]:
         return result  # FIX: [no-any-return]
     except json.JSONDecodeError as e:
         # Try to extract JSON from the response
-        start, end = raw.find("{"), raw.rfind("}")
+        start, end = raw_llm_output.find("{"), raw_llm_output.rfind("}")
         if start != -1 and end != -1:
             try:
                 # Validate required keys for extracted JSON too
@@ -104,4 +107,4 @@ def decompose_question(question: str) -> Dict[str, Any]:
                 return result  # FIX: [no-any-return]
             except json.JSONDecodeError:
                 pass
-        raise RuntimeError(f"Failed to parse JSON from LLM output. JSON Error: {e}. Raw output: {raw[:200]}...")
+        raise RuntimeError(f"Failed to parse JSON from LLM output. JSON Error: {e}. Raw output: {raw_llm_output[:200]}...")
