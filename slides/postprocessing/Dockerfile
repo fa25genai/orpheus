@@ -40,8 +40,7 @@ COPY pyproject.toml README.md ./
 # Add predefined sli.dev themes
 ADD themes/slidev-theme-tum-0.1.0.tgz /etc/slidev/themes/theme-tum/
 RUN cd /etc/slidev/themes/theme-tum/package && \
-    npm install && \
-    npm cache clean --force
+    npm install --no-cache
 
 # Install Python dependencies
 RUN poetry install --only main
