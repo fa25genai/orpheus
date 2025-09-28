@@ -95,7 +95,7 @@ async def query_document_intelligence(subqueries: List[str], client: httpx.Async
     return di_data
 
 
-async def generate_script(retrieved_content: Dict[str, Any], prompt_id: str, client: httpx.AsyncClient) -> Dict[str, Any]:
+async def generate_script(retrieved_content: List[Dict[str, Any]], prompt_id: str, client: httpx.AsyncClient) -> Dict[str, Any]:
     tracker.log("Generating script")
     await update_status(prompt_id, StatusPatch(
             stepLectureScriptGeneration=StepStatus.IN_PROGRESS
