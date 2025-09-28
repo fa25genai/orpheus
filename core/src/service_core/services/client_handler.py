@@ -22,17 +22,16 @@ from service_core.services.services_models.voice_track import VoiceTrackResponse
 
 load_dotenv()
 
-
-# DI_API_URL = "http://docint:25565"
-# SLIDES_API_URL = "http://slides:30606"
-# AVATAR_API_URL = "http://avatar-video-producer:9000"
-# STATUS_API_URL = "http://status-service:19910"
+DI_API_URL = "http://docint:25565"
+SLIDES_API_URL = "http://slides:30606"
+AVATAR_API_URL = "http://avatar-video-producer:9000"
+STATUS_API_URL = "http://status-service:19910"
 
 # Use this when you start the service locally outside a docker container
-DI_API_URL = "http://localhost:25565"
-SLIDES_API_URL = "http://localhost:30606"
-AVATAR_API_URL = "http://localhost:9000"
-STATUS_API_URL = "http://localhost:19910"
+# DI_API_URL = "http://localhost:25565"
+# SLIDES_API_URL = "http://localhost:30606"
+# AVATAR_API_URL = "http://localhost:9000"
+# STATUS_API_URL = "http://localhost:19910"
 
 DEBUG = int(os.getenv("ORPHEUS_DEBUG", "0"))    # DEBUG enabled by default
 
@@ -92,7 +91,7 @@ async def summarize_and_send(prompt_id: str, content: List[Dict[str, Any]], clie
         summary: str
         if DEBUG:
             summary = "A for loop is a control flow statement that allows code to be executed repeatedly, typically used to iterate over sequences or iterable objects.\n\nIt features a basic syntax that specifies an item variable and an iterable collection of objects, such as a list or tuple.\n\nFor loops can be nested.\n\nThey often utilize functions like range() to generate number sequences.\n\nFlow control options include break to exit the loop prematurely, and continue to skip the current iteration.\n\nAn else block can be added, which executes after the loop finishes unless the loop was terminated by a break."
-            return        
+            return
         summary = summarize_content_with_llama(content)
         await send_summary_to_endpoint(prompt_id, summary, client)
     except Exception as e:
@@ -129,11 +128,11 @@ async def generate_script(retrieved_content: List[Dict[str, Any]], prompt_id: st
         await update_status(prompt_id, StatusPatch(
                 stepLectureScriptGeneration=StepStatus.IN_PROGRESS
             ), client)
-        
+
         if prompt_request.user_persona is None:
                 print("ERROR: User persona must be defined for processing.", flush=True)
                 raise ValueError("User persona must be defined")
-        
+
         if DEBUG:
             output: Dict[str, Any] = mock_service.create_script()
             await update_status(
@@ -142,7 +141,7 @@ async def generate_script(retrieved_content: List[Dict[str, Any]], prompt_id: st
                 client,
             )
             return output
-    
+
         refined_output: Dict[str, Any] = script_generation.generate_script(retrieved_content, prompt_request.user_persona)
         await update_status(prompt_id, StatusPatch(
             stepLectureScriptGeneration=StepStatus.DONE
@@ -171,8 +170,8 @@ async def generate_slides(
         if prompt_request.user_persona is None:
                 print("ERROR: User persona must be defined for processing.", flush=True)
                 raise ValueError("User persona must be defined")
-        
-        slides_context = {
+
+        generate_slides_request_body = {
             "courseId": prompt_request.course_id,
             "promptId": str(prompt_id),
             "lectureScript": lecture_script,
@@ -180,9 +179,11 @@ async def generate_slides(
             "assets": refined_output.get("assets", []),
         }
 
+        logger.debug(f"generated slides request body: {generate_slides_request_body}")
+
         slides_response = await client.post(
             f"{SLIDES_API_URL}/v1/slides/generate",
-            json=slides_context,
+            json=generate_slides_request_body,
             timeout=300.0,
         )
         slides_response.raise_for_status()

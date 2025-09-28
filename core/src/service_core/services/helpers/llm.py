@@ -13,27 +13,24 @@
 #                                                                              #
 ################################################################################
 import os
-from typing import cast
+from typing import cast, Any
 
-from dotenv import load_dotenv
-from langchain_community.chat_models import ChatOllama
-from langchain_core.messages import BaseMessage
+from langchain_core.language_models import BaseLanguageModel
 
-
-def getLLM() -> ChatOllama:
-    load_dotenv()
-
-    api_key = os.environ.get("LLAMA_API_KEY", "")
-    llm: ChatOllama = ChatOllama(
-        model=os.environ.get("LLAMA_MODEL", "gemma3:27b"),
-        base_url=os.environ.get("LLAMA_API_URL", "https://gpu.aet.cit.tum.de/ollama"),
-        headers={"Authorization": f"Bearer {api_key}"} if api_key else {},
-    )
-    return llm
+from service_core.services.llm_chain.shared_llm import create_base_model
 
 
 def ask_llm(prompt: str) -> str:
-    llm = getLLM()
-    response: BaseMessage = llm.invoke(prompt)
+    llm = create_llm()
+    response = llm.invoke(prompt)
 
     return cast(str, response.content)
+
+
+def create_llm() -> BaseLanguageModel[Any]:
+    model_name = os.getenv("MODEL_NAME")
+    if model_name is None:
+        raise ValueError("MODEL_NAME environment variable is not set")
+
+    llm = create_base_model(model_name)
+    return llm
