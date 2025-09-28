@@ -34,7 +34,8 @@ export default function Home() {
         promptRequest: {
           prompt,
           courseId: "IN001",
-          userPersona: personas.find((person) => person.id === personaLevel)?.userProfile,
+          userPersona: personas.find((person) => person.id === personaLevel)
+            ?.userProfile,
         },
       });
       console.log("Received prompt ID:", response.promptId);
@@ -165,13 +166,15 @@ export default function Home() {
           ))}
           <div ref={bottomRef}></div>
 
-          <div className="fixed bottom-4 right-0 left-0 mx-auto max-w-6xl">
-            <ChatInput
-              handleSubmit={handleSubmit}
-              prompt={prompt}
-              setPrompt={setPrompt}
-            />
-          </div>
+          {status?.stepSlidePostprocessing === "DONE" && (
+            <div className="fixed bottom-4 right-0 left-0 mx-auto max-w-6xl">
+              <ChatInput
+                handleSubmit={handleSubmit}
+                prompt={prompt}
+                setPrompt={setPrompt}
+              />
+            </div>
+          )}
         </section>
       )}
     </main>
