@@ -19,9 +19,8 @@ from service_core.services.user_summary import summarize_content_with_llama
 from service_status.models.status_patch import StatusPatch
 from service_status.models.step_status import StepStatus
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-DOTENV_PATH = PROJECT_ROOT / '.env'
-load_dotenv(dotenv_path=DOTENV_PATH)
+load_dotenv()
+
 
 DI_API_URL = "http://docint:25565"
 SLIDES_API_URL = "http://slides:30606"
