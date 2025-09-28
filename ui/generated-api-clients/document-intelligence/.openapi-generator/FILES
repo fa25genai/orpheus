@@ -4,5 +4,6 @@ index.ts
 models/ImageObject.ts
 models/RetrievalResponse.ts
 models/UploadResponse.ts
+models/VideoUploadResponse.ts
 models/index.ts
 runtime.ts

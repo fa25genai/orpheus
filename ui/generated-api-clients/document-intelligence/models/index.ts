@@ -3,3 +3,4 @@
 export * from './ImageObject';
 export * from './RetrievalResponse';
 export * from './UploadResponse';
+export * from './VideoUploadResponse';
