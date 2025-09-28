@@ -531,12 +531,15 @@ def _worker_loop() -> None:
         _estimate_total_seconds_for_new_slide(job)
         JOBS[pid] = job
 
+        # flags are defined before the try so they exist if an early exception fires
+        audio_done = False
+        video_started = False
+        video_done = False
+
         try:
             with SessionLocal() as db:
-                audio_done = False
-                video_started = False
-                video_done = False
                 _update_avatar_generation_step_status(pid, task.slideNo, audio="IN_PROGRESS")
+
                 aurl = generate_audio(
                     voiceTrack=task.text,
                     course_id=task.courseId,
@@ -546,45 +549,53 @@ def _worker_loop() -> None:
                     db=db,
                     slot=getattr(task, "slot", "default"),
                 )
+
                 if aurl:
-                  _update_avatar_generation_step_status(pid, task.slideNo, audio="DONE")
-                  audio_done = True
-                  _update_avatar_generation_step_status(pid, task.slideNo, video="IN_PROGRESS")
-                  video_started = True
-                  
-                  # fetch the image while DB session is open
-                  source_path = None
-                  try:
-                      img = avatar_queries.get_latest_image_for_course_slot(
-                          db, course_id=task.courseId, slot=getattr(task, "slot", "default")
-                      )
-                      source_path = img.file_path
-                  except Exception as e:
-                      print(f"[worker] no image for course/slot: {e!r}")
-                      source_path = None
-                      
-                  vpath = generate_video(
-                    audio_path=aurl,
-                    prompt_id=pid,
-                    course_id=task.courseId,
-                    user_profile=task.userProfile,
-                    video_counter=task.slideNo,
-                    source_image_path=source_path,  # ✅ pass image path here
-                  )
-                  if vpath:
-                    _update_avatar_generation_step_status(pid, task.slideNo, video="DONE")
-                    video_done = True
-                  else:
-                    _update_avatar_generation_step_status(pid, task.slideNo, video="FAILED")
-            else:
-                _update_avatar_generation_step_status(pid, task.slideNo, audio="FAILED")
+                    _update_avatar_generation_step_status(pid, task.slideNo, audio="DONE")
+                    audio_done = True
+
+                    _update_avatar_generation_step_status(pid, task.slideNo, video="IN_PROGRESS")
+                    video_started = True
+
+                    # fetch the image while DB session is open
+                    source_path: Optional[str] = None
+                    try:
+                        img = avatar_queries.get_latest_image_for_course_slot(
+                            db,
+                            course_id=task.courseId,
+                            slot=getattr(task, "slot", "default"),
+                        )
+                        source_path = img.file_path
+                    except Exception as e:
+                        print(f"[worker] no image for course/slot: {e!r}")
+                        source_path = None
+
+                    vpath = generate_video(
+                        audio_path=aurl,
+                        prompt_id=pid,
+                        course_id=task.courseId,
+                        user_profile=task.userProfile,
+                        video_counter=task.slideNo,
+                        source_image_path=source_path,  # pass image path if available
+                    )
+
+                    if vpath:
+                        _update_avatar_generation_step_status(pid, task.slideNo, video="DONE")
+                        video_done = True
+                    else:
+                        _update_avatar_generation_step_status(pid, task.slideNo, video="FAILED")
+                else:
+                    # <-- this else pairs with the if aurl: above
+                    _update_avatar_generation_step_status(pid, task.slideNo, audio="FAILED")
 
         except Exception as e:
             if not audio_done:
                 _update_avatar_generation_step_status(pid, task.slideNo, audio="FAILED")
             if video_started and not video_done:
                 _update_avatar_generation_step_status(pid, task.slideNo, video="FAILED")
+
             print(f"[worker] error on slide {task.slideNo} for {pid}: {e!r}")
+
             job = JOBS.get(pid)
             if job:
                 fail_time = _utcnow()
