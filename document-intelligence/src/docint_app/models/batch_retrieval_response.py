@@ -20,20 +20,20 @@ import json
 
 
 
-from pydantic import BaseModel, ConfigDict, Field, StrictStr
-from typing import Any, ClassVar, Dict, List, Optional
+from pydantic import BaseModel, ConfigDict, Field
+from typing import Any, ClassVar, Dict, List
+from docint_app.models.retrieval_response import RetrievalResponse
 try:
     from typing import Self
 except ImportError:
     from typing_extensions import Self
 
-class ImageObject(BaseModel):
+class BatchRetrievalResponse(BaseModel):
     """
-    ImageObject
+    BatchRetrievalResponse
     """ # noqa: E501
-    image: Optional[StrictStr] = Field(default=None, description="Base64-encoded image in data URI format (e.g., 'data:image/jpeg;base64,/9j/4gIoSUNDX1BST0ZJTEUAAQEAAAIYAAAAAAIQAABtbnRyUkdCIFhZWi...').")
-    description: Optional[StrictStr] = Field(default=None, description="Short description of the image.")
-    __properties: ClassVar[List[str]] = ["image", "description"]
+    results: List[RetrievalResponse] = Field(description="Array of retrieval responses, one for each input query.")
+    __properties: ClassVar[List[str]] = ["results"]
 
     model_config = {
         "populate_by_name": True,
@@ -53,7 +53,7 @@ class ImageObject(BaseModel):
 
     @classmethod
     def from_json(cls, json_str: str) -> Self:
-        """Create an instance of ImageObject from a JSON string"""
+        """Create an instance of BatchRetrievalResponse from a JSON string"""
         return cls.from_dict(json.loads(json_str))
 
     def to_dict(self) -> Dict[str, Any]:
@@ -72,11 +72,18 @@ class ImageObject(BaseModel):
             },
             exclude_none=True,
         )
+        # override the default output from pydantic by calling `to_dict()` of each item in results (list)
+        _items = []
+        if self.results:
+            for _item in self.results:
+                if _item:
+                    _items.append(_item.to_dict())
+            _dict['results'] = _items
         return _dict
 
     @classmethod
     def from_dict(cls, obj: Dict) -> Self:
-        """Create an instance of ImageObject from a dict"""
+        """Create an instance of BatchRetrievalResponse from a dict"""
         if obj is None:
             return None
 
@@ -84,8 +91,7 @@ class ImageObject(BaseModel):
             return cls.model_validate(obj)
 
         _obj = cls.model_validate({
-            "image": obj.get("image"),
-            "description": obj.get("description")
+            "results": [RetrievalResponse.from_dict(_item) for _item in obj.get("results")] if obj.get("results") is not None else None
         })
         return _obj
 
