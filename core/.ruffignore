@@ -1,3 +1,0 @@
-# Ignore files generated from OpenAPI spec
-src/service_status/apis
-src/service_status/models
