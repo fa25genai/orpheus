@@ -1,8 +1,14 @@
+import json
+import logging
+
 from service_slides.impl.llm_chain.slide_structure import DetailedSlideStructure, DetailedSlideStructureItem
 from service_slides.impl.manager.layout_manager import LayoutTemplate
 
 
+_log = logging.getLogger("mocks")
+
 def make_mock_slide_structure() -> DetailedSlideStructure:
+    _log.warning("Using mocks for slide structure!")
     mock_items = [
         DetailedSlideStructureItem(
             content="Title: Introduction to For Loops\nHello, and welcome! Today, we're going to dive into the world of 'for loops' in Python. Now, you might be wondering, what *is* a for loop? Simply put, a for loop is a control flow statement that allows us to repeatedly execute a block of code.",
@@ -37,9 +43,10 @@ def make_mock_slide_content(
     text: str,
     layout_template: LayoutTemplate,
 ) -> str:
+    _log.warning("Using mocks for slide content!")
     template_vars = {}
     for field_name in layout_template.schema.keys():
-        if "title" in field_name.lower():
+        if "headline" in field_name.lower():
             first_line = text.split("\n", 1)[0]
             template_vars[field_name] = first_line.replace("Title: ", "")
         else:
