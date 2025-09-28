@@ -29,7 +29,8 @@ RUN npm install -g @pnpm/exe playwright-chromium && \
     cd /install/slidev && \
     pnpm install && \
     pnpm -w build && \
-    ln -s /install/slidev/packages/slidev/bin/slidev.mjs /usr/local/bin/slidev
+    ln -s /install/slidev/packages/slidev/bin/slidev.mjs /usr/local/bin/slidev && \
+    npm cache clean --force
 
 # Working directory and file copy
 WORKDIR /app
