@@ -17,7 +17,10 @@ RUN apt-get update && \
     git \
     nodejs \
     npm && \
-    rm -rf /var/lib/apt/lists/*
+    rm -rf /var/lib/apt/lists/* && \
+    apt-get autoremove --yes && \
+    apt-get clean && \
+    rm -rf /tmp/* /var/tmp/*
 
 # Install Slidev and its dependencies
 RUN npm install -g @pnpm/exe playwright-chromium && \
@@ -41,11 +44,6 @@ RUN cd /etc/slidev/themes/theme-tum/package && \
 
 # Install Python dependencies
 RUN poetry install --only main
-
-# Clean up
-RUN apt-get autoremove --yes && \
-    apt-get clean && \
-    rm -rf /tmp/* /var/tmp/*
 
 EXPOSE 30607
 
