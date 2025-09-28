@@ -5,7 +5,7 @@ import json
 from typing import TypeVar, Type
 import boto3
 from pydantic import BaseModel, ValidationError
-from debug import debug_print
+from service_core.services.helpers.debug import debug_print
 
 # --- FIX 1: Define a TypeVar for the Pydantic model ---
 # This allows the function to return the *specific* subclass of BaseModel it receives.
