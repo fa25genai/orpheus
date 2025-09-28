@@ -1,13 +1,13 @@
 import os
 import shutil
 import uuid
-from collections.abc import Generator
+from collections.abc import Generator, Mapping
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from queue import Queue
 from threading import Event, Thread
 from time import sleep
-from typing import Dict, List, Literal, Optional
+from typing import Any, Dict, List, Literal, Optional
 from uuid import UUID
 
 import requests
@@ -45,11 +45,13 @@ VIDEO_ROOT.mkdir(parents=True, exist_ok=True)
 STATUS_SERVICE_HOST = os.getenv("STATUS_SERVICE_HOST", "http://localhost:19910")
 STATUS_SERVICE_TIMEOUT = (3, 15)
 
+
 def _status_service_url(prompt_id: UUID) -> str:
     base = STATUS_SERVICE_HOST.rstrip("/")
     return f"{base}/status/{prompt_id}/update"
 
-def _patch_status(prompt_id: UUID, payload: Dict[str, object]) -> None:
+
+def _patch_status(prompt_id: UUID, payload: Mapping[str, Any]) -> None:
     if not payload:
         return
     url = _status_service_url(prompt_id)
@@ -61,6 +63,7 @@ def _patch_status(prompt_id: UUID, payload: Dict[str, object]) -> None:
     except requests.RequestException as exc:
         print(f"[status] PATCH {url} failed: {exc}")
 
+
 def _update_avatar_generation_step_status(prompt_id: UUID, slide_index: int, *, audio: Optional[str] = None, video: Optional[str] = None) -> None:
     step_payload: Dict[str, str] = {}
     if audio is not None:
@@ -71,6 +74,7 @@ def _update_avatar_generation_step_status(prompt_id: UUID, slide_index: int, *, 
         return
     payload = {"stepsAvatarGeneration": {str(slide_index): step_payload}}
     _patch_status(prompt_id, payload)
+
 
 # ---------------------------
 # Models
