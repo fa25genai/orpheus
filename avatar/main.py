@@ -1,13 +1,13 @@
 import os
 import shutil
 import uuid
-from collections.abc import Generator
+from collections.abc import Generator, Mapping
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from queue import Queue
 from threading import Event, Thread
 from time import sleep
-from typing import Dict, List, Literal, Optional
+from typing import Any, Dict, List, Literal, Optional
 from uuid import UUID
 
 import requests
@@ -40,6 +40,40 @@ IMAGES_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 VIDEO_ROOT = Path(os.getenv("VIDEO_ROOT", "/data/jobs")).resolve()
 PUBLIC_VIDEOS_BASE = os.getenv("PUBLIC_VIDEOS_BASE", "/videos/jobs")
 VIDEO_ROOT.mkdir(parents=True, exist_ok=True)
+
+
+STATUS_SERVICE_HOST = os.getenv("STATUS_SERVICE_HOST", "http://localhost:19910")
+STATUS_SERVICE_TIMEOUT = (3, 15)
+
+
+def _status_service_url(prompt_id: UUID) -> str:
+    base = STATUS_SERVICE_HOST.rstrip("/")
+    return f"{base}/status/{prompt_id}/update"
+
+
+def _patch_status(prompt_id: UUID, payload: Mapping[str, Any]) -> None:
+    if not payload:
+        return
+    url = _status_service_url(prompt_id)
+    try:
+        resp = requests.patch(url, json=payload, timeout=STATUS_SERVICE_TIMEOUT)
+        if resp.status_code >= 400:
+            snippet = resp.text[:200] if resp.text else ""
+            print(f"[status] PATCH {url} -> {resp.status_code} {snippet}")
+    except requests.RequestException as exc:
+        print(f"[status] PATCH {url} failed: {exc}")
+
+
+def _update_avatar_generation_step_status(prompt_id: UUID, slide_index: int, *, audio: Optional[str] = None, video: Optional[str] = None) -> None:
+    step_payload: Dict[str, str] = {}
+    if audio is not None:
+        step_payload["audio"] = audio
+    if video is not None:
+        step_payload["video"] = video
+    if not step_payload:
+        return
+    payload = {"stepsAvatarGeneration": {str(slide_index): step_payload}}
+    _patch_status(prompt_id, payload)
 
 
 # ---------------------------
@@ -560,25 +594,40 @@ def _worker_loop() -> None:
 
         # Audio -> Video für genau diesen Slide
         try:
-            # TODO send status in progress for voice for audio with slide number (one based?) and pid
+            audio_done = False
+            video_started = False
+            video_done = False
+            _update_avatar_generation_step_status(pid, task.slideNo, audio="IN_PROGRESS")
             aurl = generate_audio(
                 voiceTrack=task.text,
                 prompt_id=pid,
                 user_profile=task.userProfile,
                 audio_counter=task.slideNo,
             )
-            # TODO send status done for voice with slide number (one based?) and pid
             if aurl:
-                # TODO send status in progress for video for audio with slide number (one based?) and pid
-                generate_video(
+                _update_avatar_generation_step_status(pid, task.slideNo, audio="DONE")
+                audio_done = True
+                _update_avatar_generation_step_status(pid, task.slideNo, video="IN_PROGRESS")
+                video_started = True
+                vpath = generate_video(
                     audio_path=aurl,
                     prompt_id=pid,
                     course_id=task.courseId,
                     user_profile=task.userProfile,
                     video_counter=task.slideNo,
                 )
-                # TODO send status done for video with slide number (one based?) and pid
+                if vpath:
+                    _update_avatar_generation_step_status(pid, task.slideNo, video="DONE")
+                    video_done = True
+                else:
+                    _update_avatar_generation_step_status(pid, task.slideNo, video="FAILED")
+            else:
+                _update_avatar_generation_step_status(pid, task.slideNo, audio="FAILED")
         except Exception as e:
+            if not audio_done:
+                _update_avatar_generation_step_status(pid, task.slideNo, audio="FAILED")
+            if video_started and not video_done:
+                _update_avatar_generation_step_status(pid, task.slideNo, video="FAILED")
             print(f"[worker] error on slide {task.slideNo} for {pid}: {e!r}")
             # mark job as failed but keep queue going for other jobs
             job = JOBS.get(pid)
