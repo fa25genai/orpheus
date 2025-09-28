@@ -48,10 +48,6 @@ def replace_avatar_image(
     image_file: UploadFile,
     delete_previous: bool = True,
 ) -> AvatarCreatedResponse:
-    """
-    Replaces the avatar's image for (course_id, slot).
-    By default deletes the previous image file/row to avoid disk bloat.
-    """
     avatar = _get_avatar_or_404(db, course_id, slot)
     saved_new_path = None
 
@@ -71,7 +67,6 @@ def replace_avatar_image(
         )
         db.add(new_img)
 
-        # Delete previous latest (NOT the one we just added)
         if delete_previous and old_img:
             db.delete(old_img)
             try:
@@ -88,15 +83,38 @@ def replace_avatar_image(
         if not latest_audio:
             raise HTTPException(status_code=404, detail="Avatar has no audio to pair with")
 
-        return AvatarCreatedResponse(...)
+        return AvatarCreatedResponse(
+            avatarId=UUID(avatar.avatar_id),
+            name=avatar.name,
+            courseId=UUID(avatar.course_id) if avatar.course_id else None,
+            slot=CourseAvatarSlot(avatar.slot),
+            createdAt=avatar.created_at,
+            image=AvatarImageResponse(
+                id=UUID(latest_image.id),
+                avatarId=UUID(avatar.avatar_id),
+                filePath=latest_image.file_path,
+                mimeType=latest_image.mime_type,
+                sizeBytes=latest_image.size_bytes,
+                createdAt=latest_image.created_at,
+            ),
+            audio=AvatarAudioResponse(
+                id=UUID(latest_audio.id),
+                avatarId=UUID(avatar.avatar_id),
+                filePath=latest_audio.file_path,
+                mimeType=latest_audio.mime_type,
+                sizeBytes=latest_audio.size_bytes,
+                createdAt=latest_audio.created_at,
+            ),
+        )
 
     except Exception:
         db.rollback()
         if saved_new_path:
-            try: saved_new_path.unlink(missing_ok=True)
-            except Exception: pass
+            try:
+                saved_new_path.unlink(missing_ok=True)
+            except Exception:
+                pass
         raise
-
 
 def replace_avatar_audio(
     db: Session,
@@ -105,10 +123,6 @@ def replace_avatar_audio(
     audio_file: UploadFile,
     delete_previous: bool = True,
 ) -> AvatarCreatedResponse:
-    """
-    Replaces the avatar's audio for (course_id, slot).
-    By default deletes the previous audio file/row.
-    """
     avatar = _get_avatar_or_404(db, course_id, slot)
     saved_new_path = None
 
@@ -143,11 +157,35 @@ def replace_avatar_audio(
         if not latest_image:
             raise HTTPException(status_code=404, detail="Avatar has no image to pair with")
 
-        return AvatarCreatedResponse(...)
+        return AvatarCreatedResponse(
+            avatarId=UUID(avatar.avatar_id),
+            name=avatar.name,
+            courseId=UUID(avatar.course_id) if avatar.course_id else None,
+            slot=CourseAvatarSlot(avatar.slot),
+            createdAt=avatar.created_at,
+            image=AvatarImageResponse(
+                id=UUID(latest_image.id),
+                avatarId=UUID(avatar.avatar_id),
+                filePath=latest_image.file_path,
+                mimeType=latest_image.mime_type,
+                sizeBytes=latest_image.size_bytes,
+                createdAt=latest_image.created_at,
+            ),
+            audio=AvatarAudioResponse(
+                id=UUID(latest_audio.id),
+                avatarId=UUID(avatar.avatar_id),
+                filePath=latest_audio.file_path,
+                mimeType=latest_audio.mime_type,
+                sizeBytes=latest_audio.size_bytes,
+                createdAt=latest_audio.created_at,
+            ),
+        )
 
     except Exception:
         db.rollback()
         if saved_new_path:
-            try: saved_new_path.unlink(missing_ok=True)
-            except Exception: pass
+            try:
+                saved_new_path.unlink(missing_ok=True)
+            except Exception:
+                pass
         raise
