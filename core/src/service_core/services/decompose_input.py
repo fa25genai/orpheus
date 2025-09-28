@@ -56,7 +56,7 @@ def call_llm(prompt: str, model: Optional[str] = None, max_tokens: int = 512) ->
 
     # https://eu-central-1.console.aws.amazon.com/bedrock/home?region=eu-central-1#/model-catalog
     llm = ChatBedrockConverse(
-        model="anthropic.claude-sonnet-4-20250514-v1:0",  # or another supported model
+        model="anthropic.claude-3-5-sonnet-20240620-v1:0",  # or another supported model
         region_name="eu-central-1",         # set your AWS region
         aws_access_key_id=config.aws_access_key_id,
         aws_secret_access_key=config.aws_secret_access_key,
