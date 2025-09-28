@@ -1,0 +1,10 @@
+AWS_ACCESS_KEY_ID=<id>
+AWS_SECRET_ACCESS_KEY=<Key>
+AWS_SESSION_TOKEN=<Token>
+
+LLAMA_API_KEY=<apiKey>
+LLAMA_MODEL=llama3.3:latest
+LLAMA_API_URL=https://gpu.aet.cit.tum.de/ollama
+
+# 1 to enable mock responses
+ORPHEUS_DEBUG=0
