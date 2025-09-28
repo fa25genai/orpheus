@@ -2,7 +2,6 @@
 # Helper functions for interacting with LLMs via Bedrock Converse API.
 # Author: Lukas Bäurle (st187218@stud.uni-stuttgart.de)
 import json
-import re
 from typing import TypeVar, Type
 import boto3
 from pydantic import BaseModel, ValidationError
