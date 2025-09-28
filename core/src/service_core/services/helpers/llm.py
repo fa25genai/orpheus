@@ -24,7 +24,6 @@ def ask_llm_with_model(prompt: str, ResponseModel: BaseModel) -> BaseModel:
     """
     Get a structured response from Bedrock Converse API using a Pydantic model for schema validation.
     Args:
-    +
         ResponseModel (BaseModel): A Pydantic model class defining the expected response structure.
         prompt (str): The prompt to send to the LLM.
     Returns:
@@ -141,7 +140,7 @@ def ask_llm_with_model(prompt: str, ResponseModel: BaseModel) -> BaseModel:
             raise RuntimeError("Unexpected error during LLM call or validation") from e
     return validated
 
-def ask_llm(prompt:str) -> str:
+def ask_llm(prompt: str) -> str:
     '''
     Simple wrapper to get a standard text response from the LLM.
     Args:
