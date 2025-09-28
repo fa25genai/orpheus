@@ -56,7 +56,7 @@ def generate_narrations(
     
     # Load the prompt templates
     prompt_templates = json.loads(prompt_templates_json)
-    print("\n\nGenerating pages:", len(pages), flush=True)
+    print("\n\nGenerating page narrations:", len(pages), flush=True)
     for i, page in enumerate(pages):
         page_content = page["content"]
         # Build the prompt using the templates
