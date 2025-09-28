@@ -7,6 +7,7 @@ import json
 import os
 import textwrap
 from typing import Any, Dict, Optional
+import logging
 
 from dotenv import load_dotenv
 from langchain_aws import ChatBedrockConverse
@@ -14,6 +15,10 @@ from langchain_aws import ChatBedrockConverse
 from langchain_community.chat_models import BedrockChat
 
 from pydantic import BaseModel
+
+from service_core.services.llm_chain.shared_llm import create_base_model
+
+logger = logging.getLogger("Decompose Input")
 
 # Load environment variables from .env file
 load_dotenv()
@@ -47,21 +52,8 @@ def call_llm(prompt: str, model: Optional[str] = None, max_tokens: int = 512) ->
     # if not config.llama_api_key:
     #     raise RuntimeError("LLAMA_API_KEY not set")
 
-    # Initialize ChatOllama with custom endpoint and API key
-    # llm = ChatOllama(
-    #     model=model,
-    #     base_url=config.llama_api_url,
-    #     headers={"Authorization": f"Bearer {config.llama_api_key}"},
-    # )
-
-    # https://eu-central-1.console.aws.amazon.com/bedrock/home?region=eu-central-1#/model-catalog
-    llm = ChatBedrockConverse(
-        model="anthropic.claude-3-5-sonnet-20240620-v1:0",  # or another supported model
-        region_name="eu-central-1",         # set your AWS region
-        aws_access_key_id=config.aws_access_key_id,
-        aws_secret_access_key=config.aws_secret_access_key,
-        aws_session_token=config.aws_session_token,
-    )
+    logger.info(f"Initializing model: {model_name}")
+    llm = create_base_model(model_name, temperature=0.0)
 
     # Generate response
     response = llm.invoke(prompt)
