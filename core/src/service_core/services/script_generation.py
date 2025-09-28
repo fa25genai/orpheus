@@ -40,7 +40,9 @@ def try_parse_json(raw_response: str) -> Tuple[bool, Any]:
 # -----------------------------
 
 
-def generate_script_llm(retrieved_content: List[Dict[str, Any]], persona: Any) -> Dict[str, Any]:
+def generate_script_llm(
+    retrieved_content: List[Dict[str, Any]], persona: Any
+) -> Dict[str, Any]:
     if hasattr(persona, "dict"):
         persona_dict = persona.dict()
     elif hasattr(persona, "model_dump"):
@@ -136,11 +138,16 @@ def generate_script_llm(retrieved_content: List[Dict[str, Any]], persona: Any) -
         except Exception as e:
             print(f"Unexpected error on attempt {attempt + 1}: {e}")
             if attempt == max_retries - 1:
-                raise RuntimeError(f"Failed to get valid response from LLM after {max_retries} attempts: {e}")
+                raise RuntimeError(
+                    f"Failed to get valid response from LLM after {max_retries} attempts: {e}"
+                )
             continue
     raise RuntimeError("LLM did not produce valid JSON response")
 
-def generate_script(content: List[Dict[str, Any]], persona: UserProfile) -> Dict[str, Any]:
+
+def generate_script(
+    content: List[Dict[str, Any]], persona: UserProfile
+) -> Dict[str, Any]:
     retrieved_content: List[Dict[str, Any]] = convert_json_structure(content)
 
     # Create a lookup table for assets and a version of the content for the LLM
@@ -155,7 +162,10 @@ def generate_script(content: List[Dict[str, Any]], persona: UserProfile) -> Dict
                 for asset in item["assets"]:
                     if isinstance(asset, dict) and "name" in asset:
                         # Store the original asset data
-                        asset_lookup[asset["name"]] = {"mimeType": asset.get("mimeType"), "data": asset.get("data")}
+                        asset_lookup[asset["name"]] = {
+                            "mimeType": asset.get("mimeType"),
+                            "data": asset.get("data"),
+                        }
                         # Remove bulky data for the LLM call
                         asset.pop("mimeType", None)
                         asset.pop("data", None)

@@ -46,19 +46,25 @@ def generate_narrations(
     slide_messages = []
 
     # Get prompt templates JSON string
-    prompt_templates_json = load_prompt("src/service_core/services/prompts/narration.json")
-    
+    prompt_templates_json = load_prompt(
+        "src/service_core/services/prompts/narration.json"
+    )
+
     # Load the prompt templates
     prompt_templates = json.loads(prompt_templates_json)
+    print("\n\nGenerating page narrations:", len(pages), flush=True)
     for i, page in enumerate(pages):
-        # print("\n\npage:", page, flush=True)
         page_content = page["content"]
         # Build the prompt using the templates
         prompt_parts = [
             prompt_templates["base_prompt"].format(user_profile=user_profile),
-            prompt_templates["lecture_script_section"].format(lecture_script=lecture_script),
-            prompt_templates["narration_history_section"].format(narration_history=narration_history),
-            prompt_templates["slide_content_section"].format(page_content=page_content)
+            prompt_templates["lecture_script_section"].format(
+                lecture_script=lecture_script
+            ),
+            prompt_templates["narration_history_section"].format(
+                narration_history=narration_history
+            ),
+            prompt_templates["slide_content_section"].format(page_content=page_content),
         ]
 
         # Add specific instructions for first or last slide
@@ -84,10 +90,11 @@ def generate_narrations(
     output_data: Dict[str, Any] = {
         "slideMessages": slide_messages,
         "promptId": example_slides["promptId"],
-        "courseId": user_profile.enrolled_courses[0] if user_profile.enrolled_courses else None,
-        "userProfile": json.loads(user_profile.model_dump_json(
-                by_alias=False, exclude_unset=True
-            )
+        "courseId": user_profile.enrolled_courses[0]
+        if user_profile.enrolled_courses
+        else None,
+        "userProfile": json.loads(
+            user_profile.model_dump_json(by_alias=False, exclude_unset=True)
         ),
     }
     return output_data

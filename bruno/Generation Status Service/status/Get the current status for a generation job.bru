@@ -1,0 +1,15 @@
+meta {
+  name: Get the current status for a generation job
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/status/:promptId
+  body: none
+  auth: inherit
+}
+
+params:path {
+  promptId: 
+}

@@ -38,7 +38,9 @@ def invoke_llm(
     return cast(Any, chain.invoke(input_data))
 
 
-def create_base_model(model_name: str, temperature: float = 0.0, max_tokens: Optional[int] = None) -> BaseLanguageModel[Any]:
+def create_base_model(
+    model_name: str, temperature: float = 0.0, max_tokens: Optional[int] = None
+) -> BaseLanguageModel[Any]:
     """Creates the best available model based on environment variables."""
 
     # Try OpenAI first
@@ -68,7 +70,9 @@ def create_base_model(model_name: str, temperature: float = 0.0, max_tokens: Opt
             "base_url": os.environ["OLLAMA_LLM_HOST"],
             "temperature": temperature,
             "keep_alive": "-1m",
-            "client_kwargs": {"headers": {"Authorization": f"Bearer {os.environ['OLLAMA_LLM_KEY']}"}}
+            "client_kwargs": {
+                "headers": {"Authorization": f"Bearer {os.environ['OLLAMA_LLM_KEY']}"}
+            },
         }
         if max_tokens:
             model_kwargs["max_tokens"] = max_tokens
@@ -85,4 +89,6 @@ def create_base_model(model_name: str, temperature: float = 0.0, max_tokens: Opt
             model_kwargs["max_tokens"] = max_tokens
         return ChatBedrockConverse(**model_kwargs)  # type: ignore
 
-    raise RuntimeError("No LLM providers available. Please set one of: OPENAI_API_KEY, GOOGLE_API_KEY, OLLAMA_LLM_HOST, or AWS_BEARER_TOKEN_BEDROCK in your environment variables.")
+    raise RuntimeError(
+        "No LLM providers available. Please set one of: OPENAI_API_KEY, GOOGLE_API_KEY, OLLAMA_LLM_HOST, or AWS_BEARER_TOKEN_BEDROCK in your environment variables."
+    )
