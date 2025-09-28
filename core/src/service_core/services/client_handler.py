@@ -1,5 +1,4 @@
 import asyncio
-import json
 import os
 from typing import Any, Dict, List, Union
 
@@ -137,7 +136,7 @@ async def generate_slides(prompt_request: PromptRequest, prompt_id: str, lecture
             "promptId": str(prompt_id),
             "lectureScript": lecture_script,
             # "user": json.loads(mock_service.create_user().model_dump_json(by_alias=True, exclude_unset=True)),
-            "user": prompt_request.user_persona.to_dict(),
+            "user": prompt_request.user_persona.to_dict() if prompt_request.user_persona else {}, 
             "assets": refined_output.get("assets", ""),
         }
 
@@ -154,6 +153,7 @@ async def generate_slides(prompt_request: PromptRequest, prompt_id: str, lecture
         return slides_data
     except Exception as e:
         print("Error when generating slides: ", e, flush=True)
+        return {}
 
 
 async def generate_voice_scripts(lecture_script: str, slides_data: Dict[str, Any], user: UserProfile, client: httpx.AsyncClient, prompt_id: str) -> List[asyncio.Task[httpx.Response]]:
