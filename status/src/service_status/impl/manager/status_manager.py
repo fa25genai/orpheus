@@ -1,6 +1,6 @@
 import logging
 import typing
-from asyncio import Lock
+from threading import Lock
 from typing import Awaitable
 
 from service_status.models.avatar_element_status import AvatarElementStatus
@@ -21,11 +21,11 @@ class StatusManager:
         self.mutex = Lock()
 
     async def get_status(self, prompt_id: str) -> Status:
-        async with self.mutex:
+        with self.mutex:
             return self._get_status_unsafe(prompt_id)
 
     async def update_status(self, prompt_id: str, patch: StatusPatch) -> None:
-        async with self.mutex:
+        with self.mutex:
             base = self._get_status_unsafe(prompt_id)
 
             for k, v in patch.__dict__.items():
@@ -71,14 +71,14 @@ class StatusManager:
         reference: str,
         listener: typing.Callable[[Status], Awaitable[None]],
     ) -> None:
-        async with self.mutex:
+        with self.mutex:
             if prompt_id not in self.listeners:
                 self.listeners[prompt_id] = {}
             self.listeners[prompt_id][reference] = listener
             await listener(self._get_status_unsafe(prompt_id))
 
     async def remove_listener(self, prompt_id: str, reference: str) -> None:
-        async with self.mutex:
+        with self.mutex:
             if prompt_id not in self.listeners:
                 return
             del self.listeners[prompt_id][reference]
