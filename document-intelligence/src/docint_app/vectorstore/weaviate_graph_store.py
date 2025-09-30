@@ -435,7 +435,7 @@ class WeaviateGraphStore:
         course_id: Optional[str] = None,
         k: int = 5,
         image_query_vector: Optional[Sequence[float]] = None,
-        alpha: float = 0.8,  # Default weight for text is now 70%
+        alpha: float = 0.8,  # Default weight for text is now 80%
         similarity_threshold: float = 0.70,  # Results must meet this score
         per_slide_image_agg: str = "max",  # How to aggregate image scores per slide
         include_distance: bool = True,  # Whether to include distance information
