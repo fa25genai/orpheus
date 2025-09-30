@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import os
-from typing import Dict, Tuple, Union
+from typing import Tuple, Union
 
 from pydantic import Field, StrictBytes, StrictStr
 from typing_extensions import Annotated
@@ -29,7 +29,7 @@ class DocintApiImpl(BaseDocintApi):  # type: ignore[no-untyped-call]
         env_debug = os.getenv("ORPHEUS_DEBUG_MODE", "false").lower() == "true"
         # Use environment variable as default, but allow API parameter to override
         
-        print(f"Retrieving data for course {courseId} with query {prompt_query}; debug={env_debug}")
+        logger.debug(f"Retrieving data for course {courseId} with query {prompt_query}; debug={env_debug}")
 
         if not env_debug:
             service = get_retrieval_service()
