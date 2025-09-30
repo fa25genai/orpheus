@@ -931,5 +931,5 @@ def get_weaviate_client() -> weaviate.WeaviateClient:
     if _weaviate_instance.is_connected() is False:
         print("[WeaviateClient] WARNING: Weaviate client is not connected!")
         # Optionally, raise an error or attempt reconnection here.
-        _weaviate_instance = weaviate.connect_to_local(host="docint-weaviate", port=50051)
+        _weaviate_instance = weaviate.connect_to_local(host="docint-weaviate", port=28947)
     return _weaviate_instance
