@@ -18,7 +18,7 @@ class _SearchMetadata(TypedDict):
 
 class _SearchResults(TypedDict):
     query: str
-    course_id: Optional[str]
+    course_id: str
     k: int
     alpha: float
     total_hits: int
@@ -43,7 +43,7 @@ class RetrievalService:
             print(f"Failed to initialize RetrievalService: {e}")
             raise
 
-    async def search(self, query: str, course_id: Optional[str] = None, k: int = 5, alpha: float = 0.8, per_slide_image_agg: str = "max", include_images: bool = True) -> _SearchResults:
+    async def search(self, query: str, course_id: str, k: int = 5, alpha: float = 0.8, per_slide_image_agg: str = "max", include_images: bool = True) -> _SearchResults:
         """
         Search for slides and images based on a text query.
 
@@ -96,13 +96,10 @@ class RetrievalService:
 
             # Perform fused search
             print(f"Performing fused search (text+image) with alpha={alpha}...")
-            slide_hits = self.store.search_slides_fused_with_images(
+            slide_hits = self.store.client_search_slides_fused_with_images(
                 query_vector=query_vector,
                 course_id=course_id,
                 k=k,
-                alpha=alpha,
-                per_slide_image_agg=per_slide_image_agg,
-                include_distance=True,
             )
 
             results["total_hits"] = len(slide_hits)
@@ -144,7 +141,7 @@ class RetrievalService:
 
         return results
 
-    async def search_simple(self, query: str, course_id: Optional[str] = None, k: int = 5) -> Dict[str, Any]:
+    async def search_simple(self, query: str, course_id: str, k: int = 5) -> Dict[str, Any]:
         """
         Simplified search method that returns results in OpenAPI-compatible format.
 
@@ -170,13 +167,12 @@ class RetrievalService:
             query_vector = self.embedder.embed_text(query)
 
             # Perform search
-            slide_hits = self.store.search_slides_fused_with_images(
+            slide_hits = self.store.client_search_slides_fused_with_images(
                 query_vector=query_vector,
                 course_id=course_id,
                 k=k,
-                alpha=0.8,  # Default text-heavy weighting
-                include_distance=False,
             )
+            
             print(f"Retrieved {len(slide_hits)} hits from store")
 
             # Convert to OpenAPI format
