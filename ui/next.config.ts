@@ -18,7 +18,12 @@ const nextConfig: NextConfig = {
         destination: 'http://localhost:9000/v1/avatars/:courseId/:slot/image'
       }
     ];
-  }
+  },
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '300mb',
+    },
+  },
 };
 
 export default nextConfig;
