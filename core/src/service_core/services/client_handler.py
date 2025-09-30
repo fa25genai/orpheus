@@ -304,7 +304,6 @@ async def avatar_video_producer(
 def generate_avatar_video(
     voice_script: VoiceTrackResponse, index: int, client: httpx.AsyncClient
 ) -> Union[asyncio.Task[httpx.Response], None]:
-    logger.info(f"Generating avatar video for slide {index}")
     try:
         task: asyncio.Task[httpx.Response] = asyncio.create_task(
             avatar_video_producer(voice_script, client)
