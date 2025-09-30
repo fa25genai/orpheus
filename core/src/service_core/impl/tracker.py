@@ -8,6 +8,8 @@ class ProgressTracker:
 
     def log(self, message: str) -> None:
         self.current_step += 1
+        if self.current_step > total_tasks: 
+            self.current_step = 1
         print(f"({self.current_step}/{self.total_steps}): {message}", flush=True)
 
 
