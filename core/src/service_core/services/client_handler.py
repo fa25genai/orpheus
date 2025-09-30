@@ -108,18 +108,17 @@ async def query_document_intelligence(
             stepLookup=StepStatus.IN_PROGRESS
         ), client)
     # if DEBUG:
-    if True:    # Remove when DI is ready with endpoint
+    if DEBUG:    # Remove when DI is ready with endpoint
         return mock_service.create_retrieved_content()
+    print("Subqueries to DI: ", subqueries, flush=True)
 
-    subquery_for_api = subqueries[0] if subqueries else ""
-
-    di_response = await client.get(
-        f"{DI_API_URL}/v1/retrieval/{prompt_request.course_id}",
-        params={"promptQuery": str(subquery_for_api)},
+    di_response = await client.post(
+        f"{DI_API_URL}/v1/retrieval/{prompt_request.course_id}/batch",
+        json={"promptQueries": subqueries},
         timeout=300.0,
     )
     di_response.raise_for_status()
-    di_data: List[Dict[str, Any]] = di_response.json()
+    di_data: List[Dict[str, Any]] = di_response.json().get("results", "")
     return di_data
 
 
