@@ -390,11 +390,11 @@ ${right}
             LayoutDescription("two-cols", "Separates the page content in two columns."),
             LayoutDescription(
                 "two-cols-header",
-                "Separates the upper and lower lines of the page content, and the second line separates the left and right columns.",
+                "Displays a header at the top with two columns (containing e.g. text) arranged side-by-side below, and an optional bottom section.",
             ),
             LayoutDescription(
                 "two-cols-image-header",
-                "Separates the upper and lower lines of the page content, the header is shown on the top, and the second line separates the left and right columns.",
+                "Displays a header at the top with two images arranged side-by-side below, and an optional bottom section.",
             ),
         ]
 
