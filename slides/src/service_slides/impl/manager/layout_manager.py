@@ -325,6 +325,29 @@ ${right}
                     "right": "Content for the right column",
                 },
             ),
+            "two-cols-image-header": LayoutTemplate(
+                "two-cols-image-header",
+                Template(
+                    """---
+            layout: two-cols-image-header
+            imageLeft: assets/${image_left}
+            imageRight: assets/${image_right}
+            ---
+    
+            ${header}
+    
+            ::bottom::
+    
+            ${bottom}
+            """
+                ),
+                {
+                    "header": "Header and optional caption spanning the top",
+                    "image_left": "Path or URL to the left image",
+                    "image_right": "Path or URL to the right image",
+                    "bottom": "Optional footer or caption text spanning the bottom",
+                },
+            ),
         }
 
     async def get_available_layouts(self, courseId: str) -> List[LayoutDescription]:
@@ -368,6 +391,10 @@ ${right}
             LayoutDescription(
                 "two-cols-header",
                 "Separates the upper and lower lines of the page content, and the second line separates the left and right columns.",
+            ),
+            LayoutDescription(
+                "two-cols-image-header",
+                "Separates the upper and lower lines of the page content, the header is shown on the top, and the second line separates the left and right columns.",
             ),
         ]
 
