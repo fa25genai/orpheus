@@ -24,7 +24,7 @@ RUN apt-get update && \
 
 # Install Slidev and its dependencies
 RUN npm install -g @pnpm/exe playwright-chromium && \
-    npx playwright install-deps && \
+    npx playwright install-deps chromium && \
     git clone https://github.com/fa25genai/slidev.git /install/slidev/ && \
     cd /install/slidev && \
     pnpm install && \
