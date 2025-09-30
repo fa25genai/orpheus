@@ -35,7 +35,7 @@ class PDFImageExtractorService:
         try:
             image = Image.open(BytesIO(img_bytes)).convert("L")
             stat = ImageStat.Stat(image)
-            return stat.mean[0] < self.darkness_threshold and stat.stddev[0] < self.variance_threshold  # type: ignore
+            return bool(stat.mean[0] < self.darkness_threshold and stat.stddev[0] < self.variance_threshold)
         except Exception as e:
             print(f"Error checking if image is black square: {e}")
             return False
