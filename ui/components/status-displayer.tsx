@@ -1,15 +1,15 @@
 import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
 import {Status, StepStatus} from "@/generated-api-clients/status/models";
-import {CheckCircle, CircleX, Loader2} from "lucide-react";
+import {CheckCircle, CircleX, Clock, Loader2} from "lucide-react";
 
 function StepItem({title, state}: {title: string; state: StepStatus}) {
-  if (state === "NOT_STARTED") return null; // <--- Hides unfinished steps
-
   let icon = null;
   if (state === "IN_PROGRESS") {
     icon = <Loader2 className="h-5 w-5 animate-spin text-blue-500" />;
   } else if (state === "DONE") {
     icon = <CheckCircle className="h-5 w-5 text-green-500" />;
+  } else if (state === "NOT_STARTED") {
+    icon = <Clock className="h-5 w-5 text-gray-400" />;
   } else {
     icon = <CircleX className="h-5 w-5 text-gray-400" />;
   }
@@ -30,10 +30,24 @@ export function StatusDisplayer({status}: StatusDisplayerProps) {
   // Count total slides
   const totalSlides = status.slideStructure?.pages?.length ?? 0;
   const generatedSlides = status.stepSlideGeneration ?? 0;
+
+  function slideGenerationStatus(): StepStatus {
+    if (generatedSlides == 0) {
+      return "NOT_STARTED";
+    }
+
+    if (generatedSlides === totalSlides) {
+      return "DONE";
+    }
+
+    return "IN_PROGRESS";
+  }
+
   const debug = ["yes", "1", "true"].includes(
     (process.env.NEXT_PUBLIC_ORPHEUS_DEBUG || "").toLowerCase()
   );
-  console.log(debug);
+
+  const slideGeneration: StepStatus = slideGenerationStatus();
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -54,6 +68,7 @@ export function StatusDisplayer({status}: StatusDisplayerProps) {
             title="Slide Structure Generation"
             state={status.stepSlideStructureGeneration}
           />
+          <StepItem title="Slide Generation" state={slideGeneration} />
           <StepItem
             title="Slide Post Processing"
             state={status.stepSlidePostprocessing}
@@ -64,9 +79,11 @@ export function StatusDisplayer({status}: StatusDisplayerProps) {
             <h3 className="font-semibold text-sm text-muted-foreground mb-2">
               Slide Generation
             </h3>
-            <p className="text-sm">
-              {generatedSlides} / {totalSlides} slides generated
-            </p>
+            {totalSlides != 0 && (
+              <p className="text-sm">
+                {generatedSlides} / {totalSlides} slides generated
+              </p>
+            )}
           </div>
 
           {/* Avatar Generation Progress */}
@@ -77,11 +94,11 @@ export function StatusDisplayer({status}: StatusDisplayerProps) {
             {status.stepsAvatarGeneration.map((step, index) => (
               <div key={index} className="space-y-1">
                 <StepItem
-                  title={`Avatar ${index + 1} - Audio`}
+                  title={`Avatar ${index} - Audio`}
                   state={step.audio as StepStatus}
                 />
                 <StepItem
-                  title={`Avatar ${index + 1} - Video`}
+                  title={`Avatar ${index} - Video`}
                   state={step.video as StepStatus}
                 />
               </div>
