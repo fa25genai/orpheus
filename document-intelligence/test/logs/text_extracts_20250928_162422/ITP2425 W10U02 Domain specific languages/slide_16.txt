@@ -1,7 +1,0 @@
-PDF: ITP2425 W10U02 Domain specific languages.pdf
-Slide: 16
-Characters: 429
-Empty: False
---------------------------------------------------
-
-Let's create a Gradle project in IntelliJ plugins { id 'java' } group 'de.tum.ase' version '1.0-SNAPSHOT' repositories { mavenCentral() } dependencies { testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1' testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1' } test { useJUnitPlatform() } https://github.com/sintum/java-json-demo Introduction to Programming - W10 Programming Languages 30 2024 Stephen Krusche

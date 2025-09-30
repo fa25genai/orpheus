@@ -1,7 +1,0 @@
-PDF: ITP2425 W10U01 Overview.pdf
-Slide: 2
-Characters: 586
-Empty: False
---------------------------------------------------
-
-Schedule 1 16.11.24 Introduction 2 23.11.24 Control Flow in Programming 3 30.11.24 In-Depth Core Concepts* 4 06.12.24 Core Data Structures 5 13.12.24 Code Reuse and Structure 6 20.12.24 Type Flexibility and Safety 7 27.12.24 In-Depth Object Orientation* 8 04.01.25 Functional Programming Essentials 9 11.01.25 Algorithms and Data Handling 10 18.01.25 Programming Languages 11 08.01.25 Graphical User Interfaces 12 15.01.25 Recursion 13 22.01.25 Concurrency 14 29.01.25 Beyond Programming 15 05.02.25 Course Review © 2024 Krusche Introduction to Programming - W10 Programming Languages 2

@@ -1,7 +1,0 @@
-PDF: ITP2425 W10U03 Syntax trees.pdf
-Slide: 6
-Characters: 453
-Empty: False
---------------------------------------------------
-
-Example: Euclidean algorithm (greatest common divisor) while b ≠ 0: if a > b: a := a - b else: b := b - a return a © 2024 Stephen Krusche Introduction to Programming - W10 Programming Languages 42 statement sequence while condition compare op: ≠ body return variable name: a variable name: b constant value: 0 branch if-body else-body assign assign variable name: a variable name: b bin op: - variable name: b bin op: - variable name: a variable name: b

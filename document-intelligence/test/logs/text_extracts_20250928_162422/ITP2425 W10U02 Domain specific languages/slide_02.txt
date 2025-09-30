@@ -1,7 +1,0 @@
-PDF: ITP2425 W10U02 Domain specific languages.pdf
-Slide: 2
-Characters: 617
-Empty: False
---------------------------------------------------
-
-Domain Specific Language (DSL) • Specialized in a particular application domain • In contrast to general purpose languages (GPL), e.g. Java, which are broadly applicable across domains • There is a wide variety of DSLs for common domains, such as HTML for web pages • The line between GPLs and DSLs is not always sharp • A language may have specialized features for a particular domain but be applicable more broadly • Conversely, it may in principle be capable of broad application but in practice used primarily for a specific domain © 2024 Stephan Krusche Introduction to Programming - W10 Programming Languages 16

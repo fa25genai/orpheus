@@ -1,7 +1,0 @@
-PDF: ITP2425 W10U02 Domain specific languages.pdf
-Slide: 21
-Characters: 965
-Empty: False
---------------------------------------------------
-
-import org.json.JSONObject;public class Main {public static void main(String[] args) {Movie hiddenFiguresMovie = new Movie("tt4846340", "Hidden Figures", "Three ...", new String[] {"History", "Drama"}, 2016, "7.8");String jsonString = serialize(hiddenFiguresMovie);System.out.println(jsonString);Movie anotherHiddenFigureMovie = deserialize(jsonString);System.out.println(anotherHiddenFigureMovie);} // Serialize - Movie -> JSON Stringpublic static String serialize(Movie movie) {JSONObject jsonObject = movie.toJson();return jsonObject.toString(4);} public static Movie deserialize(String jsonString) {JSONObject jsonObject = new JSONObject(jsonString);return new Movie(jsonObject);} } {"year": 2016,"imdbID": "tt4846340","genres": ["History","Drama"],"rating": "7.8"},"title": "Hidden Figures"Movie(imdbID=tt4846340", title="Hidden Figures", genres=[History, Drama], year=2016, rating=7.8) © 2024 Krusche Introduction to Programming - W10 Programming Languages 35

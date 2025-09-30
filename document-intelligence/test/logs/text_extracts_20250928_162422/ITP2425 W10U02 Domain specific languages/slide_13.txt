@@ -1,7 +1,0 @@
-PDF: ITP2425 W10U02 Domain specific languages.pdf
-Slide: 13
-Characters: 476
-Empty: False
---------------------------------------------------
-
-Example: Dataflow of S.A.L. kibana-Dashboard Max Average Min 21:00:00 21:05:00 21:10:00 21:15:00 21:20:00 21:25:00 @timestamp per 10 seconds Node CPU Utilization Max Average Min 21:00:00 21:05:00 21:10:00 21:15:00 21:20:00 21:25:00 @timestamp per 10 seconds Output: Filtered data displayed in graphs kubernetes docker beats kafka logstash elasticsearch kibana ZooKeeper ElastAlert Curator slack © 2024 Stephan Krusche Introduction to Programming - W10 Programming Languages 27

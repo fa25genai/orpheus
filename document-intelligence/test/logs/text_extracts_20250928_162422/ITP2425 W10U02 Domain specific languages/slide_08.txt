@@ -1,7 +1,0 @@
-PDF: ITP2425 W10U02 Domain specific languages.pdf
-Slide: 8
-Characters: 779
-Empty: False
---------------------------------------------------
-
-XML• The extensible language defines a set of rules for encoding documents in a format that is both human-readable and machine-readable• Try it out: www.tutorialspoint.com/online xml editor.htmExampleObjectMovie- imdbID: String- title: String- simplePlot: String- genres: [String]- year: int- rating: StringhiddenFigures: MovieimdbID = "tt4846340"title = "Hidden Figures"simplePlot = "Three ..."genres = ["History", "Drama"]year = 2016rating = "7.8"XML<?xml version="1.0" encoding="UTF-8"?> <movie><imdbID>tt4846340</imdbID><title>Hidden Figures</title><simplePlot>Three ...</simplePlot><genres><element>History</element><element>Drama</element></genres><year>2016</year><rating>7.8</rating></movie>© 2024 Stephen Krusche Introduction to Programming - W10 Programming Languages22

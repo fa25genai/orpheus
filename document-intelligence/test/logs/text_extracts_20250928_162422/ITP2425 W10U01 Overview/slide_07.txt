@@ -1,8 +1,0 @@
-PDF: ITP2425 W10U01 Overview.pdf
-Slide: 7
-Characters: 627
-Empty: False
---------------------------------------------------
-
-https://www.computerscience.org/resources/computer-programming-languages
-©2024 Stephan Krusche Introduction to Programming - W10 Programming Languages 7 • Programming languages allow us to give instructions to a computer • Many different human languages → many computer programming languages • Code cannot be directly understood by a computer: it must first be translated into a lower language that the computer can execute, called a binary • Translating code into binary is called compiling or compilation • Every language, from C to Python to Java, has its own distinct features, as well as commonalities with other languages

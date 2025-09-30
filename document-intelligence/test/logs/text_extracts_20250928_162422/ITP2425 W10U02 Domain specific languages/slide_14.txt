@@ -1,7 +1,0 @@
-PDF: ITP2425 W10U02 Domain specific languages.pdf
-Slide: 14
-Characters: 544
-Empty: False
---------------------------------------------------
-
-Example: Dataflow of S.A.L. version: '3.3' services: kibana: image: docker.elasticco/kibana:$ELK_VERSION container_name: kibana volumes: type: bind source: ./kibana/kibana.yml target: /usr/share/kibana.yml read_only: true networks: sealnet: ipv4_address: 172.28.1.4 ports: "5601:5601" depends_on: elasticsearch networks: sealnet: ipam: driver: default config: subnet: 172.28.0.0/16 volumes: Introduction to Programming - W10 Programming Languages 28 kubernetes docker beats kafka logstash elasticsearch kibana ZooKeeper ElastAlert Curator slack

@@ -1,7 +1,0 @@
-PDF: ITP2425 W10U02 Domain specific languages.pdf
-Slide: 12
-Characters: 544
-Empty: False
---------------------------------------------------
-
-Example: Dataflow of S.A.L. Input: 100.000 log files in the JSON format {“correlation_id”:“01f97d55-517e-48c3-86c4-c8ae0fd9f2ca”,“function”:“status”,“host”:“ip-172-31-16-5”,“message”:“Currently 0 Services are finished.”,“pid”:768,“service”:“Session”,“cid”:768,“time”:“2020-07-05T14:16:00.490692803+00:00”,“type”:“INFO”,“unit”:“DistributedMultistreamTranscodeService”} © 2024 Stephen Krusche Introduction to Programming - W10 Programming Languages 26 kubernetes docker beats kafka logstash elasticsearch kibana Zookeeper ElastAlert Curator slack
