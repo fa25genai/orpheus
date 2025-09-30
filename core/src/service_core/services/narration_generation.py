@@ -13,7 +13,8 @@
 #                                                                              #
 ################################################################################
 import json
-from typing import Any, Dict
+from typing import Any, Dict, AsyncGenerator
+import asyncio
 
 from service_core.models.slides.generation_accepted_response import (
     GenerationAcceptedResponse,
@@ -22,14 +23,17 @@ from service_core.models.user_profile import UserProfile
 from service_core.services.helpers.debug import debug_print, enable_debug
 from service_core.services.helpers.llm import ask_llm
 from service_core.services.helpers.loaders import load_prompt
+from service_core.services.services_models.voice_track import VoiceTrackResponse
 
 
-def generate_narrations(
+async def generate_narrations(
     lecture_script: str,
     example_slides: GenerationAcceptedResponse,
     user_profile: UserProfile,
+    prompt_id: str,
+    course_id: str,
     debug: bool = False,
-) -> Dict[str, Any]:
+) -> AsyncGenerator[Dict[str, Any], None]:
     """
     Generates narrations for lecture slides based on a script and user profile.
 
@@ -54,11 +58,10 @@ def generate_narrations(
     pages = example_slides.structure.pages if example_slides.structure.pages else []
     # print("\n\npages:", pages, flush=True)
     narration_history = ""
-    slide_messages = []
 
     # Get prompt templates JSON string
-    prompt_templates_json = load_prompt(
-        "src/service_core/services/prompts/narration.json"
+    prompt_templates_json = await asyncio.to_thread(
+        load_prompt, "src/service_core/services/prompts/narration.json"
     )
 
     # Load the prompt templates
@@ -89,24 +92,19 @@ def generate_narrations(
 
         # Join all parts with newlines
         prompt = "\n\n".join(prompt_parts)
-        response = ask_llm(prompt)
-        narration = response
+        narration = await asyncio.to_thread(ask_llm, prompt)
 
         debug_print(f"--- Slide {i + 1} ---")
         debug_print(f"Content: {page_content}")
         debug_print(f"Generated Narration: {narration}\n")
 
         narration_history += f"Slide {i + 1} Narration: {narration}\n"
-        slide_messages.append(narration)
-    # Prepare output data with the actual user profile
-    output_data: Dict[str, Any] = {
-        "slideMessages": slide_messages,
-        "promptId": example_slides.prompt_id,
-        "courseId": user_profile.enrolled_courses[0]
-        if user_profile.enrolled_courses
-        else None,
-        "userProfile": json.loads(
-            user_profile.model_dump_json(by_alias=False, exclude_unset=True)
-        ),
-    }
-    return output_data
+        voice_script_request = VoiceTrackResponse(
+            promptId=prompt_id,
+            courseId=course_id,
+            voiceTrack=narration,
+            slideNumber=i,
+            userProfile=user_profile,
+        )
+
+        yield voice_script_request.model_dump(mode="json") 
