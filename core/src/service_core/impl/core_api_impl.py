@@ -54,7 +54,7 @@ def process_prompt_handler(prompt_id: UUID, prompt_request: PromptRequest) -> No
     try:
         asyncio.run(process_prompt(str(prompt_id), prompt_request))
         tracker.log(f"Closing CoreThreadPoolExecutor for {prompt_id}")
-    except Exception as e:
+    except Exception as exception:
         logger.error(
             f"An unexpected error occurred for prompt `{prompt_id}`", exc_info=exception
         )
