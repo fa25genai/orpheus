@@ -25,7 +25,7 @@ def ask_llm(prompt: str) -> str:
     response = llm.invoke(prompt)
     if isinstance(response, str):
         return response
-    return getattr(response, "content", response)
+    return getattr(response, "content", str(response))
 
 
 def create_llm() -> BaseLanguageModel[Any]:
