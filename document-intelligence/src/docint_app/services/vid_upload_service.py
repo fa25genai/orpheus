@@ -172,11 +172,10 @@ class VideoUploadService:
 
             # Verwende den Ingestion Service, um das Transkript zu speichern
             # Wir behandeln das gesamte Transkript als EINEN grossen Text-Slide/Dokument
-            await self.ingestion_service.ingest(
-                course_id=course_id, 
-                document_id=document_id, 
-                slide_texts=[transcription], # Das gesamte Transkript als ein Element
-                slide_images=[]
+            await self.ingestion_service.ingest_video_transcription(
+                course_id=course_id,
+                video_id=document_id,
+                transcription_text=transcription
             )
 
             safe_print(f"Video upload completed successfully! Document ID: {document_id}")
