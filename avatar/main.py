@@ -359,13 +359,13 @@ def generate_audio(
         # Choose reference file path (DB or fallback)
         if not ref or not getattr(ref, "file_path", None):
             print("[generate_audio] No DB voice found; using fallback sample.")
-            ref_path = Path("/app/database/voice_sample/krusche_voice.mp3")
+            ref_path = Path("/app/database/voice_sample/krusche_voice_v2.mp3")
         else:
             ref_path = Path(ref.file_path)
             if not ref_path.is_file():
                 print(f"[generate_audio] DB voice not found on disk: {ref_path}")
-                print("[generate_audio] Default fallback: Using krusche_voice.mp3")
-                ref_path = Path("/app/database/voice_sample/krusche_voice.mp3")
+                print("[generate_audio] Default fallback: Using kursche_voice_v2.mp3")
+                ref_path = Path("/app/database/voice_sample/krusche_voice_v2.mp3")
 
         # Pick a sensible MIME type for the upload
         suffix = ref_path.suffix.lower()
@@ -459,7 +459,7 @@ def generate_video(
     source_path = source_image_path
     if not source_path or not Path(source_path).is_file():
         print(f"[generate_video] Source image not found: {source_path}; using fallback sample.")
-        source_path = "/app/database/avatar_sample/image_michal.png"
+        source_path = "/app/database/avatar_sample/krusche_image.png"
     if not Path(source_path).is_file():
         print(f"[generate_video] Source image not found: {source_path}")
         return None
