@@ -127,6 +127,7 @@ async def query_document_intelligence(
         )
         di_response.raise_for_status()
         di_data: List[Dict[str, Any]] = di_response.json().get("results", [])
+        logger.debug(f"DI Response: {di_data}")
         await update_status(prompt_id, StatusPatch(stepLookup=StepStatus.DONE), client)
         return di_data
     except Exception as exception:
@@ -287,7 +288,7 @@ async def avatar_video_producer(
 ) -> httpx.Response:
     logger.info(f"Generating avatar video {voice_script.promptId}#{voice_script.slideNumber}")
     try:
-        logger.debug(f"voice track: {voice_script}")
+        logger.debug(f"Request to avatar of type {type(voice_script)}: {voice_script}")
         avatar_response = await client.post(
             f"{AVATAR_API_URL}/v1/video/generate",
             json=voice_script.model_dump(mode="json"),
