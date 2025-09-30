@@ -96,7 +96,7 @@ def generate_script_llm(
     for attempt in range(max_retries):
         try:
             raw_message = ask_llm(prompt)
-       
+
             raw: str = str(raw_message)
             # print(f"\nBreak point (attempt {attempt + 1}): {raw}")
 
