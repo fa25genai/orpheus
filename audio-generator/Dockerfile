@@ -33,4 +33,4 @@ COPY . /app/
 RUN poetry install
 
 # Run the script on container start
-CMD ["uvicorn", "generate_audio:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["poetry", "run", "uvicorn", "generate_audio:app", "--host", "0.0.0.0", "--port", "8000"]
