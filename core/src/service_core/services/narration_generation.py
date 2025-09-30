@@ -13,7 +13,7 @@
 #                                                                              #
 ################################################################################
 import json
-from typing import Any, Dict, AsyncGenerator
+from typing import AsyncGenerator
 import asyncio
 
 from service_core.models.slides.generation_accepted_response import (
@@ -45,6 +45,12 @@ async def generate_narrations(
 
     Returns:
         str: A JSON string containing the generated slide narrations.
+        :param debug:
+        :param course_id:
+        :param user_profile:
+        :param lecture_script:
+        :param example_slides:
+        :param prompt_id:
     """
 
     if debug:
@@ -105,4 +111,4 @@ async def generate_narrations(
             userProfile=user_profile,
         )
 
-        yield voice_script_request.model_dump(mode="json")
+        yield voice_script_request
