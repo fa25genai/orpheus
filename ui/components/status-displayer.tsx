@@ -30,7 +30,9 @@ export function StatusDisplayer({status}: StatusDisplayerProps) {
   // Count total slides
   const totalSlides = status.slideStructure?.pages?.length ?? 0;
   const generatedSlides = status.stepSlideGeneration ?? 0;
-  const debug = process.env.NEXT_PUBLIC_ORPHEUS_DEBUG;
+  const debug = ["yes", "1", "true"].includes(
+    (process.env.NEXT_PUBLIC_ORPHEUS_DEBUG || "").toLowerCase()
+  );
   console.log(debug);
 
   return (
