@@ -142,27 +142,35 @@ export default function Home() {
 
               {status && <StatusDisplayer status={status} />}
 
-              {status?.stepSlidePostprocessing === "DONE" && (
-                <div
-                  ref={outputRef}
-                  className="grid grid-cols-1 md:grid-cols-3 gap-6"
-                >
-                  <VideoPlayer
-                    sources={sources}
-                    onBeforeNext={() => {
-                      console.log("next slide");
-                      slidevRef.current?.next();
-                    }}
-                  />
-                  <Card className="p-8 bg-card border-border md:col-span-2">
-                    <SlidevEmbed
-                      baseUrl={`http://localhost:30608/web/${promptId}`}
-                      className="h-98"
-                      ref={slidevRef}
+              {status?.stepSlidePostprocessing === "DONE" &&
+                status?.stepsAvatarGeneration
+                  ?.slice(0, 3)
+                  .every((step, index) => {
+                    if (index < 2) {
+                      return step?.video === "DONE";
+                    }
+                    return step.video === "DONE";
+                  }) && (
+                  <div
+                    ref={outputRef}
+                    className="grid grid-cols-1 md:grid-cols-3 gap-6"
+                  >
+                    <VideoPlayer
+                      sources={sources}
+                      onBeforeNext={() => {
+                        console.log("next slide");
+                        slidevRef.current?.next();
+                      }}
                     />
-                  </Card>
-                </div>
-              )}
+                    <Card className="p-8 bg-card border-border md:col-span-2">
+                      <SlidevEmbed
+                        baseUrl={`http://localhost:30608/web/${promptId}`}
+                        className="h-98"
+                        ref={slidevRef}
+                      />
+                    </Card>
+                  </div>
+                )}
             </div>
           ))}
           <div ref={bottomRef}></div>
