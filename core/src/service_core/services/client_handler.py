@@ -233,10 +233,9 @@ async def generate_slides(
 async def generate_voice_scripts(
     lecture_script: str,
     slides_data: Dict[str, Any],
-    user: UserProfile,
+    prompt_request: PromptRequest,
     client: httpx.AsyncClient,
     prompt_id: str,
-    course_id: str,
 ) -> List[asyncio.Task[httpx.Response]]:
     tracker.log("Generating voice script")
     try:
@@ -256,16 +255,18 @@ async def generate_voice_scripts(
         logger.debug(f"slides data: {slides_data}")
 
         voice_track = narration_generation.generate_narrations(
-            lecture_script, slides_data, user
+            lecture_script, slides_data, prompt_request.user_persona
         )
 
         slides = voice_track.get("slideMessages", [])
+
+        # TODO this should not be called response, this is quite confusing
         voice_track_request = VoiceTrackResponse(
             promptId=prompt_id,
-            courseId=course_id,
+            courseId=prompt_request.course_id,
             voiceTrack="",
             slideNumber=0,
-            userProfile=user,
+            userProfile=prompt_request.user_persona,
         )
         for index, slide_data in enumerate(slides):
             voice_track_request.slideNumber = index
@@ -345,10 +346,9 @@ async def process_prompt(prompt_id: str, prompt_request: PromptRequest) -> None:
             ] = await generate_voice_scripts(
                 lecture_script,
                 slides_data,
-                prompt_request.user_persona,
+                prompt_request,
                 client,
                 prompt_id,
-                prompt_request.course_id,
             )
 
             if avatar_tasks:
