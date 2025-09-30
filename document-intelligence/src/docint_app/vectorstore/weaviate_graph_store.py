@@ -39,6 +39,9 @@ import uuid
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
 import requests
+import weaviate
+from weaviate.classes.query import MetadataQuery
+from weaviate.connect import ConnectionParams
 
 
 class WeaviateError(RuntimeError):
@@ -594,6 +597,152 @@ class WeaviateGraphStore:
         print(f"[DEBUG] Final search results: {len(out)} slides returned")
         return out
     
+    def client_search_slides_fused_with_images(
+        self,
+        *,
+        query_vector: Sequence[float],
+        course_id: str,
+        k: int = 5,
+    ) -> List[Dict[str, Any]]:
+        """
+        Simple implementation using weaviate client to search slides and their images.
+        """
+        print(f"[WeaviateClientSearch] Starting client_search_slides_fused_with_images")
+        print(f"[WeaviateClientSearch] Parameters:")
+        print(f"[WeaviateClientSearch]   - course_id: {course_id}")
+        print(f"[WeaviateClientSearch]   - k: {k}")
+        print(f"[WeaviateClientSearch]   - query_vector length: {len(query_vector) if query_vector else 'None'}")
+        
+        if not course_id:
+            print(f"[WeaviateClientSearch] ERROR: course_id is empty or None")
+            raise ValueError("course_id is required and cannot be None or empty")
+        
+        print(f"[WeaviateClientSearch] Getting weaviate client...")
+        client = get_weaviate_client()
+        print(f"[WeaviateClientSearch] Client obtained: {type(client)}")
+        
+        # Search slides using client
+        print(f"[WeaviateClientSearch] Building slide query...")
+        print(f"[WeaviateClientSearch] Query vector first 5 elements: {query_vector[:5] if len(query_vector) >= 5 else query_vector}")
+        
+        slides = client.collections.get("Slide")
+        slideImages = client.collections.get("SlideImage")
+
+        slide_query = slides.query.near_vector(
+            near_vector=query_vector, # your query vector goes here
+            limit=k,
+            certainty=0.8,
+            return_metadata=MetadataQuery(distance=True, certainty=True)
+        )
+
+        for obj in slide_query.objects:
+            print(obj.metadata)
+            print(json.dumps(obj.properties, indent=2))
+
+        return []
+
+        # slide_query = client.query.get("Slide", ["courseId", "documentId", "slideNo", "slideDescription"]).with_additional(["distance", "id"]).with_near_vector({
+        #     "vector": query_vector
+        # }).with_limit(k).with_where({
+        #     "path": ["courseId"],
+        #     "operator": "Equal",
+        #     "valueText": course_id
+        # })
+        
+        slide_query
+
+        print(f"[WeaviateClientSearch] Slide query built, executing...")
+        slide_results = slide_query.do()
+        print(f"[WeaviateClientSearch] Raw slide query results: {slide_results}")
+        
+        slides = slide_results.get("data", {}).get("Get", {}).get("Slide", [])
+        print(f"[WeaviateClientSearch] Extracted {len(slides)} slides from results")
+        
+        for i, slide in enumerate(slides):
+            distance = slide.get("_additional", {}).get("distance")
+            similarity = self._similarity_from_distance(distance)
+            print(f"[WeaviateClientSearch] Slide {i}: courseId={slide.get('courseId')}, slideNo={slide.get('slideNo')}, documentId={slide.get('documentId')}")
+            print(f"[WeaviateClientSearch]   Distance: {distance}, Similarity: {similarity}")
+            print(f"[WeaviateClientSearch]   Description preview: {(slide.get('slideDescription', '') or '')[:100]}...")
+        
+        # For each slide, get its images
+        final_results = []
+        print(f"[WeaviateClientSearch] Starting to fetch images for each slide...")
+        
+        for slide_idx, slide in enumerate(slides):
+            slide_course_id = slide.get("courseId")
+            slide_no = slide.get("slideNo")
+            
+            print(f"[WeaviateClientSearch] Processing slide {slide_idx + 1}/{len(slides)}: courseId={slide_course_id}, slideNo={slide_no}")
+            
+            # Get images for this slide
+            print(f"[WeaviateClientSearch] Building image query for slide {slide_no}...")
+            image_query = client.query.get("SlideImage", ["description", "imageBase64"]).with_where({
+                "operator": "And",
+                "operands": [
+                    {
+                        "path": ["courseId"],
+                        "operator": "Equal",
+                        "valueText": slide_course_id
+                    },
+                    {
+                        "path": ["slideNo"],
+                        "operator": "Equal",
+                        "valueInt": slide_no
+                    }
+                ]
+            }).with_limit(10)
+            
+            print(f"[WeaviateClientSearch] Executing image query for slide {slide_no}...")
+            image_results = image_query.do()
+            print(f"[WeaviateClientSearch] Raw image query results for slide {slide_no}: {image_results}")
+            
+            images = image_results.get("data", {}).get("Get", {}).get("SlideImage", [])
+            print(f"[WeaviateClientSearch] Found {len(images)} images for slide {slide_no}")
+            
+            for img_idx, img in enumerate(images):
+                desc_preview = (img.get("description", "") or "")[:50]
+                img_b64_len = len(img.get("imageBase64", "") or "")
+                print(f"[WeaviateClientSearch]   Image {img_idx}: description='{desc_preview}...', base64_length={img_b64_len}")
+            
+            # Format the result
+            print(f"[WeaviateClientSearch] Formatting images for slide {slide_no}...")
+            formatted_images = []
+            for img in images:
+                formatted_img = {
+                    "description": img.get("description", ""),
+                    "imageBase64": img.get("imageBase64", "")
+                }
+                formatted_images.append(formatted_img)
+                print(f"[WeaviateClientSearch]   Formatted image: desc_len={len(formatted_img['description'])}, b64_len={len(formatted_img['imageBase64'])}")
+            
+            slide["images"] = formatted_images
+            
+            # Add confidence scores to the slide
+            slide_distance = slide.get("_additional", {}).get("distance")
+            slide_similarity = self._similarity_from_distance(slide_distance)
+            slide["distance"] = slide_distance
+            slide["similarity"] = slide_similarity
+            
+            print(f"[WeaviateClientSearch] Added {len(formatted_images)} images to slide {slide_no}")
+            print(f"[WeaviateClientSearch] Slide confidence scores - Distance: {slide_distance}, Similarity: {slide_similarity}")
+            print(f"[WeaviateClientSearch] Final slide data keys: {list(slide.keys())}")
+            
+            final_results.append(slide)
+            print(f"[WeaviateClientSearch] Added slide {slide_no} to final results")
+        
+        print(f"[WeaviateClientSearch] Completed processing all slides")
+        print(f"[WeaviateClientSearch] Final results count: {len(final_results)}")
+        print(f"[WeaviateClientSearch] Final results summary:")
+        for i, result in enumerate(final_results):
+            distance = result.get('distance')
+            similarity = result.get('similarity')
+            print(f"[WeaviateClientSearch]   Result {i}: courseId={result.get('courseId')}, slideNo={result.get('slideNo')}, images_count={len(result.get('images', []))}")
+            print(f"[WeaviateClientSearch]   Confidence: distance={distance}, similarity={similarity}")
+        
+        print(f"[WeaviateClientSearch] Returning {len(final_results)} results")
+        return final_results
+
     # Test/Debug functions
     def get_all_data_for_course(self, course_id: str) -> Dict[str, Any]:
         """
@@ -676,3 +825,18 @@ class WeaviateGraphStore:
                     )
 
         return {"content": content, "images": images}
+
+_weaviate_instance: Optional[weaviate.WeaviateClient] = None
+
+def get_weaviate_client() -> weaviate.WeaviateClient:
+    global _weaviate_instance
+    
+    if _weaviate_instance is None:
+        _weaviate_instance = weaviate.connect_to_local(host="docint-weaviate", port=28947)
+    
+    if _weaviate_instance.is_connected() is False:
+        print("[WeaviateClient] WARNING: Weaviate client is not connected!")
+        # Optionally, raise an error or attempt reconnection here.
+        _weaviate_instance = weaviate.connect_to_local(host="docint-weaviate", port=50051)
+    return _weaviate_instance
+
