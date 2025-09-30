@@ -329,17 +329,17 @@ ${right}
                 "two-cols-image-header",
                 Template(
                     """---
-            layout: two-cols-image-header
-            imageLeft: assets/${image_left}
-            imageRight: assets/${image_right}
-            ---
+layout: two-cols-image-header
+imageLeft: assets/${image_left}
+imageRight: assets/${image_right}
+---
     
-            ${header}
+${header}
     
-            ::bottom::
+::bottom::
     
-            ${bottom}
-            """
+${bottom}
+ """
                 ),
                 {
                     "header": "Header and optional caption spanning the top",
