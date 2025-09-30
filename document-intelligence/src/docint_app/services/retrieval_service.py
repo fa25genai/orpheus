@@ -172,8 +172,7 @@ class RetrievalService:
                 course_id=course_id,
                 k=k,
             )
-            # print(self.store.get_all_data_for_course(course_id))
-            return
+            
             print(f"Retrieved {len(slide_hits)} hits from store")
 
             # Convert to OpenAPI format
