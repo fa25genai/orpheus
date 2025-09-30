@@ -41,7 +41,7 @@ logger = logging.getLogger("Client Handler")
 async def update_status(
     prompt_id: str, patch: StatusPatch, client: httpx.AsyncClient
 ) -> None:
-    print(f"Updating status for {prompt_id} with patch: {patch.to_json()}", flush=True)
+    logger.info(f"Updating status for {prompt_id} with patch: {patch.to_json()}")
     await client.patch(
         f"{STATUS_API_URL}/status/{prompt_id}/update",
         json=patch.to_dict(),
@@ -83,9 +83,11 @@ async def send_summary_to_endpoint(
 ) -> None:
     try:
         await update_status(prompt_id, StatusPatch(lectureSummary=summary), client)
-        print("Summary sent successfully", flush=True)
-    except Exception as e:
-        print("Error sending summary to endpoint:", e, flush=True)
+        logger.info(f"Summary sent for prompt {prompt_id}")
+    except Exception as exception:
+        logger.error(
+            f"Error sending summary for prompt {prompt_id}", exc_info=exception
+        )
 
 
 async def summarize_and_send(
@@ -103,7 +105,7 @@ async def summarize_and_send(
         summary = summarize_content_with_llama(content, user_prompt)
         await send_summary_to_endpoint(prompt_id, summary, client)
     except Exception as e:
-        print("Error occured when summarizing: ", e, flush=True)
+        logger.error(f"Error summarizing content for prompt {prompt_id}", exc_info=e)
 
 
 async def query_document_intelligence(
@@ -127,10 +129,10 @@ async def query_document_intelligence(
         di_data: List[Dict[str, Any]] = di_response.json().get("results", [])
         await update_status(prompt_id, StatusPatch(stepLookup=StepStatus.DONE), client)
         return di_data
-    except Exception as e:
-        print(
-            f"Error querying Document Intelligence for prompt {prompt_id}: {e}",
-            flush=True,
+    except Exception as exception:
+        logger.error(
+            f"Error querying Document Intelligence for prompt {prompt_id}",
+            exc_info=exception,
         )
         await update_status(
             prompt_id, StatusPatch(stepLookup=StepStatus.FAILED), client
@@ -153,7 +155,7 @@ async def generate_script(
         )
 
         if prompt_request.user_persona is None:
-            print("ERROR: User persona must be defined for processing.", flush=True)
+            logger.error("User persona must be defined for voice scripts.")
             raise ValueError("User persona must be defined")
 
         if DEBUG:
@@ -171,8 +173,10 @@ async def generate_script(
         await update_status(
             prompt_id, StatusPatch(stepLectureScriptGeneration=StepStatus.DONE), client
         )
-    except Exception as e:
-        print(e)
+    except Exception as exception:
+        logger.error(
+            f"Error generating script for prompt {prompt_id}", exc_info=exception
+        )
         refined_output = {}
         await update_status(
             prompt_id,
@@ -193,7 +197,7 @@ async def generate_slides(
     tracker.log("Generating slides")
     try:
         if prompt_request.user_persona is None:
-            print("ERROR: User persona must be defined for processing.", flush=True)
+            logger.error("User persona must be defined for voice scripts.")
             raise ValueError("User persona must be defined")
 
         generate_slides_request_body = {
@@ -214,8 +218,10 @@ async def generate_slides(
         slides_response.raise_for_status()
         slides_data: Dict[str, Any] = slides_response.json()
         return slides_data
-    except Exception as e:
-        print(f"Error generating slides for prompt {prompt_id}: {e}", flush=True)
+    except Exception as exception:
+        logger.error(
+            f"Error generating slides for prompt {prompt_id}", exc_info=exception
+        )
         await update_status(
             prompt_id,
             StatusPatch(stepSlideStructureGeneration=StepStatus.FAILED),
@@ -239,11 +245,15 @@ async def generate_voice_scripts(
         if DEBUG:
             for i in range(14):
                 voice_track = mock_service.create_voice_script(i)
-                print("Voice track: ", voice_track)
+                logger.debug(f"voice track: {voice_track}")
                 task = generate_avatar_video(voice_track, i, client)
                 if task:
                     tasks.append(task)
             return tasks
+
+        logger.info(f"Generating voice track for prompt {prompt_id}")
+        logger.debug(f"lecture script: {lecture_script}")
+        logger.debug(f"slides data: {slides_data}")
 
         voice_track = narration_generation.generate_narrations(
             lecture_script, slides_data, user
@@ -267,8 +277,8 @@ async def generate_voice_scripts(
                 tasks.append(task)
         return tasks
 
-    except Exception as e:
-        print("Error generating voice track:", e, flush=True)
+    except Exception as exception:
+        logger.error("Voice track generation failed", exc_info=exception)
         return []
 
 
@@ -281,10 +291,9 @@ async def avatar_video_producer(
             json=voice_track,
             timeout=300.0,
         )
-        # print("Avatar API response:", avatar_response.json(), flush=True)
         return avatar_response
-    except Exception as e:
-        print("Error occured during avatar generation: ", e, flush=True)
+    except Exception as exception:
+        logger.error("Generating avatar video failed", exc_info=exception)
         raise
 
 
@@ -292,14 +301,14 @@ async def avatar_video_producer(
 def generate_avatar_video(
     voice_track: Dict[str, Any], index: int, client: httpx.AsyncClient
 ) -> Union[asyncio.Task[httpx.Response], None]:
-    print(f"Calling Avatar API to generate video for slide {index}", flush=True)
+    logger.info(f"Generating avatar video for slide {index}")
     try:
         task: asyncio.Task[httpx.Response] = asyncio.create_task(
             avatar_video_producer(voice_track, client)
         )
         return task
-    except Exception as e:
-        print("Error generating avatar video:", e, flush=True)
+    except Exception as exception:
+        logger.error("Error generating avatar video", exc_info=exception)
         return None
 
 
@@ -328,7 +337,7 @@ async def process_prompt(prompt_id: str, prompt_request: PromptRequest) -> None:
             )
 
             if prompt_request.user_persona is None:
-                tracker.log("ERROR: User persona must be defined for voice scripts.")
+                logger.error("User persona must be defined for voice scripts.")
                 raise ValueError("User persona must be defined for voice scripts.")
 
             avatar_tasks: List[
