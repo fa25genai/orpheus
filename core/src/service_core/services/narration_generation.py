@@ -85,7 +85,7 @@ def generate_narrations(
         # Join all parts with newlines
         prompt = "\n\n".join(prompt_parts)
         response = llm.invoke(prompt)
-        narration = response.content
+        narration = response
 
         debug_print(f"--- Slide {i + 1} ---")
         debug_print(f"Content: {page_content}")

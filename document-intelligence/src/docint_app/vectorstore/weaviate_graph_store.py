@@ -18,15 +18,22 @@ WeaviateGraphStore — graph-first vector store wrapper (requests-based)
     - imageBase64: text
     - description: text
 
+  VideoChunk (vectorized with text embedding from transcription)
+    - courseId: text (mandatory)
+    - chunkId: text (unique identifier)
+    - text: text (chunk content from transcription)
+
 - Key ops:
   * ensure_schema()               -> idempotent schema creation + reference property
   * upsert_slide(...)             -> create/replace Slide with text vector
   * upsert_images_and_link(...)   -> create SlideImage objects + link to Slide.images
   * search_slides_with_images(...) -> single GraphQL query: ANN + traverse images
+  * upsert_video_chunk(...)       -> create/replace VideoChunk with text vector
+  * search_video_chunks(...)      -> search VideoChunk objects by similarity
   * to_retrieval_response(...)    -> map hits -> OpenAPI RetrievalResponse
 
 Notes:
-- BYO embeddings: send your text vector when upserting Slide.
+- BYO embeddings: send your text vector when upserting Slide or VideoChunk.
 - Vectors are stored in the class's ANN index, keyed by UUID (not a user-defined property).
 - This uses raw REST/GraphQL; no weaviate-client dependency required.
 """
@@ -39,6 +46,8 @@ import uuid
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
 import requests
+import weaviate
+from weaviate.classes.query import Filter, MetadataQuery
 
 
 class WeaviateError(RuntimeError):
@@ -210,6 +219,23 @@ class WeaviateGraphStore:
                 },
             )
 
+        # create VideoChunk (standalone, no references)
+        if "VideoChunk" not in existing_classes:
+            self._post(
+                "/v1/schema",
+                {
+                    "class": "VideoChunk",
+                    "description": "Video transcription chunks (vectorized with text embedding)",
+                    "vectorizer": "none",  # BYO vectors
+                    "properties": [
+                        {"name": "courseId", "dataType": ["text"]},
+                        {"name": "lectureId", "dataType": ["text"]},
+                        {"name": "chunkId", "dataType": ["text"]},
+                        {"name": "text", "dataType": ["text"]},
+                    ],
+                },
+            )
+
         # Refresh classes set
         schema = self._get("/v1/schema")
         existing_classes = {c["class"] for c in schema.get("classes", [])}
@@ -298,8 +324,9 @@ class WeaviateGraphStore:
         # Try create first (POST); if it already exists, update (PUT)
         try:
             self._post("/v1/objects", payload)
-        except WeaviateError:
+        except WeaviateError as e:
             # Duplicate/exists -> update instead
+            print(f"Slide upsert POST failed, trying PUT: {e}")
             self._put(f"/v1/objects/{uid}", payload)
         return uid
 
@@ -349,7 +376,8 @@ class WeaviateGraphStore:
             # Create (POST), or update (PUT) if it already exists
             try:
                 self._post("/v1/objects", obj_payload)
-            except WeaviateError:
+            except WeaviateError as e:
+                print(f"SlideImage upsert POST failed, trying PUT: {e}")
                 self._put(f"/v1/objects/{img_id}", obj_payload)
 
             # Add reference from the slide to this image
@@ -360,6 +388,45 @@ class WeaviateGraphStore:
 
         return created_ids
 
+    def upsert_video_chunk(
+        self,
+        *,
+        course_id: str,
+        lecture_id: str,
+        chunk_id: str,
+        text: str,
+        text_vector: Sequence[float],
+    ) -> str:
+        """
+        Create/replace a VideoChunk object with its text embedding (BYO vector).
+        Uses POST to create; on conflict falls back to PUT to update (idempotent).
+        :return: UUID used for the video chunk
+        """
+        # Generate deterministic UUID from course_id and chunk_id
+        name = f"VideoChunk::{course_id}::{chunk_id}"
+        uid = str(uuid.uuid5(uuid.NAMESPACE_URL, name))
+        
+        payload = {
+            "class": "VideoChunk",
+            "id": uid,
+            "properties": {
+                "courseId": course_id,
+                "lectureId": lecture_id,
+                "chunkId": chunk_id,
+                "text": text,
+            },
+            "vector": list(text_vector),
+        }
+
+        # Try create first (POST); if it already exists, update (PUT)
+        try:
+            self._post("/v1/objects", payload)
+        except WeaviateError as e:
+            # Duplicate/exists -> update instead
+            print(f"VideoChunk upsert POST failed, trying PUT: {e}")
+            self._put(f"/v1/objects/{uid}", payload)
+        return uid
+
     # Query (dual-channel with fusion: text on Slide + image-description on SlideImage)
     def search_slides_fused_with_images(
         self,
@@ -368,189 +435,415 @@ class WeaviateGraphStore:
         course_id: Optional[str] = None,
         k: int = 5,
         image_query_vector: Optional[Sequence[float]] = None,
-        alpha: float = 0.8,  # weight for text; (1 - alpha) for image
-        per_slide_image_agg: str = "max",  # "max" or "mean"
-        include_distance: bool = True,
-        similarity_threshold: float = 0.5,  # minimum similarity threshold (0.0 to 1.0)
+        alpha: float = 0.8,  # Default weight for text is now 80%
+        similarity_threshold: float = 0.70,  # Results must meet this score
+        per_slide_image_agg: str = "max",  # How to aggregate image scores per slide
+        include_distance: bool = True,  # Whether to include distance information
     ) -> List[Dict[str, Any]]:
         """
-        Single 'logical' retrieval with score fusion across two channels:
-
-          1) Text ANN on Slide (slideDescription vector)
-          2) Image-description ANN on SlideImage (caption vector)
-          3) Normalize both channels (min-max), fuse with weights
-          4) Filter by similarity threshold, then pick top-k
-          5) For each chosen slide, fetch ALL images for that slide and assemble
-
-        Returns a list of hits (dicts) with Slide fields + nested images and
-        extra keys: distanceText, bestImageDistance, fusedScore.
-        Only slides with fused similarity >= similarity_threshold are returned.
+        Retrieves slides by fusing text and image similarity scores without normalization.
+          1. Perform separate searches for relevant slides (text) and images.
+          2. Calculating an absolute fused score for each unique slide found.
+          3. Filtering out any slides that do not meet the `similarity_threshold`.
+          4. Ranking the remaining relevant slides and returning the top-k.
         """
-        # --- 1) Text ANN on Slide ---
+        print("[DEBUG] search_slides_fused_with_images called with:")
+        print(f"  - course_id: {course_id}")
+        print(f"  - k: {k}")
+        print(f"  - alpha: {alpha}")
+        print(f"  - similarity_threshold: {similarity_threshold}")
+        print(f"  - per_slide_image_agg: {per_slide_image_agg}")
+        print(f"  - query_vector length: {len(query_vector) if query_vector else 'None'}")
+        print(f"  - image_query_vector length: {len(image_query_vector) if image_query_vector else 'None'}")
+
+        # Text ANN on Slide
         where_clause = ""
         if course_id:
-            where_clause = 'where: { operator: Equal, path: ["courseId"], valueText: "%s" }' % course_id
+            where_clause = f'where: {{ operator: Equal, path: ["courseId"], valueText: "{course_id}" }}'
+        print(f"[DEBUG] where_clause: {where_clause}")
+
         gql_slides = f"""
         {{
           Get {{
             Slide(
               nearVector: {{ vector: {json.dumps(list(query_vector))} }}
               {where_clause}
-              limit: {int(max(k, 50))}   # pull a healthy candidate set; we will re-rank
+              limit: {int(max(k * 5, 50))}
             ) {{
-              courseId
-              documentId
-              slideNo
-              slideDescription
-              _additional {{ id {"distance" if include_distance else ""} }}
+              courseId, documentId, slideNo, slideDescription,
+              _additional {{ id, distance }}
             }}
           }}
         }}
         """
-        res_slides = self._post("/v1/graphql", {"query": gql_slides})
-        slide_hits = res_slides.get("data", {}).get("Get", {}).get("Slide", []) or []
+        print("[DEBUG] GraphQL query for slides:")
+        print(gql_slides)
 
-        # Build text-channel score map: key = (courseId, slideNo)
+        res_slides = self._post("/v1/graphql", {"query": gql_slides})
+        print(f"[DEBUG] Raw slide search response: {res_slides}")
+
+        slide_hits = res_slides.get("data", {}).get("Get", {}).get("Slide", []) or []
+        print(f"[DEBUG] Found {len(slide_hits)} slide hits")
+        for i, hit in enumerate(slide_hits):
+            print(f"  Slide {i}: courseId={hit.get('courseId')}, slideNo={hit.get('slideNo')}, distance={hit.get('_additional', {}).get('distance')}")
+
         text_scores: Dict[tuple, float] = {}
         slide_meta: Dict[tuple, Dict[str, Any]] = {}
         for s in slide_hits:
             key = (s.get("courseId"), s.get("slideNo"))
             dist = (s.get("_additional") or {}).get("distance")
-            sim = self._similarity_from_distance(dist if include_distance else None)
-            text_scores[key] = sim
-            slide_meta[key] = s  # keep for properties
+            text_scores[key] = self._similarity_from_distance(dist)
+            slide_meta[key] = s
 
-        # --- 2) Image-description ANN on SlideImage ---
-        # Use provided image_query_vector if given, else reuse query_vector
+        print(f"[DEBUG] Text scores computed: {text_scores}")
+        print(f"[DEBUG] Slide metadata keys: {list(slide_meta.keys())}")
+
+        # Image-description ANN on SlideImage
         img_vec = image_query_vector if image_query_vector is not None else query_vector
-        where_img = ""
-        if course_id:
-            where_img = 'where: { operator: Equal, path: ["courseId"], valueText: "%s" }' % course_id
+        print(f"[DEBUG] Using image vector - is separate: {image_query_vector is not None}")
+
         gql_images = f"""
         {{
           Get {{
             SlideImage(
               nearVector: {{ vector: {json.dumps(list(img_vec))} }}
-              {where_img}
-              limit: {int(max(k * 10, 100))}   # wider net; we aggregate per slide
+              {where_clause}
+              limit: {int(max(k * 10, 100))}
+            ) {{
+              courseId, documentId, slideNo,
+              _additional {{ id, distance }}
+            }}
+          }}
+        }}
+        """
+        print("[DEBUG] GraphQL query for images:")
+        print(gql_images)
+
+        res_images = self._post("/v1/graphql", {"query": gql_images})
+        print(f"[DEBUG] Raw image search response: {res_images}")
+
+        img_hits = res_images.get("data", {}).get("Get", {}).get("SlideImage", []) or []
+        print(f"[DEBUG] Found {len(img_hits)} image hits")
+        for i, hit in enumerate(img_hits):
+            print(f"  Image {i}: courseId={hit.get('courseId')}, slideNo={hit.get('slideNo')}, distance={hit.get('_additional', {}).get('distance')}")
+
+        from collections import defaultdict
+
+        per_slide_image_sims: Dict[tuple, List[float]] = defaultdict(list)
+        for im in img_hits:
+            key = (im.get("courseId"), im.get("slideNo"))
+            dist = (im.get("_additional") or {}).get("distance")
+            sim_score = self._similarity_from_distance(dist)
+            per_slide_image_sims[key].append(sim_score)
+            print(f"[DEBUG] Image similarity for slide {key}: distance={dist}, similarity={sim_score}")
+
+        print(f"[DEBUG] Per-slide image similarities: {dict(per_slide_image_sims)}")
+
+        # Aggregate image scores per slide using the specified method
+        image_scores: Dict[tuple, float] = {}
+        for key, vals in per_slide_image_sims.items():
+            if vals:
+                if per_slide_image_agg == "mean":
+                    image_scores[key] = sum(vals) / len(vals)
+                else:  # default to "max"
+                    image_scores[key] = max(vals)
+                print(f"[DEBUG] Aggregated image score for slide {key}: {image_scores[key]} (method: {per_slide_image_agg})")
+
+        print(f"[DEBUG] Final image scores: {image_scores}")
+
+        # Fuse scores without normalization
+        fused_scores: Dict[tuple, float] = {}
+        all_slide_keys = set(text_scores.keys()) | set(image_scores.keys())
+        print(f"[DEBUG] All unique slide keys found: {all_slide_keys}")
+        print(f"[DEBUG] Text score keys: {set(text_scores.keys())}")
+        print(f"[DEBUG] Image score keys: {set(image_scores.keys())}")
+
+        for key in all_slide_keys:
+            text_sim = text_scores.get(key, 0.0)
+            image_sim = image_scores.get(key, 0.0)
+
+            # Direct weighted sum
+            fused_score = (alpha * text_sim) + ((1.0 - alpha) * image_sim)
+            fused_scores[key] = fused_score
+            print(f"[DEBUG] Fused score for slide {key}: text={text_sim}, image={image_sim}, fused={fused_score}")
+
+        print(f"[DEBUG] All fused scores: {fused_scores}")
+
+        # Filter by threshold, then sort and limit
+        # Only keep slides that meet the similarity threshold
+        relevant_slides = {key: score for key, score in fused_scores.items() if score >= similarity_threshold}
+        print(f"[DEBUG] Slides meeting threshold {similarity_threshold}: {relevant_slides}")
+        print(f"[DEBUG] Filtered out {len(fused_scores) - len(relevant_slides)} slides below threshold")
+
+        # Sort the relevant slides by their fused score, descending
+        sorted_slides = sorted(relevant_slides.items(), key=lambda item: item[1], reverse=True)
+        print(f"[DEBUG] Sorted relevant slides: {sorted_slides}")
+
+        # Get the keys for the top k slides
+        top_keys = [key for key, score in sorted_slides[:k]]
+        print(f"[DEBUG] Top {k} slide keys selected: {top_keys}")
+
+        # Assemble final results
+        out: List[Dict[str, Any]] = []
+        print(f"[DEBUG] Starting to assemble final results for {len(top_keys)} slides")
+
+        for i, key in enumerate(top_keys):
+            c_id, s_no = key
+            print(f"[DEBUG] Processing slide {i + 1}/{len(top_keys)}: {key}")
+
+            # Get metadata for the slide, falling back to a direct fetch if it wasn't in the initial text search
+            s_meta = slide_meta.get(key)
+            if not s_meta:
+                print(f"[DEBUG] Slide metadata not found in cache, fetching directly for {key}")
+                # This fallback is for slides that were found only through an image match
+                gql_one = f"""
+                {{
+                    Get {{
+                    Slide(
+                        where: {{
+                        operator: And,
+                        operands: [
+                            {{ operator: Equal, path: ["courseId"], valueText: "{c_id}" }},
+                            {{ operator: Equal, path: ["slideNo"],  valueInt: {int(s_no)} }}
+                        ]
+                        }},
+                        limit: 1
+                    ) {{
+                        courseId, documentId, slideNo, slideDescription,
+                        _additional {{ id }}
+                    }}
+                    }}
+                }}
+                """
+                res_one = self._post("/v1/graphql", {"query": gql_one})
+                print(f"[DEBUG] Direct fetch response for slide {key}: {res_one}")
+                recs = res_one.get("data", {}).get("Get", {}).get("Slide", []) or []
+                s_meta = recs[0] if recs else {}
+                print(f"[DEBUG] Retrieved slide metadata: {s_meta}")
+            else:
+                print(f"[DEBUG] Using cached slide metadata for {key}")
+
+            # Fetch all images for the final slide
+            print(f"[DEBUG] Fetching images for slide {key}")
+            images_full = self._fetch_all_images_for_slide(c_id, s_no)
+            print(f"[DEBUG] Found {len(images_full)} images for slide {key}")
+
+            # Correctly retrieve the calculated scores from the dictionaries
+            final_fused_score = fused_scores.get(key, 0.0)
+            final_text_sim = text_scores.get(key, 0.0)
+            final_image_sim = image_scores.get(key, 0.0)
+            text_dist = (slide_meta.get(key, {}).get("_additional") or {}).get("distance") if key in slide_meta else None
+
+            print(f"[DEBUG] Final scores for slide {key}:")
+            print(f"  - fused: {final_fused_score}")
+            print(f"  - text similarity: {final_text_sim}")
+            print(f"  - image similarity: {final_image_sim}")
+            print(f"  - text distance: {text_dist}")
+
+            result_slide = {
+                "id": (s_meta.get("_additional") or {}).get("id"),
+                "courseId": c_id,
+                "documentId": s_meta.get("documentId"),
+                "slideNo": s_no,
+                "slideDescription": s_meta.get("slideDescription", ""),
+                # Flatten scores to top level for RetrievalService compatibility
+                "fusedScore": final_fused_score,
+                "similarityText": final_text_sim,
+                "bestImageSimilarity": final_image_sim,
+                "distanceText": text_dist,
+                "images": [{"id": (im.get("_additional") or {}).get("id"), "description": im.get("description", ""), "imageBase64": im.get("imageBase64")} for im in images_full],
+            }
+            print(f"[DEBUG] Adding slide result {i + 1}: {result_slide['courseId']}/{result_slide['slideNo']}")
+            out.append(result_slide)
+
+        print(f"[DEBUG] Final search results: {len(out)} slides returned")
+        return out
+
+    def client_search_slides_fused_with_images(
+        self,
+        *,
+        query_vector: Sequence[float],
+        course_id: str,
+        k: int = 5,
+    ) -> List[Dict[str, Any]]:
+        """
+        Simple implementation using weaviate client to search slides and their images.
+        """
+        print("[WeaviateClientSearch] Starting client_search_slides_fused_with_images")
+        print("[WeaviateClientSearch] Parameters:")
+        print(f"[WeaviateClientSearch]   - course_id: {course_id}")
+        print(f"[WeaviateClientSearch]   - k: {k}")
+        print(f"[WeaviateClientSearch]   - query_vector length: {len(query_vector) if query_vector else 'None'}")
+
+        if not course_id:
+            print("[WeaviateClientSearch] ERROR: course_id is empty or None")
+            raise ValueError("course_id is required and cannot be None or empty")
+
+        print("[WeaviateClientSearch] Getting weaviate client...")
+        client = get_weaviate_client()
+        print(f"[WeaviateClientSearch] Client obtained: {type(client)}")
+
+        # Search slides using client
+        print("[WeaviateClientSearch] Building slide query...")
+        print(f"[WeaviateClientSearch] Query vector first 5 elements: {query_vector[:5] if len(query_vector) >= 5 else query_vector}")
+
+        slides = client.collections.get("Slide")
+        slideImages = client.collections.get("SlideImage")
+
+        slide_query = slides.query.near_vector(
+            near_vector=query_vector,  # your query vector goes here
+            limit=k,
+            certainty=0.8,
+            return_metadata=MetadataQuery(distance=True, certainty=True),
+            filters=Filter.by_property("courseId").equal(course_id),
+        )
+
+        slide_hits = slide_query.objects
+
+        slide_hits_document_ids = [(s.properties["documentId"], s.properties["slideNo"]) for s in slide_hits]
+
+        print(slide_hits_document_ids)
+
+        if len(slide_hits_document_ids) == 0:
+            print("[WeaviateClientSearch] No slide hits found, returning empty list")
+            return []
+
+        # Build filters for each (documentId, slideNo) pair
+        slide_image_filters = [
+            Filter.all_of([
+                Filter.by_property("documentId").equal(doc_id),
+                Filter.by_property("slideNo").equal(slide_no)
+            ])
+            for doc_id, slide_no in slide_hits_document_ids
+        ]
+        slide_image_query = slideImages.query.fetch_objects(
+            filters=Filter.any_of(slide_image_filters)
+        )
+
+        slide_image_hits = slide_image_query.objects
+        print(f"[WeaviateClientSearch] Retrieved {len(slide_image_hits)} slide images")
+        for i, img in enumerate(slide_image_hits):
+            print(f"[WeaviateClientSearch]   Image {i}: courseId={img.properties.get('courseId')}, slideNo={img.properties.get('slideNo')}, documentId={img.properties.get('documentId')}")
+            print(f"[WeaviateClientSearch]     Description preview: {(img.properties.get('description', '') or '')[:100]}...")
+            print(f"[WeaviateClientSearch]     ImageBase64 length: {len(img.properties.get('imageBase64', '') or '')}")
+
+            # build output
+        print("[WeaviateClientSearch] Building final results...")
+        final_results = []
+
+        # Group images by (documentId, slideNo)
+        from collections import defaultdict
+
+        images_by_slide = defaultdict(list)
+        for img in slide_image_hits:
+            key = (img.properties.get("documentId"), img.properties.get("slideNo"))
+            images_by_slide[key].append({"description": img.properties.get("description", ""), "imageBase64": img.properties.get("imageBase64", "")})
+
+        print(f"[WeaviateClientSearch] Grouped images by slide: {len(images_by_slide)} unique slides")
+
+        # Build results for each slide hit
+        for slide_idx, slide in enumerate(slide_hits):
+            print(f"[WeaviateClientSearch] Processing slide {slide_idx + 1}/{len(slide_hits)}")
+
+            slide_props = slide.properties
+            slide_metadata = slide.metadata
+
+            # Get images for this slide
+            slide_key = (slide_props.get("documentId"), slide_props.get("slideNo"))
+            slide_images = images_by_slide.get(slide_key, [])
+
+            print(f"[WeaviateClientSearch] Slide {slide_idx}: courseId={slide_props.get('courseId')}, slideNo={slide_props.get('slideNo')}")
+            print(f"[WeaviateClientSearch]   Distance: {slide_metadata.distance}, Certainty: {slide_metadata.certainty}")
+            print(f"[WeaviateClientSearch]   Found {len(slide_images)} images for this slide")
+
+            # Calculate similarity from distance
+            result_slide = {
+                "id": slide.uuid,
+                "courseId": slide_props.get("courseId"),
+                "documentId": slide_props.get("documentId"),
+                "slideNo": slide_props.get("slideNo"),
+                "slideDescription": slide_props.get("slideDescription", ""),
+                "distance": slide_metadata.distance,
+                "certainty": slide_metadata.certainty,
+                "images": slide_images,
+            }
+
+            print(f"[WeaviateClientSearch] Slide confidence scores - Distance: {slide_metadata.distance},    Certainty: {slide_metadata.certainty}")
+            print(f"[WeaviateClientSearch] Added slide {slide_props.get('slideNo')} with {len(slide_images)} images to results")
+
+            final_results.append(result_slide)
+
+        print("[WeaviateClientSearch] Completed processing all slides")
+        print(f"[WeaviateClientSearch] Final results count: {len(final_results)}")
+        print("[WeaviateClientSearch] Final results summary:")
+        for i, result in enumerate(final_results):
+            distance = result.get("distance")
+            similarity = result.get("similarity")
+            certainty = result.get("certainty")
+            print(f"[WeaviateClientSearch]   Result {i}: courseId={result.get('courseId')}, slideNo={result.get('slideNo')}, images_count={len(result.get('images', []))}")
+            print(f"[WeaviateClientSearch]   Confidence: distance={distance}, similarity={similarity}, certainty={certainty}")
+
+        print(f"[WeaviateClientSearch] Returning {len(final_results)} results")
+        return final_results
+
+    def search_video_chunks(
+        self,
+        *,
+        query_vector: Sequence[float],
+        course_id: Optional[str] = None,
+        k: int = 5,
+        include_distance: bool = True,
+        similarity_threshold: float = 0.80,
+    ) -> List[Dict[str, Any]]:
+        """
+        Search VideoChunk objects by text similarity.
+        
+        :param query_vector: Query embedding vector
+        :param course_id: Optional filter by course ID
+        :param k: Number of results to return
+        :param include_distance: Whether to include distance in results
+        :param similarity_threshold: Minimum similarity threshold (0.0 to 1.0)
+        :return: List of video chunk hits with similarity scores
+        """
+        where_clause = ""
+        if course_id:
+            where_clause = (
+                'where: { operator: Equal, path: ["courseId"], valueText: "%s" }' % course_id
+            )
+        
+        gql_query = f"""
+        {{
+          Get {{
+            VideoChunk(
+              nearVector: {{ vector: {json.dumps(list(query_vector))} }}
+              {where_clause}
+              limit: {int(k)}
             ) {{
               courseId
-              documentId
-              slideNo
-              description
+              chunkId
+              text
               _additional {{ id {"distance" if include_distance else ""} }}
             }}
           }}
         }}
         """
-        res_images = self._post("/v1/graphql", {"query": gql_images})
-        img_hits = res_images.get("data", {}).get("Get", {}).get("SlideImage", []) or []
-
-        # Aggregate image channel per slide
-        from collections import defaultdict
-
-        per_slide_vals: Dict[tuple, List[float]] = defaultdict(list)
-        for im in img_hits:
-            key = (im.get("courseId"), im.get("slideNo"))
-            dist = (im.get("_additional") or {}).get("distance")
-            sim = self._similarity_from_distance(dist if include_distance else None)
-            per_slide_vals[key].append(sim)
-
-        image_scores: Dict[tuple, float] = {}
-        for key, vals in per_slide_vals.items():
-            if not vals:
-                continue
-            if per_slide_image_agg == "mean":
-                image_scores[key] = sum(vals) / len(vals)
-            else:
-                # default: max (best-matching image per slide)
-                image_scores[key] = max(vals)
-
-        # --- 3) Normalize & fuse ---
-        text_norm = self._minmax_normalize(text_scores)
-        img_norm = self._minmax_normalize(image_scores)
-
-        fused: List[Tuple[tuple, float]] = []
-        keys = set(text_norm.keys()) | set(img_norm.keys())
-        for key in keys:
-            t = text_norm.get(key, 0.0)
-            i = img_norm.get(key, 0.0)
-            fused_score = alpha * t + (1.0 - alpha) * i
-            fused.append((key, fused_score))
-
-        # Rank by fused score desc
-        fused.sort(key=lambda x: x[1], reverse=True)
-
-        # Apply similarity threshold filter before taking top k
-        filtered_fused = [(key, score) for (key, score) in fused if score >= similarity_threshold]
-        top_keys = [k for (k, _) in filtered_fused[:k]]
-
-        # --- 4) Assemble: fetch ALL images for each selected slide ---
-        out: List[Dict[str, Any]] = []
-        for key in top_keys:
-            c_id, s_no = key
-            s_meta = slide_meta.get(key)
-            # If the slide wasn't in the text channel candidates, we still need properties:
-            if not s_meta:
-                # Fallback: fetch a minimal record for this slide via a filtered query
-                gql_one = f"""
-                {{
-                  Get {{
-                    Slide(
-                      where: {{
-                        operator: And
-                        operands: [
-                          {{ operator: Equal, path: ["courseId"], valueText: "{c_id}" }},
-                          {{ operator: Equal, path: ["slideNo"],  valueInt: {int(s_no)} }}
-                        ]
-                      }}
-                      limit: 1
-                    ) {{
-                      courseId
-                      documentId
-                      slideNo
-                      slideDescription
-                      _additional {{ id }}
-                    }}
-                  }}
-                }}
-                """
-                res_one = self._post("/v1/graphql", {"query": gql_one})
-                recs = res_one.get("data", {}).get("Get", {}).get("Slide", []) or []
-                s_meta = recs[0] if recs else {"courseId": c_id, "slideNo": s_no, "documentId": None, "slideDescription": "", "_additional": {"id": None}}
-
-            # Fetch all images for this slide
-            images_full = self._fetch_all_images_for_slide(c_id, s_no, limit=64)
-
-            # Compose distances/scores
-            dist_text = (s_meta.get("_additional") or {}).get("distance") if include_distance else None
-            sim_text = text_scores.get(key, 0.0)
-            best_img_sim = image_scores.get(key, 0.0)
-
-            out.append(
-                {
-                    "id": (s_meta.get("_additional") or {}).get("id"),
-                    "courseId": s_meta.get("courseId"),
-                    "documentId": s_meta.get("documentId"),
-                    "slideNo": s_meta.get("slideNo"),
-                    "slideDescription": s_meta.get("slideDescription"),
-                    # channel metrics for transparency/debugging
-                    "distanceText": dist_text,
-                    "similarityText": sim_text,
-                    "bestImageSimilarity": best_img_sim,
-                    "fusedScore": next((score for (kk, score) in fused if kk == key), None),
-                    "images": [
-                        {
-                            "id": (im.get("_additional") or {}).get("id"),
-                            "description": im.get("description") or "",
-                            "imageBase64": im.get("imageBase64"),
-                        }
-                        for im in images_full
-                    ],
-                }
-            )
-
-        return out
+        
+        res = self._post("/v1/graphql", {"query": gql_query})
+        chunk_hits = res.get("data", {}).get("Get", {}).get("VideoChunk", []) or []
+        
+        # Filter by similarity threshold if specified
+        filtered_hits = []
+        for chunk in chunk_hits:
+            dist = (chunk.get("_additional") or {}).get("distance") if include_distance else None
+            similarity = self._similarity_from_distance(dist)
+            
+            if similarity >= similarity_threshold:
+                chunk["similarity"] = similarity
+                if include_distance:
+                    chunk["distance"] = dist
+                filtered_hits.append(chunk)
+        
+        return filtered_hits
 
     # Test/Debug functions
     def get_all_data_for_course(self, course_id: str) -> Dict[str, Any]:
@@ -634,3 +927,19 @@ class WeaviateGraphStore:
                     )
 
         return {"content": content, "images": images}
+
+
+_weaviate_instance: Optional[weaviate.WeaviateClient] = None
+
+
+def get_weaviate_client() -> weaviate.WeaviateClient:
+    global _weaviate_instance
+
+    if _weaviate_instance is None:
+        _weaviate_instance = weaviate.connect_to_local(host="docint-weaviate", port=28947)
+
+    if _weaviate_instance.is_connected() is False:
+        print("[WeaviateClient] WARNING: Weaviate client is not connected!")
+        # Optionally, raise an error or attempt reconnection here.
+        _weaviate_instance = weaviate.connect_to_local(host="docint-weaviate", port=28947)
+    return _weaviate_instance
