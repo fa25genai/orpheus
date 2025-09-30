@@ -28,7 +28,6 @@ from service_core.services.script_generation import LectureScriptWithAssets
 from service_core.services.user_summary import summarize_content_with_llama
 from service_status.models.status_patch import StatusPatch
 from service_status.models.step_status import StepStatus
-from service_core.services.services_models.voice_track import VoiceTrackResponse
 
 load_dotenv()
 
@@ -267,30 +266,33 @@ async def generate_voice_scripts(
         logger.debug(f"lecture script: {lecture_script}")
         logger.debug(f"slides data: {slides_data}")
 
-        voice_script = narration_generation.generate_narrations(
-            lecture_script, slides_data, user
+        narration_stream = narration_generation.generate_narrations(
+            lecture_script, 
+            slides_data, 
+            user, 
+            prompt_id,
+            course_id
         )
 
-        slides = voice_script.get("slideMessages", [])
-        voice_script_request = VoiceTrackResponse(
-            promptId=prompt_id,
-            courseId=course_id,
-            voiceTrack="",
-            slideNumber=0,
-            userProfile=user,
-        )
-        for index, slide_data in enumerate(slides):
-            voice_script_request.slideNumber = index
-            voice_script_request.voiceTrack = slide_data
+        slide_index = 0
+        
+        async for voice_script_payload in narration_stream:
+            logger.debug(f"Received narration segment {slide_index}, scheduling avatar task.")
+            
             task = generate_avatar_video(
-                voice_script_request.model_dump(mode="json"), index, client
+                voice_script_payload, 
+                slide_index,
+                client
             )
             if task:
                 tasks.append(task)
+                
+            slide_index += 1
+            
         return tasks
 
     except Exception as exception:
-        logger.error("Voice track generation failed", exc_info=exception)
+        logger.error("Voice track generation failed during streaming", exc_info=exception)
         return []
 
 
