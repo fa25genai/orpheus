@@ -432,8 +432,8 @@ class WeaviateGraphStore:
     def test_upsert_video_chunk(self) -> str:
         to_upsert = 'A for loop is a control structure used to repeat a block of code a specific number of times. It is especially useful when you know in advance how many iterations you need. In most programming languages, a for loop consists of an initialization, a condition, and an update step. For example, it can be used to iterate over a range of numbers or through elements of a collection like a list. By using for loops, repetitive tasks can be written more concisely and clearly. This makes code easier to maintain and less error-prone compared to writing the same instructions multiple times.' # noqa: E501
         text_vector = get_embedding_service().embed_text(to_upsert)
-        self.upsert_video_chunk(course_id="W2", lecture_id="lecture456", chunk_id="chunk789", text=to_upsert, text_vector=text_vector)
-        return "no-id-hehehe"
+        uid = self.upsert_video_chunk(course_id="W2", lecture_id="lecture456", chunk_id="chunk789", text=to_upsert, text_vector=text_vector)
+        return uid
     
     def client_search_slides_fused_with_images(
         self,
