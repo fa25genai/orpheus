@@ -49,7 +49,7 @@ async def update_status(
     )
 
 
-async def decompose_inputs(
+async def retrieve_subqueries_from_prompt(
     prompt_request: PromptRequest, prompt_id: str, client: httpx.AsyncClient
 ) -> List[str]:
     tracker.log("Decomposing inputs")
@@ -57,24 +57,27 @@ async def decompose_inputs(
         prompt_id, StatusPatch(stepUnderstanding=StepStatus.IN_PROGRESS), client
     )
 
-    decomposed_questions: List[str]
+    subqueries: List[str]
     if DEBUG:
-        decomposed_questions = mock_service.create_decomposed_question().get(
+        subqueries = mock_service.create_decomposed_question().get(
             "subqueries", []
         )
         await update_status(
             prompt_id, StatusPatch(stepUnderstanding=StepStatus.DONE), client
         )
-        return decomposed_questions
+        return subqueries
 
-    decomposed_questions = decompose_input.decompose_question(
+    subqueries = decompose_input.decompose_question(
         prompt_request.prompt
     ).get("subqueries", [])
+
+    logger.debug(f"subqueries retrieved from prompt: {subqueries}")
+
     # FIX: [no-any-return]
     await update_status(
         prompt_id, StatusPatch(stepUnderstanding=StepStatus.DONE), client
     )
-    return decomposed_questions
+    return subqueries
 
 
 async def send_summary_to_endpoint(
@@ -270,7 +273,7 @@ def generate_avatar_video(
 async def process_prompt(prompt_id: str, prompt_request: PromptRequest) -> None:
     try:
         async with httpx.AsyncClient() as client:
-            subqueries = await decompose_inputs(prompt_request, prompt_id, client)
+            subqueries = await retrieve_subqueries_from_prompt(prompt_request, prompt_id, client)
             retrieved_content = await query_document_intelligence(
                 subqueries, client, prompt_id, prompt_request
             )
