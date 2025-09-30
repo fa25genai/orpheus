@@ -140,17 +140,14 @@ export default function Home() {
                 </div>
               </div>
 
-              {status && <StatusDisplayer status={status} />}
+              {status && (
+                <StatusDisplayer promptId={promptId} status={status} />
+              )}
 
               {status?.stepSlidePostprocessing === "DONE" &&
-                status?.stepsAvatarGeneration
-                  ?.slice(0, 3)
-                  .every((step, index) => {
-                    if (index < 2) {
-                      return step?.video === "DONE";
-                    }
-                    return step.video === "DONE";
-                  }) && (
+                status?.stepsAvatarGeneration?.slice(0, 4).every((step) => {
+                  return step.video === "DONE";
+                }) && (
                   <div
                     ref={outputRef}
                     className="grid grid-cols-1 md:grid-cols-3 gap-6"
