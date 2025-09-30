@@ -81,3 +81,10 @@ Run the following command from the `ui` directory:
     # or
     docker compose up
     ```
+
+The following configuration options are available (using environment variables)
+
+| Environment Variable          | Description                                                                                         | Default value                        |
+|-------------------------------|-----------------------------------------------------------------------------------------------------|--------------------------------------|
+| `NEXT_PUBLIC_ORPHEUS_DEBUG`               | Displays additional infos in the UI for debugging                |                                      |
+
