@@ -28,7 +28,7 @@ class CoreApiImpl(BaseCoreApi):  # type: ignore[no-untyped-call]
     ) -> PromptResponse:
         try:
             prompt_id = uuid4()
-            executor = get_executor(prompt_id)
+            executor = get_executor()
             if prompt_request.user_persona is None:
                 raise ValueError("User persona must be defined for prompt requests from client.")
 
