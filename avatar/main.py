@@ -5,6 +5,9 @@ from threading import Event, Thread
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+import logging
+import os
+
 from app.api.avatars import router as avatars_router
 from app.api.video import router as video_router
 from app.workers import audio as audio_worker
