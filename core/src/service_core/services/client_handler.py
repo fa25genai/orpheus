@@ -52,7 +52,7 @@ async def update_status(
 async def retrieve_subqueries_from_prompt(
     prompt_request: PromptRequest, prompt_id: str, client: httpx.AsyncClient
 ) -> List[str]:
-    tracker.log("Decomposing inputs")
+    logger.info(f"Decomposing inputs for prompt `{prompt_id}`")
     await update_status(
         prompt_id, StatusPatch(stepUnderstanding=StepStatus.IN_PROGRESS), client
     )
@@ -114,7 +114,7 @@ async def query_document_intelligence(
     prompt_id: str,
     prompt_request: PromptRequest,
 ) -> List[Dict[str, Any]]:
-    tracker.log("Querying document intelligence")
+    logger.info(f"Querying document intelligence for prompt `{prompt_id}`")
     try:
         await update_status(
             prompt_id, StatusPatch(stepLookup=StepStatus.IN_PROGRESS), client
@@ -147,7 +147,7 @@ async def generate_script(
     client: httpx.AsyncClient,
 ) -> Dict[str, Any]:
     try:
-        tracker.log("Generating script")
+        logger.info(f"Generating script for prompt `{prompt_id}`")
         await update_status(
             prompt_id,
             StatusPatch(stepLectureScriptGeneration=StepStatus.IN_PROGRESS),
@@ -194,7 +194,7 @@ async def generate_slides(
     refined_output: Dict[str, Any],
     client: httpx.AsyncClient,
 ) -> Dict[str, Any]:
-    tracker.log("Generating slides")
+    logger.info(f"Generating slides for prompt `{prompt_id}`")
     try:
         if prompt_request.user_persona is None:
             logger.error("User persona must be defined for voice scripts.")
@@ -237,7 +237,7 @@ async def generate_voice_scripts(
     client: httpx.AsyncClient,
     prompt_id: str,
 ) -> List[asyncio.Task[httpx.Response]]:
-    tracker.log("Generating voice script")
+    logger.info(f"Generating voice scripts for prompt `{prompt_id}`")
     try:
         voice_script: Dict[str, Any]
         tasks: List[asyncio.Task[httpx.Response]] = []
@@ -355,7 +355,7 @@ async def process_prompt(prompt_id: str, prompt_request: PromptRequest) -> None:
             if avatar_tasks:
                 await asyncio.gather(*avatar_tasks)
 
-            tracker.log(f"SUCCESS: Completed processing for {prompt_id}")
+            logger.info(f"Completed processing for {prompt_id}")
     except Exception as exception:
         logger.error(
             f"Failed processing for {prompt_id}: {exception}", exc_info=exception
