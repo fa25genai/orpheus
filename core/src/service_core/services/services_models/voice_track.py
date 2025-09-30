@@ -14,4 +14,3 @@ class VoiceTrackResponse(BaseModel):
     slideNumber: int
     # In your code you put a string; keeping it flexible:
     userProfile: UserProfile
-    metadata: Optional[str] = None
