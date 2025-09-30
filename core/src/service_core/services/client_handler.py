@@ -23,16 +23,16 @@ from service_core.services.services_models.voice_track import VoiceTrackResponse
 load_dotenv()
 
 
-DI_API_URL = "http://docint:25565"
-SLIDES_API_URL = "http://slides:30606"
-AVATAR_API_URL = "http://avatar-video-producer:9000"
-STATUS_API_URL = "http://status-service:19910"
+# DI_API_URL = "http://docint:25565"
+# SLIDES_API_URL = "http://slides:30606"
+# AVATAR_API_URL = "http://avatar-video-producer:9000"
+# STATUS_API_URL = "http://status-service:19910"
 
 # Use this when you start the service locally outside a docker container
-# DI_API_URL = "http://localhost:25565"
-# SLIDES_API_URL = "http://localhost:30606"
-# AVATAR_API_URL = "http://localhost:9000"
-# STATUS_API_URL = "http://localhost:19910"
+DI_API_URL = "http://localhost:25565"
+SLIDES_API_URL = "http://localhost:30606"
+AVATAR_API_URL = "http://localhost:9000"
+STATUS_API_URL = "http://localhost:19910"
 
 DEBUG = int(os.getenv("ORPHEUS_DEBUG", "0"))    # DEBUG enabled by default
 
@@ -168,10 +168,6 @@ async def generate_slides(
 ) -> Dict[str, Any]:
     tracker.log("Generating slides")
     try:
-        await update_status(prompt_id, StatusPatch(
-                stepSlideStructureGeneration=StepStatus.IN_PROGRESS
-            ), client)
-
         if prompt_request.user_persona is None:
                 print("ERROR: User persona must be defined for processing.", flush=True)
                 raise ValueError("User persona must be defined")
@@ -181,7 +177,7 @@ async def generate_slides(
             "promptId": str(prompt_id),
             "lectureScript": lecture_script,
             "user": prompt_request.user_persona.model_dump(mode="json"),
-            "assets": refined_output.get("assets", ""),
+            "assets": refined_output.get("assets", []),
         }
 
         slides_response = await client.post(
@@ -191,9 +187,6 @@ async def generate_slides(
         )
         slides_response.raise_for_status()
         slides_data: Dict[str, Any] = slides_response.json()
-        await update_status(prompt_id, StatusPatch(
-                stepSlideStructureGeneration=StepStatus.DONE
-            ), client)
         return slides_data
     except Exception as e:
         print(f"Error generating slides for prompt {prompt_id}: {e}", flush=True)
