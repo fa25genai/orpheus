@@ -101,7 +101,7 @@ async def summarize_and_send(
         if DEBUG:
             summary = "A for loop is a control flow statement that allows code to be executed repeatedly, typically used to iterate over sequences or iterable objects.\n\nIt features a basic syntax that specifies an item variable and an iterable collection of objects, such as a list or tuple.\n\nFor loops can be nested.\n\nThey often utilize functions like range() to generate number sequences.\n\nFlow control options include break to exit the loop prematurely, and continue to skip the current iteration.\n\nAn else block can be added, which executes after the loop finishes unless the loop was terminated by a break."
             await send_summary_to_endpoint(prompt_id, summary, client)
-            return        
+            return
         summary = summarize_content_with_llama(content, user_prompt)
         await send_summary_to_endpoint(prompt_id, summary, client)
     except Exception as e:
@@ -359,3 +359,10 @@ async def process_prompt(prompt_id: str, prompt_request: PromptRequest) -> None:
         logger.error(
             f"Failed processing for {prompt_id}: {exception}", exc_info=exception
         )
+
+        if "[Errno 8] nodename nor servname provided, or not known" in str(exception):
+            logger.error(
+                "This usually means the service hostname is incorrect or unreachable. "
+                "If you started the server as docker component make sure the URLs for DI_API_URL are referencing docker addresses (e.g. http://docint:25565). "
+                "If you started the server as standalone make sure the URLs for DI_API_URL are pointing to the correct host and port (e.g. http://localhost:25565)."
+            )
