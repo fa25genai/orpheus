@@ -359,3 +359,11 @@ async def process_prompt(prompt_id: str, prompt_request: PromptRequest) -> None:
         logger.error(
             f"Failed processing for {prompt_id}: {exception}", exc_info=exception
         )
+
+        if "[Errno 8] nodename nor servname provided, or not known" in str(exception):
+            logger.error(
+                "This usually means the service hostname is incorrect or unreachable. "
+                "If you started the server as docker component make sure the URLs for DI_API_URL are referencing docker addresses (e.g. http://docint:25565). "
+                "If you started the server as standalone make sure the URLs for DI_API_URL are pointing to the correct host and port (e.g. http://localhost:25565)."
+            )
+
