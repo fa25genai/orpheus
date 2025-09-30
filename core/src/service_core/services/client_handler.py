@@ -107,9 +107,7 @@ async def query_document_intelligence(
         await update_status(prompt_id, StatusPatch(
                 stepLookup=StepStatus.IN_PROGRESS
             ), client)
-        # if DEBUG:
-        if DEBUG:    # Remove when DI is ready with endpoint
-            return mock_service.create_retrieved_content()
+        
         print("Subqueries to DI: ", subqueries, flush=True)
 
         di_response = await client.post(
