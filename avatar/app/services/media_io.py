@@ -36,7 +36,7 @@ def generate_audio(
     try:
         ref = avatar_queries.get_latest_audio_for_course_slot(db, str(course_id), slot)
         if not ref or not getattr(ref, "file_path", None):
-            logger.warning("generate_audio: no audio found for course_id and slot")
+            logger.warning(f"generate_audio: no audio found for course_id `{course_id}` and slot {slot}")
             ref_path = Path("/app/database/voice_sample/krusche_voice_v2.mp3")
         else:
             ref_path = Path(ref.file_path)
@@ -50,7 +50,7 @@ def generate_audio(
         is_debug = os.getenv("DEBUG", "").lower() == "debug"
         data = {"voiceTrack": voiceTrack or "", "debug": "true" if is_debug else "false", "promptId": str(prompt_id)}
 
-        logger.info(f"generate_audio {prompt_id}#{voiceTrack}: Posting to {audio_api_url} with {ref_path}")
+        logger.info(f"generate_audio {prompt_id}#{slot}: Posting to {audio_api_url} with {ref_path}")
         with ref_path.open("rb") as f:
             resp = requests.post(
                 audio_api_url,
