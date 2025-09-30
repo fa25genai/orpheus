@@ -2,6 +2,8 @@ from typing import Tuple, Union
 
 from pydantic import StrictBytes, StrictStr
 
+from docint_app.vectorstore.weaviate_graph_store import get_store, get_weaviate_client
+
 
 class MockVideoUploadService:
     async def upload_video(self, courseId: str, body: Union[StrictBytes, StrictStr, Tuple[StrictStr, StrictBytes]]) -> str:
@@ -14,6 +16,8 @@ class MockVideoUploadService:
             # For string, assume it's base64 or raw bytes
             video_bytes = body.encode() if isinstance(body, str) else body
 
+        store = get_store()
+        store.test_upsert_video_chunk()
         # # Create tmp directory if it doesn't exist
         # os.makedirs("tmp", exist_ok=True)
 
