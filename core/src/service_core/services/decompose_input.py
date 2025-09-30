@@ -4,9 +4,8 @@ Simpler Python script: Question Refinement with Gemini/HuggingFace fallback
 """
 
 import json
-import os
 import textwrap
-from typing import Any, Dict, Optional, List
+from typing import Any, Dict, List
 import logging
 from pydantic import BaseModel
 
@@ -43,25 +42,25 @@ class ExtractionModel(BaseModel):
     subqueries: List[str]
     answer_plan: str
 
-    def decompose_question(question: str) -> Dict[str, Any]:
-        """
-        Decomposes a question into sub-queries and an answer plan using a structured output LLM call.
+def decompose_question(question: str) -> Dict[str, Any]:
+    """
+    Decomposes a question into sub-queries and an answer plan using a structured output LLM call.
 
-        Args:
-            question: The user's question.
+    Args:
+        question: The user's question.
 
-        Returns:
-            A dictionary containing the original question, sub-queries, and an answer plan.
-        """
-        prompt = DECOMPOSE_PROMPT + "\n\nQuestion to analyze: " + json.dumps(question)
+    Returns:
+        A dictionary containing the original question, sub-queries, and an answer plan.
+    """
+    prompt = DECOMPOSE_PROMPT + "\n\nQuestion to analyze: " + json.dumps(question)
 
-        try:
-            structured_output: ExtractionModel = azure_with_structured_output(
-                prompt, ExtractionModel
-            )
-            return structured_output.model_dump_()
-        except Exception as e:
-            logger.error(f"Failed to get structured output from LLM: {e}")
-            # Fallback or re-raising the exception might be needed depending on desired behavior
-            raise RuntimeError(f"Failed to process question with structured output LLM: {e}")
+    try:
+        structured_output: ExtractionModel = azure_with_structured_output(
+            prompt, ExtractionModel
+        )
+        return structured_output.model_dump()
+    except Exception as e:
+        logger.error(f"Failed to get structured output from LLM: {e}")
+        # Fallback or re-raising the exception might be needed depending on desired behavior
+        raise RuntimeError(f"Failed to process question with structured output LLM: {e}")
 

@@ -2,7 +2,6 @@ import os
 import instructor
 from openai import AzureOpenAI
 from pydantic import BaseModel, Field
-from typing import List
 
 class basicAnswer(BaseModel):
     answer: str = Field(..., description="The answer.")
