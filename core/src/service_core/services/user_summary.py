@@ -18,7 +18,9 @@ def extract_text_content(data: List[Dict[str, Any]]) -> str:
     return "\n".join(texts)
 
 
-def summarize_content_with_llama(retrieved_content: List[Dict[str, Any]], user_prompt: str) -> str:
+def summarize_content_with_llama(
+    retrieved_content: List[Dict[str, Any]], user_prompt: str
+) -> str:
     """Summarize only the text content from retrieved_content using Llama via llm_call."""
     text_content = extract_text_content(retrieved_content)
     # print("Text content to summarize:", text_content, flush=True)

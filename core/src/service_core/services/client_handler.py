@@ -22,7 +22,6 @@ from service_core.services.services_models.voice_track import VoiceTrackResponse
 
 load_dotenv()
 
-
 DI_API_URL = "http://docint:25565"
 SLIDES_API_URL = "http://slides:30606"
 AVATAR_API_URL = "http://avatar-video-producer:9000"
@@ -34,7 +33,7 @@ STATUS_API_URL = "http://status-service:19910"
 # AVATAR_API_URL = "http://localhost:9000"
 # STATUS_API_URL = "http://localhost:19910"
 
-DEBUG = int(os.getenv("ORPHEUS_DEBUG", "0"))    # DEBUG enabled by default
+DEBUG = int(os.getenv("ORPHEUS_DEBUG", "0"))  # DEBUG enabled by default
 
 logger = logging.getLogger("Client Handler")
 
@@ -50,7 +49,7 @@ async def update_status(
     )
 
 
-async def decompose_inputs(
+async def retrieve_subqueries_from_prompt(
     prompt_request: PromptRequest, prompt_id: str, client: httpx.AsyncClient
 ) -> List[str]:
     tracker.log("Decomposing inputs")
@@ -58,24 +57,25 @@ async def decompose_inputs(
         prompt_id, StatusPatch(stepUnderstanding=StepStatus.IN_PROGRESS), client
     )
 
-    decomposed_questions: List[str]
+    subqueries: List[str]
     if DEBUG:
-        decomposed_questions = mock_service.create_decomposed_question().get(
-            "subqueries", []
-        )
+        subqueries = mock_service.create_decomposed_question().get("subqueries", [])
         await update_status(
             prompt_id, StatusPatch(stepUnderstanding=StepStatus.DONE), client
         )
-        return decomposed_questions
+        return subqueries
 
-    decomposed_questions = decompose_input.decompose_question(
-        prompt_request.prompt
-    ).get("subqueries", [])
+    subqueries = decompose_input.decompose_question(prompt_request.prompt).get(
+        "subqueries", []
+    )
+
+    logger.debug(f"subqueries retrieved from prompt: {subqueries}")
+
     # FIX: [no-any-return]
     await update_status(
         prompt_id, StatusPatch(stepUnderstanding=StepStatus.DONE), client
     )
-    return decomposed_questions
+    return subqueries
 
 
 async def send_summary_to_endpoint(
@@ -87,7 +87,13 @@ async def send_summary_to_endpoint(
     except Exception as e:
         print("Error sending summary to endpoint:", e, flush=True)
 
-async def summarize_and_send(prompt_id: str, content: List[Dict[str, Any]], client: httpx.AsyncClient, user_prompt: str) -> None:
+
+async def summarize_and_send(
+    prompt_id: str,
+    content: List[Dict[str, Any]],
+    client: httpx.AsyncClient,
+    user_prompt: str,
+) -> None:
     try:
         summary: str
         if DEBUG:
@@ -100,16 +106,17 @@ async def summarize_and_send(prompt_id: str, content: List[Dict[str, Any]], clie
         print("Error occured when summarizing: ", e, flush=True)
 
 
-
 async def query_document_intelligence(
-    subqueries: List[str], client: httpx.AsyncClient, prompt_id: str, prompt_request: PromptRequest) -> List[Dict[str, Any]]:
+    subqueries: List[str],
+    client: httpx.AsyncClient,
+    prompt_id: str,
+    prompt_request: PromptRequest,
+) -> List[Dict[str, Any]]:
     tracker.log("Querying document intelligence")
     try:
-        await update_status(prompt_id, StatusPatch(
-                stepLookup=StepStatus.IN_PROGRESS
-            ), client)
-        
-        print("Subqueries to DI: ", subqueries, flush=True)
+        await update_status(
+            prompt_id, StatusPatch(stepLookup=StepStatus.IN_PROGRESS), client
+        )
 
         di_response = await client.post(
             f"{DI_API_URL}/v1/retrieval/{prompt_request.course_id}/batch",
@@ -118,30 +125,37 @@ async def query_document_intelligence(
         )
         di_response.raise_for_status()
         di_data: List[Dict[str, Any]] = di_response.json().get("results", [])
-        await update_status(prompt_id, StatusPatch(
-                stepLookup=StepStatus.DONE
-            ), client)
+        await update_status(prompt_id, StatusPatch(stepLookup=StepStatus.DONE), client)
         return di_data
     except Exception as e:
-        print(f"Error querying Document Intelligence for prompt {prompt_id}: {e}", flush=True)
-        await update_status(prompt_id, StatusPatch(
-            stepLookup=StepStatus.FAILED
-        ), client)
+        print(
+            f"Error querying Document Intelligence for prompt {prompt_id}: {e}",
+            flush=True,
+        )
+        await update_status(
+            prompt_id, StatusPatch(stepLookup=StepStatus.FAILED), client
+        )
         return []
-    
 
 
-async def generate_script(retrieved_content: List[Dict[str, Any]], prompt_id: str, prompt_request: PromptRequest, client: httpx.AsyncClient) -> Dict[str, Any]:
+async def generate_script(
+    retrieved_content: List[Dict[str, Any]],
+    prompt_id: str,
+    prompt_request: PromptRequest,
+    client: httpx.AsyncClient,
+) -> Dict[str, Any]:
     try:
         tracker.log("Generating script")
-        await update_status(prompt_id, StatusPatch(
-                stepLectureScriptGeneration=StepStatus.IN_PROGRESS
-            ), client)
-        
+        await update_status(
+            prompt_id,
+            StatusPatch(stepLectureScriptGeneration=StepStatus.IN_PROGRESS),
+            client,
+        )
+
         if prompt_request.user_persona is None:
-                print("ERROR: User persona must be defined for processing.", flush=True)
-                raise ValueError("User persona must be defined")
-        
+            print("ERROR: User persona must be defined for processing.", flush=True)
+            raise ValueError("User persona must be defined")
+
         if DEBUG:
             output: Dict[str, Any] = mock_service.create_script()
             await update_status(
@@ -150,11 +164,13 @@ async def generate_script(retrieved_content: List[Dict[str, Any]], prompt_id: st
                 client,
             )
             return output
-    
-        refined_output: Dict[str, Any] = script_generation.generate_script(retrieved_content, prompt_request.user_persona)
-        await update_status(prompt_id, StatusPatch(
-            stepLectureScriptGeneration=StepStatus.DONE
-        ), client)
+
+        refined_output: Dict[str, Any] = script_generation.generate_script(
+            retrieved_content, prompt_request.user_persona
+        )
+        await update_status(
+            prompt_id, StatusPatch(stepLectureScriptGeneration=StepStatus.DONE), client
+        )
     except Exception as e:
         print(e)
         refined_output = {}
@@ -176,42 +192,46 @@ async def generate_slides(
 ) -> Dict[str, Any]:
     tracker.log("Generating slides")
     try:
-        await update_status(prompt_id, StatusPatch(
-                stepSlideStructureGeneration=StepStatus.IN_PROGRESS
-            ), client)
-
         if prompt_request.user_persona is None:
-                print("ERROR: User persona must be defined for processing.", flush=True)
-                raise ValueError("User persona must be defined")
-        
-        slides_context = {
+            print("ERROR: User persona must be defined for processing.", flush=True)
+            raise ValueError("User persona must be defined")
+
+        generate_slides_request_body = {
             "courseId": prompt_request.course_id,
             "promptId": str(prompt_id),
             "lectureScript": lecture_script,
             "user": prompt_request.user_persona.model_dump(mode="json"),
-            "assets": refined_output.get("assets", ""),
+            "assets": refined_output.get("assets", []),
         }
+
+        logger.debug(f"generated slides request body: {generate_slides_request_body}")
 
         slides_response = await client.post(
             f"{SLIDES_API_URL}/v1/slides/generate",
-            json=slides_context,
+            json=generate_slides_request_body,
             timeout=300.0,
         )
         slides_response.raise_for_status()
         slides_data: Dict[str, Any] = slides_response.json()
-        await update_status(prompt_id, StatusPatch(
-                stepSlideStructureGeneration=StepStatus.DONE
-            ), client)
         return slides_data
     except Exception as e:
         print(f"Error generating slides for prompt {prompt_id}: {e}", flush=True)
-        await update_status(prompt_id, StatusPatch(
-            stepSlideStructureGeneration=StepStatus.FAILED
-        ), client)
+        await update_status(
+            prompt_id,
+            StatusPatch(stepSlideStructureGeneration=StepStatus.FAILED),
+            client,
+        )
         return {}
 
 
-async def generate_voice_scripts(lecture_script: str, slides_data: Dict[str, Any], user: UserProfile, client: httpx.AsyncClient, prompt_id: str, course_id: str) -> List[asyncio.Task[httpx.Response]]:
+async def generate_voice_scripts(
+    lecture_script: str,
+    slides_data: Dict[str, Any],
+    user: UserProfile,
+    client: httpx.AsyncClient,
+    prompt_id: str,
+    course_id: str,
+) -> List[asyncio.Task[httpx.Response]]:
     tracker.log("Generating voice script")
     try:
         voice_track: Dict[str, Any]
@@ -231,16 +251,18 @@ async def generate_voice_scripts(lecture_script: str, slides_data: Dict[str, Any
 
         slides = voice_track.get("slideMessages", [])
         voice_track_request = VoiceTrackResponse(
-        promptId=prompt_id,
-        courseId=course_id,
-        voiceTrack="",
-        slideNumber=0,
-        userProfile=user
-    )
+            promptId=prompt_id,
+            courseId=course_id,
+            voiceTrack="",
+            slideNumber=0,
+            userProfile=user,
+        )
         for index, slide_data in enumerate(slides):
             voice_track_request.slideNumber = index
             voice_track_request.voiceTrack = slide_data
-            task = generate_avatar_video(voice_track_request.model_dump(mode="json"), index, client)
+            task = generate_avatar_video(
+                voice_track_request.model_dump(mode="json"), index, client
+            )
             if task:
                 tasks.append(task)
         return tasks
@@ -284,16 +306,22 @@ def generate_avatar_video(
 async def process_prompt(prompt_id: str, prompt_request: PromptRequest) -> None:
     try:
         async with httpx.AsyncClient() as client:
-            subqueries = await decompose_inputs(prompt_request, prompt_id, client)
+            subqueries = await retrieve_subqueries_from_prompt(
+                prompt_request, prompt_id, client
+            )
             retrieved_content = await query_document_intelligence(
                 subqueries, client, prompt_id, prompt_request
             )
 
             asyncio.create_task(
-                summarize_and_send(prompt_id, retrieved_content, client, prompt_request.prompt)
+                summarize_and_send(
+                    prompt_id, retrieved_content, client, prompt_request.prompt
+                )
             )
 
-            refined_output = await generate_script(retrieved_content, prompt_id, prompt_request, client)
+            refined_output = await generate_script(
+                retrieved_content, prompt_id, prompt_request, client
+            )
             lecture_script = refined_output.get("lectureScript", "")
             slides_data: Dict[str, Any] = await generate_slides(
                 prompt_request, prompt_id, lecture_script, refined_output, client
@@ -311,7 +339,7 @@ async def process_prompt(prompt_id: str, prompt_request: PromptRequest) -> None:
                 prompt_request.user_persona,
                 client,
                 prompt_id,
-                prompt_request.course_id
+                prompt_request.course_id,
             )
 
             if avatar_tasks:
