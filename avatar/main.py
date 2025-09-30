@@ -204,7 +204,7 @@ def folder_url(prompt_id: UUID) -> str:
 )
 def create_avatar(
     name: Optional[str] = Form(None),
-    courseId: UUID = Form(...),
+    courseId: str = Form(...),
     slot: Optional[str] = Form("default"),  # accepts "default", "beginning", "ending" (+ minor typos)
     image_file: UploadFile = File(..., description="png/jpeg/webp"),
     audio_file: UploadFile = File(..., description="mp3/wav/flac/webm"),
@@ -226,7 +226,7 @@ def create_avatar(
     tags=["avatar"],
 )
 def get_avatars_by_course_endpoint(
-    courseId: UUID,
+    courseId: str,
     slot: Optional[str] = Query(None, description="optional: default | beginning | ending"),
     db: Session = Depends(get_db),
 ) -> List[media.AvatarCreatedResponse]:
@@ -240,7 +240,7 @@ def get_avatars_by_course_endpoint(
     tags=["avatar"],
 )
 def replace_avatar_image_endpoint(
-    courseId: UUID,
+    courseId: str,
     slot: str,
     image_file: UploadFile = File(..., description="png/jpeg/webp"),
     db: Session = Depends(get_db),
@@ -255,7 +255,7 @@ def replace_avatar_image_endpoint(
     tags=["avatar"],
 )
 def replace_avatar_audio_endpoint(
-    courseId: UUID,
+    courseId: str,
     slot: str,
     audio_file: UploadFile = File(..., description="mp3/wav/flac/webm"),
     db: Session = Depends(get_db),

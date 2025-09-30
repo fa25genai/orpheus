@@ -8,6 +8,7 @@ from typing import Optional, Sequence, cast
 from uuid import UUID
 
 from fastapi import HTTPException, UploadFile, status
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from .avatar_media import (
@@ -24,12 +25,9 @@ from .avatar_media import (
 )
 
 
-def _get_avatar_or_404(db: Session, course_id: UUID, slot: Optional[str]) -> Avatar:
+def _get_avatar_or_404(db: Session, course_id: str, slot: Optional[str]) -> Avatar:
     the_slot = _normalize_slot(slot) if slot is not None else CourseAvatarSlot.default
-    avatar: Optional[Avatar] = db.query(Avatar).filter(
-        Avatar.course_id == str(course_id),
-        Avatar.slot == the_slot.value,
-    ).first()
+    avatar = db.query(Avatar).filter(Avatar.course_id == course_id, Avatar.slot == the_slot.value).first()
     if not avatar:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -69,7 +67,7 @@ def _latest_audio_or_none(items: Sequence[AvatarAudio] | list[AvatarAudio]) -> O
 
 def replace_avatar_image(
     db: Session,
-    course_id: UUID,
+    course_id: str,
     slot: Optional[str],
     image_file: UploadFile,
     delete_previous: bool = True,
@@ -78,7 +76,7 @@ def replace_avatar_image(
     Replace the avatar's image for (course_id, slot).
     Optionally deletes the previous latest image row + file.
     """
-    avatar = _get_avatar_or_404(db, course_id, slot)
+    avatar = _get_or_create_avatar(db, course_id, slot)
     saved_new_path: Optional[Path] = None
 
     # capture old latest BEFORE adding the new one
@@ -112,12 +110,7 @@ def replace_avatar_image(
         latest_image: Optional[AvatarImage] = _latest_image_or_none(cast(Sequence[AvatarImage], avatar.images))
         latest_audio: Optional[AvatarAudio] = _latest_audio_or_none(cast(Sequence[AvatarAudio], avatar.audios))
 
-        if latest_image is None:
-            # We just added one; if it's still None, something is inconsistent.
-            raise HTTPException(status_code=500, detail="Failed to load latest image")
 
-        if latest_audio is None:
-            raise HTTPException(status_code=404, detail="Avatar has no audio to pair with")
 
         # After commit succeeded, best-effort unlink old file
         if delete_previous and old_img:
@@ -129,25 +122,29 @@ def replace_avatar_image(
         return AvatarCreatedResponse(
             avatarId=UUID(avatar.avatar_id),
             name=avatar.name,
-            courseId=UUID(avatar.course_id) if avatar.course_id else None,
+            courseId=(avatar.course_id) if avatar.course_id else None,
             slot=CourseAvatarSlot(avatar.slot),
             createdAt=avatar.created_at,
-            image=AvatarImageResponse(
-                id=UUID(latest_image.id),
-                avatarId=UUID(avatar.avatar_id),
-                filePath=latest_image.file_path,
-                mimeType=latest_image.mime_type,
-                sizeBytes=latest_image.size_bytes,
-                createdAt=latest_image.created_at,
-            ),
-            audio=AvatarAudioResponse(
-                id=UUID(latest_audio.id),
-                avatarId=UUID(avatar.avatar_id),
-                filePath=latest_audio.file_path,
-                mimeType=latest_audio.mime_type,
-                sizeBytes=latest_audio.size_bytes,
-                createdAt=latest_audio.created_at,
-            ),
+            image=(
+                 AvatarImageResponse(
+                     id=UUID(latest_image.id),
+                     avatarId=UUID(avatar.avatar_id),
+                     filePath=latest_image.file_path,
+                     mimeType=latest_image.mime_type,
+                     sizeBytes=latest_image.size_bytes,
+                     createdAt=latest_image.created_at,
+                 ) if latest_image else None
+             ),
+             audio=(
+                 AvatarAudioResponse(
+                     id=UUID(latest_audio.id),
+                     avatarId=UUID(avatar.avatar_id),
+                     filePath=latest_audio.file_path,
+                     mimeType=latest_audio.mime_type,
+                     sizeBytes=latest_audio.size_bytes,
+                     createdAt=latest_audio.created_at,
+                 ) if latest_audio else None
+             ),
         )
 
     except Exception:
@@ -162,7 +159,7 @@ def replace_avatar_image(
 
 def replace_avatar_audio(
     db: Session,
-    course_id: UUID,
+    course_id: str,
     slot: Optional[str],
     audio_file: UploadFile,
     delete_previous: bool = True,
@@ -171,7 +168,7 @@ def replace_avatar_audio(
     Replace the avatar's audio for (course_id, slot).
     Optionally deletes the previous latest audio row + file.
     """
-    avatar = _get_avatar_or_404(db, course_id, slot)
+    avatar = _get_or_create_avatar(db, course_id, slot)
     saved_new_path: Optional[Path] = None
 
     # capture old latest BEFORE adding the new one
@@ -205,13 +202,6 @@ def replace_avatar_audio(
         latest_image: Optional[AvatarImage] = _latest_image_or_none(cast(Sequence[AvatarImage], avatar.images))
         latest_audio: Optional[AvatarAudio] = _latest_audio_or_none(cast(Sequence[AvatarAudio], avatar.audios))
 
-        if latest_audio is None:
-            # We just added one; if it's still None, something is inconsistent.
-            raise HTTPException(status_code=500, detail="Failed to load latest audio")
-
-        if latest_image is None:
-            raise HTTPException(status_code=404, detail="Avatar has no image to pair with")
-
         # After commit succeeded, best-effort unlink old file
         if delete_previous and old_aud:
             try:
@@ -222,25 +212,29 @@ def replace_avatar_audio(
         return AvatarCreatedResponse(
             avatarId=UUID(avatar.avatar_id),
             name=avatar.name,
-            courseId=UUID(avatar.course_id) if avatar.course_id else None,
+            courseId=(avatar.course_id) if avatar.course_id else None,
             slot=CourseAvatarSlot(avatar.slot),
             createdAt=avatar.created_at,
-            image=AvatarImageResponse(
-                id=UUID(latest_image.id),
-                avatarId=UUID(avatar.avatar_id),
-                filePath=latest_image.file_path,
-                mimeType=latest_image.mime_type,
-                sizeBytes=latest_image.size_bytes,
-                createdAt=latest_image.created_at,
-            ),
-            audio=AvatarAudioResponse(
-                id=UUID(latest_audio.id),
-                avatarId=UUID(avatar.avatar_id),
-                filePath=latest_audio.file_path,
-                mimeType=latest_audio.mime_type,
-                sizeBytes=latest_audio.size_bytes,
-                createdAt=latest_audio.created_at,
-            ),
+            image=(
+                 AvatarImageResponse(
+                     id=UUID(latest_image.id),
+                     avatarId=UUID(avatar.avatar_id),
+                     filePath=latest_image.file_path,
+                     mimeType=latest_image.mime_type,
+                     sizeBytes=latest_image.size_bytes,
+                     createdAt=latest_image.created_at,
+                ) if latest_image else None
+             ),
+             audio=(
+                 AvatarAudioResponse(
+                     id=UUID(latest_audio.id),
+                     avatarId=UUID(avatar.avatar_id),
+                     filePath=latest_audio.file_path,
+                     mimeType=latest_audio.mime_type,
+                     sizeBytes=latest_audio.size_bytes,
+                     createdAt=latest_audio.created_at,
+                 ) if latest_audio else None
+             ),
         )
 
     except Exception:
@@ -251,3 +245,34 @@ def replace_avatar_audio(
             except Exception:
                 pass
         raise
+
+
+def _get_or_create_avatar(db: Session, course_id: str, slot: Optional[str]) -> Avatar:
+    the_slot = _normalize_slot(slot) if slot is not None else CourseAvatarSlot.default
+    avatar = db.query(Avatar).filter(Avatar.course_id == course_id, Avatar.slot == the_slot.value).first()
+    if avatar:
+        return avatar
+
+    # create new avatar with generated UUID
+    new_avatar = Avatar(
+        avatar_id=str(uuid.uuid4()),
+        course_id=course_id,
+        slot=the_slot.value,
+        name=None,
+    )
+    db.add(new_avatar)
+    try:
+        db.commit()
+    except IntegrityError:
+        # race: someone else created it — fetch it
+        db.rollback()
+    if not getattr(new_avatar, "created_at", None):
+        # either rolled back or not flushed; re-query
+        avatar = db.query(Avatar).filter(Avatar.course_id == course_id, Avatar.slot == the_slot.value).first()
+        if avatar:
+            return avatar
+        # fallback: ensure it exists
+        db.add(new_avatar)
+        db.commit()
+    db.refresh(new_avatar)
+    return new_avatar
