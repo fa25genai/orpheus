@@ -16,6 +16,7 @@ import VideoPlayer from "@/components/video-player";
 import {Card} from "@/components/ui/card";
 import SlidevEmbed, {SlidevEmbedHandle} from "@/components/slidev-embed";
 import {useStatus} from "@/hooks/use-status";
+import {courseId} from "@/data/course";
 
 export default function Home() {
   const [personaLevel, setPersonaLevel] = useState<PersonaLevel>("beginner");
@@ -33,7 +34,7 @@ export default function Home() {
       const response: PromptResponse = await coreApi.createLectureFromPrompt({
         promptRequest: {
           prompt,
-          courseId: "IN001",
+          courseId,
           userPersona: personas.find((person) => person.id === personaLevel)
             ?.userProfile,
         },
@@ -67,12 +68,11 @@ export default function Home() {
     async function updateVideoSources() {
       if (status?.stepSlidePostprocessing !== "DONE") return;
 
-      const baseUrl = `http://localhost:3000/videos/jobs/${promptId}/`; //TODO: change to promptId
-
+      const baseUrl = `http://localhost:3000/videos/jobs/${promptId}/`;
       const readyVideos: string[] = status.stepsAvatarGeneration
         .map(
           (step, index) =>
-            step.video === "DONE" ? `${baseUrl}${index}.mp4` : null // TODO: change to starting index 0
+            step.video === "DONE" ? `${baseUrl}${index}.mp4` : null
         )
         // needed to filter out all nulls
         .filter((url): url is string => url !== null);
@@ -140,17 +140,14 @@ export default function Home() {
                 </div>
               </div>
 
-              {status && <StatusDisplayer status={status} />}
+              {status && (
+                <StatusDisplayer promptId={promptId} status={status} />
+              )}
 
               {status?.stepSlidePostprocessing === "DONE" &&
-                status?.stepsAvatarGeneration
-                  ?.slice(0, 3)
-                  .every((step, index) => {
-                    if (index < 2) {
-                      return step?.video === "DONE";
-                    }
-                    return step.video === "DONE";
-                  }) && (
+                status?.stepsAvatarGeneration?.slice(0, 4).every((step) => {
+                  return step.video === "DONE";
+                }) && (
                   <div
                     ref={outputRef}
                     className="grid grid-cols-1 md:grid-cols-3 gap-6"

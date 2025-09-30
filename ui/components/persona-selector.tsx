@@ -22,6 +22,7 @@ import {
 import {GraduationCap, User, Brain, Settings, ChevronDown} from "lucide-react";
 import {PersonaLevel} from "@/types/uploading";
 import {UserProfile} from "@/generated-api-clients/core";
+import { courseId } from "@/data/course";
 
 export interface Persona {
   id: string;
@@ -50,6 +51,7 @@ export const personas: Persona[] = [
     color: "bg-green-500/10 text-green-500 border-green-500/20",
     // request body fields
     userProfile: {
+      id: crypto.randomUUID(),
       role: "student",
       language: "english",
       preferences: {
@@ -58,7 +60,7 @@ export const personas: Persona[] = [
         expertiseLevel: "beginner",
         includePictures: "many",
       },
-      enrolledCourses: ["SE001", "cs001"],
+      enrolledCourses: [courseId],
     },
   },
   {

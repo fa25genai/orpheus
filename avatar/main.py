@@ -11,6 +11,15 @@ from app.workers import audio as audio_worker
 from app.workers import cleanup as cleanup_worker
 from app.workers import video as video_worker
 
+logging.basicConfig(
+    level=logging.DEBUG if os.getenv("ORPHEUS_VERBOSE") else logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+    datefmt="%m/%d/%Y %I:%M:%S %p",
+)
+logging.getLogger("httpcore").setLevel(logging.WARNING)
+logging.getLogger("asyncio").setLevel(logging.WARNING)
+logging.getLogger("botocore").setLevel(logging.WARNING)
+
 app = FastAPI(title="Service Video-Generation APIs", version="0.1")
 
 app.add_middleware(
@@ -41,14 +50,5 @@ def _start_workers() -> None:
     if not _cleanup_started.is_set():
         Thread(target=cleanup_worker.loop, name="job-cleanup", daemon=True).start()
         _cleanup_started.set()
-
-logging.basicConfig(
-    level=logging.DEBUG if os.getenv("ORPHEUS_VERBOSE") else logging.INFO,
-    format="%(asctime)s %(levelname)s %(name)s: %(message)s",
-    datefmt="%m/%d/%Y %I:%M:%S %p",
-)
-logging.getLogger("httpcore").setLevel(logging.WARNING)
-logging.getLogger("asyncio").setLevel(logging.WARNING)
-logging.getLogger("botocore").setLevel(logging.WARNING) 
 
 # Run: uvicorn main:app --host 0.0.0.0 --port 8080 --reload

@@ -1,13 +1,12 @@
 import asyncio
 import os
-from typing import Any, Dict, List, Union
+from typing import List, Union
 import logging
 
 import httpx
 from dotenv import load_dotenv
 
 import service_core.services.fetch_mock_data as mock_service
-from service_core.impl.tracker import tracker
 from service_core.models.docint.batch_retrieval_request import BatchRetrievalRequest
 from service_core.models.docint.batch_retrieval_response import BatchRetrievalResponse
 from service_core.models.docint.retrieval_response import RetrievalResponse
@@ -18,13 +17,13 @@ from service_core.models.slides.generation_accepted_response import (
 from service_core.models.slides.request_slide_generation_request import (
     RequestSlideGenerationRequest,
 )
-from service_core.models.user_profile import UserProfile
 from service_core.services import (
     decompose_input,
     narration_generation,
     script_generation,
 )
 from service_core.services.script_generation import LectureScriptWithAssets
+from service_core.services.services_models.voice_track import VoiceTrackResponse
 from service_core.services.user_summary import summarize_content_with_llama
 from service_status.models.status_patch import StatusPatch
 from service_status.models.step_status import StepStatus
@@ -37,10 +36,10 @@ AVATAR_API_URL = "http://avatar-video-producer:9000"
 STATUS_API_URL = "http://status-service:19910"
 
 # Use this when you start the service locally outside a docker container
-# DI_API_URL = "http://localhost:25565"
-# SLIDES_API_URL = "http://localhost:30606"
-# AVATAR_API_URL = "http://localhost:9000"
-# STATUS_API_URL = "http://localhost:19910"
+DI_API_URL = "http://localhost:25565"
+SLIDES_API_URL = "http://localhost:30606"
+AVATAR_API_URL = "http://localhost:9000"
+STATUS_API_URL = "http://localhost:19910"
 
 DEBUG = int(os.getenv("ORPHEUS_DEBUG", "0"))  # DEBUG enabled by default
 
@@ -61,7 +60,7 @@ async def update_status(
 async def retrieve_subqueries_from_prompt(
     prompt_request: PromptRequest, prompt_id: str, client: httpx.AsyncClient
 ) -> List[str]:
-    tracker.log("Decomposing inputs")
+    logger.info(f"Decomposing inputs for prompt `{prompt_id}`")
     await update_status(
         prompt_id, StatusPatch(stepUnderstanding=StepStatus.IN_PROGRESS), client
     )
@@ -123,7 +122,7 @@ async def query_document_intelligence(
     prompt_id: str,
     prompt_request: PromptRequest,
 ) -> List[RetrievalResponse]:
-    tracker.log("Querying document intelligence")
+    logger.info(f"Querying document intelligence for prompt `{prompt_id}`")
     try:
         await update_status(
             prompt_id, StatusPatch(stepLookup=StepStatus.IN_PROGRESS), client
@@ -159,7 +158,7 @@ async def generate_script(
     client: httpx.AsyncClient,
 ) -> LectureScriptWithAssets:
     try:
-        tracker.log("Generating script")
+        logger.info(f"Generating script for prompt `{prompt_id}`")
         await update_status(
             prompt_id,
             StatusPatch(stepLectureScriptGeneration=StepStatus.IN_PROGRESS),
@@ -206,7 +205,7 @@ async def generate_slides(
     refined_output: LectureScriptWithAssets,
     client: httpx.AsyncClient,
 ) -> GenerationAcceptedResponse:
-    tracker.log("Generating slides")
+    logger.info(f"Generating slides for prompt `{prompt_id}`")
     try:
         if prompt_request.user_persona is None:
             logger.error("User persona must be defined for voice scripts.")
@@ -244,20 +243,23 @@ async def generate_slides(
 async def generate_voice_scripts(
     lecture_script: str,
     slides_data: GenerationAcceptedResponse,
-    user: UserProfile,
+    prompt_request: PromptRequest,
     client: httpx.AsyncClient,
     prompt_id: str,
-    course_id: str,
 ) -> List[asyncio.Task[httpx.Response]]:
-    tracker.log("Generating voice script")
+    logger.info(f"Generating voice scripts for prompt `{prompt_id}`")
+    await update_status(
+        prompt_id,
+        StatusPatch(stepLectureScriptGeneration=StepStatus.IN_PROGRESS),
+        client,
+    )
     try:
-        voice_script: Dict[str, Any]
         tasks: List[asyncio.Task[httpx.Response]] = []
         if DEBUG:
             for i in range(14):
                 voice_script = mock_service.create_voice_script(i)
                 logger.debug(f"voice script: {voice_script}")
-                task = generate_avatar_video(voice_script, i, client)
+                task = generate_avatar_video(voice_script, client)
                 if task:
                     tasks.append(task)
             return tasks
@@ -266,44 +268,61 @@ async def generate_voice_scripts(
         logger.debug(f"lecture script: {lecture_script}")
         logger.debug(f"slides data: {slides_data}")
 
+        if not prompt_request.user_persona:
+            logger.error("User persona must be defined for voice scripts.")
+            raise ValueError("User persona must be defined")
+
         narration_stream = narration_generation.generate_narrations(
-            lecture_script, 
-            slides_data, 
-            user, 
+            lecture_script,
+            slides_data,
+            prompt_request,
             prompt_id,
-            course_id
         )
 
         slide_index = 0
-        
+
+        await update_status(
+            prompt_id,
+            StatusPatch(stepLectureScriptGeneration=StepStatus.DONE),
+            client,
+        )
+
         async for voice_script_payload in narration_stream:
-            logger.debug(f"Received narration segment {slide_index}, scheduling avatar task.")
-            
-            task = generate_avatar_video(
-                voice_script_payload, 
-                slide_index,
-                client
+            logger.debug(
+                f"Received narration segment {slide_index}, scheduling avatar task."
             )
+
+            task = generate_avatar_video(voice_script_payload, client)
             if task:
                 tasks.append(task)
-                
+
             slide_index += 1
-            
+
         return tasks
 
     except Exception as exception:
-        logger.error("Voice track generation failed during streaming", exc_info=exception)
+        logger.error(
+            "Voice track generation failed during streaming", exc_info=exception
+        )
+        await update_status(
+            prompt_id,
+            StatusPatch(stepLectureScriptGeneration=StepStatus.FAILED),
+            client,
+        )
         return []
 
 
 async def avatar_video_producer(
-    voice_script: Dict[str, Any], client: httpx.AsyncClient
+    voice_script: VoiceTrackResponse, client: httpx.AsyncClient
 ) -> httpx.Response:
+    logger.info(
+        f"Generating avatar video {voice_script.promptId}#{voice_script.slideNumber}"
+    )
     try:
         logger.debug(f"Request to avatar of type {type(voice_script)}: {voice_script}")
         avatar_response = await client.post(
             f"{AVATAR_API_URL}/v1/video/generate",
-            json=voice_script,
+            json=voice_script.model_dump(mode="json"),
             timeout=300.0,
         )
         return avatar_response
@@ -314,12 +333,11 @@ async def avatar_video_producer(
 
 # TODO return Optional instead of response
 def generate_avatar_video(
-    voice_script: Dict[str, Any], index: int, client: httpx.AsyncClient
+    voice_track: VoiceTrackResponse, client: httpx.AsyncClient
 ) -> Union[asyncio.Task[httpx.Response], None]:
-    logger.info(f"Generating avatar video for slide {index}")
     try:
         task: asyncio.Task[httpx.Response] = asyncio.create_task(
-            avatar_video_producer(voice_script, client)
+            avatar_video_producer(voice_track, client)
         )
         return task
     except Exception as exception:
@@ -360,16 +378,15 @@ async def process_prompt(prompt_id: str, prompt_request: PromptRequest) -> None:
             ] = await generate_voice_scripts(
                 lecture_script,
                 slides_data,
-                prompt_request.user_persona,
+                prompt_request,
                 client,
                 prompt_id,
-                prompt_request.course_id,
             )
 
             if avatar_tasks:
                 await asyncio.gather(*avatar_tasks)
 
-            tracker.log(f"SUCCESS: Completed processing for {prompt_id}")
+            logger.info(f"Completed processing for {prompt_id}")
     except Exception as exception:
         logger.error(
             f"Failed processing for {prompt_id}: {exception}", exc_info=exception

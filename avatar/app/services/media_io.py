@@ -35,12 +35,12 @@ def generate_audio(
         ref = avatar_queries.get_latest_audio_for_course_slot(db, str(course_id), slot)
         if not ref or not getattr(ref, "file_path", None):
             print("[generate_audio] No DB voice found; using fallback sample.")
-            ref_path = Path("/app/database/voice_sample/krusche_voice.mp3")
+            ref_path = Path("/app/database/voice_sample/krusche_voice_v2.mp3")
         else:
             ref_path = Path(ref.file_path)
             if not ref_path.is_file():
                 print(f"[generate_audio] DB voice not found on disk: {ref_path}")
-                ref_path = Path("/app/database/voice_sample/krusche_voice.mp3")
+                ref_path = Path("/app/database/voice_sample/krusche_voice_v2.mp3")
 
         suffix = ref_path.suffix.lower()
         mime_type = "audio/wav" if suffix == ".wav" else "audio/mpeg"
@@ -116,7 +116,7 @@ def generate_video(
     source_path = source_image_path
     if not source_path or not Path(source_path).is_file():
         print(f"[generate_video] Source image not found: {source_path}; using fallback sample.")
-        source_path = "/app/database/avatar_sample/image_michal.png"
+        source_path = "/app/database/avatar_sample/krusche_image.png"
     if not Path(source_path).is_file():
         print(f"[generate_video] Source image not found: {source_path}")
         return None
