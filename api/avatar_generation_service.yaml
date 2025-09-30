@@ -1,7 +1,7 @@
-openapi: 3.1.0
+openapi: 3.0.3
 info:
   title: Service Video-Generation APIs
-  version: "0.1"
+  version: "0.3"
 
 paths:
   /v1/avatars:
@@ -45,12 +45,12 @@ paths:
         - name: slot
           in: query
           required: false
-          description: optional: default | beginning | ending
+          description: "optional: default | beginning | ending"
           schema:
             anyOf:
               - type: string
               - type: null
-            description: optional: default | beginning | ending
+            description: "optional: default | beginning | ending"
             title: Slot
       responses:
         "200":

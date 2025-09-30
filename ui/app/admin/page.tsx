@@ -14,11 +14,12 @@ import {
   Volume2,
 } from "lucide-react";
 import Link from "next/link";
-import {useState} from "react";
+import {useEffect, useState} from "react";
 import {FileUpload} from "@/components/file-upload";
 import {UploadedFile} from "@/types/uploading";
-import {docintApi} from "../api-clients";
+import {docintApi, avatarApi} from "../api-clients";
 import {makeUploadHandler, makeRemoveHandler} from "@/helper/upload-helper";
+import {courseId} from "@/data/course";
 
 export default function Admin() {
   const [activeTab, setActiveTab] = useState("material");
@@ -29,12 +30,43 @@ export default function Admin() {
   const [avatar, setAvatar] = useState<UploadedFile[]>([]);
   const [audio, setAudio] = useState<UploadedFile[]>([]);
 
+  async function getAvatar() {
+    const avatarResponse =
+      await avatarApi.getAvatarsByCourseEndpointV1AvatarsByCourseCourseIdGet({
+        courseId,
+      });
+
+    const correctAvatar = avatarResponse.find(
+      (avatar) => avatar.slot === "default"
+    );
+
+    if (correctAvatar) {
+      setAvatar([
+        {
+          id: correctAvatar?.avatarId,
+          name: correctAvatar.slot ?? "default",
+          size: correctAvatar.image.sizeBytes ?? 0,
+          type: "image",
+          status: "completed",
+          url: correctAvatar.image.filePath,
+          documentId: correctAvatar.avatarId,
+        },
+      ]);
+    }
+  }
+
+  useEffect(() => {
+    getAvatar().catch((err) => {
+      console.error("Failed to fetch avatar:", err);
+    });
+  }, []);
+
   // --------------------
   // Handlers for Slides
   // --------------------
   const handleSlidesUpload = makeUploadHandler(setSlides, async (file) => {
     const response = await docintApi.uploadsDocument({
-      courseId: "IN001",
+      courseId,
       body: file,
     });
     return {documentId: response.documentId};
@@ -50,11 +82,9 @@ export default function Admin() {
   // --------------------
   const handleVideosUpload = makeUploadHandler(setVideos, async (file) => {
     const response = await docintApi.uploadsVideo({
-      courseId: "IN001",
+      courseId,
       body: file,
     });
-    // TODO: replace with your video upload API call
-    await new Promise((r) => setTimeout(r, 1000));
     return {documentId: response.videoId};
   });
 
@@ -67,9 +97,13 @@ export default function Admin() {
   // Handlers for Avatar
   // --------------------
   const handleAvatarUpload = makeUploadHandler(setAvatar, async (file) => {
-    console.log(file);
-    await new Promise((r) => setTimeout(r, 1000));
-    return {documentId: "avatar-" + file.name};
+    const response =
+      await avatarApi.replaceAvatarImageEndpointV1AvatarsCourseIdSlotImagePost({
+        courseId,
+        imageFile: file,
+        slot: "default",
+      });
+    return {documentId: response.avatarId};
   });
 
   const handleAvatarRemove = makeRemoveHandler(setAvatar, async (file) => {
