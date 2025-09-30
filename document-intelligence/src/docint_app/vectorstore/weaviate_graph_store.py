@@ -405,7 +405,7 @@ class WeaviateGraphStore:
         # Generate deterministic UUID from course_id and chunk_id
         name = f"VideoChunk::{course_id}::{chunk_id}"
         uid = str(uuid.uuid5(uuid.NAMESPACE_URL, name))
-        
+
         payload = {
             "class": "VideoChunk",
             "id": uid,
@@ -709,16 +709,8 @@ class WeaviateGraphStore:
             return []
 
         # Build filters for each (documentId, slideNo) pair
-        slide_image_filters = [
-            Filter.all_of([
-                Filter.by_property("documentId").equal(doc_id),
-                Filter.by_property("slideNo").equal(slide_no)
-            ])
-            for doc_id, slide_no in slide_hits_document_ids
-        ]
-        slide_image_query = slideImages.query.fetch_objects(
-            filters=Filter.any_of(slide_image_filters)
-        )
+        slide_image_filters = [Filter.all_of([Filter.by_property("documentId").equal(doc_id), Filter.by_property("slideNo").equal(slide_no)]) for doc_id, slide_no in slide_hits_document_ids]
+        slide_image_query = slideImages.query.fetch_objects(filters=Filter.any_of(slide_image_filters))
 
         slide_image_hits = slide_image_query.objects
         print(f"[WeaviateClientSearch] Retrieved {len(slide_image_hits)} slide images")
@@ -797,7 +789,7 @@ class WeaviateGraphStore:
     ) -> List[Dict[str, Any]]:
         """
         Search VideoChunk objects by text similarity.
-        
+
         :param query_vector: Query embedding vector
         :param course_id: Optional filter by course ID
         :param k: Number of results to return
@@ -807,10 +799,8 @@ class WeaviateGraphStore:
         """
         where_clause = ""
         if course_id:
-            where_clause = (
-                'where: { operator: Equal, path: ["courseId"], valueText: "%s" }' % course_id
-            )
-        
+            where_clause = 'where: { operator: Equal, path: ["courseId"], valueText: "%s" }' % course_id
+
         gql_query = f"""
         {{
           Get {{
@@ -827,22 +817,22 @@ class WeaviateGraphStore:
           }}
         }}
         """
-        
+
         res = self._post("/v1/graphql", {"query": gql_query})
         chunk_hits = res.get("data", {}).get("Get", {}).get("VideoChunk", []) or []
-        
+
         # Filter by similarity threshold if specified
         filtered_hits = []
         for chunk in chunk_hits:
             dist = (chunk.get("_additional") or {}).get("distance") if include_distance else None
             similarity = self._similarity_from_distance(dist)
-            
+
             if similarity >= similarity_threshold:
                 chunk["similarity"] = similarity
                 if include_distance:
                     chunk["distance"] = dist
                 filtered_hits.append(chunk)
-        
+
         return filtered_hits
 
     # Test/Debug functions

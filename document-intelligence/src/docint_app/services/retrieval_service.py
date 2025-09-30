@@ -172,7 +172,7 @@ class RetrievalService:
                 course_id=course_id,
                 k=k,
             )
-            
+
             print(f"Retrieved {len(slide_hits)} hits from store")
 
             # Convert to OpenAPI format
