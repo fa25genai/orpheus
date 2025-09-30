@@ -89,7 +89,7 @@ def create_slides() -> Dict[str, Any]:
     )
     return slide_bullets.model_dump()
 
-def create_voice_script(index=0) -> Dict[str, Any]:
+def create_voice_script(index=0) -> VoiceTrackResponse:
     slides=[
         "Welcome to this lecture on For-Loops! Today we will learn how to repeat actions in programs—similar to repeating push-ups during training. For-loops enable us to make code more efficient and streamlined.",
         "Think of push-ups: We repeat an action until a goal is reached. We also use this principle in programs to efficiently automate tasks.",
