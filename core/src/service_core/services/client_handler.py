@@ -239,13 +239,13 @@ async def generate_voice_scripts(
 ) -> List[asyncio.Task[httpx.Response]]:
     tracker.log("Generating voice script")
     try:
-        voice_track: Dict[str, Any]
+        voice_script: Dict[str, Any]
         tasks: List[asyncio.Task[httpx.Response]] = []
         if DEBUG:
             for i in range(14):
-                voice_track = mock_service.create_voice_script(i)
-                logger.debug(f"voice track: {voice_track}")
-                task = generate_avatar_video(voice_track, i, client)
+                voice_script = mock_service.create_voice_script(i)
+                logger.debug(f"voice script: {voice_script}")
+                task = generate_avatar_video(voice_script, i, client)
                 if task:
                     tasks.append(task)
             return tasks
@@ -254,15 +254,15 @@ async def generate_voice_scripts(
         logger.debug(f"lecture script: {lecture_script}")
         logger.debug(f"slides data: {slides_data}")
 
-        voice_track = narration_generation.generate_narrations(
+        voice_script = narration_generation.generate_narrations(
             lecture_script, slides_data, prompt_request.user_persona
         )
 
-        slides = voice_track.get("slideMessages", [])
+        slides = voice_script.get("slideMessages", [])
 
         for index, slide_data in enumerate(slides):
             # TODO this should not be called response, this is quite confusing
-            voice_track_request = VoiceTrackResponse(
+            voice_script_request = VoiceTrackResponse(
                 promptId=prompt_id,
                 courseId=prompt_request.course_id,
                 voiceTrack=slide_data,
@@ -271,7 +271,7 @@ async def generate_voice_scripts(
             )
 
             task = generate_avatar_video(
-                voice_track_request, index, client
+                voice_script_request, index, client
             )
             if task:
                 tasks.append(task)
@@ -283,14 +283,14 @@ async def generate_voice_scripts(
 
 
 async def avatar_video_producer(
-    voice_track: VoiceTrackResponse, client: httpx.AsyncClient
+    voice_script: VoiceTrackResponse, client: httpx.AsyncClient
 ) -> httpx.Response:
-    logger.info(f"Generating avatar video {voice_track.promptId}#{voice_track.slideNumber}")
+    logger.info(f"Generating avatar video {voice_script.promptId}#{voice_track.slideNumber}")
     try:
-        logger.debug(f"voice track: {voice_track}")
+        logger.debug(f"voice track: {voice_script}")
         avatar_response = await client.post(
             f"{AVATAR_API_URL}/v1/video/generate",
-            json=voice_track.model_dump(mode="json"),
+            json=voice_script.model_dump(mode="json"),
             timeout=300.0,
         )
         return avatar_response
@@ -301,12 +301,12 @@ async def avatar_video_producer(
 
 # TODO return Optional instead of response
 def generate_avatar_video(
-    voice_track: VoiceTrackResponse, index: int, client: httpx.AsyncClient
+    voice_script: VoiceTrackResponse, index: int, client: httpx.AsyncClient
 ) -> Union[asyncio.Task[httpx.Response], None]:
     logger.info(f"Generating avatar video for slide {index}")
     try:
         task: asyncio.Task[httpx.Response] = asyncio.create_task(
-            avatar_video_producer(voice_track, client)
+            avatar_video_producer(voice_script, client)
         )
         return task
     except Exception as exception:
