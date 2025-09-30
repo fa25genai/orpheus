@@ -596,7 +596,6 @@ class WeaviateGraphStore:
             chunk_query = video_chunks.query.near_vector(
                 near_vector=query_vector,
                 limit=k,
-                # TODO: Determine appropriate certainty threshold for video chunks
                 certainty=similarity_threshold,  # Using similarity_threshold as certainty
                 return_metadata=MetadataQuery(distance=True, certainty=True),
                 filters=Filter.by_property("courseId").equal(course_id),
