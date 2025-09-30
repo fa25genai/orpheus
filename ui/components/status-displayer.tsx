@@ -30,6 +30,10 @@ export function StatusDisplayer({status}: StatusDisplayerProps) {
   // Count total slides
   const totalSlides = status.slideStructure?.pages?.length ?? 0;
   const generatedSlides = status.stepSlideGeneration ?? 0;
+  const debug = ["yes", "1", "true"].includes(
+    (process.env.NEXT_PUBLIC_ORPHEUS_DEBUG || "").toLowerCase()
+  );
+  console.log(debug);
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -83,17 +87,18 @@ export function StatusDisplayer({status}: StatusDisplayerProps) {
               </div>
             ))}
           </div>
-          {/* Slide Structure */}
-          <div>
-            <h3 className="font-semibold text-sm text-muted-foreground mb-2">
-              Slide Structure
-            </h3>
-            <ul className="list-disc list-inside space-y-1 text-sm">
-              {status.slideStructure?.pages?.map((page, index) => (
-                <li key={index}>{page.content}</li>
-              ))}
-            </ul>
-          </div>
+          {debug && (
+            <div>
+              <h3 className="font-semibold text-sm text-muted-foreground mb-2">
+                Slide Structure
+              </h3>
+              <ul className="list-disc list-inside space-y-1 text-sm">
+                {status.slideStructure?.pages?.map((page, index) => (
+                  <li key={index}>{page.content}</li>
+                ))}
+              </ul>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -105,13 +110,17 @@ export function StatusDisplayer({status}: StatusDisplayerProps) {
         </CardHeader>
         <CardContent>
           <p>
-            {status.lectureSummary
-              ? status.lectureSummary
-              : "No summary available."}
+            {status.lectureSummary ? (
+              status.lectureSummary
+            ) : (
+              <Loader2 className="h-5 w-5 animate-spin text-blue-500" />
+            )}
           </p>
-          <pre className="bg-black text-white my-4 p-4 rounded overflow-x-auto">
-            {JSON.stringify(status, null, 2)}
-          </pre>
+          {debug && (
+            <pre className="bg-black text-white my-4 p-4 rounded overflow-x-auto">
+              {JSON.stringify(status, null, 2)}
+            </pre>
+          )}
         </CardContent>
       </Card>
     </div>
