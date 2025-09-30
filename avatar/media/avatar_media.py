@@ -114,8 +114,8 @@ class AvatarCreatedResponse(BaseModel):
     courseId: Optional[str] = None
     slot: CourseAvatarSlot = CourseAvatarSlot.default
     createdAt: datetime
-    image: AvatarImageResponse
-    audio: AvatarAudioResponse
+    image: Optional[AvatarImageResponse] = None
+    audio: Optional[AvatarAudioResponse] = None
 
 
 # ----- file helpers -----
