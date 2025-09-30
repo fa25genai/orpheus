@@ -219,7 +219,7 @@ def replace_avatar_audio(
         return AvatarCreatedResponse(
             avatarId=UUID(avatar.avatar_id),
             name=avatar.name,
-            courseId=UUID(avatar.course_id) if avatar.course_id else None,
+            courseId=(avatar.course_id) if avatar.course_id else None,
             slot=CourseAvatarSlot(avatar.slot),
             createdAt=avatar.created_at,
             image=AvatarImageResponse(

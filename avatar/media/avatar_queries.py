@@ -71,7 +71,7 @@ def get_avatars_by_course(
             AvatarCreatedResponse(
                 avatarId=UUID(a.avatar_id),
                 name=a.name,
-                courseId=UUID(a.course_id) if a.course_id else None,
+                courseId=(a.course_id) if a.course_id else None,
                 slot=CourseAvatarSlot(a.slot),
                 createdAt=a.created_at,
                 image=AvatarImageResponse(
