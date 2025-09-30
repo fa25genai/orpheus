@@ -71,6 +71,7 @@ def loop() -> None:
                         print(f"[audio-worker] no image for course/slot: {e!r}")
 
                     from app.schemas import VideoTask
+
                     VIDEO_QUEUE.put(
                         VideoTask(
                             promptId=pid,

@@ -29,8 +29,9 @@ _audio_started = Event()
 _video_started = Event()
 _cleanup_started = Event()
 
+
 @app.on_event("startup")
-def _start_workers():
+def _start_workers() -> None:
     if not _audio_started.is_set():
         Thread(target=audio_worker.loop, name="audio-worker", daemon=True).start()
         _audio_started.set()
@@ -40,5 +41,6 @@ def _start_workers():
     if not _cleanup_started.is_set():
         Thread(target=cleanup_worker.loop, name="job-cleanup", daemon=True).start()
         _cleanup_started.set()
+
 
 # Run: uvicorn main:app --host 0.0.0.0 --port 8080 --reload

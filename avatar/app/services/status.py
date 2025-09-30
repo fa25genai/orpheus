@@ -12,6 +12,7 @@ def _status_service_url(prompt_id: UUID) -> str:
     base = config.STATUS_SERVICE_HOST.rstrip("/")
     return f"{base}/status/{prompt_id}/update"
 
+
 def patch_status(prompt_id: UUID, payload: Mapping[str, Any]) -> None:
     if not payload:
         return
@@ -24,9 +25,8 @@ def patch_status(prompt_id: UUID, payload: Mapping[str, Any]) -> None:
     except requests.RequestException as exc:
         print(f"[status] PATCH {url} failed: {exc}")
 
-def update_avatar_generation_step_status(
-    prompt_id: UUID, slide_index: int, *, audio: Optional[str]=None, video: Optional[str]=None
-) -> None:
+
+def update_avatar_generation_step_status(prompt_id: UUID, slide_index: int, *, audio: Optional[str] = None, video: Optional[str] = None) -> None:
     step_payload: Dict[str, str] = {}
     if audio is not None:
         step_payload["audio"] = audio

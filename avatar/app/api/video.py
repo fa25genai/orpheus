@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from typing import Union
+from uuid import UUID
+
 from fastapi import APIRouter, Request, Response
 from fastapi.responses import JSONResponse
 
@@ -8,12 +11,14 @@ from app.workers.queues import AUDIO_QUEUE, JOBS, eta_seconds, folder_url, purge
 
 router = APIRouter(prefix="/v1/video", tags=["video"])
 
-@router.post("/generate",
+
+@router.post(
+    "/generate",
     response_model=GenerationAcceptedResponse,
     status_code=202,
     responses={400: {"model": ErrorModel}, 401: {"model": ErrorModel}, 500: {"model": ErrorModel}},
 )
-def request_video_generation(payload: GenerateRequest, response: Response, request: Request):
+def request_video_generation(payload: GenerateRequest, response: Response, request: Request) -> Union[GenerationAcceptedResponse, JSONResponse]:
     now = utcnow()
     purge_stale_jobs(now)
 
@@ -54,8 +59,9 @@ def request_video_generation(payload: GenerateRequest, response: Response, reque
     response.headers["Location"] = f"{base}/v1/video/{payload.promptId}/status"
     return GenerationAcceptedResponse(promptId=payload.promptId, createdAt=now)
 
+
 @router.get("/{promptId}/status", response_model=GenerationStatusResponse, responses={404: {"model": ErrorModel}})
-def get_generation_status(promptId):
+def get_generation_status(promptId: UUID) -> Union[GenerationStatusResponse, JSONResponse]:
     purge_stale_jobs()
     job = JOBS.get(promptId)
     if not job:
