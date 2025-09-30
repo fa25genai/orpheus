@@ -17,7 +17,7 @@ Defaults (override via env or CLI):
 Examples:
   python stress_av.py --audio-requests 200 --video-requests 200 --concurrency 40 \
     --voice-sample /app/database/voice_sample/krusche_voice.mp3 \
-    --video-image /app/database/avatar_sample/image_michal.png \
+    --video-image /app/database/avatar_sample/krusche_image.png \
     --save-audio-samples 1 --save-video-samples 1
 """
 

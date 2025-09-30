@@ -1,6 +1,6 @@
 import datetime
 import logging
-from asyncio import Lock
+from threading import Lock
 from typing import Dict
 
 _log = logging.getLogger("job_manager")
@@ -26,20 +26,20 @@ class JobManager:
 
     async def init_job(self, promptId: str, required_page_count: int) -> None:
         await self.cleanup()
-        async with self.mutex:
+        with self.mutex:
             _log.debug("Initializing job %s", promptId)
             self.jobs[promptId] = JobHandle(promptId, required_page_count)
 
     async def finish_page(self, promptId: str) -> int:
         await self.cleanup()
-        async with self.mutex:
+        with self.mutex:
             _log.debug("Incrementing finished pages for %s", promptId)
             return self.jobs[promptId].increment_count()
 
     async def cleanup(self) -> None:
         _log.debug("Cleaning up jobs")
         to_remove = set()
-        async with self.mutex:
+        with self.mutex:
             # Remove jobs with update timestamps older than 4 hours
             for id, job in self.jobs.items():
                 last_update = job.updated_at
