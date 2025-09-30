@@ -23,8 +23,9 @@ from service_core.services.llm_chain.shared_llm import create_base_model
 def ask_llm(prompt: str) -> str:
     llm = create_llm()
     response = llm.invoke(prompt)
-
-    return cast(str, response.content)
+    if isinstance(response, str):
+        return response
+    return getattr(response, "content", response)
 
 
 def create_llm() -> BaseLanguageModel[Any]:
