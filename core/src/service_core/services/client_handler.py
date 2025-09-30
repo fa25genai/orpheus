@@ -1,6 +1,6 @@
 import asyncio
 import os
-from typing import Any, Dict, List, Union
+from typing import List, Union
 import logging
 
 import httpx
@@ -249,7 +249,6 @@ async def generate_voice_scripts(
 ) -> List[asyncio.Task[httpx.Response]]:
     logger.info(f"Generating voice scripts for prompt `{prompt_id}`")
     try:
-        voice_script: Dict[str, Any]
         tasks: List[asyncio.Task[httpx.Response]] = []
         if DEBUG:
             for i in range(14):
@@ -264,23 +263,15 @@ async def generate_voice_scripts(
         logger.debug(f"lecture script: {lecture_script}")
         logger.debug(f"slides data: {slides_data}")
 
-        voice_script = narration_generation.generate_narrations(
+        voice_scripts = narration_generation.generate_narrations(
             lecture_script, slides_data, prompt_request.user_persona
         )
 
-        slides = voice_script.get("slideMessages", [])
+        if not prompt_request.user_persona:
+            raise Exception("User persona must be defined for voice scripts.")
 
-        for index, slide_data in enumerate(slides):
-            # TODO this should not be called response, this is quite confusing
-            voice_script_request = VoiceTrackResponse(
-                promptId=prompt_id,
-                courseId=prompt_request.course_id,
-                voiceTrack=slide_data,
-                slideNumber=index,
-                userProfile=prompt_request.user_persona,
-            )
-
-            task = generate_avatar_video(voice_script_request, index, client)
+        for index, voice_script in enumerate(voice_scripts):
+            task = generate_avatar_video(voice_script, index, client)
             if task:
                 tasks.append(task)
         return tasks

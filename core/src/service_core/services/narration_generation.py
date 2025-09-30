@@ -13,7 +13,7 @@
 #                                                                              #
 ################################################################################
 import json
-from typing import Any, Dict
+from typing import List
 
 from service_core.models.slides.generation_accepted_response import (
     GenerationAcceptedResponse,
@@ -22,14 +22,15 @@ from service_core.models.user_profile import UserProfile
 from service_core.services.helpers.debug import debug_print, enable_debug
 from service_core.services.helpers.llm import ask_llm
 from service_core.services.helpers.loaders import load_prompt
+from service_core.services.services_models.voice_track import VoiceTrackResponse
 
 
 def generate_narrations(
     lecture_script: str,
     example_slides: GenerationAcceptedResponse,
-    user_profile: UserProfile,
+    user_profile: UserProfile | None,
     debug: bool = False,
-) -> Dict[str, Any]:
+) -> List[VoiceTrackResponse]:
     """
     Generates narrations for lecture slides based on a script and user profile.
 
@@ -97,14 +98,26 @@ def generate_narrations(
         narration_history += f"Slide {i + 1} Narration: {narration}\n"
         slide_messages.append(narration)
     # Prepare output data with the actual user profile
-    output_data: Dict[str, Any] = {
-        "slideMessages": slide_messages,
-        "promptId": example_slides.prompt_id,
-        "courseId": user_profile.enrolled_courses[0]
-        if user_profile.enrolled_courses
-        else None,
-        "userProfile": json.loads(
-            user_profile.model_dump_json(by_alias=False, exclude_unset=True)
-        ),
-    }
-    return output_data
+    if not user_profile:
+        raise Exception("No user profile available")
+
+    voice_track_responses = []
+
+    for index, slide_message in enumerate(slide_messages):
+        voice_track_responses.append(
+            VoiceTrackResponse(
+                voiceTrack=slide_message,
+                slideNumber=index,
+                promptId=example_slides.prompt_id
+                if example_slides.prompt_id
+                else "Placeholder promptID for compilation",
+                courseId=user_profile.enrolled_courses[0]
+                if user_profile.enrolled_courses
+                else None,
+                userProfile=json.loads(
+                    user_profile.model_dump_json(by_alias=False, exclude_unset=True)
+                ),
+            )
+        )
+
+    return voice_track_responses
