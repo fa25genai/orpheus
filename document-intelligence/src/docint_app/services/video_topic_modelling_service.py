@@ -1,6 +1,6 @@
 import json
 import re
-from typing import Dict, List, TypedDict
+from typing import Dict, List, Optional, TypedDict
 
 from docint_app.services.ollama_client_service import get_ollama_client
 
@@ -85,5 +85,10 @@ class VideoTopicModellingService:
         final = self._assemble_segments(sentences, parsed)  # dict with "segments" key and list of {title, video_chunk} vals
         return final["segments"]  # list of {title, video_chunk} dicts
 
+_instance: Optional[VideoTopicModellingService] = None
+
 def get_video_topic_modelling_service(transcription: str) -> VideoTopicModellingService:
-    return VideoTopicModellingService(transcription)
+    global _instance
+    if _instance is None:
+        _instance = VideoTopicModellingService(transcription)
+    return _instance

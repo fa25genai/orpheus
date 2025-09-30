@@ -53,8 +53,8 @@ class CoreApiImpl(BaseCoreApi):  # type: ignore[no-untyped-call]
 def process_prompt_handler(prompt_id: UUID, prompt_request: PromptRequest) -> None:
     try:
         asyncio.run(process_prompt(str(prompt_id), prompt_request))
-        tracker.log(f"SUCCESS: Closing CoreThreadPoolExecutor for {prompt_id}")
-    except Exception as exception:
+        tracker.log(f"Closing CoreThreadPoolExecutor for {prompt_id}")
+    except Exception as e:
         logger.error(
             f"An unexpected error occurred for prompt `{prompt_id}`", exc_info=exception
         )

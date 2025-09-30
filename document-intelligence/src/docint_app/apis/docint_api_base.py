@@ -36,7 +36,7 @@ class BaseDocintApi:
     async def retrieves_data_for_generation(
         self,
         courseId: Annotated[StrictStr, Field(description="The course ID.")],
-        prompt_query: Annotated[StrictStr, Field(description="The user's query or prompt.")],
+        prompt_query: Annotated[StrictStr, Field(description="The user's query or prompt.")]
     ) -> RetrievalResponse:
         ...
 
