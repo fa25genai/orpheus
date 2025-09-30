@@ -14,7 +14,7 @@
 
 import { mapValues } from '../runtime';
 /**
- * Generation/presentation preferences.
+ * 
  * @export
  * @interface UserProfilePreferences
  */
