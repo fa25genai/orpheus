@@ -85,7 +85,10 @@ async def send_summary_to_endpoint(
         await update_status(prompt_id, StatusPatch(lectureSummary=summary), client)
         logger.info(f"Summary sent for prompt {prompt_id}")
     except Exception as exception:
-        logger.error(f"Error sending summary for prompt {prompt_id}", exc_info=exception)
+        logger.error(
+            f"Error sending summary for prompt {prompt_id}", exc_info=exception
+        )
+
 
 async def summarize_and_send(
     prompt_id: str,
@@ -102,6 +105,7 @@ async def summarize_and_send(
         await send_summary_to_endpoint(prompt_id, summary, client)
     except Exception as e:
         logger.error(f"Error summarizing content for prompt {prompt_id}", exc_info=e)
+
 
 async def query_document_intelligence(
     subqueries: List[str],
@@ -124,7 +128,7 @@ async def query_document_intelligence(
         di_data: List[Dict[str, Any]] = di_response.json().get("results", [])
         await update_status(prompt_id, StatusPatch(stepLookup=StepStatus.DONE), client)
         return di_data
-    except Exception as e:
+    except Exception:
         logger.error(f"Error querying Document Intelligence for prompt {prompt_id}")
         await update_status(
             prompt_id, StatusPatch(stepLookup=StepStatus.FAILED), client
@@ -166,7 +170,9 @@ async def generate_script(
             prompt_id, StatusPatch(stepLectureScriptGeneration=StepStatus.DONE), client
         )
     except Exception as exception:
-        logger.error(f"Error generating script for prompt {prompt_id}", exc_info=exception)
+        logger.error(
+            f"Error generating script for prompt {prompt_id}", exc_info=exception
+        )
         refined_output = {}
         await update_status(
             prompt_id,
@@ -209,7 +215,9 @@ async def generate_slides(
         slides_data: Dict[str, Any] = slides_response.json()
         return slides_data
     except Exception as exception:
-        logger.error(f"Error generating slides for prompt {prompt_id}", exc_info=exception)
+        logger.error(
+            f"Error generating slides for prompt {prompt_id}", exc_info=exception
+        )
         await update_status(
             prompt_id,
             StatusPatch(stepSlideStructureGeneration=StepStatus.FAILED),
@@ -269,6 +277,7 @@ async def generate_voice_scripts(
         logger.error("Voice track generation failed", exc_info=exception)
         return []
 
+
 async def avatar_video_producer(
     voice_track: Dict[str, Any], client: httpx.AsyncClient
 ) -> httpx.Response:
@@ -280,7 +289,7 @@ async def avatar_video_producer(
         )
         return avatar_response
     except Exception as exception:
-        logger.error(f"Generating avatar video failed", exc_info=exception)
+        logger.error("Generating avatar video failed", exc_info=exception)
         raise
 
 
