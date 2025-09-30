@@ -2,8 +2,6 @@ from __future__ import annotations
 
 # --- Standard library ---
 import os
-import shutil
-import uuid
 from collections.abc import Generator, Mapping
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -24,16 +22,9 @@ from sqlalchemy.orm import Session, sessionmaker
 from typing_extensions import Annotated
 
 # --- Local package (works in both installed and in-repo runs) ---
-try:
-    # If project is installed (e.g., `poetry install` or `pip install -e .`)
-    from media import avatar_media as media
-    from media import avatar_queries
-    from media import avatar_updates
-except ImportError:  # pragma: no cover
-    # If run inside the package (e.g., `python -m yourpkg.main`)
-    from .media import avatar_media as media  # type: ignore
-    from .media import avatar_queries  # type: ignore
-    from .media import avatar_updates  # type: ignore
+# If project is installed (e.g., `poetry install` or `pip install -e .`)
+from media import avatar_media as media
+from media import avatar_queries, avatar_updates
 
 app = FastAPI(title="Service Video-Generation APIs", version="0.1")
 origins = ["*"]
@@ -57,8 +48,12 @@ VIDEO_ROOT = Path(os.getenv("VIDEO_ROOT", "/data/jobs")).resolve()
 PUBLIC_VIDEOS_BASE = os.getenv("PUBLIC_VIDEOS_BASE", "/videos/jobs")
 VIDEO_ROOT.mkdir(parents=True, exist_ok=True)
 
+# if ran locally with separate docker containers
+STATUS_SERVICE_HOST = os.getenv("STATUS_SERVICE_HOST", "http://host.docker.internal:19910")
 
-STATUS_SERVICE_HOST = os.getenv("STATUS_SERVICE_HOST", "http://localhost:19910")
+# if ran with docker compose for all
+# STATUS_SERVICE_HOST = os.getenv("STATUS_SERVICE_HOST", "http://status-service:19910")
+
 STATUS_SERVICE_TIMEOUT = (3, 15)
 
 
@@ -152,16 +147,22 @@ class SlideTask(BaseModel):
     slot: Literal["default", "beginning", "ending"] = "default"
 
 
+class VideoTask(BaseModel):
+    promptId: UUID
+    courseId: str
+    userProfile: UserProfile
+    slideNo: int
+    audioPath: str
+    slot: Literal["default", "beginning", "ending"] = "default"
+    sourceImagePath: Optional[str] = None
+
+
 # ---------------------------
 # DB layer (SQLAlchemy 2.x)
 # ---------------------------
 
 
-engine = create_engine(
-    DATABASE_URL,
-    future=True,
-    connect_args={"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
-)
+engine = create_engine(DATABASE_URL, future=True, connect_args={"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {})
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, future=True)
 
 
@@ -202,12 +203,12 @@ def folder_url(prompt_id: UUID) -> str:
     tags=["avatar"],
 )
 def create_avatar(
-        name: Optional[str] = Form(None),
-        courseId: UUID = Form(...),
-        slot: Optional[str] = Form('default'),  # accepts "default", "beginning", "ending" (+ minor typos)
-        image_file: UploadFile = File(..., description="png/jpeg/webp"),
-        audio_file: UploadFile = File(..., description="mp3/wav/flac/webm"),
-        db: Session = Depends(get_db),
+    name: Optional[str] = Form(None),
+    courseId: str = Form(...),
+    slot: Optional[str] = Form("default"),  # accepts "default", "beginning", "ending" (+ minor typos)
+    image_file: UploadFile = File(..., description="png/jpeg/webp"),
+    audio_file: UploadFile = File(..., description="mp3/wav/flac/webm"),
+    db: Session = Depends(get_db),
 ) -> media.AvatarCreatedResponse:
     return media.create_avatar_with_media(
         db=db,
@@ -225,9 +226,9 @@ def create_avatar(
     tags=["avatar"],
 )
 def get_avatars_by_course_endpoint(
-        courseId: UUID,
-        slot: Optional[str] = Query(None, description="optional: default | beginning | ending"),
-        db: Session = Depends(get_db),
+    courseId: str,
+    slot: Optional[str] = Query(None, description="optional: default | beginning | ending"),
+    db: Session = Depends(get_db),
 ) -> List[media.AvatarCreatedResponse]:
     return avatar_queries.get_avatars_by_course(db=db, course_id=courseId, slot=slot)
 
@@ -239,14 +240,12 @@ def get_avatars_by_course_endpoint(
     tags=["avatar"],
 )
 def replace_avatar_image_endpoint(
-        courseId: UUID,
-        slot: str,
-        image_file: UploadFile = File(..., description="png/jpeg/webp"),
-        db: Session = Depends(get_db),
+    courseId: str,
+    slot: str,
+    image_file: UploadFile = File(..., description="png/jpeg/webp"),
+    db: Session = Depends(get_db),
 ) -> media.AvatarCreatedResponse:
-    return avatar_updates.replace_avatar_image(
-        db=db, course_id=courseId, slot=slot, image_file=image_file, delete_previous=True
-    )
+    return avatar_updates.replace_avatar_image(db=db, course_id=courseId, slot=slot, image_file=image_file, delete_previous=True)
 
 
 # Replace only AUDIO
@@ -256,14 +255,12 @@ def replace_avatar_image_endpoint(
     tags=["avatar"],
 )
 def replace_avatar_audio_endpoint(
-        courseId: UUID,
-        slot: str,
-        audio_file: UploadFile = File(..., description="mp3/wav/flac/webm"),
-        db: Session = Depends(get_db),
+    courseId: str,
+    slot: str,
+    audio_file: UploadFile = File(..., description="mp3/wav/flac/webm"),
+    db: Session = Depends(get_db),
 ) -> media.AvatarCreatedResponse:
-    return avatar_updates.replace_avatar_audio(
-        db=db, course_id=courseId, slot=slot, audio_file=audio_file, delete_previous=True
-    )
+    return avatar_updates.replace_avatar_audio(db=db, course_id=courseId, slot=slot, audio_file=audio_file, delete_previous=True)
 
 
 # ---------------------------
@@ -289,8 +286,10 @@ JOB_TTL = timedelta(hours=24)
 CLEANUP_INTERVAL_SECONDS = 900
 
 
-SLIDE_QUEUE: "Queue[SlideTask]" = Queue()
-_WORKER_STARTED = Event()
+AUDIO_QUEUE: "Queue[SlideTask]" = Queue()
+VIDEO_QUEUE: "Queue[VideoTask]" = Queue()
+_AUDIO_WORKER_STARTED = Event()
+_VIDEO_WORKER_STARTED = Event()
 _CLEANUP_STARTED = Event()
 
 
@@ -332,10 +331,10 @@ def _purge_stale_jobs(now: Optional[datetime] = None) -> None:
 
 
 def generate_audio(
-    voice_track: Optional[str],
+    voiceTrack: Optional[str],
     course_id: str | UUID,
     prompt_id: UUID | None,
-    user_profile: "UserProfile" | None,  # kept for signature parity; not used below
+    user_profile: UserProfile,
     audio_counter: int,
     *,
     db: Session,
@@ -376,7 +375,7 @@ def generate_audio(
         # 2) Call TTS with the DB audio as voice_file
         is_debug = os.getenv("DEBUG", "").lower() == "debug"
         data = {
-            "voiceTrack": voice_track or "",
+            "voiceTrack": voiceTrack or "",
             "debug": "true" if is_debug else "false",
             "promptId": str(prompt_id),  # <-- ensure JSON/form-serializable
         }
@@ -430,12 +429,12 @@ def generate_audio(
 
 
 def generate_video(
-        audio_path: Optional[str] = None,
-        prompt_id: Optional[UUID] = None,
-        course_id: Optional[str] = None,
-        user_profile: Optional[UserProfile] = None,
-        video_counter: int = 0,
-        source_image_path: Optional[str] = None,
+    audio_path: Optional[str] = None,
+    prompt_id: Optional[UUID] = None,
+    course_id: Optional[str] = None,
+    user_profile: Optional[UserProfile] = None,
+    video_counter: int = 0,
+    source_image_path: Optional[str] = None,
 ) -> Optional[str]:
     """
     Render MP4 video for one slide using audio and a static image.
@@ -460,7 +459,7 @@ def generate_video(
     # choose your static image
     source_path = source_image_path
     if not source_path or not Path(source_path).is_file():
-        print(f"[generate_video] Source image not found: {source_path}")
+        print(f"[generate_video] Source image not found: {source_path}; using fallback sample.")
         source_path = "/app/database/avatar_sample/image_michal.png"
     if not Path(source_path).is_file():
         print(f"[generate_video] Source image not found: {source_path}")
@@ -526,14 +525,14 @@ def _cleanup_loop() -> None:
 
 
 # ---------------------------
-# Worker-Thread
+# Worker-Threads
 # ---------------------------
 
 
-def _worker_loop() -> None:
-    print("[worker] started")
+def _audio_worker_loop() -> None:
+    print("[audio-worker] started")
     while True:
-        task: SlideTask = SLIDE_QUEUE.get()
+        task: SlideTask = AUDIO_QUEUE.get()
         pid = task.promptId
         now = _utcnow()
         _purge_stale_jobs(now)
@@ -560,10 +559,7 @@ def _worker_loop() -> None:
         _estimate_total_seconds_for_new_slide(job)
         JOBS[pid] = job
 
-        # flags are defined before the try so they exist if an early exception fires
         audio_done = False
-        video_started = False
-        video_done = False
 
         try:
             with SessionLocal() as db:
@@ -584,7 +580,6 @@ def _worker_loop() -> None:
                     audio_done = True
 
                     _update_avatar_generation_step_status(pid, task.slideNo, video="IN_PROGRESS")
-                    video_started = True
 
                     # fetch the image while DB session is open
                     source_path: Optional[str] = None
@@ -596,23 +591,20 @@ def _worker_loop() -> None:
                         )
                         source_path = img.file_path
                     except Exception as e:
-                        print(f"[worker] no image for course/slot: {e!r}")
+                        print(f"[audio-worker] no image for course/slot: {e!r}")
                         source_path = None
 
-                    vpath = generate_video(
-                        audio_path=aurl,
-                        prompt_id=pid,
-                        course_id=task.courseId,
-                        user_profile=task.userProfile,
-                        video_counter=task.slideNo,
-                        source_image_path=source_path,  # pass image path if available
+                    VIDEO_QUEUE.put(
+                        VideoTask(
+                            promptId=pid,
+                            courseId=task.courseId,
+                            userProfile=task.userProfile,
+                            slideNo=task.slideNo,
+                            audioPath=aurl,
+                            slot=getattr(task, "slot", "default"),
+                            sourceImagePath=source_path,
+                        )
                     )
-
-                    if vpath:
-                        _update_avatar_generation_step_status(pid, task.slideNo, video="DONE")
-                        video_done = True
-                    else:
-                        _update_avatar_generation_step_status(pid, task.slideNo, video="FAILED")
                 else:
                     # <-- this else pairs with the if aurl: above
                     _update_avatar_generation_step_status(pid, task.slideNo, audio="FAILED")
@@ -620,10 +612,8 @@ def _worker_loop() -> None:
         except Exception as e:
             if not audio_done:
                 _update_avatar_generation_step_status(pid, task.slideNo, audio="FAILED")
-            if video_started and not video_done:
-                _update_avatar_generation_step_status(pid, task.slideNo, video="FAILED")
 
-            print(f"[worker] error on slide {task.slideNo} for {pid}: {e!r}")
+            print(f"[audio-worker] error on slide {task.slideNo} for {pid}: {e!r}")
 
             job = JOBS.get(pid)
             if job:
@@ -634,7 +624,55 @@ def _worker_loop() -> None:
                 job.error = ErrorModel(code="GENERATION_FAILED", message=str(e))
                 JOBS[pid] = job
         finally:
-            SLIDE_QUEUE.task_done()
+            AUDIO_QUEUE.task_done()
+            job = JOBS.get(pid)
+            if job and job.status != "FAILED":
+                done_time = _utcnow()
+                job.lastUpdated = done_time
+                job.lastTouched = done_time
+                JOBS[pid] = job
+
+
+def _video_worker_loop() -> None:
+    print("[video-worker] started")
+    while True:
+        task: VideoTask = VIDEO_QUEUE.get()
+        pid = task.promptId
+
+        video_done = False
+
+        try:
+            vpath = generate_video(
+                audio_path=task.audioPath,
+                prompt_id=pid,
+                course_id=task.courseId,
+                user_profile=task.userProfile,
+                video_counter=task.slideNo,
+                source_image_path=task.sourceImagePath,
+            )
+
+            if vpath:
+                _update_avatar_generation_step_status(pid, task.slideNo, video="DONE")
+                video_done = True
+            else:
+                _update_avatar_generation_step_status(pid, task.slideNo, video="FAILED")
+
+        except Exception as e:
+            if not video_done:
+                _update_avatar_generation_step_status(pid, task.slideNo, video="FAILED")
+
+            print(f"[video-worker] error on slide {task.slideNo} for {pid}: {e!r}")
+
+            job = JOBS.get(pid)
+            if job:
+                fail_time = _utcnow()
+                job.status = "FAILED"
+                job.lastUpdated = fail_time
+                job.lastTouched = fail_time
+                job.error = ErrorModel(code="GENERATION_FAILED", message=str(e))
+                JOBS[pid] = job
+        finally:
+            VIDEO_QUEUE.task_done()
             job = JOBS.get(pid)
             if job and job.status != "FAILED":
                 done_time = _utcnow()
@@ -644,10 +682,14 @@ def _worker_loop() -> None:
 
 
 def _start_worker_once() -> None:
-    if not _WORKER_STARTED.is_set():
-        worker_thread = Thread(target=_worker_loop, name="slide-worker", daemon=True)
-        worker_thread.start()
-        _WORKER_STARTED.set()
+    if not _AUDIO_WORKER_STARTED.is_set():
+        audio_thread = Thread(target=_audio_worker_loop, name="audio-worker", daemon=True)
+        audio_thread.start()
+        _AUDIO_WORKER_STARTED.set()
+    if not _VIDEO_WORKER_STARTED.is_set():
+        video_thread = Thread(target=_video_worker_loop, name="video-worker", daemon=True)
+        video_thread.start()
+        _VIDEO_WORKER_STARTED.set()
     if not _CLEANUP_STARTED.is_set():
         cleanup_thread = Thread(target=_cleanup_loop, name="job-cleanup", daemon=True)
         cleanup_thread.start()
@@ -707,7 +749,7 @@ def request_video_generation(payload: GenerateRequest, response: Response, reque
     slide_no = payload.slideNumber
 
     # Enqueue
-    SLIDE_QUEUE.put(
+    AUDIO_QUEUE.put(
         SlideTask(
             promptId=payload.promptId,
             courseId=payload.courseId,

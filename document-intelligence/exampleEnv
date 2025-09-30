@@ -1,0 +1,4 @@
+OLLAMA_API_KEY=<apiKey>
+
+# enables debug logs when true
+ORPHEUS_VERBOSE=true

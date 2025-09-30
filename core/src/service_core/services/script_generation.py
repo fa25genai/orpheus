@@ -23,7 +23,7 @@ from typing import Any, Dict, List, Tuple, cast
 
 from service_core.models.user_profile import UserProfile
 from service_core.services.helpers.handle_retrieved import convert_json_structure
-from service_core.services.helpers.llm import getLLM
+from service_core.services.helpers.llm import ask_llm
 
 
 def try_parse_json(raw_response: str) -> Tuple[bool, Any]:
@@ -95,9 +95,9 @@ def generate_script_llm(
     max_retries = 3
     for attempt in range(max_retries):
         try:
-            raw_message = getLLM().invoke(prompt)
-            content_obj = getattr(raw_message, "content", raw_message)
-            raw: str = str(content_obj)
+            raw_message = ask_llm(prompt)
+
+            raw: str = str(raw_message)
             # print(f"\nBreak point (attempt {attempt + 1}): {raw}")
 
             # Clean the response: remove markdown and trim whitespace

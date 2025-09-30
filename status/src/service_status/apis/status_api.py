@@ -2,10 +2,11 @@
 
 from typing import Dict, List  # noqa: F401
 import importlib
+import logging
 import pkgutil
 import uuid
 
-from starlette.websockets import WebSocket, WebSocketDisconnect
+from starlette.websockets import WebSocket
 
 from service_status.apis.status_api_base import BaseStatusApi
 import service_status.impl
@@ -38,6 +39,8 @@ router = APIRouter()
 ns_pkg = service_status.impl
 for _, name, _ in pkgutil.iter_modules(ns_pkg.__path__, ns_pkg.__name__ + "."):  # type: ignore
     importlib.import_module(name)
+
+_log = logging.getLogger("status_api")
 
 
 @router.get(
@@ -106,7 +109,8 @@ async def websocket_status(
     async def send_status_update(status_obj: Status) -> None:
         try:
             await websocket.send_json(status_obj.model_dump(by_alias=True))
-        except WebSocketDisconnect:
+        except Exception as ex:
+            _log.error("Websocket disconnected", exc_info=ex)
             status_manager.remove_listener(promptId, id)
 
     await status_manager.add_listener(promptId, id, send_status_update)
@@ -114,5 +118,6 @@ async def websocket_status(
     try:
         while True:
             await websocket.receive()
-    except WebSocketDisconnect:
+    except Exception as ex:
+        _log.error("Websocket disconnected", exc_info=ex)
         status_manager.remove_listener(promptId, id)

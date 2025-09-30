@@ -17,7 +17,7 @@ from typing import Any, Dict
 
 from service_core.models.user_profile import UserProfile
 from service_core.services.helpers.debug import debug_print, enable_debug
-from service_core.services.helpers.llm import getLLM
+from service_core.services.helpers.llm import create_llm
 from service_core.services.helpers.loaders import load_prompt
 
 
@@ -43,7 +43,7 @@ def generate_narrations(
     if debug:
         enable_debug()
 
-    llm = getLLM()
+    llm = create_llm()
 
     # slides_data = json.loads(example_slides.model_dump_json())
     pages = example_slides["structure"]["pages"]
@@ -85,7 +85,7 @@ def generate_narrations(
         # Join all parts with newlines
         prompt = "\n\n".join(prompt_parts)
         response = llm.invoke(prompt)
-        narration = response.content
+        narration = response
 
         debug_print(f"--- Slide {i + 1} ---")
         debug_print(f"Content: {page_content}")
