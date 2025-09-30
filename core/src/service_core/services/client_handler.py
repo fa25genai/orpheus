@@ -227,7 +227,7 @@ async def generate_slides(
             StatusPatch(stepSlideStructureGeneration=StepStatus.FAILED),
             client,
         )
-        return {}
+        raise exception
 
 
 async def generate_voice_scripts(
