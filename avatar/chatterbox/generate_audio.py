@@ -1,15 +1,14 @@
-import torchaudio as ta
-from chatterbox.mtl_tts import ChatterboxMultilingualTTS
 import os
-import torch
+import re
+import shutil
+import tempfile
 from pathlib import Path
 from typing import List, Literal, Optional
 
-import shutil
-import tempfile
 import inflect
-import re
-
+import torch
+import torchaudio as ta
+from chatterbox.mtl_tts import ChatterboxMultilingualTTS
 from fastapi import BackgroundTasks, FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse, ORJSONResponse
 from pydantic import BaseModel

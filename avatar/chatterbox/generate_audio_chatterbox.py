@@ -1,8 +1,9 @@
+import re
 from pathlib import Path
+
+import inflect
 import torch
 import torchaudio as ta
-import inflect
-import re
 from chatterbox.mtl_tts import ChatterboxMultilingualTTS
 
 
