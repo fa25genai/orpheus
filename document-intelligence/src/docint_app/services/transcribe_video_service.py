@@ -1,6 +1,7 @@
 import os
 import subprocess
-from openai import AzureOpenAI
+import time  # Import the time module for the sleep function
+from openai import AzureOpenAI, RateLimitError # Import RateLimitError specifically
 from pathlib import Path
 from dotenv import load_dotenv
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -14,8 +15,12 @@ AZURE_WHISPER_DEPLOYMENT_NAME = "whisper"
 AZURE_API_VERSION = "2024-06-01" 
 AZURE_OPENAI_API_KEY = os.getenv("AZURE_OPENAI_API_KEY")
 
-MEDIA_FILE_PATH = "vids/W02U03.mp4" 
+MEDIA_FILE_PATH = "vids/W01U01.mp4" 
 MAX_WORKERS = 4  # Number of parallel transcription jobs
+
+# --- NEW Retry Configuration ---
+RATE_LIMIT_DELAY_SECONDS = 45 # Time to wait after a rate limit error
+MAX_RETRIES = 3 # Maximum number of times to retry a failed transcription
 
 # --- Client Initialization ---
 try:
@@ -57,22 +62,45 @@ def extract_audio_chunk_ffmpeg(video_path, start_time, duration, output_path):
 
 
 def transcribe_audio(file_path: str, deployment_name: str):
-    """Transcribes an audio file using Azure OpenAI Whisper"""
-    try:
-        if os.path.getsize(file_path) > 25 * 1024 * 1024:
-            safe_print("⚠️ Warning: File is larger than 25 MB. The Azure API might fail.")
+    """Transcribes an audio file using Azure OpenAI Whisper with retry mechanism"""
+    if os.path.getsize(file_path) > 25 * 1024 * 1024:
+        safe_print("⚠️ Warning: File is larger than 25 MB. The Azure API might fail.")
             
-        with open(file_path, "rb") as audio_file:
-            result = client.audio.translations.create(
-                model=deployment_name,
-                file=audio_file,
-            )
-        return result.text
+    for attempt in range(MAX_RETRIES):
+        try:
+            with open(file_path, "rb") as audio_file:
+                # The file pointer needs to be at the beginning for each attempt
+                # open() and with block handle this, but explicit seek(0) is safer
+                audio_file.seek(0) 
+                result = client.audio.translations.create(
+                    model=deployment_name,
+                    file=audio_file,
+                )
+            return result.text
 
-    except FileNotFoundError:
-        return f"Error: File not found at {file_path}"
-    except Exception as e:
-        return f"An error occurred during transcription: {e}"
+        except RateLimitError:
+            if attempt < MAX_RETRIES - 1:
+                safe_print(f"🛑 Rate limit exceeded. Waiting {RATE_LIMIT_DELAY_SECONDS}s before retry {attempt + 2}/{MAX_RETRIES}.")
+                time.sleep(RATE_LIMIT_DELAY_SECONDS)
+            else:
+                safe_print(f"❌ Rate limit exceeded after {MAX_RETRIES} attempts. Giving up.")
+                return f"[Error: RateLimitError after {MAX_RETRIES} retries]"
+                
+        except FileNotFoundError:
+            return f"Error: File not found at {file_path}"
+        except Exception as e:
+            # Check for other errors that might indicate rate limiting 
+            # (e.g., if RateLimitError isn't caught directly, check error message/status)
+            error_message = str(e)
+            if "status code 429" in error_message or "Rate limit" in error_message:
+                if attempt < MAX_RETRIES - 1:
+                    safe_print(f"🛑 Detected potential rate limit (429) error. Waiting {RATE_LIMIT_DELAY_SECONDS}s before retry {attempt + 2}/{MAX_RETRIES}.")
+                    time.sleep(RATE_LIMIT_DELAY_SECONDS)
+                else:
+                    safe_print(f"❌ Detected potential rate limit (429) error after {MAX_RETRIES} attempts. Giving up.")
+                    return f"[Error: RateLimitError after {MAX_RETRIES} retries]"
+            else:
+                return f"An unhandled error occurred during transcription: {e}"
 
 
 def process_chunk(video_path, chunk_info):
@@ -83,17 +111,23 @@ def process_chunk(video_path, chunk_info):
     
     try:
         safe_print(f"🎬 Chunk {chunk_id}: Extracting {start_time:.2f}s to {start_time + chunk_duration:.2f}s")
-        extract_audio_chunk_ffmpeg(video_path, start_time, chunk_duration, chunk_filename)
+        # Ensure extraction only runs once, regardless of transcription retries
+        if not os.path.exists(chunk_filename):
+            extract_audio_chunk_ffmpeg(video_path, start_time, chunk_duration, chunk_filename)
         
         safe_print(f"🗣️  Chunk {chunk_id}: Transcribing...")
         chunk_transcript = transcribe_audio(chunk_filename, deployment_name)
         
-        safe_print(f"✅ Chunk {chunk_id}: Complete")
+        # Check if the transcription was successful or returned an error message
+        if chunk_transcript.startswith("[Error"):
+             safe_print(f"❌ Chunk {chunk_id}: Failed to transcribe.")
+        else:
+            safe_print(f"✅ Chunk {chunk_id}: Complete")
         
         return chunk_id, chunk_transcript
         
     except Exception as e:
-        safe_print(f"❌ Chunk {chunk_id}: Error - {e}")
+        safe_print(f"❌ Chunk {chunk_id}: Unrecoverable Error - {e}")
         return chunk_id, f"[Error in chunk {chunk_id}: {e}]"
         
     finally:
