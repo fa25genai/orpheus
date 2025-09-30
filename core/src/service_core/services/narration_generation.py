@@ -43,7 +43,6 @@ def generate_narrations(
     if debug:
         enable_debug()
 
-
     # slides_data = json.loads(example_slides.model_dump_json())
     pages = example_slides["structure"]["pages"]
     narration_history = ""

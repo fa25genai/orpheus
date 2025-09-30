@@ -7,9 +7,7 @@ import httpx
 from dotenv import load_dotenv
 
 import service_core.services.fetch_mock_data as mock_service
-from service_core.impl.tracker import tracker
 from service_core.models.prompt_request import PromptRequest
-from service_core.models.user_profile import UserProfile
 from service_core.services import (
     decompose_input,
     narration_generation,
@@ -271,9 +269,7 @@ async def generate_voice_scripts(
                 userProfile=prompt_request.user_persona,
             )
 
-            task = generate_avatar_video(
-                voice_script_request, index, client
-            )
+            task = generate_avatar_video(voice_script_request, index, client)
             if task:
                 tasks.append(task)
         return tasks
@@ -286,7 +282,9 @@ async def generate_voice_scripts(
 async def avatar_video_producer(
     voice_script: VoiceTrackResponse, client: httpx.AsyncClient
 ) -> httpx.Response:
-    logger.info(f"Generating avatar video {voice_script.promptId}#{voice_script.slideNumber}")
+    logger.info(
+        f"Generating avatar video {voice_script.promptId}#{voice_script.slideNumber}"
+    )
     try:
         logger.debug(f"Request to avatar of type {type(voice_script)}: {voice_script}")
         avatar_response = await client.post(

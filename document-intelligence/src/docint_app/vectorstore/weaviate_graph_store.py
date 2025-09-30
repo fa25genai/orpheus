@@ -407,7 +407,7 @@ class WeaviateGraphStore:
         # Generate deterministic UUID from course_id and chunk_id
         name = f"VideoChunk::{course_id}::{chunk_id}"
         uid = str(uuid.uuid5(uuid.NAMESPACE_URL, name))
-        
+
         payload = {
             "class": "VideoChunk",
             "id": uid,
@@ -430,11 +430,11 @@ class WeaviateGraphStore:
         return uid
 
     def test_upsert_video_chunk(self) -> str:
-        to_upsert = 'A for loop is a control structure used to repeat a block of code a specific number of times. It is especially useful when you know in advance how many iterations you need. In most programming languages, a for loop consists of an initialization, a condition, and an update step. For example, it can be used to iterate over a range of numbers or through elements of a collection like a list. By using for loops, repetitive tasks can be written more concisely and clearly. This makes code easier to maintain and less error-prone compared to writing the same instructions multiple times.' # noqa: E501
+        to_upsert = "A for loop is a control structure used to repeat a block of code a specific number of times. It is especially useful when you know in advance how many iterations you need. In most programming languages, a for loop consists of an initialization, a condition, and an update step. For example, it can be used to iterate over a range of numbers or through elements of a collection like a list. By using for loops, repetitive tasks can be written more concisely and clearly. This makes code easier to maintain and less error-prone compared to writing the same instructions multiple times."  # noqa: E501
         text_vector = get_embedding_service().embed_text(to_upsert)
         uid = self.upsert_video_chunk(course_id="W2", lecture_id="lecture456", chunk_id="chunk789", text=to_upsert, text_vector=text_vector)
         return uid
-    
+
     def client_search_slides_fused_with_images(
         self,
         *,
@@ -486,16 +486,8 @@ class WeaviateGraphStore:
             return []
 
         # Build filters for each (documentId, slideNo) pair
-        slide_image_filters = [
-            Filter.all_of([
-                Filter.by_property("documentId").equal(doc_id),
-                Filter.by_property("slideNo").equal(slide_no)
-            ])
-            for doc_id, slide_no in slide_hits_document_ids
-        ]
-        slide_image_query = slideImages.query.fetch_objects(
-            filters=Filter.any_of(slide_image_filters)
-        )
+        slide_image_filters = [Filter.all_of([Filter.by_property("documentId").equal(doc_id), Filter.by_property("slideNo").equal(slide_no)]) for doc_id, slide_no in slide_hits_document_ids]
+        slide_image_query = slideImages.query.fetch_objects(filters=Filter.any_of(slide_image_filters))
 
         slide_image_hits = slide_image_query.objects
         print(f"[WeaviateClientSearch] Retrieved {len(slide_image_hits)} slide images")
@@ -662,28 +654,11 @@ class WeaviateGraphStore:
         print(f"[WeaviateClientSearch] Returning {len(final_results)} results")
         return final_results
 
-    def client_get_both_slides_and_video_chunks(
-        self,
-        *,
-        query_vector: Sequence[float],
-        course_id: Optional[str] = None,
-        k: int = 5,
-        similarity_threshold: float = 0.80
-    ) -> Dict[str, Any]:
-        slide_hits = self.client_search_slides_fused_with_images(
-            query_vector=query_vector,
-            course_id=course_id,
-            k=k,
-            similarity_threshold=similarity_threshold
-        )
+    def client_get_both_slides_and_video_chunks(self, *, query_vector: Sequence[float], course_id: Optional[str] = None, k: int = 5, similarity_threshold: float = 0.80) -> Dict[str, Any]:
+        slide_hits = self.client_search_slides_fused_with_images(query_vector=query_vector, course_id=course_id, k=k, similarity_threshold=similarity_threshold)
 
-        video_chunk_hits = self.client_search_video_chunks(
-            query_vector=query_vector, 
-            course_id=course_id, 
-            k=k, 
-            similarity_threshold=similarity_threshold
-        )
-        
+        video_chunk_hits = self.client_search_video_chunks(query_vector=query_vector, course_id=course_id, k=k, similarity_threshold=similarity_threshold)
+
         print(f"Retrieved {len(slide_hits)} hits from store")
 
         # Convert to OpenAPI format
@@ -741,10 +716,7 @@ class WeaviateGraphStore:
 
     # Mapping to OpenAPI response shape
     @staticmethod
-    def to_retrieval_response(
-        slide_hits: List[Dict[str, Any]] = None, 
-        video_chunk_hits: List[Dict[str, Any]] = None
-    ) -> Dict[str, Any]:
+    def to_retrieval_response(slide_hits: List[Dict[str, Any]] = None, video_chunk_hits: List[Dict[str, Any]] = None) -> Dict[str, Any]:
         """
         Convert slide hits and video chunk hits into your OpenAPI RetrievalResponse:
         {
@@ -760,35 +732,27 @@ class WeaviateGraphStore:
         """
         content: List[str] = []
         images: List[Dict[str, str]] = []
-        
+
         # Normalize inputs
         slide_hits = slide_hits or []
         video_chunk_hits = video_chunk_hits or []
-        
+
         # Create combined list with type indicator and certainty score
         combined_items = []
-        
+
         # Add slides to combined list
         for slide in slide_hits:
             certainty = slide.get("certainty", 0.0)
-            combined_items.append({
-                "type": "slide",
-                "certainty": certainty,
-                "item": slide
-            })
-        
+            combined_items.append({"type": "slide", "certainty": certainty, "item": slide})
+
         # Add video chunks to combined list
         for chunk in video_chunk_hits:
             certainty = chunk.get("certainty", 0.0)
-            combined_items.append({
-                "type": "video_chunk",
-                "certainty": certainty,
-                "item": chunk
-            })
-        
+            combined_items.append({"type": "video_chunk", "certainty": certainty, "item": chunk})
+
         # Sort combined items by certainty score (highest first)
         combined_items.sort(key=lambda x: x["certainty"], reverse=True)
-        
+
         # Process items in order of certainty
         for item in combined_items:
             if item["type"] == "slide":
@@ -796,22 +760,24 @@ class WeaviateGraphStore:
                 desc = (slide.get("slideDescription") or "").strip()
                 if desc:
                     content.append(desc)
-                
+
                 # Collect images from slides
                 for im in slide.get("images", []):
                     img_b64 = im.get("imageBase64")
                     if img_b64:
-                        images.append({
-                            "image": img_b64,
-                            "description": im.get("description") or "",
-                        })
-            
+                        images.append(
+                            {
+                                "image": img_b64,
+                                "description": im.get("description") or "",
+                            }
+                        )
+
             elif item["type"] == "video_chunk":
                 chunk = item["item"]
                 text = (chunk.get("text") or "").strip()
                 if text:
                     content.append(text)
-        
+
         return {"content": content, "images": images}
 
 
@@ -830,7 +796,9 @@ def get_weaviate_client() -> weaviate.WeaviateClient:
         _weaviate_instance = weaviate.connect_to_local(host="docint-weaviate", port=28947)
     return _weaviate_instance
 
+
 _store_instance: Optional[WeaviateGraphStore] = None
+
 
 def get_store() -> WeaviateGraphStore:
     global _store_instance

@@ -15,6 +15,7 @@ import logging
 
 logger = logging.getLogger("Core API Implementation")
 
+
 def get_executor() -> ThreadPoolExecutor:
     with app_state.lock:
         if app_state.executor is None:
@@ -30,10 +31,12 @@ class CoreApiImpl(BaseCoreApi):  # type: ignore[no-untyped-call]
             prompt_id = uuid4()
             executor = get_executor()
             if prompt_request.user_persona is None:
-                raise ValueError("User persona must be defined for prompt requests from client.")
+                raise ValueError(
+                    "User persona must be defined for prompt requests from client."
+                )
 
             # TODO test if user_persona is provided
-            prompt_request.user_persona.id = uuid4()    # TODO: Remove this workaround when client provides user_persona.id (see issue #<issue-number>)
+            prompt_request.user_persona.id = uuid4()  # TODO: Remove this workaround when client provides user_persona.id (see issue #<issue-number>)
             tracker.log(f"Initializing CoreThreadPoolExecutor for {prompt_id}")
             executor.submit(process_prompt_handler, prompt_id, prompt_request)
 
@@ -52,4 +55,6 @@ def process_prompt_handler(prompt_id: UUID, prompt_request: PromptRequest) -> No
         asyncio.run(process_prompt(str(prompt_id), prompt_request))
         tracker.log(f"SUCCESS: Closing CoreThreadPoolExecutor for {prompt_id}")
     except Exception as exception:
-        logger.error(f"An unexpected error occurred for prompt `{prompt_id}`", exc_info=exception)
+        logger.error(
+            f"An unexpected error occurred for prompt `{prompt_id}`", exc_info=exception
+        )
