@@ -15,12 +15,12 @@ def extract_text_content(data: List[RetrievalResponse]) -> str:
 
     for item in data:
         if isinstance(item, dict):  # Added fix to work with amazon model
-            text = item.get('content', None)
+            text = item.get("content", None)
             if text is not None:
                 texts.append(str(text))
         else:
             item_str = str(item)
-            if 'ImageObject' not in item_str and 'data:image' not in item_str:
+            if "ImageObject" not in item_str and "data:image" not in item_str:
                 texts.append(item_str)
 
     return "\n".join(texts)
