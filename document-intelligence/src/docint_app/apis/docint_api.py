@@ -93,10 +93,12 @@ async def retrieves_batch_data_for_generation(
 async def retrieves_data_for_generation(
     courseId: Annotated[StrictStr, Field(description="The course ID.")] = Path(..., description="The course ID."),
     prompt_query: Annotated[StrictStr, Field(description="The user's query or prompt.")] = Query(None, description="The user&#39;s query or prompt.", alias="promptQuery"),
+    debugflag: Annotated[bool, Field(description="Enable debug logging.")] = Query(False, description="Enable debug logging."),
+
 ) -> RetrievalResponse:
     if not BaseDocintApi.subclasses:
         raise HTTPException(status_code=500, detail="Not implemented")
-    return await BaseDocintApi.subclasses[0]().retrieves_data_for_generation(courseId, prompt_query)
+    return await BaseDocintApi.subclasses[0]().retrieves_data_for_generation(courseId, prompt_query, debugflag)
 
 
 @router.post(

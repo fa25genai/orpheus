@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import Tuple, Union
+from typing import Dict, Tuple, Union
 
 from pydantic import Field, StrictBytes, StrictStr
 from typing_extensions import Annotated
@@ -23,11 +23,18 @@ class DocintApiImpl(BaseDocintApi):  # type: ignore[no-untyped-call]
         self,
         courseId: Annotated[StrictStr, Field(description="The course ID.")],
         prompt_query: Annotated[StrictStr, Field(description="The user's query or prompt.")],
+        debugflag: Annotated[bool, Field(description="Enable debug logging.")],
     ) -> RetrievalResponse:
-        logger.debug(f"Retrieving data for course {courseId} with query {prompt_query}")
+        print(f"Retrieving data for course {courseId} with query {prompt_query}; debug={debugflag}")
 
-        service = get_retrieval_service()
-        result = await service.search_simple(prompt_query, courseId)
+        if not debugflag:
+            service = get_retrieval_service()
+            result = await service.search_simple(prompt_query, courseId)
+        else:
+            result = {
+                "content": ["Debug mode is enabled. No actual search performed."],
+                "images": []
+            }
 
         logger.debug(f"Retrieved data for course {courseId} with query {prompt_query}: {result}")
 

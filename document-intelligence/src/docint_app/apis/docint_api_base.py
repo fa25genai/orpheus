@@ -37,6 +37,7 @@ class BaseDocintApi:
         self,
         courseId: Annotated[StrictStr, Field(description="The course ID.")],
         prompt_query: Annotated[StrictStr, Field(description="The user's query or prompt.")],
+        debugflag: Annotated[bool, Field(description="Enable debug logging.")],
     ) -> RetrievalResponse:
         ...
 
