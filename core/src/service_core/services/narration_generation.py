@@ -13,7 +13,8 @@
 #                                                                              #
 ################################################################################
 import json
-from typing import List
+from typing import Any, Dict, AsyncGenerator
+import asyncio
 
 from service_core.models.slides.generation_accepted_response import (
     GenerationAcceptedResponse,
@@ -25,12 +26,14 @@ from service_core.services.helpers.loaders import load_prompt
 from service_core.services.services_models.voice_track import VoiceTrackResponse
 
 
-def generate_narrations(
+async def generate_narrations(
     lecture_script: str,
     example_slides: GenerationAcceptedResponse,
-    user_profile: UserProfile | None,
+    user_profile: UserProfile,
+    prompt_id: str,
+    course_id: str,
     debug: bool = False,
-) -> List[VoiceTrackResponse]:
+) -> AsyncGenerator[VoiceTrackResponse, None]:
     """
     Generates narrations for lecture slides based on a script and user profile.
 
@@ -53,11 +56,10 @@ def generate_narrations(
 
     pages = example_slides.structure.pages if example_slides.structure.pages else []
     narration_history = ""
-    slide_messages = []
 
     # Get prompt templates JSON string
-    prompt_templates_json = load_prompt(
-        "src/service_core/services/prompts/narration.json"
+    prompt_templates_json = await asyncio.to_thread(
+        load_prompt, "src/service_core/services/prompts/narration.json"
     )
 
     # Load the prompt templates
@@ -88,36 +90,19 @@ def generate_narrations(
 
         # Join all parts with newlines
         prompt = "\n\n".join(prompt_parts)
-        response = ask_llm(prompt)
-        narration = response
+        narration = await asyncio.to_thread(ask_llm, prompt)
 
         debug_print(f"--- Slide {i + 1} ---")
         debug_print(f"Content: {page_content}")
         debug_print(f"Generated Narration: {narration}\n")
 
         narration_history += f"Slide {i + 1} Narration: {narration}\n"
-        slide_messages.append(narration)
-    # Prepare output data with the actual user profile
-    if not user_profile:
-        raise Exception("No user profile available")
-
-    voice_track_responses = []
-
-    for index, slide_message in enumerate(slide_messages):
-        voice_track_responses.append(
-            VoiceTrackResponse(
-                voiceTrack=slide_message,
-                slideNumber=index,
-                promptId=example_slides.prompt_id
-                if example_slides.prompt_id
-                else "Placeholder promptID for compilation",
-                courseId=user_profile.enrolled_courses[0]
-                if user_profile.enrolled_courses
-                else None,
-                userProfile=json.loads(
-                    user_profile.model_dump_json(by_alias=False, exclude_unset=True)
-                ),
-            )
+        voice_script_request = VoiceTrackResponse(
+            promptId=prompt_id,
+            courseId=course_id,
+            voiceTrack=narration,
+            slideNumber=i,
+            userProfile=user_profile,
         )
 
-    return voice_track_responses
+        yield voice_script_request.model_dump(mode="json")
