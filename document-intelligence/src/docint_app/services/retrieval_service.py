@@ -7,7 +7,7 @@ import os
 from typing import Any, Dict, List, Optional, TypedDict, cast
 
 from docint_app.services.embedding_service import get_embedding_service
-from docint_app.vectorstore.weaviate_graph_store import WeaviateGraphStore
+from docint_app.vectorstore.weaviate_graph_store import get_store
 
 
 class _SearchMetadata(TypedDict):
@@ -18,7 +18,7 @@ class _SearchMetadata(TypedDict):
 
 class _SearchResults(TypedDict):
     query: str
-    course_id: Optional[str]
+    course_id: str
     k: int
     alpha: float
     total_hits: int
@@ -36,14 +36,14 @@ class RetrievalService:
         print(f"Initializing RetrievalService with base_url: {base_url}")
 
         try:
-            self.store = WeaviateGraphStore(base_url=base_url)
+            self.store = get_store()
             self.embedder = get_embedding_service()
             print("Successfully initialized WeaviateGraphStore and EmbeddingService")
         except Exception as e:
             print(f"Failed to initialize RetrievalService: {e}")
             raise
 
-    async def search(self, query: str, course_id: Optional[str] = None, k: int = 5, alpha: float = 0.8, per_slide_image_agg: str = "max", include_images: bool = True) -> _SearchResults:
+    async def search(self, query: str, course_id: str, k: int = 5, alpha: float = 0.8, per_slide_image_agg: str = "max", include_images: bool = True) -> _SearchResults:
         """
         Search for slides and images based on a text query.
 
@@ -96,13 +96,10 @@ class RetrievalService:
 
             # Perform fused search
             print(f"Performing fused search (text+image) with alpha={alpha}...")
-            slide_hits = self.store.search_slides_fused_with_images(
+            slide_hits = self.store.client_search_slides_fused_with_images(
                 query_vector=query_vector,
                 course_id=course_id,
                 k=k,
-                alpha=alpha,
-                per_slide_image_agg=per_slide_image_agg,
-                include_distance=True,
             )
 
             results["total_hits"] = len(slide_hits)
@@ -144,19 +141,23 @@ class RetrievalService:
 
         return results
 
-    async def search_simple(self, query: str, course_id: Optional[str] = None, k: int = 5) -> Dict[str, Any]:
+    async def search_simple(self, query: str, course_id: str, k: int = 5) -> Dict[str, Any]:
         """
         Simplified search method that returns results in OpenAPI-compatible format.
 
         Args:
             query: The search query text
             course_id: Optional course ID to filter results
-            k: Number of results to return
+            k: Number of results to return (times two)
 
         Returns:
             Dict with 'content' and 'images' arrays matching OpenAPI RetrievalResponse
         """
         print(f"Starting simple search for query: '{query[:50]}...'")
+
+        print("Ensureing Weaviate schema exists...")
+        self.store.ensure_schema()
+        print("Schema validation completed")
 
         # Input validation
         if not query.strip():
@@ -170,17 +171,9 @@ class RetrievalService:
             query_vector = self.embedder.embed_text(query)
 
             # Perform search
-            slide_hits = self.store.search_slides_fused_with_images(
-                query_vector=query_vector,
-                course_id=course_id,
-                k=k,
-                alpha=0.8,  # Default text-heavy weighting
-                include_distance=False,
-            )
-            print(f"Retrieved {len(slide_hits)} hits from store")
+            response: Dict[str, Any] = self.store.client_get_both_slides_and_video_chunks(query_vector=query_vector, course_id=course_id, k=k)
 
             # Convert to OpenAPI format
-            response: Dict[str, Any] = self.store.to_retrieval_response(slide_hits)
             print(f"Simple search completed. Returning {len(response.get('content', []))} content items, {len(response.get('images', []))} images")
 
             return response

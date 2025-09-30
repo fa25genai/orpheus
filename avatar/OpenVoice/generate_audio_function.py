@@ -2,9 +2,12 @@ import os
 import shutil
 import sys
 import tempfile
-import uuid
 from pathlib import Path
 from typing import Dict, List, Literal, Optional
+
+# Imports added for correctly number generation
+import inflect
+import re
 
 import torch
 from fastapi import BackgroundTasks, FastAPI, File, Form, HTTPException, UploadFile
@@ -255,6 +258,23 @@ def _load_converter(ckpt_dir: Path, device: str) -> ToneColorConverter:
     conv.load_ckpt(str(pth))
     return conv
 
+# New function to convert numbers to words
+def numbers_to_words(text: str) -> str:
+    p = inflect.engine()
+
+    def repl(m):
+        s = m.group(0)
+        # ordinal numerals like 21st, 3rd
+        m_ord = re.fullmatch(r"(\d+)(st|nd|rd|th)", s, re.I)
+        if m_ord:
+            return p.number_to_words(int(m_ord.group(1)), ordinal=True)
+        # decimals or integers
+        if "." in s:
+            # e.g., 3.14 -> "three point one four"
+            return p.number_to_words(s, wantlist=False)
+        return p.number_to_words(int(s))
+
+    return re.sub(r"\d+(?:\.\d+)?|(?:\d+(?:st|nd|rd|th))", repl, text)
 
 def generate_audio(
         voiceTrack: str,
@@ -313,6 +333,9 @@ def generate_audio(
     text = voiceTrack
     if not text or not text.strip():
         return ""
+    
+    # Convert numbers to words
+    text = numbers_to_words(text)
 
     tmp_src = output_dir / "tmp.wav"
     save_path = output_dir / f"output.wav"
