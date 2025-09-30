@@ -7,7 +7,7 @@ import os
 from typing import Any, Dict, List, Optional, TypedDict, cast
 
 from docint_app.services.embedding_service import get_embedding_service
-from docint_app.vectorstore.weaviate_graph_store import WeaviateGraphStore
+from docint_app.vectorstore.weaviate_graph_store import get_store
 
 
 class _SearchMetadata(TypedDict):
@@ -36,7 +36,7 @@ class RetrievalService:
         print(f"Initializing RetrievalService with base_url: {base_url}")
 
         try:
-            self.store = WeaviateGraphStore(base_url=base_url)
+            self.store = get_store()
             self.embedder = get_embedding_service()
             print("Successfully initialized WeaviateGraphStore and EmbeddingService")
         except Exception as e:
@@ -148,12 +148,16 @@ class RetrievalService:
         Args:
             query: The search query text
             course_id: Optional course ID to filter results
-            k: Number of results to return
+            k: Number of results to return (times two)
 
         Returns:
             Dict with 'content' and 'images' arrays matching OpenAPI RetrievalResponse
         """
         print(f"Starting simple search for query: '{query[:50]}...'")
+
+        print("Ensureing Weaviate schema exists...")
+        self.store.ensure_schema()
+        print("Schema validation completed")
 
         # Input validation
         if not query.strip():
@@ -167,16 +171,9 @@ class RetrievalService:
             query_vector = self.embedder.embed_text(query)
 
             # Perform search
-            slide_hits = self.store.client_search_slides_fused_with_images(
-                query_vector=query_vector,
-                course_id=course_id,
-                k=k,
-            )
-            
-            print(f"Retrieved {len(slide_hits)} hits from store")
+            response: Dict[str, Any] = self.store.client_get_both_slides_and_video_chunks(query_vector=query_vector, course_id=course_id, k=k)
 
             # Convert to OpenAPI format
-            response: Dict[str, Any] = self.store.to_retrieval_response(slide_hits)
             print(f"Simple search completed. Returning {len(response.get('content', []))} content items, {len(response.get('images', []))} images")
 
             return response

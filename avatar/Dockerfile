@@ -6,6 +6,7 @@ RUN pip install -r requirements.txt
 COPY main.py .
 COPY media /app/media
 COPY database /app/database
+COPY app ./app
 RUN mkdir -p /data
 EXPOSE 9000
 ENV PYTHONPATH=/app

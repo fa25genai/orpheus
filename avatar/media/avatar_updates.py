@@ -110,8 +110,6 @@ def replace_avatar_image(
         latest_image: Optional[AvatarImage] = _latest_image_or_none(cast(Sequence[AvatarImage], avatar.images))
         latest_audio: Optional[AvatarAudio] = _latest_audio_or_none(cast(Sequence[AvatarAudio], avatar.audios))
 
-
-
         # After commit succeeded, best-effort unlink old file
         if delete_previous and old_img:
             try:
@@ -126,25 +124,29 @@ def replace_avatar_image(
             slot=CourseAvatarSlot(avatar.slot),
             createdAt=avatar.created_at,
             image=(
-                 AvatarImageResponse(
-                     id=UUID(latest_image.id),
-                     avatarId=UUID(avatar.avatar_id),
-                     filePath=latest_image.file_path,
-                     mimeType=latest_image.mime_type,
-                     sizeBytes=latest_image.size_bytes,
-                     createdAt=latest_image.created_at,
-                 ) if latest_image else None
-             ),
-             audio=(
-                 AvatarAudioResponse(
-                     id=UUID(latest_audio.id),
-                     avatarId=UUID(avatar.avatar_id),
-                     filePath=latest_audio.file_path,
-                     mimeType=latest_audio.mime_type,
-                     sizeBytes=latest_audio.size_bytes,
-                     createdAt=latest_audio.created_at,
-                 ) if latest_audio else None
-             ),
+                AvatarImageResponse(
+                    id=UUID(latest_image.id),
+                    avatarId=UUID(avatar.avatar_id),
+                    filePath=latest_image.file_path,
+                    mimeType=latest_image.mime_type,
+                    sizeBytes=latest_image.size_bytes,
+                    createdAt=latest_image.created_at,
+                )
+                if latest_image
+                else None
+            ),
+            audio=(
+                AvatarAudioResponse(
+                    id=UUID(latest_audio.id),
+                    avatarId=UUID(avatar.avatar_id),
+                    filePath=latest_audio.file_path,
+                    mimeType=latest_audio.mime_type,
+                    sizeBytes=latest_audio.size_bytes,
+                    createdAt=latest_audio.created_at,
+                )
+                if latest_audio
+                else None
+            ),
         )
 
     except Exception:
@@ -216,25 +218,29 @@ def replace_avatar_audio(
             slot=CourseAvatarSlot(avatar.slot),
             createdAt=avatar.created_at,
             image=(
-                 AvatarImageResponse(
-                     id=UUID(latest_image.id),
-                     avatarId=UUID(avatar.avatar_id),
-                     filePath=latest_image.file_path,
-                     mimeType=latest_image.mime_type,
-                     sizeBytes=latest_image.size_bytes,
-                     createdAt=latest_image.created_at,
-                ) if latest_image else None
-             ),
-             audio=(
-                 AvatarAudioResponse(
-                     id=UUID(latest_audio.id),
-                     avatarId=UUID(avatar.avatar_id),
-                     filePath=latest_audio.file_path,
-                     mimeType=latest_audio.mime_type,
-                     sizeBytes=latest_audio.size_bytes,
-                     createdAt=latest_audio.created_at,
-                 ) if latest_audio else None
-             ),
+                AvatarImageResponse(
+                    id=UUID(latest_image.id),
+                    avatarId=UUID(avatar.avatar_id),
+                    filePath=latest_image.file_path,
+                    mimeType=latest_image.mime_type,
+                    sizeBytes=latest_image.size_bytes,
+                    createdAt=latest_image.created_at,
+                )
+                if latest_image
+                else None
+            ),
+            audio=(
+                AvatarAudioResponse(
+                    id=UUID(latest_audio.id),
+                    avatarId=UUID(avatar.avatar_id),
+                    filePath=latest_audio.file_path,
+                    mimeType=latest_audio.mime_type,
+                    sizeBytes=latest_audio.size_bytes,
+                    createdAt=latest_audio.created_at,
+                )
+                if latest_audio
+                else None
+            ),
         )
 
     except Exception:
