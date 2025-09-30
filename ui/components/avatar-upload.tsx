@@ -39,10 +39,10 @@ export function AvatarUpload() {
             {
               id: avatar.avatarId,
               name: avatar.slot ?? slot,
-              size: avatar.image.sizeBytes ?? 0,
+              size: avatar.image?.sizeBytes ?? 0,
               type: "image",
               status: "completed",
-              url: avatar.image.filePath,
+              url: avatar.image?.filePath,
               documentId: avatar.avatarId,
             },
           ];
