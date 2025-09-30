@@ -118,7 +118,7 @@ async def query_document_intelligence(
             timeout=300.0,
         )
         di_response.raise_for_status()
-        di_data: List[Dict[str, Any]] = di_response.json().get("results", "")
+        di_data: List[Dict[str, Any]] = di_response.json().get("results", [])
         await update_status(prompt_id, StatusPatch(
                 stepLookup=StepStatus.DONE
             ), client)
