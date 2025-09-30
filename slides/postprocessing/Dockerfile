@@ -38,7 +38,7 @@ COPY src src
 COPY pyproject.toml README.md ./
 
 # Add predefined sli.dev themes
-ADD themes/slidev-theme-tum-0.1.0.tgz /etc/slidev/themes/theme-tum/
+ADD themes/slidev-theme-tum-0.2.0.tgz /etc/slidev/themes/theme-tum/
 RUN cd /etc/slidev/themes/theme-tum/package && \
     npm install --no-cache
 
