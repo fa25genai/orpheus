@@ -1,6 +1,7 @@
+import math
+
 import librosa
 import numpy as np
-import math
 
 from ..aux_models.hubert_stream import HubertStreaming
 

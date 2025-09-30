@@ -13,6 +13,14 @@
  */
 
 import { mapValues } from '../runtime';
+import type { UserProfile } from './UserProfile';
+import {
+    UserProfileFromJSON,
+    UserProfileFromJSONTyped,
+    UserProfileToJSON,
+    UserProfileToJSONTyped,
+} from './UserProfile';
+
 /**
  * 
  * @export
@@ -31,6 +39,12 @@ export interface PromptRequest {
      * @memberof PromptRequest
      */
     courseId: string;
+    /**
+     * 
+     * @type {UserProfile}
+     * @memberof PromptRequest
+     */
+    userPersona?: UserProfile;
 }
 
 /**
@@ -54,6 +68,7 @@ export function PromptRequestFromJSONTyped(json: any, ignoreDiscriminator: boole
         
         'prompt': json['prompt'],
         'courseId': json['courseId'],
+        'userPersona': json['UserPersona'] == null ? undefined : UserProfileFromJSON(json['UserPersona']),
     };
 }
 
@@ -70,6 +85,7 @@ export function PromptRequestToJSONTyped(value?: PromptRequest | null, ignoreDis
         
         'prompt': value['prompt'],
         'courseId': value['courseId'],
+        'UserPersona': UserProfileToJSON(value['userPersona']),
     };
 }
 

@@ -1,0 +1,39 @@
+meta {
+  name: Updates the status for a generation job
+  type: http
+  seq: 1
+}
+
+patch {
+  url: {{baseUrl}}/status/:promptId/update
+  body: json
+  auth: inherit
+}
+
+params:path {
+  promptId: 
+}
+
+body:json {
+  {
+    "stepUnderstanding": "DONE",
+    "stepLookup": "DONE",
+    "stepLectureScriptGeneration": "DONE",
+    "stepSlideStructureGeneration": "DONE",
+    "stepSlideGeneration": 5,
+    "stepSlidePostprocessing": "DONE",
+    "stepsAvatarGeneration": {
+      "0": {"video": "DONE", "audio": "DONE"},
+      "1": {"video": "DONE", "audio": "DONE"},
+      "2": {"video": "DONE", "audio": "DONE"}
+    },
+    "lectureSummary": "string",
+    "slideStructure": {
+      "pages": [
+        {
+          "content": "string"
+        }
+      ]
+    }
+  }
+}

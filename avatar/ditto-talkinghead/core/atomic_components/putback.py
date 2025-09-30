@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+
 from ..utils.blend import blend_images_cy
 from ..utils.get_mask import get_mask
 

@@ -4,10 +4,10 @@
 cropping function and the related preprocess functions for cropping
 """
 
-import numpy as np
-import os.path as osp
-from math import sin, cos, acos, degrees
+from math import acos, cos, degrees, sin
+
 import cv2
+import numpy as np
 
 DTYPE = np.float32
 CV2_INTERP = cv2.INTER_LINEAR

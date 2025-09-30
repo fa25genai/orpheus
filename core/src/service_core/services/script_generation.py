@@ -12,16 +12,21 @@ Output format:
   "Images": [{"image": "...", "description": "..."}]
 }
 """
-from service_core.services.helpers.llm import getLLM  
-import json
-from typing import Dict, Any, List
-from service_core.services.helpers.handle_retrieved import convert_json_structure
+
 import copy
-from service_core.models.user_profile import UserProfile
+import json
+
 # -----------------------------
 # JSON helpers
 # -----------------------------
-def try_parse_json(raw_response: str):
+from typing import Any, Dict, List, Tuple, cast
+
+from service_core.models.user_profile import UserProfile
+from service_core.services.helpers.handle_retrieved import convert_json_structure
+from service_core.services.helpers.llm import create_llm
+
+
+def try_parse_json(raw_response: str) -> Tuple[bool, Any]:
     """Try to parse JSON response, return (success, result)"""
     try:
         result = json.loads(raw_response)
@@ -34,17 +39,20 @@ def try_parse_json(raw_response: str):
 # Refine lecture content
 # -----------------------------
 
-def generate_script_llm(retrieved_content: List[Dict[str, Any]], persona):
-    if hasattr(persona, 'dict'):
+
+def generate_script_llm(
+    retrieved_content: List[Dict[str, Any]], persona: Any
+) -> Dict[str, Any]:
+    if hasattr(persona, "dict"):
         persona_dict = persona.dict()
-    elif hasattr(persona, 'model_dump'):
+    elif hasattr(persona, "model_dump"):
         persona_dict = persona.model_dump()
     else:
         persona_dict = persona
 
-    persona_dict['id'] = str(persona_dict['id'])
+    persona_dict["id"] = str(persona_dict["id"])
 
-    #print("Refining lecture content for persona:")
+    # print("Refining lecture content for persona:")
     persona_str = json.dumps(persona_dict, indent=2, ensure_ascii=False)
     # print(persona_str)
     content_str = json.dumps(retrieved_content, indent=2, ensure_ascii=False)
@@ -68,7 +76,8 @@ def generate_script_llm(retrieved_content: List[Dict[str, Any]], persona):
         * Image filenames need to match the given namens.\n\n
         * Coherence: The final lectureScript must flow logically and be structured as a single, cohesive piece, not a list of disconnected facts.\n\n
         ---\n### OUTPUT FORMAT\n---\n\n
-        Your response MUST be a single, valid JSON object and nothing else. Do not include any introductory text, explanations, or markdown formatting (like json) around the JSON object. The property names need to be enclosed in double quotes. The JSON object must strictly adhere to the following structure:\n\njson\n{{
+        Your response MUST be a single, valid JSON object and nothing else. Do not include any introductory text, explanations, or markdown formatting (like json) around the JSON object.
+        The property names need to be enclosed in double quotes. The JSON object must strictly adhere to the following structure:\n\njson\n{{
     "lectureScript": "A single string containing the entire lecture script. Use \\n for new paragraphs and \\t for indentation if needed.",
     "assets": [
         {{
@@ -86,70 +95,76 @@ def generate_script_llm(retrieved_content: List[Dict[str, Any]], persona):
     max_retries = 3
     for attempt in range(max_retries):
         try:
-            raw_message = getLLM().invoke(prompt)
-            raw = raw_message.content
-            #print(f"\nBreak point (attempt {attempt + 1}): {raw}")
+            raw_message = create_llm().invoke(prompt)
+            content_obj = getattr(raw_message, "content", raw_message)
+            raw: str = str(content_obj)
+            # print(f"\nBreak point (attempt {attempt + 1}): {raw}")
 
-            
             # Clean the response: remove markdown and trim whitespace
-            if '```json' in raw:
-                raw = raw.split('```json')[1].split('```')[0]
-            elif '```' in raw:
-                raw = raw.split('```')[1].split('```')[0]
-            
+            if "```json" in raw:
+                raw = raw.split("```json")[1].split("```")[0]
+            elif "```" in raw:
+                raw = raw.split("```")[1].split("```")[0]
+
             raw = raw.strip()
 
             # Try to parse JSON
             success, result = try_parse_json(raw)
             if success:
                 # print(json.dumps(result, indent=2, ensure_ascii=False))
-                return result
-            
+                return cast(Dict[str, Any], result)
+
             # If it didn't work, this will raise JSONDecodeError and trigger retry
             # This is useful for debugging the raw output on failure.
             json.loads(raw)
-                
+
         except json.JSONDecodeError as e:
             print(f"JSON parsing error on attempt {attempt + 1}: {e}")
             continue
         except Exception as e:
             print(f"Unexpected error on attempt {attempt + 1}: {e}")
             if attempt == max_retries - 1:
-                raise RuntimeError(f"Failed to get valid response from LLM after {max_retries} attempts: {e}")
+                raise RuntimeError(
+                    f"Failed to get valid response from LLM after {max_retries} attempts: {e}"
+                )
             continue
+    raise RuntimeError("LLM did not produce valid JSON response")
 
-def generate_script(retrieved_content: List[Dict[str, Any]], persona: UserProfile):
-    
-    retrieved_content = convert_json_structure(retrieved_content)
-    
+
+def generate_script(
+    content: List[Dict[str, Any]], persona: UserProfile
+) -> Dict[str, Any]:
+    retrieved_content: List[Dict[str, Any]] = convert_json_structure(content)
+
     # Create a lookup table for assets and a version of the content for the LLM
-    asset_lookup = {}
+    asset_lookup: Dict[str, Any] = {}
     retrieved_content_for_llm = copy.deepcopy(retrieved_content)
     for item in retrieved_content_for_llm:
         # print('a', flush=True)
-        if 'assets' in item:
-            # print('b', flush=True)
-            for asset in item['assets']:
-                # print('c', flush=True)
-                if 'name' in asset:
-                    # Store the original asset data
-                    asset_lookup[asset['name']] = {
-                        'mimeType': asset.get('mimeType'),
-                        'data': asset.get('data')
-                    }
-                # Remove bulky data for the LLM call
-                asset.pop('mimeType', None)
-                asset.pop('data', None)
+        if isinstance(item, dict):
+            # TODO reduce complexity, reduce nesting
+            if "assets" in item and isinstance(item["assets"], list):
+                # print('b', flush=True)
+                for asset in item["assets"]:
+                    if isinstance(asset, dict) and "name" in asset:
+                        # Store the original asset data
+                        asset_lookup[asset["name"]] = {
+                            "mimeType": asset.get("mimeType"),
+                            "data": asset.get("data"),
+                        }
+                        # Remove bulky data for the LLM call
+                        asset.pop("mimeType", None)
+                        asset.pop("data", None)
 
-    generated_script = generate_script_llm(retrieved_content_for_llm, persona)   
+    generated_script = generate_script_llm(retrieved_content_for_llm, persona)
     # print("\n\nGenerate Script Output:", generated_script)
-    
+
     # Add mimetype and data back to the assets in the generated script
-    assets = generated_script.get('assets', [])
+    assets = generated_script.get("assets", [])
     if assets:
         for asset in assets:
             # print("asset:", asset)
-            if 'name' in asset and asset['name'] in asset_lookup:
-                asset.update(asset_lookup[asset['name']])
+            if "name" in asset and asset["name"] in asset_lookup:
+                asset.update(asset_lookup[asset["name"]])
     # print("\n\nFinal Generated Script with Assets:", json.dumps(generated_script, indent=2))
     return generated_script

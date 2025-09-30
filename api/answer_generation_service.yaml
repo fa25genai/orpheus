@@ -115,14 +115,9 @@ components:
           format: "uuid"
           description: "The unique ID assigned to the generation job."
           example: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
-        summary:
-          type: "string"
-          description: "The summary of the lecture being generated"
-          example: "A for loop is a control flow statement used for definite iteration..."
 
       required:
         - "promptId"
-        - "summary"
 
     Error:
       type: "object"

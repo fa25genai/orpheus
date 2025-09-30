@@ -1,5 +1,5 @@
-import numpy as np
 import cv2
+import numpy as np
 
 from ..aux_models.insightface_det import InsightFaceDet
 from ..aux_models.insightface_landmark106 import Landmark106
@@ -7,10 +7,8 @@ from ..aux_models.landmark203 import Landmark203
 from ..aux_models.mediapipe_landmark478 import Landmark478
 from ..models.appearance_extractor import AppearanceExtractor
 from ..models.motion_extractor import MotionExtractor
-
 from ..utils.crop import crop_image
 from ..utils.eye_info import EyeAttrUtilsByMP
-
 
 """
 insightface_det_cfg = {

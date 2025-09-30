@@ -13,16 +13,15 @@
 
 
 from __future__ import annotations
+
+import json
 import pprint
 import re  # noqa: F401
-import json
-
-
-
-
-from pydantic import BaseModel, ConfigDict, Field, StrictStr
 from typing import Any, ClassVar, Dict, List
 from uuid import UUID
+
+from pydantic import BaseModel, Field, StrictStr
+
 try:
     from typing import Self
 except ImportError:
@@ -33,8 +32,7 @@ class PromptResponse(BaseModel):
     PromptResponse
     """ # noqa: E501
     prompt_id: UUID = Field(description="The unique ID assigned to the generation job.", alias="promptId")
-    summary: StrictStr = Field(description="The summary of the lecture being generated")
-    __properties: ClassVar[List[str]] = ["promptId", "summary"]
+    __properties: ClassVar[List[str]] = ["promptId"]
 
     model_config = {
         "populate_by_name": True,
@@ -85,8 +83,7 @@ class PromptResponse(BaseModel):
             return cls.model_validate(obj)
 
         _obj = cls.model_validate({
-            "promptId": obj.get("promptId"),
-            "summary": obj.get("summary")
+            "promptId": obj.get("promptId")
         })
         return _obj
 

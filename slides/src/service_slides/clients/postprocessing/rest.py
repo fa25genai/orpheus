@@ -59,9 +59,7 @@ class RESTClientObject:
             cadata=configuration.ca_cert_data,
         )
         if configuration.cert_file:
-            self.ssl_context.load_cert_chain(
-                configuration.cert_file, keyfile=configuration.key_file
-            )
+            self.ssl_context.load_cert_chain(configuration.cert_file, keyfile=configuration.key_file)
 
         if not configuration.verify_ssl:
             self.ssl_context.check_hostname = False
@@ -81,9 +79,7 @@ class RESTClientObject:
         if self.retry_client is not None:
             await self.retry_client.close()
 
-    async def request(
-        self, method, url, headers=None, body=None, post_params=None, _request_timeout=None
-    ):
+    async def request(self, method, url, headers=None, body=None, post_params=None, _request_timeout=None):
         """Execute request
 
         :param method: http request method
@@ -171,9 +167,7 @@ class RESTClientObject:
             if self.retry_client is None:
                 self.retry_client = aiohttp_retry.RetryClient(
                     client_session=self.pool_manager,
-                    retry_options=aiohttp_retry.ExponentialRetry(
-                        attempts=self.retries, factor=2.0, start_timeout=0.1, max_timeout=120.0
-                    ),
+                    retry_options=aiohttp_retry.ExponentialRetry(attempts=self.retries, factor=2.0, start_timeout=0.1, max_timeout=120.0),
                 )
             pool_manager = self.retry_client
 
