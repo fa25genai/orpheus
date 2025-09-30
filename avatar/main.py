@@ -288,7 +288,7 @@ CLEANUP_INTERVAL_SECONDS = 900
 
 AUDIO_QUEUE: "Queue[SlideTask]" = Queue()
 VIDEO_QUEUE: "Queue[VideoTask]" = Queue()
-_WORKER_STARTED = Event()
+_AUDIO_WORKER_STARTED = Event()
 _VIDEO_WORKER_STARTED = Event()
 _CLEANUP_STARTED = Event()
 
@@ -681,10 +681,10 @@ def _video_worker_loop() -> None:
 
 
 def _start_worker_once() -> None:
-    if not _WORKER_STARTED.is_set():
-        worker_thread = Thread(target=_audio_worker_loop, name="audio-worker", daemon=True)
-        worker_thread.start()
-        _WORKER_STARTED.set()
+    if not _AUDIO_WORKER_STARTED.is_set():
+        audio_thread = Thread(target=_audio_worker_loop, name="audio-worker", daemon=True)
+        audio_thread.start()
+        _AUDIO_WORKER_STARTED.set()
     if not _VIDEO_WORKER_STARTED.is_set():
         video_thread = Thread(target=_video_worker_loop, name="video-worker", daemon=True)
         video_thread.start()
