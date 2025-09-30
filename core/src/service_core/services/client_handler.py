@@ -36,10 +36,10 @@ AVATAR_API_URL = "http://avatar-video-producer:9000"
 STATUS_API_URL = "http://status-service:19910"
 
 # Use this when you start the service locally outside a docker container
-DI_API_URL = "http://localhost:25565"
-SLIDES_API_URL = "http://localhost:30606"
-AVATAR_API_URL = "http://localhost:9000"
-STATUS_API_URL = "http://localhost:19910"
+# DI_API_URL = "http://localhost:25565"
+# SLIDES_API_URL = "http://localhost:30606"
+# AVATAR_API_URL = "http://localhost:9000"
+# STATUS_API_URL = "http://localhost:19910"
 
 DEBUG = int(os.getenv("ORPHEUS_DEBUG", "0"))  # DEBUG enabled by default
 
@@ -161,7 +161,7 @@ async def generate_script(
         logger.info(f"Generating script for prompt `{prompt_id}`")
         await update_status(
             prompt_id,
-            StatusPatch(stepLectureScriptGeneration=StepStatus.IN_PROGRESS),
+            StatusPatch(stepAudioScriptGeneration=StepStatus.IN_PROGRESS),
             client,
         )
 
@@ -182,7 +182,7 @@ async def generate_script(
             retrieved_content, prompt_request.user_persona
         )
         await update_status(
-            prompt_id, StatusPatch(stepLectureScriptGeneration=StepStatus.DONE), client
+            prompt_id, StatusPatch(stepAudioScriptGeneration=StepStatus.DONE), client
         )
     except Exception as exception:
         logger.error(
@@ -190,7 +190,7 @@ async def generate_script(
         )
         await update_status(
             prompt_id,
-            StatusPatch(stepLectureScriptGeneration=StepStatus.FAILED),
+            StatusPatch(stepAudioScriptGeneration=StepStatus.FAILED),
             client,
         )
         raise exception
