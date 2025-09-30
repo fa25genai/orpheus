@@ -2,11 +2,11 @@ openapi: "3.1.0"
 info:
   title: Service Video-Generation APIs
   version: "0.1"
+
 paths:
   /v1/avatars:
     post:
-      tags:
-        - avatar
+      tags: [avatar]
       summary: Create Avatar
       operationId: create_avatar_v1_avatars_post
       requestBody:
@@ -17,7 +17,7 @@ paths:
               $ref: '#/components/schemas/Body_create_avatar_v1_avatars_post'
       responses:
         "201":
-          description: Successful Response
+          description: Avatar created
           content:
             application/json:
               schema:
@@ -28,11 +28,11 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
+
   /v1/avatars/by-course/{courseId}:
     get:
-      tags:
-        - avatar
-      summary: Get Avatars By Course Endpoint
+      tags: [avatar]
+      summary: Get Avatars By Course
       operationId: get_avatars_by_course_endpoint_v1_avatars_by_course__courseId__get
       parameters:
         - name: courseId
@@ -40,7 +40,7 @@ paths:
           required: true
           schema:
             type: string
-            title: Courseid
+            title: CourseId
         - name: slot
           in: query
           required: false
@@ -48,9 +48,9 @@ paths:
           schema:
             anyOf:
               - type: string
+                enum: [default, beginning, ending]
               - type: "null"
             title: Slot
-            description: optional: default | beginning | ending
       responses:
         "200":
           description: Successful Response
@@ -58,7 +58,6 @@ paths:
             application/json:
               schema:
                 type: array
-                title: Response Get Avatars By Course Endpoint V1 Avatars By Course  Courseid  Get
                 items:
                   $ref: '#/components/schemas/AvatarCreatedResponse'
         "422":
@@ -67,11 +66,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
+
   /v1/avatars/{courseId}/{slot}/image:
     post:
-      tags:
-        - avatar
-      summary: Replace Avatar Image Endpoint
+      tags: [avatar]
+      summary: Replace (or Create) Avatar Image
+      description: >
+        Upsert behavior: replaces the image if the avatar exists; creates a new avatar
+        for the given `courseId`/`slot` if none exists.
       operationId: replace_avatar_image_endpoint_v1_avatars__courseId___slot__image_post
       parameters:
         - name: courseId
@@ -79,12 +81,13 @@ paths:
           required: true
           schema:
             type: string
-            title: Courseid
+            title: CourseId
         - name: slot
           in: path
           required: true
           schema:
             type: string
+            enum: [default, beginning, ending]
             title: Slot
       requestBody:
         required: true
@@ -94,7 +97,13 @@ paths:
               $ref: '#/components/schemas/Body_replace_avatar_image_endpoint_v1_avatars__courseId___slot__image_post'
       responses:
         "200":
-          description: Successful Response
+          description: Image replaced (avatar existed)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AvatarCreatedResponse'
+        "201":
+          description: Avatar created and image set (avatar did not exist)
           content:
             application/json:
               schema:
@@ -105,11 +114,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
+
   /v1/avatars/{courseId}/{slot}/audio:
     post:
-      tags:
-        - avatar
-      summary: Replace Avatar Audio Endpoint
+      tags: [avatar]
+      summary: Replace (or Create) Avatar Audio
+      description: >
+        Upsert behavior: replaces the audio if the avatar exists; creates a new avatar
+        for the given `courseId`/`slot` if none exists.
       operationId: replace_avatar_audio_endpoint_v1_avatars__courseId___slot__audio_post
       parameters:
         - name: courseId
@@ -117,12 +129,13 @@ paths:
           required: true
           schema:
             type: string
-            title: Courseid
+            title: CourseId
         - name: slot
           in: path
           required: true
           schema:
             type: string
+            enum: [default, beginning, ending]
             title: Slot
       requestBody:
         required: true
@@ -132,7 +145,13 @@ paths:
               $ref: '#/components/schemas/Body_replace_avatar_audio_endpoint_v1_avatars__courseId___slot__audio_post'
       responses:
         "200":
-          description: Successful Response
+          description: Audio replaced (avatar existed)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AvatarCreatedResponse'
+        "201":
+          description: Avatar created and audio set (avatar did not exist)
           content:
             application/json:
               schema:
@@ -143,10 +162,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
+
   /v1/video/generate:
     post:
-      tags:
-        - video
+      tags: [video]
       summary: Request Video Generation
       description: |-
         Nimmt einen einzelnen Slide entgegen (payload.voiceTrack),
@@ -160,7 +179,7 @@ paths:
               $ref: '#/components/schemas/GenerateRequest'
       responses:
         "202":
-          description: Successful Response
+          description: Accepted
           content:
             application/json:
               schema:
@@ -189,10 +208,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
+
   /v1/video/{promptId}/status:
     get:
-      tags:
-        - video
+      tags: [video]
       summary: Get Generation Status
       operationId: get_generation_status_v1_video__promptId__status_get
       parameters:
@@ -202,7 +221,7 @@ paths:
           schema:
             type: string
             format: uuid
-            title: Promptid
+            title: PromptId
       responses:
         "200":
           description: Successful Response
@@ -222,70 +241,41 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
+
 components:
   schemas:
     AvatarAudioResponse:
       title: AvatarAudioResponse
       type: object
-      required:
-        - id
-        - avatarId
-        - filePath
-        - createdAt
+      required: [id, avatarId, filePath, createdAt]
       properties:
-        id:
-          type: string
-          format: uuid
-          title: Id
-        avatarId:
-          type: string
-          format: uuid
-          title: Avatarid
-        filePath:
-          type: string
-          title: Filepath
+        id: { type: string, format: uuid, title: Id }
+        avatarId: { type: string, format: uuid, title: AvatarId }
+        filePath: { type: string, title: FilePath }
         mimeType:
-          anyOf:
-            - type: string
-            - type: "null"
-          title: Mimetype
+          anyOf: [{ type: string }, { type: "null" }]
+          title: MimeType
         sizeBytes:
-          anyOf:
-            - type: integer
-            - type: "null"
-          title: Sizebytes
-        createdAt:
-          type: string
-          format: date-time
-          title: Createdat
+          anyOf: [{ type: integer }, { type: "null" }]
+          title: SizeBytes
+        createdAt: { type: string, format: date-time, title: CreatedAt }
+
     AvatarCreatedResponse:
       title: AvatarCreatedResponse
       type: object
-      required:
-        - avatarId
-        - createdAt
+      required: [avatarId, createdAt]
       properties:
-        avatarId:
-          type: string
-          format: uuid
-          title: Avatarid
+        avatarId: { type: string, format: uuid, title: AvatarId }
         name:
-          anyOf:
-            - type: string
-            - type: "null"
+          anyOf: [{ type: string }, { type: "null" }]
           title: Name
         courseId:
-          anyOf:
-            - type: string
-            - type: "null"
-          title: Courseid
+          anyOf: [{ type: string }, { type: "null" }]
+          title: CourseId
         slot:
           $ref: '#/components/schemas/CourseAvatarSlot'
           default: default
-        createdAt:
-          type: string
-          format: date-time
-          title: Createdat
+        createdAt: { type: string, format: date-time, title: CreatedAt }
         image:
           anyOf:
             - $ref: '#/components/schemas/AvatarImageResponse'
@@ -294,60 +284,34 @@ components:
           anyOf:
             - $ref: '#/components/schemas/AvatarAudioResponse'
             - type: "null"
+
     AvatarImageResponse:
       title: AvatarImageResponse
       type: object
-      required:
-        - id
-        - avatarId
-        - filePath
-        - createdAt
+      required: [id, avatarId, filePath, createdAt]
       properties:
-        id:
-          type: string
-          format: uuid
-          title: Id
-        avatarId:
-          type: string
-          format: uuid
-          title: Avatarid
-        filePath:
-          type: string
-          title: Filepath
+        id: { type: string, format: uuid, title: Id }
+        avatarId: { type: string, format: uuid, title: AvatarId }
+        filePath: { type: string, title: FilePath }
         mimeType:
-          anyOf:
-            - type: string
-            - type: "null"
-          title: Mimetype
+          anyOf: [{ type: string }, { type: "null" }]
+          title: MimeType
         sizeBytes:
-          anyOf:
-            - type: integer
-            - type: "null"
-          title: Sizebytes
-        createdAt:
-          type: string
-          format: date-time
-          title: Createdat
+          anyOf: [{ type: integer }, { type: "null" }]
+          title: SizeBytes
+        createdAt: { type: string, format: date-time, title: CreatedAt }
+
     Body_create_avatar_v1_avatars_post:
       title: Body_create_avatar_v1_avatars_post
       type: object
-      required:
-        - courseId
-        - image_file
-        - audio_file
+      required: [courseId, image_file, audio_file]
       properties:
         name:
-          anyOf:
-            - type: string
-            - type: "null"
+          anyOf: [{ type: string }, { type: "null" }]
           title: Name
-        courseId:
-          type: string
-          title: Courseid
+        courseId: { type: string, title: CourseId }
         slot:
-          anyOf:
-            - type: string
-            - type: "null"
+          anyOf: [{ type: string }, { type: "null" }]
           title: Slot
           default: default
         image_file:
@@ -360,134 +324,87 @@ components:
           format: binary
           title: Audio File
           description: mp3/wav/flac/webm
+
     Body_replace_avatar_audio_endpoint_v1_avatars__courseId___slot__audio_post:
       title: Body_replace_avatar_audio_endpoint_v1_avatars__courseId___slot__audio_post
       type: object
-      required:
-        - audio_file
+      required: [audio_file]
       properties:
         audio_file:
           type: string
           format: binary
           title: Audio File
           description: mp3/wav/flac/webm
+
     Body_replace_avatar_image_endpoint_v1_avatars__courseId___slot__image_post:
       title: Body_replace_avatar_image_endpoint_v1_avatars__courseId___slot__image_post
       type: object
-      required:
-        - image_file
+      required: [image_file]
       properties:
         image_file:
           type: string
           format: binary
           title: Image File
           description: png/jpeg/webp
+
     CourseAvatarSlot:
       title: CourseAvatarSlot
       type: string
-      enum:
-        - default
-        - beginning
-        - ending
+      enum: [default, beginning, ending]
+
     ErrorModel:
       title: ErrorModel
       type: object
       properties:
         code:
-          anyOf:
-            - type: string
-            - type: "null"
+          anyOf: [{ type: string }, { type: "null" }]
           title: Code
         message:
-          anyOf:
-            - type: string
-            - type: "null"
+          anyOf: [{ type: string }, { type: "null" }]
           title: Message
+
     GenerateRequest:
       title: GenerateRequest
       type: object
-      required:
-        - voiceTrack
-        - slideNumber
-        - promptId
-        - courseId
-        - userProfile
+      required: [voiceTrack, slideNumber, promptId, courseId, userProfile]
       properties:
-        voiceTrack:
-          type: string
-          minLength: 1
-          title: Voicetrack
-        slideNumber:
-          type: integer
-          minimum: 0.0
-          title: Slidenumber
-        promptId:
-          type: string
-          format: uuid
-          title: Promptid
-        courseId:
-          type: string
-          title: Courseid
-        userProfile:
-          $ref: '#/components/schemas/UserProfile'
+        voiceTrack: { type: string, minLength: 1, title: VoiceTrack }
+        slideNumber: { type: integer, minimum: 0, title: SlideNumber }
+        promptId: { type: string, format: uuid, title: PromptId }
+        courseId: { type: string, title: CourseId }
+        userProfile: { $ref: '#/components/schemas/UserProfile' }
         slot:
           type: string
-          enum:
-            - default
-            - beginning
-            - ending
+          enum: [default, beginning, ending]
           title: Slot
           default: default
+
     GenerationAcceptedResponse:
       title: GenerationAcceptedResponse
       type: object
-      required:
-        - promptId
-        - createdAt
+      required: [promptId, createdAt]
       properties:
-        promptId:
-          type: string
-          format: uuid
-          title: Promptid
-        createdAt:
-          type: string
-          format: date-time
-          title: Createdat
+        promptId: { type: string, format: uuid, title: PromptId }
+        createdAt: { type: string, format: date-time, title: CreatedAt }
+
     GenerationStatusResponse:
       title: GenerationStatusResponse
       type: object
-      required:
-        - promptId
-        - status
-        - lastUpdated
-        - resultUrl
-        - estimatedSecondsLeft
+      required: [promptId, status, lastUpdated, resultUrl, estimatedSecondsLeft]
       properties:
-        promptId:
-          type: string
-          format: uuid
-          title: Promptid
+        promptId: { type: string, format: uuid, title: PromptId }
         status:
           type: string
-          enum:
-            - IN_PROGRESS
-            - FAILED
-            - DONE
+          enum: [IN_PROGRESS, FAILED, DONE]
           title: Status
-        lastUpdated:
-          type: string
-          format: date-time
-          title: Lastupdated
-        resultUrl:
-          type: string
-          title: Resulturl
-        estimatedSecondsLeft:
-          type: integer
-          title: Estimatedsecondsleft
+        lastUpdated: { type: string, format: date-time, title: LastUpdated }
+        resultUrl: { type: string, title: ResultUrl }
+        estimatedSecondsLeft: { type: integer, title: EstimatedSecondsLeft }
         error:
           anyOf:
             - $ref: '#/components/schemas/ErrorModel'
             - type: "null"
+
     HTTPValidationError:
       title: HTTPValidationError
       type: object
@@ -497,6 +414,7 @@ components:
           title: Detail
           items:
             $ref: '#/components/schemas/ValidationError'
+
     Preferences:
       title: Preferences
       type: object
@@ -506,36 +424,32 @@ components:
             - type: string
               enum: [short, medium, long]
             - type: "null"
-          title: Answerlength
+          title: AnswerLength
         languageLevel:
           anyOf:
             - type: string
               enum: [basic, intermediate, advanced]
             - type: "null"
-          title: Languagelevel
+          title: LanguageLevel
         expertiseLevel:
           anyOf:
             - type: string
               enum: [beginner, intermediate, advanced, expert]
             - type: "null"
-          title: Expertiselevel
+          title: ExpertiseLevel
         includePictures:
           anyOf:
             - type: string
               enum: [none, few, many]
             - type: "null"
-          title: Includepictures
+          title: IncludePictures
+
     UserProfile:
       title: UserProfile
       type: object
-      required:
-        - id
-        - role
-        - language
+      required: [id, role, language]
       properties:
-        id:
-          type: string
-          title: Id
+        id: { type: string, title: Id }
         role:
           type: string
           enum: [student, instructor]
@@ -551,17 +465,14 @@ components:
         enrolled_courses:
           anyOf:
             - type: array
-              items:
-                type: string
+              items: { type: string }
             - type: "null"
           title: Enrolled Courses
+
     ValidationError:
       title: ValidationError
       type: object
-      required:
-        - loc
-        - msg
-        - type
+      required: [loc, msg, type]
       properties:
         loc:
           type: array
@@ -570,9 +481,5 @@ components:
             anyOf:
               - type: string
               - type: integer
-        msg:
-          type: string
-          title: Message
-        type:
-          type: string
-          title: Error Type
+        msg: { type: string, title: Message }
+        type: { type: string, title: Error Type }
