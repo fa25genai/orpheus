@@ -11,7 +11,7 @@ class VideoTopicModellingService:
         self.model = "llama3.3:latest"
         self.transcription = transcription
 
-    def _split_sentences(self, text: str): # type: ignore[no-untyped-def]
+    def _split_sentences(self, text: str):
         raw = re.split(r'(?<=[.!?])\s+(?=[A-Z(""Oo0])', text.strip())
         sentences = [s.strip() for s in raw if s.strip()]
         return list(enumerate(sentences))
