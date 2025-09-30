@@ -1,6 +1,5 @@
 import json
 import re
-from typing import List
 
 from docint_app.services.ollama_client_service import get_ollama_client
 
