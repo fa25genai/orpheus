@@ -11,9 +11,9 @@ from docint_app.models.batch_retrieval_response import BatchRetrievalResponse
 from docint_app.models.retrieval_response import RetrievalResponse
 from docint_app.models.upload_response import UploadResponse
 from docint_app.models.video_upload_response import VideoUploadResponse
-from docint_app.services.mock_video_upload_service import get_video_upload_service
 from docint_app.services.pdf_upload_service import get_upload_pdf_service
 from docint_app.services.retrieval_service import get_retrieval_service
+from docint_app.services.vid_upload_service import get_upload_video_service
 
 logger = logging.getLogger("Document Intelligence Request Handler")
 
@@ -60,7 +60,7 @@ class DocintApiImpl(BaseDocintApi):  # type: ignore[no-untyped-call]
         courseId: Annotated[StrictStr, Field(description="The course ID.")],
         body: Union[StrictBytes, StrictStr, Tuple[StrictStr, StrictBytes]],
     ) -> VideoUploadResponse:
-        service = get_video_upload_service()
+        service = get_upload_video_service()
 
         video_id = await service.upload_video(courseId, body)
         return VideoUploadResponse(videoId=video_id)
