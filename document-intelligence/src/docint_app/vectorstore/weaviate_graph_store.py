@@ -322,7 +322,7 @@ class WeaviateGraphStore:
         # Try create first (POST); if it already exists, update (PUT)
         try:
             self._post("/v1/objects", payload)
-        except WeaviateError:
+        except WeaviateError as e:
             # Duplicate/exists -> update instead
             print(f"Slide upsert POST failed, trying PUT: {e}")
             self._put(f"/v1/objects/{uid}", payload)
@@ -374,7 +374,8 @@ class WeaviateGraphStore:
             # Create (POST), or update (PUT) if it already exists
             try:
                 self._post("/v1/objects", obj_payload)
-            except WeaviateError:
+            except WeaviateError as e:
+                print(f"SlideImage upsert POST failed, trying PUT: {e}")
                 self._put(f"/v1/objects/{img_id}", obj_payload)
 
             # Add reference from the slide to this image
