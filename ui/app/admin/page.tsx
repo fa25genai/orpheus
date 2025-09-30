@@ -112,7 +112,7 @@ export default function Admin() {
               <CardHeader>
                 <CardTitle>Upload your Lecture Material</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-6">
+              <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Slides */}
                 <FileUpload
                   files={slides}
@@ -152,8 +152,7 @@ export default function Admin() {
               <CardHeader>
                 <CardTitle>Upload your Avatar</CardTitle>
                 <CardDescription>
-                  In order to replace Avatars when there are there just Upload a
-                  new Avatar
+                  To replace an avatar, simply upload a new one.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -167,6 +166,7 @@ export default function Admin() {
             <Card>
               <CardHeader>
                 <CardTitle>Upload your Audio</CardTitle>
+                <CardDescription>To replace an audio, simply upload a new one.</CardDescription>
               </CardHeader>
               <CardContent>
                 <AudioUpload />
