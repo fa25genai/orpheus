@@ -120,13 +120,6 @@ paths:
           schema:
             type: string
           description: "The user's query or prompt."
-        - debugflag:
-          name: debug
-          in: query
-          required: false
-          schema:
-            type: boolean
-          description: "Debug flag to enable verbose logging."
       responses:
         "200":
           description: "Content and images."

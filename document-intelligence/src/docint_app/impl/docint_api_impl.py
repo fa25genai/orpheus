@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import os
 from typing import Dict, Tuple, Union
 
 from pydantic import Field, StrictBytes, StrictStr
@@ -23,16 +24,41 @@ class DocintApiImpl(BaseDocintApi):  # type: ignore[no-untyped-call]
         self,
         courseId: Annotated[StrictStr, Field(description="The course ID.")],
         prompt_query: Annotated[StrictStr, Field(description="The user's query or prompt.")],
-        debugflag: Annotated[bool, Field(description="Enable debug logging.")],
     ) -> RetrievalResponse:
-        print(f"Retrieving data for course {courseId} with query {prompt_query}; debug={debugflag}")
+        # Check environment variable for debug mode override
+        env_debug = os.getenv("ORPHEUS_DEBUG_MODE", "false").lower() == "true"
+        # Use environment variable as default, but allow API parameter to override
+        
+        print(f"Retrieving data for course {courseId} with query {prompt_query}; debug={env_debug}")
 
-        if not debugflag:
+        if not env_debug:
             service = get_retrieval_service()
             result = await service.search_simple(prompt_query, courseId)
         else:
+            # Return predefined debug response for testing pipeline
             result = {
-                "content": ["Debug mode is enabled. No actual search performed."],
+                "content": [
+                    "For Loops let you repeat a block of code a fixed number of times.",
+                    "A standard for loop has three parts inside the parentheses:",
+                    "(1) initialisation – set the starting value (e.g. int i = 0),",
+                    "(2) condition – checked before each iteration (loop runs while condition is true),",
+                    "(3) update – changes the loop variable after each iteration (e.g. i++).",
+
+                    "Example:",
+                    "for (int i = 0; i < abc.length; i++) {",
+                    " System.out.println(abc[i]);",
+                    "}",
+
+                    "The loop prints each element of the array one by one.",
+
+                    "A for-each loop is a special form that iterates directly over all elements without an index:",
+                    "for (String letter : abc) {",
+                    " System.out.println(letter);",
+                    "}",
+
+                    "Use a for-each loop when you don’t need the index.",
+                    "Use a regular for loop when you need to control the counter or skip elements.",
+                ],
                 "images": []
             }
 
