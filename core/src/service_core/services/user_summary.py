@@ -1,25 +1,33 @@
-from typing import Any, Dict, List
+from typing import List
 
+from service_core.models.docint.retrieval_response import RetrievalResponse
 from service_core.services.helpers.llm import ask_llm
 
 
-def extract_text_content(data: List[Dict[str, Any]]) -> str:
+def extract_text_content(data: List[RetrievalResponse]) -> str:
     """Extract only the text content from a list of dicts, ignoring images or other fields."""
 
     if not isinstance(data, list):
+        # Fallback for non-list input
         return str(data)
 
     texts = []
+    
     for item in data:
-        # Try common keys for text content
-        if isinstance(item, dict):
-            if "content" in item:
-                texts.append(str(item["content"]))
+        if isinstance(item, dict):  # Added fix to work with amazon model
+            text = item.get('content', None)    
+            if text is not None:
+                texts.append(str(text))
+        else:
+            item_str = str(item)
+            if 'ImageObject' not in item_str and 'data:image' not in item_str:
+                texts.append(item_str)
+            
     return "\n".join(texts)
 
 
 def summarize_content_with_llama(
-    retrieved_content: List[Dict[str, Any]], user_prompt: str
+    retrieved_content: List[RetrievalResponse], user_prompt: str
 ) -> str:
     """Summarize only the text content from retrieved_content using Llama via llm_call."""
     text_content = extract_text_content(retrieved_content)
