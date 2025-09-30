@@ -20,7 +20,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
  && rm -rf /var/lib/apt/lists/*
 
-# Upgrade pip toolchain
+# Upgrade pip toolchainC
 RUN pip install --upgrade pip setuptools wheel poetry
 
 # Workdir for the app
