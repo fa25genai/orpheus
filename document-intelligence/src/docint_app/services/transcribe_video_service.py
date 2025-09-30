@@ -1,19 +1,21 @@
 import os
+import subprocess
 from openai import AzureOpenAI
 from pathlib import Path
-from moviepy import VideoFileClip # Import moviepy for audio extraction
+from dotenv import load_dotenv
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from threading import Lock
+
+load_dotenv() 
 
 # --- Configuration ---
-# IMPORTANT: Replace these placeholders with your actual values
 AZURE_OPENAI_ENDPOINT = "https://ase-us03.openai.azure.com/"
 AZURE_WHISPER_DEPLOYMENT_NAME = "whisper" 
 AZURE_API_VERSION = "2024-06-01" 
-AZURE_OPENAI_API_KEY = "a3ec8df6e7934d9fa2c62ce2372eddee"
+AZURE_OPENAI_API_KEY = os.getenv("AZURE_OPENAI_API_KEY")
 
-# Path to your video file.
-MEDIA_FILE_PATH = "vids/W01U01.mp4" 
-# Output path for the extracted audio file. Using .mp3 is common.
-OUTPUT_AUDIO_PATH = "vids/extracted_audio.mp3" 
+MEDIA_FILE_PATH = "vids/W02U03.mp4" 
+MAX_WORKERS = 4  # Number of parallel transcription jobs
 
 # --- Client Initialization ---
 try:
@@ -26,85 +28,119 @@ except Exception as e:
     print(f"Error initializing AzureOpenAI client: {e}")
     exit()
 
+# Thread-safe print
+print_lock = Lock()
+
+def safe_print(*args, **kwargs):
+    with print_lock:
+        print(*args, **kwargs)
 
 
-# ----------------------------------------------------------------------
-# 🗣️ WHISPER FUNCTION (from previous response)
-# ----------------------------------------------------------------------
+def get_video_duration(video_path):
+    """Get video duration using ffprobe"""
+    cmd = [
+        'ffprobe', '-v', 'error', '-show_entries', 'format=duration',
+        '-of', 'default=noprint_wrappers=1:nokey=1', video_path
+    ]
+    result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    return float(result.stdout.strip())
 
-def transcribe_large_video(video_path, chunk_duration_seconds=60):
-    # 1. Extract the full audio from the video
-    clip = VideoFileClip(video_path)
-    audio = clip.audio
-    
-    # Get the total duration of the audio in seconds
-    total_duration = audio.duration
-    
-    # Base name for chunks
-    base_name = os.path.splitext(os.path.basename(video_path))[0]
-    
-    full_transcript = ""
-    print(f"Total audio duration: {total_duration:.2f} seconds")
-    
-    # 2. Iterate through the audio, creating chunks
-    for i, start_time in enumerate(range(0, int(total_duration), chunk_duration_seconds)):
-        end_time = min(start_time + chunk_duration_seconds, total_duration)
-        
-        # Create a subclip (chunk)
-        chunk = audio.subclipped(start_time, end_time)
-        
-        # Create a unique filename for the chunk
-        chunk_filename = f"{base_name}_chunk_{i+1}.mp3"
-        
-        print(f"Processing chunk {i+1}: {start_time:.2f}s to {end_time:.2f}s")
-        
-        # Write the chunk to a file
-        chunk.write_audiofile(chunk_filename)
 
-        # 3. Transcribe the small chunk (THIS IS WHERE YOU CALL AZURE API)
-        
-        # ⚠️ Replace this Mock Call with your actual Azure API call
-        chunk_transcript = transcribe_audio(chunk_filename,AZURE_WHISPER_DEPLOYMENT_NAME) 
-        
-        # 4. Combine the transcripts
-        full_transcript += chunk_transcript + " " 
-        
-        # Clean up the temporary chunk file
-        os.remove(chunk_filename)
-        
-    # Final cleanup
-    audio.close()
-    clip.close()
-    return full_transcript
+def extract_audio_chunk_ffmpeg(video_path, start_time, duration, output_path):
+    """Extract a specific audio chunk using FFmpeg"""
+    cmd = [
+        'ffmpeg', '-y', '-ss', str(start_time), '-t', str(duration),
+        '-i', video_path, '-vn', '-acodec', 'libmp3lame', '-q:a', '2',
+        output_path
+    ]
+    subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
 
-# ----------------------------------------------------------------------
-# 🗣️ WHISPER FUNCTION (from previous response)
-# ----------------------------------------------------------------------
+
 def transcribe_audio(file_path: str, deployment_name: str):
-    """
-    Transcribes an audio file using the Azure OpenAI Whisper deployment.
-    """
+    """Transcribes an audio file using Azure OpenAI Whisper"""
     try:
         if os.path.getsize(file_path) > 25 * 1024 * 1024:
-            print("⚠️ Warning: File is larger than 25 MB. The Azure API might fail.")
-            print("It's highly recommended to chunk the audio before uploading.")
+            safe_print("⚠️ Warning: File is larger than 25 MB. The Azure API might fail.")
             
         with open(file_path, "rb") as audio_file:
-            print(f"Uploading and processing audio file: {Path(file_path).name}...")
-            
-            # Using translations.create() as requested, which can also transcribe English audio
             result = client.audio.translations.create(
-                model=deployment_name, # In Azure, the model parameter is the deployment name
+                model=deployment_name,
                 file=audio_file,
             )
-
-        transcribed_text = result.text
-        return transcribed_text
+        return result.text
 
     except FileNotFoundError:
         return f"Error: File not found at {file_path}"
     except Exception as e:
         return f"An error occurred during transcription: {e}"
+
+
+def process_chunk(video_path, chunk_info):
+    """Process a single chunk: extract, transcribe, cleanup"""
+    chunk_id, start_time, chunk_duration, base_name, deployment_name = chunk_info
+    
+    chunk_filename = f"{base_name}_chunk_{chunk_id}.mp3"
+    
+    try:
+        safe_print(f"🎬 Chunk {chunk_id}: Extracting {start_time:.2f}s to {start_time + chunk_duration:.2f}s")
+        extract_audio_chunk_ffmpeg(video_path, start_time, chunk_duration, chunk_filename)
+        
+        safe_print(f"🗣️  Chunk {chunk_id}: Transcribing...")
+        chunk_transcript = transcribe_audio(chunk_filename, deployment_name)
+        
+        safe_print(f"✅ Chunk {chunk_id}: Complete")
+        
+        return chunk_id, chunk_transcript
+        
+    except Exception as e:
+        safe_print(f"❌ Chunk {chunk_id}: Error - {e}")
+        return chunk_id, f"[Error in chunk {chunk_id}: {e}]"
+        
+    finally:
+        # Cleanup
+        if os.path.exists(chunk_filename):
+            os.remove(chunk_filename)
+
+
+def transcribe_large_video_parallel(video_path, chunk_duration_seconds=120, max_workers=4):
+    """Fast parallel video transcription using FFmpeg and ThreadPoolExecutor"""
+    
+    print(f"Getting video duration...")
+    total_duration = get_video_duration(video_path)
+    print(f"Total duration: {total_duration:.2f} seconds")
+    
+    base_name = os.path.splitext(os.path.basename(video_path))[0]
+    
+    # Prepare all chunk information
+    chunks_info = []
+    for i, start_time in enumerate(range(0, int(total_duration), chunk_duration_seconds)):
+        chunk_duration = min(chunk_duration_seconds, total_duration - start_time)
+        chunk_id = i + 1
+        chunks_info.append((chunk_id, start_time, chunk_duration, base_name, AZURE_WHISPER_DEPLOYMENT_NAME))
+    
+    print(f"Processing {len(chunks_info)} chunks in parallel (max {max_workers} workers)...\n")
+    
+    # Store results with chunk IDs to maintain order
+    results = {}
+    
+    # Process chunks in parallel
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        # Submit all jobs
+        future_to_chunk = {
+            executor.submit(process_chunk, video_path, chunk_info): chunk_info[0] 
+            for chunk_info in chunks_info
+        }
+        
+        # Collect results as they complete
+        for future in as_completed(future_to_chunk):
+            chunk_id, transcript = future.result()
+            results[chunk_id] = transcript
+    
+    # Reconstruct transcript in correct order
+    full_transcript = " ".join(results[chunk_id] for chunk_id in sorted(results.keys()))
+    
+    return full_transcript
+
 
 # ----------------------------------------------------------------------
 # ▶️ EXECUTION
@@ -115,12 +151,14 @@ if __name__ == "__main__":
         print(f"🔴 ERROR: The file path '{MEDIA_FILE_PATH}' does not exist.")
         print("Please update the 'MEDIA_FILE_PATH' variable.")
     else:
+        transcription = transcribe_large_video_parallel(
+            MEDIA_FILE_PATH, 
+            chunk_duration_seconds=120,
+            max_workers=MAX_WORKERS
+        )
         
-        transcription = transcribe_large_video(MEDIA_FILE_PATH, chunk_duration_seconds=120)
-        
-        # 4. Print the result
-        print("\n--- Transcription Result ---")
+        print("\n" + "="*50)
+        print("--- Transcription Result ---")
+        print("="*50)
         print(transcription)
-        print("----------------------------")
-        
-    
+        print("="*50)
