@@ -6,12 +6,14 @@ from uuid import UUID
 from fastapi import APIRouter, Request, Response
 from fastapi.responses import JSONResponse
 
+import logging
+
 from app.schemas import ErrorModel, GenerateRequest, GenerationAcceptedResponse, GenerationStatusResponse, Job, SlideTask
 from app.workers.queues import AUDIO_QUEUE, JOBS, eta_seconds, folder_url, purge_stale_jobs, utcnow
 
 router = APIRouter(prefix="/v1/video", tags=["video"])
 
-logger = logging.getLogger("Client Handler")
+logger = logging.getLogger("video.py")
 
 @router.post(
     "/generate",
@@ -20,8 +22,8 @@ logger = logging.getLogger("Client Handler")
     responses={400: {"model": ErrorModel}, 401: {"model": ErrorModel}, 500: {"model": ErrorModel}},
 )
 def request_video_generation(payload: GenerateRequest, response: Response, request: Request) -> Union[GenerationAcceptedResponse, JSONResponse]:
-    logger.debug(f"received slide with number: {GenerateRequest.slideNumber}")
-    
+    logger.info(f"Generating video for {payload.promptId}#{payload.slideNumber}")
+
     now = utcnow()
     purge_stale_jobs(now)
 
