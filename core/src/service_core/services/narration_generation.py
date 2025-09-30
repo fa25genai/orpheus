@@ -38,17 +38,13 @@ async def generate_narrations(
 
     Args:
         lecture_script (str): The script for the entire lecture.
-        example_slides (SlidesEnvelope): An object representing the slide structure.
-        user_profile (UserProfile): An object containing the user's profile.
-        debug (bool): If True, enables debug output.
+        example_slides (GenerationAcceptedResponse): An object representing the slide structure.
+        prompt_request (PromptRequest): An object containing the user's profile and request data.
+        prompt_id (str): The prompt identifier.
+        debug (bool, optional): If True, enables debug output.
 
-    Returns:
-        str: A JSON string containing the generated slide narrations.
-        :param lecture_script:
-        :param prompt_request:
-        :param example_slides:
-        :param prompt_id:
-        :param debug:
+    Yields:
+        VoiceTrackResponse: The generated narration for each slide.
     """
 
     if debug:
