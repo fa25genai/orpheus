@@ -8,18 +8,18 @@ import {
   CircleUser,
   FileText,
   File,
-  ImageIcon,
   Mic,
   Video,
   Volume2,
 } from "lucide-react";
 import Link from "next/link";
-import {useEffect, useState} from "react";
+import {useState} from "react";
 import {FileUpload} from "@/components/file-upload";
 import {UploadedFile} from "@/types/uploading";
-import {docintApi, avatarApi} from "../api-clients";
+import {docintApi} from "../api-clients";
 import {makeUploadHandler, makeRemoveHandler} from "@/helper/upload-helper";
 import {courseId} from "@/data/course";
+import {AvatarUpload} from "@/components/avatar-upload";
 
 export default function Admin() {
   const [activeTab, setActiveTab] = useState("material");
@@ -27,39 +27,7 @@ export default function Admin() {
   // State for each file type
   const [slides, setSlides] = useState<UploadedFile[]>([]);
   const [videos, setVideos] = useState<UploadedFile[]>([]);
-  const [avatar, setAvatar] = useState<UploadedFile[]>([]);
   const [audio, setAudio] = useState<UploadedFile[]>([]);
-
-  async function getAvatar() {
-    const avatarResponse =
-      await avatarApi.getAvatarsByCourseEndpointV1AvatarsByCourseCourseIdGet({
-        courseId,
-      });
-
-    const correctAvatar = avatarResponse.find(
-      (avatar) => avatar.slot === "default"
-    );
-
-    if (correctAvatar) {
-      setAvatar([
-        {
-          id: correctAvatar?.avatarId,
-          name: correctAvatar.slot ?? "default",
-          size: correctAvatar.image.sizeBytes ?? 0,
-          type: "image",
-          status: "completed",
-          url: correctAvatar.image.filePath,
-          documentId: correctAvatar.avatarId,
-        },
-      ]);
-    }
-  }
-
-  useEffect(() => {
-    getAvatar().catch((err) => {
-      console.error("Failed to fetch avatar:", err);
-    });
-  }, []);
 
   // --------------------
   // Handlers for Slides
@@ -89,24 +57,6 @@ export default function Admin() {
   });
 
   const handleVideosRemove = makeRemoveHandler(setVideos, async (file) => {
-    console.log(file);
-    await new Promise((r) => setTimeout(r, 500));
-  });
-
-  // --------------------
-  // Handlers for Avatar
-  // --------------------
-  const handleAvatarUpload = makeUploadHandler(setAvatar, async (file) => {
-    const response =
-      await avatarApi.replaceAvatarImageEndpointV1AvatarsCourseIdSlotImagePost({
-        courseId,
-        imageFile: file,
-        slot: "default",
-      });
-    return {documentId: response.avatarId};
-  });
-
-  const handleAvatarRemove = makeRemoveHandler(setAvatar, async (file) => {
     console.log(file);
     await new Promise((r) => setTimeout(r, 500));
   });
@@ -212,20 +162,7 @@ export default function Admin() {
                 <CardTitle>Upload your Avatar</CardTitle>
               </CardHeader>
               <CardContent>
-                <FileUpload
-                  files={avatar}
-                  onUpload={handleAvatarUpload}
-                  onRemove={handleAvatarRemove}
-                  onFilesChange={setAvatar}
-                  acceptedTypes={["image/jpeg", "image/png", "image/webp"]}
-                  maxSize={10}
-                  icon={
-                    <ImageIcon className="w-12 h-12 text-muted-foreground" />
-                  }
-                  title="Professor Avatar Image"
-                  description="JPG, PNG, WEBP"
-                  multiple={false}
-                />
+                <AvatarUpload />
               </CardContent>
             </Card>
           </TabsContent>
