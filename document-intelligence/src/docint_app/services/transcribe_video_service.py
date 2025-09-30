@@ -8,7 +8,7 @@ from moviepy import VideoFileClip # Import moviepy for audio extraction
 AZURE_OPENAI_ENDPOINT = "https://ase-us03.openai.azure.com/"
 AZURE_WHISPER_DEPLOYMENT_NAME = "whisper" 
 AZURE_API_VERSION = "2024-06-01" 
-AZURE_OPENAI_API_KEY = "a3ec8df6e7934d9fa2c62ce2372eddee"
+AZURE_OPENAI_API_KEY = "<YOUR_AZURE_OPENAI_API_KEY>"  # Replace with your actual API key
 
 # Path to your video file.
 MEDIA_FILE_PATH = "vids/W01U01.mp4" 
