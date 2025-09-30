@@ -1,13 +1,17 @@
 from __future__ import annotations
+
 import os
 from pathlib import Path
 from typing import Optional
-import requests
 from uuid import UUID
+
+import requests
 from sqlalchemy.orm import Session
+
+from app.schemas import UserProfile
 from app.workers.queues import job_dir
 from media import avatar_queries  # keep your existing module
-from app.schemas import UserProfile
+
 
 def generate_audio(
     voiceTrack: Optional[str],

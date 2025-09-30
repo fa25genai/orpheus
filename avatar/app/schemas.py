@@ -1,10 +1,12 @@
 from __future__ import annotations
+
 from datetime import datetime
-from typing import Optional, Literal, List
+from typing import List, Literal, Optional
 from uuid import UUID
-from pydantic import BaseModel, Field
+
+from pydantic import BaseModel, Field, StringConstraints
 from typing_extensions import Annotated
-from pydantic import StringConstraints
+
 
 class Preferences(BaseModel):
     answerLength: Optional[Literal["short","medium","long"]] = None

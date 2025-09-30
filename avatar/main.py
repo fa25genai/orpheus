@@ -1,11 +1,15 @@
 from __future__ import annotations
+
+from threading import Event, Thread
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from threading import Thread, Event
 
 from app.api.avatars import router as avatars_router
 from app.api.video import router as video_router
-from app.workers import audio as audio_worker, video as video_worker, cleanup as cleanup_worker
+from app.workers import audio as audio_worker
+from app.workers import cleanup as cleanup_worker
+from app.workers import video as video_worker
 
 app = FastAPI(title="Service Video-Generation APIs", version="0.1")
 

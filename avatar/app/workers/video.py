@@ -1,8 +1,10 @@
 from __future__ import annotations
-from app.schemas import ErrorModel, VideoTask, Job
+
+from app.schemas import ErrorModel, VideoTask
 from app.services.media_io import generate_video
 from app.services.status import update_avatar_generation_step_status
-from app.workers.queues import VIDEO_QUEUE, JOBS, utcnow
+from app.workers.queues import JOBS, VIDEO_QUEUE, utcnow
+
 
 def loop() -> None:
     print("[video-worker] started")

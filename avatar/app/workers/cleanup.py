@@ -1,6 +1,9 @@
 from __future__ import annotations
+
 from time import sleep
-from app.workers.queues import purge_stale_jobs, CLEANUP_INTERVAL_SECONDS
+
+from app.workers.queues import CLEANUP_INTERVAL_SECONDS, purge_stale_jobs
+
 
 def loop() -> None:
     while True:

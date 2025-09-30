@@ -1,8 +1,12 @@
 from __future__ import annotations
-from typing import Mapping, Any, Dict, Optional
+
+from typing import Any, Dict, Mapping, Optional
 from uuid import UUID
+
 import requests
+
 from app import config
+
 
 def _status_service_url(prompt_id: UUID) -> str:
     base = config.STATUS_SERVICE_HOST.rstrip("/")

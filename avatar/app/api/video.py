@@ -1,10 +1,10 @@
 from __future__ import annotations
-from fastapi import APIRouter, Response, Request
+
+from fastapi import APIRouter, Request, Response
 from fastapi.responses import JSONResponse
-from app.schemas import (
-    GenerateRequest, GenerationAcceptedResponse, GenerationStatusResponse, ErrorModel, Job, SlideTask
-)
-from app.workers.queues import AUDIO_QUEUE, JOBS, utcnow, purge_stale_jobs, folder_url, eta_seconds
+
+from app.schemas import ErrorModel, GenerateRequest, GenerationAcceptedResponse, GenerationStatusResponse, Job, SlideTask
+from app.workers.queues import AUDIO_QUEUE, JOBS, eta_seconds, folder_url, purge_stale_jobs, utcnow
 
 router = APIRouter(prefix="/v1/video", tags=["video"])
 

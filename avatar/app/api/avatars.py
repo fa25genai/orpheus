@@ -1,9 +1,13 @@
 from __future__ import annotations
-from typing import Optional, List
+
+from typing import List, Optional
+
 from fastapi import APIRouter, Depends, File, Form, Query, UploadFile
 from sqlalchemy.orm import Session
-from app.db import get_db, engine
-from media import avatar_media as media, avatar_queries, avatar_updates
+
+from app.db import engine, get_db
+from media import avatar_media as media
+from media import avatar_queries, avatar_updates
 
 router = APIRouter(prefix="/v1/avatars", tags=["avatar"])
 

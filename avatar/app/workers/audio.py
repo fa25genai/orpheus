@@ -1,14 +1,12 @@
 from __future__ import annotations
-from threading import Event, Thread
+
 from app.db import SessionLocal
-from app.schemas import ErrorModel, SlideTask, Job
+from app.schemas import ErrorModel, Job, SlideTask
 from app.services.media_io import generate_audio
 from app.services.status import update_avatar_generation_step_status
-from app.workers.queues import (
-    AUDIO_QUEUE, VIDEO_QUEUE, JOBS, utcnow, purge_stale_jobs,
-    estimate_total_seconds_for_new_slide, folder_url
-)
+from app.workers.queues import AUDIO_QUEUE, JOBS, VIDEO_QUEUE, estimate_total_seconds_for_new_slide, folder_url, purge_stale_jobs, utcnow
 from media import avatar_queries
+
 
 def loop() -> None:
     print("[audio-worker] started")

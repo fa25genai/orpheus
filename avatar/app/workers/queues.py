@@ -1,9 +1,11 @@
 from __future__ import annotations
+
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from queue import Queue
 from typing import Dict
 from uuid import UUID
+
 from app import config
 from app.schemas import Job, SlideTask, VideoTask
 
