@@ -285,7 +285,7 @@ async def generate_voice_scripts(
 async def avatar_video_producer(
     voice_script: VoiceTrackResponse, client: httpx.AsyncClient
 ) -> httpx.Response:
-    logger.info(f"Generating avatar video {voice_script.promptId}#{voice_track.slideNumber}")
+    logger.info(f"Generating avatar video {voice_script.promptId}#{voice_script.slideNumber}")
     try:
         logger.debug(f"voice track: {voice_script}")
         avatar_response = await client.post(
