@@ -128,8 +128,8 @@ async def query_document_intelligence(
         di_data: List[Dict[str, Any]] = di_response.json().get("results", [])
         await update_status(prompt_id, StatusPatch(stepLookup=StepStatus.DONE), client)
         return di_data
-    except Exception:
-        logger.error(f"Error querying Document Intelligence for prompt {prompt_id}")
+    except Exception as exception:
+        logger.error(f"Error querying Document Intelligence for prompt {prompt_id}", exc_info=exception)
         await update_status(
             prompt_id, StatusPatch(stepLookup=StepStatus.FAILED), client
         )
@@ -303,8 +303,8 @@ def generate_avatar_video(
             avatar_video_producer(voice_track, client)
         )
         return task
-    except Exception as e:
-        logger.error("Error generating avatar video:", exc_info=e)
+    except Exception as exception:
+        logger.error("Error generating avatar video", exc_info=exception)
         return None
 
 
