@@ -8,11 +8,21 @@ def extract_text_content(data: List[RetrievalResponse]) -> str:
     """Extract only the text content from a list of dicts, ignoring images or other fields."""
 
     if not isinstance(data, list):
+        # Fallback for non-list input
         return str(data)
 
     texts = []
+    
     for item in data:
-        texts.append(str(item))
+        if isinstance(item, dict):  # Added fix to work with amazon model
+            text = item.get('content', None)    
+            if text is not None:
+                texts.append(str(text))
+        else:
+            item_str = str(item)
+            if 'ImageObject' not in item_str and 'data:image' not in item_str:
+                texts.append(item_str)
+            
     return "\n".join(texts)
 
 
