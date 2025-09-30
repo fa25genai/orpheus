@@ -1,5 +1,7 @@
 src/tmp/*
 src/docint_app/test/*.py
+test/
 .env
 *.pdf
 *.log
+*.txt

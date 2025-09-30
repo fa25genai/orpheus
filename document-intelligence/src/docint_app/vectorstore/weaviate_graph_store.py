@@ -234,6 +234,7 @@ class WeaviateGraphStore:
                     "vectorizer": "none",  # BYO vectors
                     "properties": [
                         {"name": "courseId", "dataType": ["text"]},
+                        {"name": "lectureId", "dataType": ["text"]},
                         {"name": "chunkId", "dataType": ["text"]},
                         {"name": "text", "dataType": ["text"]},
                     ],
@@ -394,6 +395,7 @@ class WeaviateGraphStore:
         self,
         *,
         course_id: str,
+        lecture_id: str,
         chunk_id: str,
         text: str,
         text_vector: Sequence[float],
@@ -412,6 +414,7 @@ class WeaviateGraphStore:
             "id": uid,
             "properties": {
                 "courseId": course_id,
+                "lectureId": lecture_id,
                 "chunkId": chunk_id,
                 "text": text,
             },
