@@ -1,5 +1,8 @@
+import json
+import re
+
 from docint_app.services.ollama_client_service import get_ollama_client
-import json, re
+
 
 class VideoTopicModellingService:
     def __init__(self, transcription: str):
