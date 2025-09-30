@@ -23,7 +23,7 @@ def summarize_content_with_llama(
 ) -> str:
     """Summarize only the text content from retrieved_content using Llama via llm_call."""
     text_content = extract_text_content(retrieved_content)
-    # TODO use the out-commented prompt again when document intelligence delivers acutal information
+    # TODO use the out-commented prompt again when document intelligence delivers actual information
     # prompt = f'Summarize the following content in 3-4 sentences. Only return the summary with respect to user query, do not preface with any explanation or heading and return "Question can not be answered from course material." if it\'s unrelated.\n\n{text_content}\n\nUser prompt: {user_prompt}'
     prompt = f'Summarize the following content in 3-4 sentences. \n\n{text_content}\n\nUser prompt: {user_prompt}'
     user_summary: str = ask_llm(prompt)
