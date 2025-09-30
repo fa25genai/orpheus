@@ -58,8 +58,8 @@ class Avatar(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     name: Mapped[Optional[str]] = mapped_column(String(120), nullable=True, index=True)
-    course_id: Mapped[Optional[str]] = mapped_column(String(36), nullable=False, index=True)
-    slot: Mapped[str] = mapped_column(String(16), nullable=False, index=True, default=CourseAvatarSlot.default.value, server_default=text("'default'"))
+    course_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+    slot: Mapped[str] = mapped_column(String(64), nullable=False, index=True, default=CourseAvatarSlot.default.value, server_default=text("'default'"))
 
     images: Mapped[list["AvatarImage"]] = relationship(back_populates="avatar", cascade="all, delete-orphan")
     audios: Mapped[list["AvatarAudio"]] = relationship(back_populates="avatar", cascade="all, delete-orphan")
@@ -111,11 +111,11 @@ class AvatarAudioResponse(BaseModel):
 class AvatarCreatedResponse(BaseModel):
     avatarId: UUID
     name: Optional[str] = None
-    courseId: Optional[UUID] = None
+    courseId: Optional[str] = None
     slot: CourseAvatarSlot = CourseAvatarSlot.default
     createdAt: datetime
-    image: AvatarImageResponse
-    audio: AvatarAudioResponse
+    image: Optional[AvatarImageResponse] = None
+    audio: Optional[AvatarAudioResponse] = None
 
 
 # ----- file helpers -----
@@ -166,7 +166,7 @@ def create_avatar_with_media(
     db: Session,
     image_file: UploadFile,
     audio_file: UploadFile,
-    course_id: UUID,
+    course_id: str,
     name: Optional[str] = None,
     slot: Optional[str] = None,  # <--- new
 ) -> AvatarCreatedResponse:
@@ -215,7 +215,7 @@ def create_avatar_with_media(
         return AvatarCreatedResponse(
             avatarId=UUID(avatar.avatar_id),
             name=avatar.name,
-            courseId=UUID(avatar.course_id) if avatar.course_id else None,
+            courseId=(avatar.course_id) if avatar.course_id else None,
             slot=CourseAvatarSlot(avatar.slot),  # <--- expose in response
             createdAt=avatar.created_at,
             image=AvatarImageResponse(

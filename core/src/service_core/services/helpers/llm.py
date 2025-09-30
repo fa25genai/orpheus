@@ -13,7 +13,7 @@
 #                                                                              #
 ################################################################################
 import os
-from typing import cast, Any
+from typing import Any
 
 from langchain_core.language_models import BaseLanguageModel
 
@@ -23,8 +23,9 @@ from service_core.services.llm_chain.shared_llm import create_base_model
 def ask_llm(prompt: str) -> str:
     llm = create_llm()
     response = llm.invoke(prompt)
-
-    return cast(str, response.content)
+    if isinstance(response, str):
+        return response
+    return getattr(response, "content", str(response))
 
 
 def create_llm() -> BaseLanguageModel[Any]:

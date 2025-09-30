@@ -7,7 +7,7 @@ import os
 from typing import Any, Dict, List, Optional, TypedDict
 
 from docint_app.services.embedding_service import get_embedding_service
-from docint_app.vectorstore.weaviate_graph_store import WeaviateGraphStore
+from docint_app.vectorstore.weaviate_graph_store import get_store
 
 
 class _IngestResults(TypedDict):
@@ -28,7 +28,7 @@ class IngestionService:
         base_url = os.getenv("WEAVIATE_URL", base_url)
         print(f"Initializing IngestionService with base_url: {base_url}")
         try:
-            self.store = WeaviateGraphStore(base_url=base_url)
+            self.store = get_store()
             self.embedder = get_embedding_service()
             print("Successfully initialized WeaviateGraphStore and EmbeddingService")
         except Exception as e:
