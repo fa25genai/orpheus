@@ -1,12 +1,12 @@
 from __future__ import annotations
 
+import logging
 import os
 from pathlib import Path
 from typing import Optional
 from uuid import UUID
 
 import requests
-import logging
 from sqlalchemy.orm import Session
 
 from app.schemas import UserProfile
@@ -14,6 +14,7 @@ from app.workers.queues import job_dir
 from media import avatar_queries  # keep your existing module
 
 logger = logging.getLogger("media_io.py")
+
 
 def generate_audio(
     voiceTrack: Optional[str],
@@ -86,7 +87,7 @@ def generate_audio(
         return str(wav_path)
 
     except requests.RequestException as exception:
-        logger.error(f"[generate_audio] Request error", exc_info=exception)
+        logger.error("[generate_audio] Request error", exc_info=exception)
         return None
     except Exception as exception:
         logger.error("[generate_audio] Unexpected error", exc_info=exception)
@@ -163,7 +164,7 @@ def generate_video(
         return str(final_path)
 
     except requests.RequestException as exception:
-        logger.error(f"[generate_video] Request error", exc_info=exception)
+        logger.error("[generate_video] Request error", exc_info=exception)
         return None
     except Exception as exception:
         logger.error("[generate_video] Unexpected error", exc_info=exception)

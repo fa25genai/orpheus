@@ -1,12 +1,11 @@
 from __future__ import annotations
 
+import logging
 from typing import Union
 from uuid import UUID
 
 from fastapi import APIRouter, Request, Response
 from fastapi.responses import JSONResponse
-
-import logging
 
 from app.schemas import ErrorModel, GenerateRequest, GenerationAcceptedResponse, GenerationStatusResponse, Job, SlideTask
 from app.workers.queues import AUDIO_QUEUE, JOBS, eta_seconds, folder_url, purge_stale_jobs, utcnow
@@ -14,6 +13,7 @@ from app.workers.queues import AUDIO_QUEUE, JOBS, eta_seconds, folder_url, purge
 router = APIRouter(prefix="/v1/video", tags=["video"])
 
 logger = logging.getLogger("video.py")
+
 
 @router.post(
     "/generate",
