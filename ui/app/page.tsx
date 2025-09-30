@@ -8,11 +8,11 @@ import {PromptResponse} from "@/generated-api-clients/core";
 import {PersonaLevel} from "@/types/uploading";
 import {User} from "lucide-react";
 import Link from "next/link";
-import {useEffect, useRef, useState} from "react";
+import {useEffect, useMemo, useRef, useState} from "react";
 import {coreApi} from "@/app/api-clients";
 import {toast} from "sonner";
 import {StatusDisplayer} from "@/components/status-displayer";
-import VideoPlayer from "@/components/video-player";
+import VideoPlayer, {VideoPlayerHandle} from "@/components/video-player";
 import {Card} from "@/components/ui/card";
 import SlidevEmbed, {SlidevEmbedHandle} from "@/components/slidev-embed";
 import {useStatus} from "@/hooks/use-status";
@@ -22,13 +22,27 @@ export default function Home() {
   const [messages, setMessages] = useState<string[]>([]);
   const [prompt, setPrompt] = useState<string>("");
   const [promptId, setPromptId] = useState<string>("");
+  const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
   const [sources, setSources] = useState<string[]>([]);
+
+  const mockMode = useMemo(
+    () => (process.env.NEXT_PUBLIC_MOCK_MODE || "").toLowerCase() === "true" || process.env.NEXT_PUBLIC_MOCK_MODE === "1",
+    []
+  );
+  const mockVideosBaseUrl = (process.env.NEXT_PUBLIC_MOCK_VIDEOS_BASE_URL || "").trim();
+  const mockSlidesUrl = (process.env.NEXT_PUBLIC_MOCK_SLIDES_URL || "").trim();
+
   const status = useStatus(promptId);
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const slidevRef = useRef<SlidevEmbedHandle>(null);
+  const videoPlayerRef = useRef<VideoPlayerHandle>(null);
   const outputRef = useRef<HTMLDivElement>(null);
   async function getPromptId(prompt: string) {
+      if (mockMode) {
+        return "mock";
+      }
+
     try {
       const response: PromptResponse = await coreApi.createLectureFromPrompt({
         promptRequest: {
@@ -52,6 +66,18 @@ export default function Home() {
     }
   }
 
+  function handleNextSlide() {
+      console.log("next slide & video");
+      slidevRef.current?.next();
+      videoPlayerRef.current?.next();
+  }
+
+  function handlePrevSlide() {
+      console.log("prev slide & video");
+      slidevRef.current?.prev();
+      videoPlayerRef.current?.prev();
+  }
+
   async function handleSubmit(input: string, e?: React.FormEvent) {
     if (e) e.preventDefault();
     if (!input.trim()) return;
@@ -67,13 +93,12 @@ export default function Home() {
     async function updateVideoSources() {
       if (status?.stepSlidePostprocessing !== "DONE") return;
 
-      const baseUrl = `http://localhost:3000/videos/jobs/${promptId}`; //TODO: change to promptId
+      const baseUrl = mockMode && mockVideosBaseUrl
+        ? mockVideosBaseUrl
+        : `http://localhost:3000/videos/jobs/${promptId}`;
 
       const readyVideos: string[] = status.stepsAvatarGeneration
-        .map(
-          (step, index) =>
-            step.video === "DONE" ? `${baseUrl}${index}.mp4` : null // TODO: change to starting index 0
-        )
+        .map((step, index) => (step.video === "DONE" ? `${baseUrl}${index}.mp4` : null))
         // needed to filter out all nulls
         .filter((url): url is string => url !== null);
 
@@ -81,7 +106,7 @@ export default function Home() {
     }
 
     updateVideoSources();
-  }, [status, promptId]);
+  }, [status, promptId, mockMode, mockVideosBaseUrl]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({behavior: "smooth"});
@@ -98,9 +123,10 @@ export default function Home() {
           <PersonaSelector
             selectedPersona={personaLevel}
             onPersonaChange={setPersonaLevel}
+            className="cursor-pointer"
           />
           <Link href="/admin">
-            <Button>
+            <Button className="cursor-pointer">
               <User className="w-4 h-4 mr-2" />
               Admin
             </Button>
@@ -148,19 +174,30 @@ export default function Home() {
                   className="grid grid-cols-1 md:grid-cols-3 gap-6"
                 >
                   <VideoPlayer
+                    ref={videoPlayerRef}
                     sources={sources}
                     onBeforeNext={() => {
                       console.log("next slide");
                       slidevRef.current?.next();
                     }}
                   />
-                  <Card className="p-8 bg-card border-border md:col-span-2">
-                    <SlidevEmbed
-                      baseUrl={`http://localhost:30608/web/${promptId}`}
-                      className="h-98"
-                      ref={slidevRef}
-                    />
-                  </Card>
+                    <Card className="p-4 bg-card border-border md:col-span-2">
+                      <SlidevEmbed
+                        baseUrl={mockMode && mockSlidesUrl ? mockSlidesUrl : `http://localhost:30608/web/${promptId}`}
+                        className="h-98"
+                        ref={slidevRef}
+                        />
+                        <div className="flex flex-row gap-4">
+                          <Button
+                            onClick={() => handlePrevSlide()}
+                            disabled={videoPlayerRef.current?.getIndex() === 0}
+                          >Prev</Button>
+                          <Button
+                            onClick={() => handleNextSlide()}
+                            disabled={videoPlayerRef.current?.getIndex() === status.stepsAvatarGeneration.length - 1}
+                          >Next</Button>
+                        </div>
+                    </Card>
                 </div>
               )}
             </div>

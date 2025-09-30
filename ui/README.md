@@ -87,4 +87,7 @@ The following configuration options are available (using environment variables)
 | Environment Variable          | Description                                                                                         | Default value                        |
 |-------------------------------|-----------------------------------------------------------------------------------------------------|--------------------------------------|
 | `NEXT_PUBLIC_ORPHEUS_DEBUG`               | Displays additional infos in the UI for debugging                |                                      |
+| `NEXT_PUBLIC_MOCK_MODE`        | Enable mock mode to use static URLs and avoid all backend requests ("true"/"1" to enable) |                                      |
+| `NEXT_PUBLIC_MOCK_VIDEOS_BASE_URL` | Base URL for mock videos; each video is fetched as `${BASE_URL}{index}.mp4` (e.g., 0.mp4, 1.mp4) |                                      |
+| `NEXT_PUBLIC_MOCK_SLIDES_URL`  | Full base URL for the slides embed (the URL you would normally pass as Slidev baseUrl)     |                                      |
 
