@@ -30,6 +30,10 @@ class VideoTopicModellingService:
     def _assemble_segments(self, sentences: List[tuple[int, str]], segments_json: Dict[str, List[SegmentRange]]) -> Dict[str, List[SegmentContent]]:
         idx_to_sent = {i: s for i, s in sentences}
         out: List[SegmentContent] = []
+
+        if len(idx_to_sent) == 0:
+            return {"segments": []}
+
         for seg in segments_json["segments"]:
             chunk = " ".join(idx_to_sent[i] for i in range(seg["start_idx"], seg["end_idx"] + 1))
             out.append({"title": seg["title"], "video_chunk": chunk})
