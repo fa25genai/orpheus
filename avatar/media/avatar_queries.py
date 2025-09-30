@@ -25,7 +25,8 @@ def get_latest_image_for_course_slot(db: Session, course_id: str, slot: Optional
     avatar = db.query(Avatar).filter(Avatar.course_id == course_id, Avatar.slot == the_slot.value).first()
     if not avatar or not avatar.images:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No image found for given courseId and slot")
-    return sorted(avatar.images, key=lambda i: i.created_at or datetime.min, reverse=True)[0]
+    images: List[AvatarImage] = list(avatar.images)
+    return sorted(images, key=lambda i: i.created_at or datetime.min, reverse=True)[0]
 
 
 def get_latest_audio_for_course_slot(db: Session, course_id: str, slot: Optional[str]) -> AvatarAudio | None:
@@ -55,7 +56,7 @@ def get_avatars_by_course(
         the_slot = _normalize_slot(slot)
         q = q.filter(Avatar.slot == the_slot.value)
 
-    avatars = q.order_by(Avatar.created_at.desc()).all()
+    avatars: List[Avatar] = list(q.order_by(Avatar.created_at.desc()).all())
 
     if not avatars:
         raise HTTPException(status_code=404, detail="No avatars found for the given criteria")
@@ -64,8 +65,10 @@ def get_avatars_by_course(
     for a in avatars:
         if not a.images or not a.audios:
             continue
-        image = sorted(a.images, key=lambda x: x.created_at or datetime.min, reverse=True)[0]
-        audio = sorted(a.audios, key=lambda x: x.created_at or datetime.min, reverse=True)[0]
+        images: List[AvatarImage] = list(a.images)
+        audios: List[AvatarAudio] = list(a.audios)
+        image = sorted(images, key=lambda x: x.created_at or datetime.min, reverse=True)[0]
+        audio = sorted(audios, key=lambda x: x.created_at or datetime.min, reverse=True)[0]
 
         results.append(
             AvatarCreatedResponse(
