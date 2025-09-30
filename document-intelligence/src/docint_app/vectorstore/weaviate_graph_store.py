@@ -41,7 +41,6 @@ from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 import requests
 import weaviate
 from weaviate.classes.query import Filter, MetadataQuery
-from weaviate.connect import ConnectionParams
 
 
 class WeaviateError(RuntimeError):
@@ -383,7 +382,7 @@ class WeaviateGraphStore:
           3. Filtering out any slides that do not meet the `similarity_threshold`.
           4. Ranking the remaining relevant slides and returning the top-k.
         """
-        print(f"[DEBUG] search_slides_fused_with_images called with:")
+        print("[DEBUG] search_slides_fused_with_images called with:")
         print(f"  - course_id: {course_id}")
         print(f"  - k: {k}")
         print(f"  - alpha: {alpha}")
@@ -412,7 +411,7 @@ class WeaviateGraphStore:
           }}
         }}
         """
-        print(f"[DEBUG] GraphQL query for slides:")
+        print("[DEBUG] GraphQL query for slides:")
         print(gql_slides)
 
         res_slides = self._post("/v1/graphql", {"query": gql_slides})
@@ -452,7 +451,7 @@ class WeaviateGraphStore:
           }}
         }}
         """
-        print(f"[DEBUG] GraphQL query for images:")
+        print("[DEBUG] GraphQL query for images:")
         print(gql_images)
 
         res_images = self._post("/v1/graphql", {"query": gql_images})
@@ -605,22 +604,22 @@ class WeaviateGraphStore:
         """
         Simple implementation using weaviate client to search slides and their images.
         """
-        print(f"[WeaviateClientSearch] Starting client_search_slides_fused_with_images")
-        print(f"[WeaviateClientSearch] Parameters:")
+        print("[WeaviateClientSearch] Starting client_search_slides_fused_with_images")
+        print("[WeaviateClientSearch] Parameters:")
         print(f"[WeaviateClientSearch]   - course_id: {course_id}")
         print(f"[WeaviateClientSearch]   - k: {k}")
         print(f"[WeaviateClientSearch]   - query_vector length: {len(query_vector) if query_vector else 'None'}")
 
         if not course_id:
-            print(f"[WeaviateClientSearch] ERROR: course_id is empty or None")
+            print("[WeaviateClientSearch] ERROR: course_id is empty or None")
             raise ValueError("course_id is required and cannot be None or empty")
 
-        print(f"[WeaviateClientSearch] Getting weaviate client...")
+        print("[WeaviateClientSearch] Getting weaviate client...")
         client = get_weaviate_client()
         print(f"[WeaviateClientSearch] Client obtained: {type(client)}")
 
         # Search slides using client
-        print(f"[WeaviateClientSearch] Building slide query...")
+        print("[WeaviateClientSearch] Building slide query...")
         print(f"[WeaviateClientSearch] Query vector first 5 elements: {query_vector[:5] if len(query_vector) >= 5 else query_vector}")
 
         slides = client.collections.get("Slide")
@@ -641,7 +640,7 @@ class WeaviateGraphStore:
         print(slide_hits_document_ids)
 
         if len(slide_hits_document_ids) == 0:
-            print(f"[WeaviateClientSearch] No slide hits found, returning empty list")
+            print("[WeaviateClientSearch] No slide hits found, returning empty list")
             return []
 
         slide_image_query = slideImages.query.fetch_objects(filters=Filter.any_of([Filter.all_of([Filter.by_property("documentId").equal(doc_id), Filter.by_property("slideNo").equal(slide_no)]) for doc_id, slide_no in slide_hits_document_ids]))
@@ -654,7 +653,7 @@ class WeaviateGraphStore:
             print(f"[WeaviateClientSearch]     ImageBase64 length: {len(img.properties.get('imageBase64', '') or '')}")
 
             # build output
-        print(f"[WeaviateClientSearch] Building final results...")
+        print("[WeaviateClientSearch] Building final results...")
         final_results = []
 
         # Group images by (documentId, slideNo)
@@ -699,9 +698,9 @@ class WeaviateGraphStore:
 
             final_results.append(result_slide)
 
-        print(f"[WeaviateClientSearch] Completed processing all slides")
+        print("[WeaviateClientSearch] Completed processing all slides")
         print(f"[WeaviateClientSearch] Final results count: {len(final_results)}")
-        print(f"[WeaviateClientSearch] Final results summary:")
+        print("[WeaviateClientSearch] Final results summary:")
         for i, result in enumerate(final_results):
             distance = result.get("distance")
             similarity = result.get("similarity")
