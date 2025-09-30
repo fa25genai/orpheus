@@ -8,13 +8,23 @@ from dotenv import load_dotenv
 
 import service_core.services.fetch_mock_data as mock_service
 from service_core.impl.tracker import tracker
+from service_core.models.docint.batch_retrieval_request import BatchRetrievalRequest
+from service_core.models.docint.batch_retrieval_response import BatchRetrievalResponse
+from service_core.models.docint.retrieval_response import RetrievalResponse
 from service_core.models.prompt_request import PromptRequest
+from service_core.models.slides.generation_accepted_response import (
+    GenerationAcceptedResponse,
+)
+from service_core.models.slides.request_slide_generation_request import (
+    RequestSlideGenerationRequest,
+)
 from service_core.models.user_profile import UserProfile
 from service_core.services import (
     decompose_input,
     narration_generation,
     script_generation,
 )
+from service_core.services.script_generation import LectureScriptWithAssets
 from service_core.services.user_summary import summarize_content_with_llama
 from service_status.models.status_patch import StatusPatch
 from service_status.models.step_status import StepStatus
@@ -92,7 +102,7 @@ async def send_summary_to_endpoint(
 
 async def summarize_and_send(
     prompt_id: str,
-    content: List[Dict[str, Any]],
+    content: List[RetrievalResponse],
     client: httpx.AsyncClient,
     user_prompt: str,
 ) -> None:
@@ -113,23 +123,25 @@ async def query_document_intelligence(
     client: httpx.AsyncClient,
     prompt_id: str,
     prompt_request: PromptRequest,
-) -> List[Dict[str, Any]]:
+) -> List[RetrievalResponse]:
     tracker.log("Querying document intelligence")
     try:
         await update_status(
             prompt_id, StatusPatch(stepLookup=StepStatus.IN_PROGRESS), client
         )
 
+        req = BatchRetrievalRequest(promptQueries=subqueries)
+
         di_response = await client.post(
             f"{DI_API_URL}/v1/retrieval/{prompt_request.course_id}/batch",
-            json={"promptQueries": subqueries},
+            json=req.model_dump(mode="json"),
             timeout=300.0,
         )
         di_response.raise_for_status()
-        di_data: List[Dict[str, Any]] = di_response.json().get("results", [])
-        logger.debug(f"DI Response: {di_data}")
+        resp = BatchRetrievalResponse.from_dict(di_response.json())
+        logger.debug(f"DI Response: {resp}")
         await update_status(prompt_id, StatusPatch(stepLookup=StepStatus.DONE), client)
-        return di_data
+        return resp.results
     except Exception as exception:
         logger.error(
             f"Error querying Document Intelligence for prompt {prompt_id}",
@@ -142,11 +154,11 @@ async def query_document_intelligence(
 
 
 async def generate_script(
-    retrieved_content: List[Dict[str, Any]],
+    retrieved_content: List[RetrievalResponse],
     prompt_id: str,
     prompt_request: PromptRequest,
     client: httpx.AsyncClient,
-) -> Dict[str, Any]:
+) -> LectureScriptWithAssets:
     try:
         tracker.log("Generating script")
         await update_status(
@@ -160,7 +172,7 @@ async def generate_script(
             raise ValueError("User persona must be defined")
 
         if DEBUG:
-            output: Dict[str, Any] = mock_service.create_script()
+            output: LectureScriptWithAssets = mock_service.create_script()
             await update_status(
                 prompt_id,
                 StatusPatch(stepLectureScriptGeneration=StepStatus.DONE),
@@ -168,7 +180,7 @@ async def generate_script(
             )
             return output
 
-        refined_output: Dict[str, Any] = script_generation.generate_script(
+        refined_output: LectureScriptWithAssets = script_generation.generate_script(
             retrieved_content, prompt_request.user_persona
         )
         await update_status(
@@ -178,12 +190,12 @@ async def generate_script(
         logger.error(
             f"Error generating script for prompt {prompt_id}", exc_info=exception
         )
-        refined_output = {}
         await update_status(
             prompt_id,
             StatusPatch(stepLectureScriptGeneration=StepStatus.FAILED),
             client,
         )
+        raise exception
 
     return refined_output
 
@@ -192,33 +204,32 @@ async def generate_slides(
     prompt_request: PromptRequest,
     prompt_id: str,
     lecture_script: str,
-    refined_output: Dict[str, Any],
+    refined_output: LectureScriptWithAssets,
     client: httpx.AsyncClient,
-) -> Dict[str, Any]:
+) -> GenerationAcceptedResponse:
     tracker.log("Generating slides")
     try:
         if prompt_request.user_persona is None:
             logger.error("User persona must be defined for voice scripts.")
             raise ValueError("User persona must be defined")
 
-        generate_slides_request_body = {
-            "courseId": prompt_request.course_id,
-            "promptId": str(prompt_id),
-            "lectureScript": lecture_script,
-            "user": prompt_request.user_persona.model_dump(mode="json"),
-            "assets": refined_output.get("assets", []),
-        }
+        generate_slides_request_body = RequestSlideGenerationRequest(
+            courseId=prompt_request.course_id,
+            promptId=prompt_id,
+            lectureScript=lecture_script,
+            user=prompt_request.user_persona.model_dump(mode="json"),
+            assets=refined_output.assets,
+        )
 
         logger.debug(f"generated slides request body: {generate_slides_request_body}")
 
         slides_response = await client.post(
             f"{SLIDES_API_URL}/v1/slides/generate",
-            json=generate_slides_request_body,
+            json=generate_slides_request_body.model_dump(mode="json"),
             timeout=300.0,
         )
         slides_response.raise_for_status()
-        slides_data: Dict[str, Any] = slides_response.json()
-        return slides_data
+        return GenerationAcceptedResponse(**slides_response.json())
     except Exception as exception:
         logger.error(
             f"Error generating slides for prompt {prompt_id}", exc_info=exception
@@ -228,12 +239,12 @@ async def generate_slides(
             StatusPatch(stepSlideStructureGeneration=StepStatus.FAILED),
             client,
         )
-        return {}
+        raise exception
 
 
 async def generate_voice_scripts(
     lecture_script: str,
-    slides_data: Dict[str, Any],
+    slides_data: GenerationAcceptedResponse,
     user: UserProfile,
     client: httpx.AsyncClient,
     prompt_id: str,
@@ -333,8 +344,8 @@ async def process_prompt(prompt_id: str, prompt_request: PromptRequest) -> None:
             refined_output = await generate_script(
                 retrieved_content, prompt_id, prompt_request, client
             )
-            lecture_script = refined_output.get("lectureScript", "")
-            slides_data: Dict[str, Any] = await generate_slides(
+            lecture_script = refined_output.lecture_script
+            slides_data: GenerationAcceptedResponse = await generate_slides(
                 prompt_request, prompt_id, lecture_script, refined_output, client
             )
 
