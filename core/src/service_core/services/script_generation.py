@@ -13,16 +13,26 @@ Output format:
 }
 """
 
-import copy
 import json
 
 # -----------------------------
 # JSON helpers
 # -----------------------------
-from typing import Any, Dict, List, Tuple, cast
+from typing import Any, List, Tuple
 
+from pydantic import BaseModel, Field
+
+from service_core.models.slides.request_slide_generation_request_assets_inner import (
+    RequestSlideGenerationRequestAssetsInner,
+)
 from service_core.models.user_profile import UserProfile
-from service_core.services.helpers.handle_retrieved import convert_json_structure
+from service_core.models.docint.retrieval_response import (
+    RetrievalResponse as DocintRetrievalResponse,
+)
+from service_core.services.helpers.handle_retrieved import (
+    map_docint_file_to_slides_asset,
+    ContentWithAssets,
+)
 from service_core.services.helpers.llm import ask_llm
 
 
@@ -40,9 +50,24 @@ def try_parse_json(raw_response: str) -> Tuple[bool, Any]:
 # -----------------------------
 
 
+class ReducedAsset(BaseModel):
+    name: str
+    asset_description: str = Field(alias="assetDescription")
+
+
+class LectureScriptWithReducedAssets(BaseModel):
+    lecture_script: str = Field(default="", alias="lectureScript")
+    assets: List[ReducedAsset] = Field(default=[])
+
+
+class LectureScriptWithAssets(BaseModel):
+    lecture_script: str = Field(default="", alias="lectureScript")
+    assets: List[RequestSlideGenerationRequestAssetsInner] = Field(default=[])
+
+
 def generate_script_llm(
-    retrieved_content: List[Dict[str, Any]], persona: Any
-) -> Dict[str, Any]:
+    retrieved_content: List[ContentWithAssets], persona: Any
+) -> LectureScriptWithReducedAssets:
     if hasattr(persona, "dict"):
         persona_dict = persona.dict()
     elif hasattr(persona, "model_dump"):
@@ -53,7 +78,16 @@ def generate_script_llm(
     persona_dict["id"] = str(persona_dict["id"])
 
     persona_str = json.dumps(persona_dict, indent=2, ensure_ascii=False)
-    content_str = json.dumps(retrieved_content, indent=2, ensure_ascii=False)
+    content_str = json.dumps(
+        list(
+            map(
+                lambda content_with_assets: content_with_assets.build_desc_map(),
+                retrieved_content,
+            )
+        ),
+        indent=2,
+        ensure_ascii=False,
+    )
     prompt = f"""
         You are an expert AI assistant specializing in personalized educational content creation. Your purpose is to transform raw educational material into an engaging and effective lecture script tailored to a specific learner's profile.\n\n
         Your task is to synthesize the provided content into a single, coherent lecture script.
@@ -94,19 +128,24 @@ def generate_script_llm(
             raw_message = ask_llm(prompt)
 
             raw: str = str(raw_message)
-
-            # Clean the response: remove markdown and trim whitespace
-            if "```json" in raw:
-                raw = raw.split("```json")[1].split("```")[0]
-            elif "```" in raw:
-                raw = raw.split("```")[1].split("```")[0]
-
-            raw = raw.strip()
-
-            # Try to parse JSON
             success, result = try_parse_json(raw)
+
+            # print(f"\nBreak point (attempt {attempt + 1}): {raw}")
+
+            if not success:
+                # Clean the response: remove markdown and trim whitespace
+                if "```json" in raw:
+                    raw = raw.split("```json")[1].split("```")[0]
+                elif "```" in raw:
+                    raw = raw.split("```")[1].split("```")[0]
+
+                raw = raw.strip()
+
+                # Try to parse JSON
+                success, result = try_parse_json(raw)
             if success:
-                return cast(Dict[str, Any], result)
+                print(json.dumps(result, indent=2, ensure_ascii=False))
+                return LectureScriptWithReducedAssets(**result)
 
             # If it didn't work, this will raise JSONDecodeError and trigger retry
             # This is useful for debugging the raw output on failure.
@@ -126,34 +165,21 @@ def generate_script_llm(
 
 
 def generate_script(
-    content: List[Dict[str, Any]], persona: UserProfile
-) -> Dict[str, Any]:
-    retrieved_content: List[Dict[str, Any]] = convert_json_structure(content)
+    content: List[DocintRetrievalResponse], persona: UserProfile
+) -> LectureScriptWithAssets:
+    retrieved_content: List[ContentWithAssets] = map_docint_file_to_slides_asset(
+        content
+    )
+    asset_lookup = {
+        asset.name: asset for content in retrieved_content for asset in content.assets
+    }
 
-    # Create a lookup table for assets and a version of the content for the LLM
-    asset_lookup: Dict[str, Any] = {}
-    retrieved_content_for_llm = copy.deepcopy(retrieved_content)
-    for item in retrieved_content_for_llm:
-        if isinstance(item, dict):
-            # TODO reduce complexity, reduce nesting
-            if "assets" in item and isinstance(item["assets"], list):
-                for asset in item["assets"]:
-                    if isinstance(asset, dict) and "name" in asset:
-                        # Store the original asset data
-                        asset_lookup[asset["name"]] = {
-                            "mimeType": asset.get("mimeType"),
-                            "data": asset.get("data"),
-                        }
-                        # Remove bulky data for the LLM call
-                        asset.pop("mimeType", None)
-                        asset.pop("data", None)
-
-    generated_script = generate_script_llm(retrieved_content_for_llm, persona)
-
-    # Add mimetype and data back to the assets in the generated script
-    assets = generated_script.get("assets", [])
-    if assets:
-        for asset in assets:
-            if "name" in asset and asset["name"] in asset_lookup:
-                asset.update(asset_lookup[asset["name"]])
-    return generated_script
+    generated_script_with_assets = generate_script_llm(retrieved_content, persona)
+    return LectureScriptWithAssets(
+        lectureScript=generated_script_with_assets.lecture_script,
+        assets=[
+            asset_lookup[red_asset.name]
+            for red_asset in generated_script_with_assets.assets
+            if red_asset.name in asset_lookup
+        ],
+    )

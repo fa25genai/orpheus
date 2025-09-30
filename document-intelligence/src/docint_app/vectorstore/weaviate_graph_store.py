@@ -565,7 +565,7 @@ class WeaviateGraphStore:
     ) -> List[Dict[str, Any]]:
         """
         Simple implementation using weaviate client to search video chunks.
-        """
+"""
         print("[WeaviateClientSearch] Starting client_search_video_chunks")
         print("[WeaviateClientSearch] Parameters:")
         print(f"[WeaviateClientSearch]   - course_id: {course_id}")
@@ -657,7 +657,12 @@ class WeaviateGraphStore:
     def client_get_both_slides_and_video_chunks(self, *, query_vector: Sequence[float], course_id: Optional[str] = None, k: int = 5, similarity_threshold: float = 0.80) -> Dict[str, Any]:
         slide_hits = self.client_search_slides_fused_with_images(query_vector=query_vector, course_id=course_id, k=k, similarity_threshold=similarity_threshold)
 
-        video_chunk_hits = self.client_search_video_chunks(query_vector=query_vector, course_id=course_id, k=k, similarity_threshold=similarity_threshold)
+        video_chunk_hits = self.client_search_video_chunks(
+            query_vector=query_vector,
+            course_id=course_id,
+            k=k,
+            similarity_threshold=similarity_threshold
+        )
 
         print(f"Retrieved {len(slide_hits)} hits from store")
 
@@ -716,7 +721,10 @@ class WeaviateGraphStore:
 
     # Mapping to OpenAPI response shape
     @staticmethod
-    def to_retrieval_response(slide_hits: List[Dict[str, Any]] = None, video_chunk_hits: List[Dict[str, Any]] = None) -> Dict[str, Any]:
+    def to_retrieval_response(
+        slide_hits: List[Dict[str, Any]] = None,
+        video_chunk_hits: List[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
         """
         Convert slide hits and video chunk hits into your OpenAPI RetrievalResponse:
         {
@@ -743,12 +751,20 @@ class WeaviateGraphStore:
         # Add slides to combined list
         for slide in slide_hits:
             certainty = slide.get("certainty", 0.0)
-            combined_items.append({"type": "slide", "certainty": certainty, "item": slide})
+            combined_items.append({
+                "type": "slide",
+                "certainty": certainty,
+                "item": slide
+            })
 
         # Add video chunks to combined list
         for chunk in video_chunk_hits:
             certainty = chunk.get("certainty", 0.0)
-            combined_items.append({"type": "video_chunk", "certainty": certainty, "item": chunk})
+            combined_items.append({
+                "type": "video_chunk",
+                "certainty": certainty,
+                "item": chunk
+            })
 
         # Sort combined items by certainty score (highest first)
         combined_items.sort(key=lambda x: x["certainty"], reverse=True)
@@ -765,12 +781,10 @@ class WeaviateGraphStore:
                 for im in slide.get("images", []):
                     img_b64 = im.get("imageBase64")
                     if img_b64:
-                        images.append(
-                            {
-                                "image": img_b64,
-                                "description": im.get("description") or "",
-                            }
-                        )
+                        images.append({
+                            "image": img_b64,
+                            "description": im.get("description") or "",
+                        })
 
             elif item["type"] == "video_chunk":
                 chunk = item["item"]

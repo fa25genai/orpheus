@@ -15,6 +15,9 @@
 import json
 from typing import Any, Dict
 
+from service_core.models.slides.generation_accepted_response import (
+    GenerationAcceptedResponse,
+)
 from service_core.models.user_profile import UserProfile
 from service_core.services.helpers.debug import debug_print, enable_debug
 from service_core.services.helpers.llm import ask_llm
@@ -23,7 +26,7 @@ from service_core.services.helpers.loaders import load_prompt
 
 def generate_narrations(
     lecture_script: str,
-    example_slides: Dict[str, Any],
+    example_slides: GenerationAcceptedResponse,
     user_profile: UserProfile,
     debug: bool = False,
 ) -> Dict[str, Any]:
@@ -44,7 +47,10 @@ def generate_narrations(
         enable_debug()
 
     # slides_data = json.loads(example_slides.model_dump_json())
-    pages = example_slides["structure"]["pages"]
+    if not example_slides.structure:
+        raise Exception("No slide structure available")
+
+    pages = example_slides.structure.pages if example_slides.structure.pages else []
     narration_history = ""
     slide_messages = []
 
@@ -57,7 +63,7 @@ def generate_narrations(
     prompt_templates = json.loads(prompt_templates_json)
     print("\n\nGenerating page narrations:", len(pages), flush=True)
     for i, page in enumerate(pages):
-        page_content = page["content"]
+        page_content = page.content
         # Build the prompt using the templates
         prompt_parts = [
             prompt_templates["base_prompt"].format(user_profile=user_profile),
@@ -93,7 +99,7 @@ def generate_narrations(
     # Prepare output data with the actual user profile
     output_data: Dict[str, Any] = {
         "slideMessages": slide_messages,
-        "promptId": example_slides["promptId"],
+        "promptId": example_slides.prompt_id,
         "courseId": user_profile.enrolled_courses[0]
         if user_profile.enrolled_courses
         else None,
