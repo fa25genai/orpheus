@@ -67,7 +67,7 @@ export default function Home() {
     async function updateVideoSources() {
       if (status?.stepSlidePostprocessing !== "DONE") return;
 
-      const baseUrl = `http://localhost:3000/videos/jobs/${promptId}`; //TODO: change to promptId
+      const baseUrl = `http://localhost:3000/videos/jobs/${promptId}/`; //TODO: change to promptId
 
       const readyVideos: string[] = status.stepsAvatarGeneration
         .map(
