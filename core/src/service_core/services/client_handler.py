@@ -245,7 +245,7 @@ async def generate_slides(
 async def generate_voice_scripts(
     lecture_script: str,
     slides_data: GenerationAcceptedResponse,
-    user: UserProfile,
+    prompt_request: PromptRequest,
     client: httpx.AsyncClient,
     prompt_id: str,
 ) -> List[asyncio.Task[httpx.Response]]:
