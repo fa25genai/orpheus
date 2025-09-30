@@ -7,7 +7,7 @@ import os
 from typing import Any, Dict, List, Optional, TypedDict
 
 from docint_app.services.embedding_service import get_embedding_service
-from docint_app.services.video_topic_modelling_service import VideoTopicModellingService, get_video_topic_modelling_service
+from docint_app.services.video_topic_modelling_service import VideoTopicModellingService
 from docint_app.vectorstore.weaviate_graph_store import get_store
 
 

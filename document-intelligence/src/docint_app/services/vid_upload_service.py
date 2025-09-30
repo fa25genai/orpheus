@@ -4,22 +4,23 @@ Processes video files by generating transcription and storing video metadata
 and transcription text in a vector database.
 """
 
-import asyncio
 import os
 from datetime import datetime
 from pathlib import Path
-from typing import Optional, Tuple, Union, Dict, Any
 from threading import Lock
-from pydantic import StrictBytes, StrictStr 
+from typing import Any, Optional, Tuple, Union
+
+from pydantic import StrictBytes, StrictStr
+
+from docint_app.services.ingestion_service import IngestionService  # Annahme: Der existierende IngestionService
 
 # --- Importe der Kernkomponenten (Annahme basierend auf Ihrem Projektstruktur) ---
 # Import des Transkriptions- und Verarbeitungs-Service aus der vorherigen Antwort
-from docint_app.services.transcribe_video_service import get_transcriber_service, AzureVideoTranscriberService
-from docint_app.services.ingestion_service import IngestionService # Annahme: Der existierende IngestionService
+from docint_app.services.transcribe_video_service import AzureVideoTranscriberService, get_transcriber_service
 
 # --- Hilfsfunktion (zur thread-sicheren Ausgabe, beibehalten) ---
 print_lock = Lock()
-def safe_print(*args, **kwargs):
+def safe_print(*args: Any, **kwargs: Any) -> None:
     """Thread-sichere Ausgabe."""
     with print_lock:
         print(*args, **kwargs)
@@ -142,8 +143,6 @@ class VideoUploadService:
 
         if not course_id or not course_id.strip():
             raise ValueError("course_id must be a non-empty string")
-
-        video_path_temp = None
         
         try:
             # 1. Video-Bytes und Dateiname extrahieren
@@ -195,65 +194,3 @@ def get_upload_video_service() -> VideoUploadService:
     if _video_instance is None:
         _video_instance = VideoUploadService()
     return _video_instance
-
-_azure_transcriber_instance: Optional[AzureVideoTranscriberService] = None
-
-def get_transcriber_service() -> AzureVideoTranscriberService:
-    """Singleton accessor for AzureVideoTranscriberService"""
-    global _azure_transcriber_instance
-    if _azure_transcriber_instance is None:
-        _azure_transcriber_instance = AzureVideoTranscriberService(
-            max_workers=4,
-            chunk_duration_seconds=120
-        )
-    return _azure_transcriber_instance
-
-# Beispielnutzung (wie im PDF-Beispiel)
-async def main_video_example() -> None:
-    """Example usage of the VideoUploadService"""
-
-    # ⚠️ HINWEIS: Für diesen Test muss eine tatsächliche Videodatei existieren!
-    TEST_FILE_PATH = "vids/W01U02.mp4" 
-    
-    if not os.path.exists(TEST_FILE_PATH):
-        safe_print(f"\n🔴 ERROR: Testdatei '{TEST_FILE_PATH}' existiert nicht. Bitte 'TEST_FILE_PATH' anpassen.")
-        return
-
-    # Initialisiere Service
-    service = get_upload_video_service()
-
-    try:
-        # Simuliere Video-Upload (Sie würden dies von der API erhalten)
-        with open(TEST_FILE_PATH, "rb") as f:
-            video_bytes = f.read()
-
-        # Simulieren des Upload-Body-Formats
-        upload_body = (os.path.basename(TEST_FILE_PATH), video_bytes)
-
-        document_id = await service.upload_video(course_id="CS101_Video_Lecture", body=upload_body)
-
-        safe_print("=" * 50)
-        safe_print("VIDEO UPLOAD COMPLETE")
-        safe_print("=" * 50)
-        safe_print(f"Document ID: {document_id}")
-        safe_print("✅ Video uploaded successfully!")
-
-    except Exception as e:
-        safe_print(f"Upload failed: {e}")
-
-
-if __name__ == "__main__":
-    # Erstellen Sie eine Dummy-Implementierung für die Abhängigkeiten, falls diese nicht vorhanden sind
-    # DIES IST NUR FÜR DAS LAUFEN DES BEISPIELS NOTWENDIG, NICHT FÜR DIE SERVICE-KLASSE SELBST
-    class MockIngestionService:
-        def __init__(self, base_url):
-            safe_print(f"Mock Ingestion Service initialisiert: {base_url}")
-        async def ingest(self, **kwargs):
-            safe_print(f"Mock Ingestion: Daten für {kwargs['document_id']} erhalten. Textlänge: {len(kwargs['slide_texts'][0]) if kwargs.get('slide_texts') else 0}")
-            safe_print(f"Metadata: {kwargs.get('metadata')}")
-
-    # Überschreibe die echten Importe für den Testfall
-    from unittest.mock import patch
-    with patch('docint_app.services.ingestion_service.IngestionService', MockIngestionService):
-        # Der VideoProcessingService MUSS die echte Azure-Logik enthalten, um die Transkription durchzuführen.
-        asyncio.run(main_video_example())

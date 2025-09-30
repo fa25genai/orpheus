@@ -6,12 +6,12 @@ unter Verwendung von FFmpeg und Azure OpenAI's Whisper-Modell.
 import os
 import subprocess
 import time
-from openai import AzureOpenAI, RateLimitError
-from pathlib import Path
-from dotenv import load_dotenv
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from threading import Lock
-from typing import Optional, List, Tuple, Dict, Any
+from typing import Any, Dict, Optional, Tuple
+
+from dotenv import load_dotenv
+from openai import AzureOpenAI, RateLimitError
 
 # Laden der Umgebungsvariablen
 load_dotenv() 
@@ -19,7 +19,7 @@ load_dotenv()
 # --- Thread-safe print Mechanism ---
 print_lock = Lock()
 
-def safe_print(*args, **kwargs):
+def safe_print(*args: Any, **kwargs: Any) -> None:
     """Thread-sichere Ausgabe."""
     with print_lock:
         print(*args, **kwargs)
@@ -43,12 +43,12 @@ class AzureVideoTranscriberService:
     _MAX_RETRIES = 3 # Max. Anzahl der Wiederholungen
 
     def __init__(self, 
-                 endpoint: str = None, 
-                 deployment_name: str = None, 
-                 api_version: str = None,
-                 max_workers: int = None,
-                 chunk_duration_seconds: int = None,
-                 max_retries: int = None):
+                 endpoint: Optional[str] = None, 
+                 deployment_name: Optional[str] = None, 
+                 api_version: Optional[str] = None,
+                 max_workers: Optional[int] = None,
+                 chunk_duration_seconds: Optional[int] = None,
+                 max_retries: Optional[int] = None):
         
         # Konfiguration übernehmen oder Standardwerte verwenden
         self.endpoint = endpoint or self._AZURE_OPENAI_ENDPOINT
@@ -118,7 +118,7 @@ class AzureVideoTranscriberService:
                         model=self.deployment_name,
                         file=audio_file,
                     )
-                return result.text
+                return str(result.text)
 
             except RateLimitError:
                 if attempt < self.max_retries - 1:
@@ -141,6 +141,7 @@ class AzureVideoTranscriberService:
                         return f"[Error: RateLimitError nach {self.max_retries} Wiederholungen]"
                 else:
                     return f"Ein unbehandelter Fehler bei der Transkription ist aufgetreten: {e}"
+        return "[Error: Unbekannter Fehler bei der Transkription]"
 
     def _process_chunk(self, video_path: str, chunk_info: Tuple[int, float, float, str]) -> Tuple[int, str]:
         """Verarbeitet einen einzelnen Chunk: extrahiert, transkribiert, räumt auf."""
@@ -185,7 +186,7 @@ class AzureVideoTranscriberService:
         workers = max_workers if max_workers is not None else self.max_workers
         
         try:
-            safe_print(f"Rufe Videodauer ab...")
+            safe_print("Rufe Videodauer ab...")
             total_duration = self._get_video_duration(video_path)
             safe_print(f"Gesamtdauer: {total_duration:.2f} Sekunden")
         except Exception as e:
