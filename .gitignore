@@ -218,3 +218,5 @@ ui/next-env.d.ts
 .DS_Store
 avatar/.DS_Store
 avatar/assets/.DS_Store
+
+.env

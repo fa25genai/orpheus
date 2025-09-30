@@ -1,3 +1,8 @@
 src/tmp/*
-src/test/*.py
+src/docint_app/test/*.py
+lectureSlides/*
+test/*
 .env
+*.pdf
+*.log
+*.txt

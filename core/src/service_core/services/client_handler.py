@@ -101,7 +101,7 @@ async def summarize_and_send(
         if DEBUG:
             summary = "A for loop is a control flow statement that allows code to be executed repeatedly, typically used to iterate over sequences or iterable objects.\n\nIt features a basic syntax that specifies an item variable and an iterable collection of objects, such as a list or tuple.\n\nFor loops can be nested.\n\nThey often utilize functions like range() to generate number sequences.\n\nFlow control options include break to exit the loop prematurely, and continue to skip the current iteration.\n\nAn else block can be added, which executes after the loop finishes unless the loop was terminated by a break."
             await send_summary_to_endpoint(prompt_id, summary, client)
-            return        
+            return
         summary = summarize_content_with_llama(content, user_prompt)
         await send_summary_to_endpoint(prompt_id, summary, client)
     except Exception as e:
@@ -127,6 +127,7 @@ async def query_document_intelligence(
         )
         di_response.raise_for_status()
         di_data: List[Dict[str, Any]] = di_response.json().get("results", [])
+        logger.debug(f"DI Response: {di_data}")
         await update_status(prompt_id, StatusPatch(stepLookup=StepStatus.DONE), client)
         return di_data
     except Exception as exception:
@@ -240,13 +241,13 @@ async def generate_voice_scripts(
 ) -> List[asyncio.Task[httpx.Response]]:
     tracker.log("Generating voice script")
     try:
-        voice_track: Dict[str, Any]
+        voice_script: Dict[str, Any]
         tasks: List[asyncio.Task[httpx.Response]] = []
         if DEBUG:
             for i in range(14):
-                voice_track = mock_service.create_voice_script(i)
-                logger.debug(f"voice track: {voice_track}")
-                task = generate_avatar_video(voice_track, i, client)
+                voice_script = mock_service.create_voice_script(i)
+                logger.debug(f"voice script: {voice_script}")
+                task = generate_avatar_video(voice_script, i, client)
                 if task:
                     tasks.append(task)
             return tasks
@@ -255,12 +256,12 @@ async def generate_voice_scripts(
         logger.debug(f"lecture script: {lecture_script}")
         logger.debug(f"slides data: {slides_data}")
 
-        voice_track = narration_generation.generate_narrations(
+        voice_script = narration_generation.generate_narrations(
             lecture_script, slides_data, user
         )
 
-        slides = voice_track.get("slideMessages", [])
-        voice_track_request = VoiceTrackResponse(
+        slides = voice_script.get("slideMessages", [])
+        voice_script_request = VoiceTrackResponse(
             promptId=prompt_id,
             courseId=course_id,
             voiceTrack="",
@@ -268,10 +269,10 @@ async def generate_voice_scripts(
             userProfile=user,
         )
         for index, slide_data in enumerate(slides):
-            voice_track_request.slideNumber = index
-            voice_track_request.voiceTrack = slide_data
+            voice_script_request.slideNumber = index
+            voice_script_request.voiceTrack = slide_data
             task = generate_avatar_video(
-                voice_track_request.model_dump(mode="json"), index, client
+                voice_script_request.model_dump(mode="json"), index, client
             )
             if task:
                 tasks.append(task)
@@ -283,12 +284,13 @@ async def generate_voice_scripts(
 
 
 async def avatar_video_producer(
-    voice_track: Dict[str, Any], client: httpx.AsyncClient
+    voice_script: Dict[str, Any], client: httpx.AsyncClient
 ) -> httpx.Response:
     try:
+        logger.debug(f"Request to avatar of type {type(voice_script)}: {voice_script}")
         avatar_response = await client.post(
             f"{AVATAR_API_URL}/v1/video/generate",
-            json=voice_track,
+            json=voice_script,
             timeout=300.0,
         )
         return avatar_response
@@ -299,12 +301,12 @@ async def avatar_video_producer(
 
 # TODO return Optional instead of response
 def generate_avatar_video(
-    voice_track: Dict[str, Any], index: int, client: httpx.AsyncClient
+    voice_script: Dict[str, Any], index: int, client: httpx.AsyncClient
 ) -> Union[asyncio.Task[httpx.Response], None]:
     logger.info(f"Generating avatar video for slide {index}")
     try:
         task: asyncio.Task[httpx.Response] = asyncio.create_task(
-            avatar_video_producer(voice_track, client)
+            avatar_video_producer(voice_script, client)
         )
         return task
     except Exception as exception:
@@ -359,3 +361,10 @@ async def process_prompt(prompt_id: str, prompt_request: PromptRequest) -> None:
         logger.error(
             f"Failed processing for {prompt_id}: {exception}", exc_info=exception
         )
+
+        if "[Errno 8] nodename nor servname provided, or not known" in str(exception):
+            logger.error(
+                "This usually means the service hostname is incorrect or unreachable. "
+                "If you started the server as docker component make sure the URLs for DI_API_URL are referencing docker addresses (e.g. http://docint:25565). "
+                "If you started the server as standalone make sure the URLs for DI_API_URL are pointing to the correct host and port (e.g. http://localhost:25565)."
+            )
