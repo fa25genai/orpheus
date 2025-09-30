@@ -1,14 +1,19 @@
 "use client";
 import {Badge} from "@/components/ui/badge";
 import {Button} from "@/components/ui/button";
-import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs";
 import {
   ArrowLeft,
   CircleUser,
   FileText,
   File,
-  Mic,
   Video,
   Volume2,
 } from "lucide-react";
@@ -20,6 +25,7 @@ import {docintApi} from "../api-clients";
 import {makeUploadHandler, makeRemoveHandler} from "@/helper/upload-helper";
 import {courseId} from "@/data/course";
 import {AvatarUpload} from "@/components/avatar-upload";
+import {AudioUpload} from "@/components/audio-upload";
 
 export default function Admin() {
   const [activeTab, setActiveTab] = useState("material");
@@ -27,8 +33,6 @@ export default function Admin() {
   // State for each file type
   const [slides, setSlides] = useState<UploadedFile[]>([]);
   const [videos, setVideos] = useState<UploadedFile[]>([]);
-  const [audio, setAudio] = useState<UploadedFile[]>([]);
-
   // --------------------
   // Handlers for Slides
   // --------------------
@@ -57,19 +61,6 @@ export default function Admin() {
   });
 
   const handleVideosRemove = makeRemoveHandler(setVideos, async (file) => {
-    console.log(file);
-    await new Promise((r) => setTimeout(r, 500));
-  });
-
-  // --------------------
-  // Handlers for Audio
-  // --------------------
-  const handleAudioUpload = makeUploadHandler(setAudio, async (file) => {
-    await new Promise((r) => setTimeout(r, 1000));
-    return {documentId: "audio-" + file.name};
-  });
-
-  const handleAudioRemove = makeRemoveHandler(setAudio, async (file) => {
     console.log(file);
     await new Promise((r) => setTimeout(r, 500));
   });
@@ -160,6 +151,10 @@ export default function Admin() {
             <Card>
               <CardHeader>
                 <CardTitle>Upload your Avatar</CardTitle>
+                <CardDescription>
+                  In order to replace Avatars when there are there just Upload a
+                  new Avatar
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <AvatarUpload />
@@ -174,18 +169,7 @@ export default function Admin() {
                 <CardTitle>Upload your Audio</CardTitle>
               </CardHeader>
               <CardContent>
-                <FileUpload
-                  files={audio}
-                  onUpload={handleAudioUpload}
-                  onRemove={handleAudioRemove}
-                  onFilesChange={setAudio}
-                  acceptedTypes={["audio/mpeg", "audio/wav", "audio/mp3"]}
-                  maxSize={100}
-                  multiple={true}
-                  icon={<Mic className="w-12 h-12 text-muted-foreground" />}
-                  title="Audio Samples"
-                  description="MP3, WAV"
-                />
+                <AudioUpload />
               </CardContent>
             </Card>
           </TabsContent>
