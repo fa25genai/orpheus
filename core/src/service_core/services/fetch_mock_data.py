@@ -17,7 +17,7 @@ def create_user() -> UserProfile:
                 expertiseLevel="beginner",
                 includePictures="few"
             ),
-            enrolled_courses=["SE001","cs001"]
+            enrolled_courses=["IN001"]
         )
     return demo_user
 
@@ -156,11 +156,10 @@ def create_voice_script(index=0) -> Dict[str, Any]:
     print("Slide: ", slides[index])
     voice_track_response = VoiceTrackResponse(
         promptId=create_slides()["promptId"],
-        courseId="cs001",
+        courseId="IN001",
         voiceTrack=slides[index],
         slideNumber=index,
-        userProfile=create_user(),
-        metadata=""
+        userProfile=create_user()
     )
     # response = json.loads(voice_track_response.model_dump_json(by_alias=True, exclude_unset=True))
     return voice_track_response.model_dump(mode="json")
