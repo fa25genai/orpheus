@@ -24,9 +24,9 @@ from .avatar_media import (
 )
 
 
-def _get_avatar_or_404(db: Session, course_id: UUID, slot: Optional[str]) -> Avatar:
+def _get_avatar_or_404(db: Session, course_id: str, slot: Optional[str]) -> Avatar:
     the_slot = _normalize_slot(slot) if slot is not None else CourseAvatarSlot.default
-    avatar = db.query(Avatar).filter(Avatar.course_id == str(course_id), Avatar.slot == the_slot.value).first()
+    avatar = db.query(Avatar).filter(Avatar.course_id == course_id, Avatar.slot == the_slot.value).first()
     if not avatar:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -66,7 +66,7 @@ def _latest_audio_or_none(items: Sequence[AvatarAudio] | list[AvatarAudio]) -> O
 
 def replace_avatar_image(
     db: Session,
-    course_id: UUID,
+    course_id: str,
     slot: Optional[str],
     image_file: UploadFile,
     delete_previous: bool = True,
@@ -126,7 +126,7 @@ def replace_avatar_image(
         return AvatarCreatedResponse(
             avatarId=UUID(avatar.avatar_id),
             name=avatar.name,
-            courseId=UUID(avatar.course_id) if avatar.course_id else None,
+            courseId=(avatar.course_id) if avatar.course_id else None,
             slot=CourseAvatarSlot(avatar.slot),
             createdAt=avatar.created_at,
             image=AvatarImageResponse(
@@ -159,7 +159,7 @@ def replace_avatar_image(
 
 def replace_avatar_audio(
     db: Session,
-    course_id: UUID,
+    course_id: str,
     slot: Optional[str],
     audio_file: UploadFile,
     delete_previous: bool = True,
