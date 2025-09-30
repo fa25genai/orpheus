@@ -7,7 +7,6 @@ import httpx
 from dotenv import load_dotenv
 
 import service_core.services.fetch_mock_data as mock_service
-from service_core.impl.tracker import tracker
 from service_core.models.docint.batch_retrieval_request import BatchRetrievalRequest
 from service_core.models.docint.batch_retrieval_response import BatchRetrievalResponse
 from service_core.models.docint.retrieval_response import RetrievalResponse
@@ -18,7 +17,6 @@ from service_core.models.slides.generation_accepted_response import (
 from service_core.models.slides.request_slide_generation_request import (
     RequestSlideGenerationRequest,
 )
-from service_core.models.user_profile import UserProfile
 from service_core.services import (
     decompose_input,
     narration_generation,
