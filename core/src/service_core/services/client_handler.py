@@ -260,19 +260,18 @@ async def generate_voice_scripts(
 
         slides = voice_track.get("slideMessages", [])
 
-        # TODO this should not be called response, this is quite confusing
-        voice_track_request = VoiceTrackResponse(
-            promptId=prompt_id,
-            courseId=prompt_request.course_id,
-            voiceTrack="",
-            slideNumber=0,
-            userProfile=prompt_request.user_persona,
-        )
         for index, slide_data in enumerate(slides):
-            voice_track_request.slideNumber = index
-            voice_track_request.voiceTrack = slide_data
+            # TODO this should not be called response, this is quite confusing
+            voice_track_request = VoiceTrackResponse(
+                promptId=prompt_id,
+                courseId=prompt_request.course_id,
+                voiceTrack=slide_data,
+                slideNumber=index,
+                userProfile=prompt_request.user_persona,
+            )
+
             task = generate_avatar_video(
-                voice_track_request.model_dump(mode="json"), index, client
+                voice_track_request, index, client
             )
             if task:
                 tasks.append(task)
@@ -284,12 +283,14 @@ async def generate_voice_scripts(
 
 
 async def avatar_video_producer(
-    voice_track: Dict[str, Any], client: httpx.AsyncClient
+    voice_track: VoiceTrackResponse, client: httpx.AsyncClient
 ) -> httpx.Response:
+    logger.info(f"Generating avatar video {voice_track.promptId}#{voice_track.slideNumber}")
     try:
+        logger.debug(f"voice track: {voice_track}")
         avatar_response = await client.post(
             f"{AVATAR_API_URL}/v1/video/generate",
-            json=voice_track,
+            json=voice_track.model_dump(mode="json"),
             timeout=300.0,
         )
         return avatar_response
@@ -300,7 +301,7 @@ async def avatar_video_producer(
 
 # TODO return Optional instead of response
 def generate_avatar_video(
-    voice_track: Dict[str, Any], index: int, client: httpx.AsyncClient
+    voice_track: VoiceTrackResponse, index: int, client: httpx.AsyncClient
 ) -> Union[asyncio.Task[httpx.Response], None]:
     logger.info(f"Generating avatar video for slide {index}")
     try:
