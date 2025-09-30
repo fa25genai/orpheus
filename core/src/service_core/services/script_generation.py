@@ -52,11 +52,8 @@ def generate_script_llm(
 
     persona_dict["id"] = str(persona_dict["id"])
 
-    # print("Refining lecture content for persona:")
     persona_str = json.dumps(persona_dict, indent=2, ensure_ascii=False)
-    # print(persona_str)
     content_str = json.dumps(retrieved_content, indent=2, ensure_ascii=False)
-    # print(content_str)
     prompt = f"""
         You are an expert AI assistant specializing in personalized educational content creation. Your purpose is to transform raw educational material into an engaging and effective lecture script tailored to a specific learner's profile.\n\n
         Your task is to synthesize the provided content into a single, coherent lecture script.
@@ -91,14 +88,12 @@ def generate_script_llm(
     ]
     }}
     """
-    # print(prompt)
     max_retries = 3
     for attempt in range(max_retries):
         try:
             raw_message = create_llm().invoke(prompt)
             content_obj = getattr(raw_message, "content", raw_message)
             raw: str = str(content_obj)
-            # print(f"\nBreak point (attempt {attempt + 1}): {raw}")
 
             # Clean the response: remove markdown and trim whitespace
             if "```json" in raw:
@@ -111,7 +106,6 @@ def generate_script_llm(
             # Try to parse JSON
             success, result = try_parse_json(raw)
             if success:
-                # print(json.dumps(result, indent=2, ensure_ascii=False))
                 return cast(Dict[str, Any], result)
 
             # If it didn't work, this will raise JSONDecodeError and trigger retry
@@ -140,11 +134,9 @@ def generate_script(
     asset_lookup: Dict[str, Any] = {}
     retrieved_content_for_llm = copy.deepcopy(retrieved_content)
     for item in retrieved_content_for_llm:
-        # print('a', flush=True)
         if isinstance(item, dict):
             # TODO reduce complexity, reduce nesting
             if "assets" in item and isinstance(item["assets"], list):
-                # print('b', flush=True)
                 for asset in item["assets"]:
                     if isinstance(asset, dict) and "name" in asset:
                         # Store the original asset data
@@ -157,14 +149,11 @@ def generate_script(
                         asset.pop("data", None)
 
     generated_script = generate_script_llm(retrieved_content_for_llm, persona)
-    # print("\n\nGenerate Script Output:", generated_script)
 
     # Add mimetype and data back to the assets in the generated script
     assets = generated_script.get("assets", [])
     if assets:
         for asset in assets:
-            # print("asset:", asset)
             if "name" in asset and asset["name"] in asset_lookup:
                 asset.update(asset_lookup[asset["name"]])
-    # print("\n\nFinal Generated Script with Assets:", json.dumps(generated_script, indent=2))
     return generated_script

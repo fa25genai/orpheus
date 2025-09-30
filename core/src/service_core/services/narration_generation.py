@@ -47,7 +47,6 @@ def generate_narrations(
 
     # slides_data = json.loads(example_slides.model_dump_json())
     pages = example_slides["structure"]["pages"]
-    # print("\n\npages:", pages, flush=True)
     narration_history = ""
     slide_messages = []
 
