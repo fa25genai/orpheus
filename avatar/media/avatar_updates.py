@@ -8,8 +8,8 @@ from typing import Optional, Sequence, cast
 from uuid import UUID
 
 from fastapi import HTTPException, UploadFile, status
-from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session
 
 from .avatar_media import (
     AVATARS_OUTPUT_DIR,
