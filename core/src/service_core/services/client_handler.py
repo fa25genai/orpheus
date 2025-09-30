@@ -282,7 +282,7 @@ async def generate_voice_scripts(
                 f"Received narration segment {slide_index}, scheduling avatar task."
             )
 
-            task = generate_avatar_video(voice_script_payload, slide_index, client)
+            task = generate_avatar_video(voice_script_payload, client)
             if task:
                 tasks.append(task)
 
