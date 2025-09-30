@@ -1,7 +1,7 @@
 from typing import List
 
 from service_core.models.docint.retrieval_response import RetrievalResponse
-from service_core.services.helpers.llm import ask_llm
+from service_core.services.llm_chain.azure_llm import azure_with_string_output
 
 
 def extract_text_content(data: List[RetrievalResponse]) -> str:
@@ -33,7 +33,7 @@ def summarize_content_with_llama(
     text_content = extract_text_content(retrieved_content)
     # print("Text content to summarize:", text_content, flush=True)
     prompt = f'Summarize the following content in 3-4 sentences. Only return the summary with respect to user query, do not preface with any explanation or heading. If there is insufficient information to answer the question **only** then answer "Query irrelevant to course content".\n\n{text_content}\n\nUser prompt: {user_prompt}'
-    user_summary: str = ask_llm(prompt)
+    user_summary: str = azure_with_string_output(prompt)
 
     if "query irrelevant" in user_summary.strip().lower():
         raise ValueError(f"LLM determined prompt '{user_prompt}' is irrelevant to the course content.")

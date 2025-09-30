@@ -33,7 +33,7 @@ from service_core.services.helpers.handle_retrieved import (
     map_docint_file_to_slides_asset,
     ContentWithAssets,
 )
-from service_core.services.helpers.llm import ask_llm
+from service_core.services.llm_chain.azure_llm import azure_with_structured_output
 
 
 def try_parse_json(raw_response: str) -> Tuple[bool, Any]:
@@ -129,31 +129,10 @@ def generate_script_llm(
     max_retries = 3
     for attempt in range(max_retries):
         try:
-            raw_message = ask_llm(prompt)
-
-            raw: str = str(raw_message)
-            success, result = try_parse_json(raw)
-
-            # print(f"\nBreak point (attempt {attempt + 1}): {raw}")
-
-            if not success:
-                # Clean the response: remove markdown and trim whitespace
-                if "```json" in raw:
-                    raw = raw.split("```json")[1].split("```")[0]
-                elif "```" in raw:
-                    raw = raw.split("```")[1].split("```")[0]
-
-                raw = raw.strip()
-
-                # Try to parse JSON
-                success, result = try_parse_json(raw)
-            if success:
-                print(json.dumps(result, indent=2, ensure_ascii=False))
-                return LectureScriptWithReducedAssets(**result)
-
-            # If it didn't work, this will raise JSONDecodeError and trigger retry
-            # This is useful for debugging the raw output on failure.
-            json.loads(raw)
+            result = azure_with_structured_output(
+                prompt,LectureScriptWithReducedAssets
+            )
+            return result
 
         except json.JSONDecodeError as e:
             print(f"JSON parsing error on attempt {attempt + 1}: {e}")

@@ -21,7 +21,7 @@ from service_core.models.slides.generation_accepted_response import (
 )
 from service_core.models.user_profile import UserProfile
 from service_core.services.helpers.debug import debug_print, enable_debug
-from service_core.services.helpers.llm import ask_llm
+from service_core.services.llm_chain.azure_llm import azure_with_string_output
 from service_core.services.helpers.loaders import load_prompt
 from service_core.services.services_models.voice_track import VoiceTrackResponse
 
@@ -92,7 +92,7 @@ async def generate_narrations(
 
         # Join all parts with newlines
         prompt = "\n\n".join(prompt_parts)
-        narration = await asyncio.to_thread(ask_llm, prompt)
+        narration = await asyncio.to_thread(azure_with_string_output, prompt)
 
         debug_print(f"--- Slide {i + 1} ---")
         debug_print(f"Content: {page_content}")
