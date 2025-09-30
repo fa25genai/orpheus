@@ -97,6 +97,8 @@ components:
           $ref: "#/components/schemas/StepStatus"
         stepSlideStructureGeneration:
           $ref: "#/components/schemas/StepStatus"
+        stepAudioScriptGeneration:
+          $ref: "#/components/schemas/StepStatus"
         stepSlideGeneration:
           type: integer
         stepSlidePostprocessing:
@@ -128,6 +130,7 @@ components:
         - stepLookup
         - stepLectureScriptGeneration
         - stepSlideStructureGeneration
+        - stepAudioScriptGeneration
         - stepSlideGeneration
         - stepSlidePostprocessing
         - stepsAvatarGeneration
@@ -139,6 +142,8 @@ components:
         stepLectureScriptGeneration:
           $ref: "#/components/schemas/StepStatus"
         stepSlideStructureGeneration:
+          $ref: "#/components/schemas/StepStatus"
+        stepAudioScriptGeneration:
           $ref: "#/components/schemas/StepStatus"
         stepSlideGeneration:
           type: integer

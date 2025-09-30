@@ -50,7 +50,6 @@ async def generate_narrations(
     if debug:
         enable_debug()
 
-
     # slides_data = json.loads(example_slides.model_dump_json())
     if not example_slides.structure:
         raise Exception("No slide structure available")
@@ -107,4 +106,4 @@ async def generate_narrations(
             userProfile=user_profile,
         )
 
-        yield voice_script_request.model_dump(mode="json") 
+        yield voice_script_request.model_dump(mode="json")

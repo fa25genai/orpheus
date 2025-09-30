@@ -34,6 +34,7 @@ class StatusPatch(BaseModel):
     step_lookup: Optional[StepStatus] = Field(default=None, alias="stepLookup")
     step_lecture_script_generation: Optional[StepStatus] = Field(default=None, alias="stepLectureScriptGeneration")
     step_slide_structure_generation: Optional[StepStatus] = Field(default=None, alias="stepSlideStructureGeneration")
+    step_audio_script_generation: Optional[StepStatus] = Field(default=None, alias="stepAudioScriptGeneration")
     step_slide_generation: Optional[StrictInt] = Field(default=None, alias="stepSlideGeneration")
     step_slide_postprocessing: Optional[StepStatus] = Field(default=None, alias="stepSlidePostprocessing")
     steps_avatar_generation: Optional[Dict[str, Any]] = Field(default=None, alias="stepsAvatarGeneration")
