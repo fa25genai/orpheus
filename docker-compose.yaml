@@ -134,11 +134,13 @@ services:
       context: ./avatar
       dockerfile: Dockerfile
     environment:
-      DEBUG: "debug"
+      DEBUG: "not debug"
       VIDEO_ROOT: "/data/jobs"
       PUBLIC_VIDEOS_BASE: "/videos/jobs"
       GEN_AUDIO: "https://gpu.aet.cit.tum.de/avatar/audio/v1/audio/generate"
       GEN_VIDEO: "https://gpu.aet.cit.tum.de/avatar/video/infer"
+      AVATARS_OUTPUT_DIR: "/data/avatars"
+      DATABASE_URL: "sqlite:////data/app.db"
     volumes:
       - avatar_file_storage:/data
     networks:

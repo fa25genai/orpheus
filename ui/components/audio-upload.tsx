@@ -107,7 +107,7 @@ export function AudioUpload() {
       <FileUpload
         files={audios.beginning}
         {...beginningHandlers}
-        acceptedTypes={["audio/wav", "audio/mp3", "audio/x-wav"]}
+        acceptedTypes={["audio/mpeg", "audio/mp3"]}
         maxSize={100}
         icon={<Mic className="w-12 h-12 text-muted-foreground" />}
         title="Beginning Audio"
@@ -119,7 +119,7 @@ export function AudioUpload() {
       <FileUpload
         files={audios.default}
         {...defaultHandlers}
-        acceptedTypes={["audio/wav", "audio/mp3", "audio/x-wav"]}
+        acceptedTypes={["audio/mpeg", "audio/mp3"]}
         maxSize={100}
         icon={<Mic className="w-12 h-12 text-muted-foreground" />}
         title="Default/Middle Audio"
@@ -131,7 +131,7 @@ export function AudioUpload() {
       <FileUpload
         files={audios.ending}
         {...endingHandlers}
-        acceptedTypes={["audio/wav", "audio/mp3", "audio/x-wav"]}
+        acceptedTypes={["audio/mpeg", "audio/mp3"]}
         maxSize={100}
         icon={<Mic className="w-12 h-12 text-muted-foreground" />}
         title="Ending Audio"

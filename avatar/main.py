@@ -8,7 +8,7 @@ from pathlib import Path
 from queue import Queue
 from threading import Event, Thread
 from time import sleep
-from typing import Any, Literal, Optional, Union
+from typing import Any, Dict, List, Literal, Optional
 from uuid import UUID
 
 # --- Third-party ---
@@ -327,7 +327,6 @@ def _purge_stale_jobs(now: Optional[datetime] = None) -> None:
 # ---------------------------
 # Audio / Video Generators
 # ---------------------------
-
 
 
 def generate_audio(
@@ -786,5 +785,6 @@ def get_generation_status(promptId: UUID) -> GenerationStatusResponse | JSONResp
         estimatedSecondsLeft=_eta_seconds(job),
         error=job.error,
     )
+
 
 # Run: uvicorn main:app --host 0.0.0.0 --port 8080 --reload

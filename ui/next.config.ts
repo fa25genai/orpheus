@@ -12,7 +12,7 @@ const nextConfig: NextConfig = {
       },
       {
         source: "/v1/:path*",
-        destination: "http://localhost:9000/v1/:path*",
+        destination: "http://avatar-video-producer:9000/v1/:path*",
       },
     ];
   },
