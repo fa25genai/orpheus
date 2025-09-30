@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "avatar-service"
+version = "0.1.0"
+description = "Service for creating lecturer avatar audio."
+authors = ["Orpheus Team"]
+package-mode = false
+
+[tool.poetry.dependencies]
+python = ">=3.10,<3.11"
+inflect = "*"
+fastapi = "*"
+pydantic = "*"
+uvicorn = "*"
+orjson = "*"
+python-multipart = "*"
+chatterbox-tts = { git = "https://github.com/fa25genai/chatterbox", rev = "8d5a4ce" }
+
+[build-system]
+requires = ["poetry-core>=2.2.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
