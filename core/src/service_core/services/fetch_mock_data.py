@@ -17,7 +17,7 @@ def create_user() -> UserProfile:
                 expertiseLevel="beginner",
                 includePictures="few"
             ),
-            enrolled_courses=["SE001","cs001"]
+            enrolled_courses=["IN001"]
         )
     return demo_user
 
