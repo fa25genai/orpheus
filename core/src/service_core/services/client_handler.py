@@ -101,25 +101,35 @@ async def summarize_and_send(prompt_id: str, content: List[Dict[str, Any]], clie
 
 
 async def query_document_intelligence(
-    subqueries: List[str], client: httpx.AsyncClient, prompt_id: str, prompt_request: PromptRequest
-) -> List[Dict[str, Any]]:
+    subqueries: List[str], client: httpx.AsyncClient, prompt_id: str, prompt_request: PromptRequest) -> List[Dict[str, Any]]:
     tracker.log("Querying document intelligence")
-    await update_status(prompt_id, StatusPatch(
-            stepLookup=StepStatus.IN_PROGRESS
-        ), client)
-    # if DEBUG:
-    if DEBUG:    # Remove when DI is ready with endpoint
-        return mock_service.create_retrieved_content()
-    print("Subqueries to DI: ", subqueries, flush=True)
+    try:
+        await update_status(prompt_id, StatusPatch(
+                stepLookup=StepStatus.IN_PROGRESS
+            ), client)
+        # if DEBUG:
+        if DEBUG:    # Remove when DI is ready with endpoint
+            return mock_service.create_retrieved_content()
+        print("Subqueries to DI: ", subqueries, flush=True)
 
-    di_response = await client.post(
-        f"{DI_API_URL}/v1/retrieval/{prompt_request.course_id}/batch",
-        json={"promptQueries": subqueries},
-        timeout=300.0,
-    )
-    di_response.raise_for_status()
-    di_data: List[Dict[str, Any]] = di_response.json().get("results", "")
-    return di_data
+        di_response = await client.post(
+            f"{DI_API_URL}/v1/retrieval/{prompt_request.course_id}/batch",
+            json={"promptQueries": subqueries},
+            timeout=300.0,
+        )
+        di_response.raise_for_status()
+        di_data: List[Dict[str, Any]] = di_response.json().get("results", "")
+        await update_status(prompt_id, StatusPatch(
+                stepLookup=StepStatus.DONE
+            ), client)
+        return di_data
+    except Exception as e:
+        print(f"Error querying Document Intelligence for prompt {prompt_id}: {e}", flush=True)
+        await update_status(prompt_id, StatusPatch(
+            stepLookup=StepStatus.FAILED
+        ), client)
+        return []
+    
 
 
 async def generate_script(retrieved_content: List[Dict[str, Any]], prompt_id: str, prompt_request: PromptRequest, client: httpx.AsyncClient) -> Dict[str, Any]:
