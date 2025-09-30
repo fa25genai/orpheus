@@ -442,7 +442,7 @@ def generate_video(
     # choose your static image
     source_path = source_image_path
     if not source_path or not Path(source_path).is_file():
-        print(f"[generate_video] Source image not found: {source_path}")
+        print(f"[generate_video] Source image not found: {source_path}; using fallback sample.")
         source_path = "/app/database/avatar_sample/image_michal.png"
     if not Path(source_path).is_file():
         print(f"[generate_video] Source image not found: {source_path}")

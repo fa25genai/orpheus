@@ -32,10 +32,8 @@ def get_latest_audio_for_course_slot(db: Session, course_id: Union[str, UUID], s
     the_slot = _normalize_slot(slot) if slot is not None else _normalize_slot("default")
     avatar = db.query(Avatar).filter(Avatar.course_id == str(course_id), Avatar.slot == the_slot.value).first()
     if not avatar or not getattr(avatar, "audios", None):
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="No audio found for given courseId and slot",
-        )
+        print("No audio found for given courseId and slot")
+        return None
 
     # If the relationship isn't statically typed, cast it for mypy
     audios: List[AvatarAudio] = cast(List[AvatarAudio], list(avatar.audios))
