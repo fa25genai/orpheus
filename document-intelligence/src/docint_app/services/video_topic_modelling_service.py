@@ -1,6 +1,6 @@
 import json
 import re
-
+from typing import no_type_check
 from docint_app.services.ollama_client_service import get_ollama_client
 
 
@@ -10,12 +10,12 @@ class VideoTopicModellingService:
         self.model = "llama3.3:latest"
         self.transcription = transcription
 
-    def _split_sentences(self, text: str):
+    def _split_sentences(self, text: str) -> list[tuple[int, str]]:
         raw = re.split(r'(?<=[.!?])\s+(?=[A-Z(""Oo0])', text.strip())
         sentences = [s.strip() for s in raw if s.strip()]
         return list(enumerate(sentences))
 
-    def _assemble_segments(self, sentences, segments_json): # type: ignore[no-untyped-def]
+    def _assemble_segments(self, sentences, segments_json) -> dict[str, list[dict[str, str]]]:
         idx_to_sent = {i: s for i, s in sentences}
         out = []
         for seg in segments_json["segments"]:
@@ -23,7 +23,7 @@ class VideoTopicModellingService:
             out.append({"title": seg["title"], "video_chunk": chunk})
         return {"segments": out}
 
-    def _chunk_with_ollama_ranges(self, sentences): # type: ignore[no-untyped-def]
+    def _chunk_with_ollama_ranges(self, sentences) -> str:
         system = (
             "You are an expert lecture segmenter.\n"
             "Task: Split the lecture into topic-based segments using the provided sentence list.\n"
@@ -62,12 +62,12 @@ class VideoTopicModellingService:
 
         return response['message']['content']
 
-    def extract_topics(self): # type: ignore[no-untyped-def]
+    def extract_topics(self) -> list[dict[str, str]]:
         sentences = self._split_sentences(self.transcription)
         raw = self._chunk_with_ollama_ranges(sentences)
         parsed = json.loads(raw)
-        final = self._assemble_segments(sentences, parsed) # dict with "segments" key and list of {title, video_chunk} vals
-        return final["segments"] # list of {title, video_chunk} dicts
+        final = self._assemble_segments(sentences, parsed)  # dict with "segments" key and list of {title, video_chunk} vals
+        return final["segments"]  # list of {title, video_chunk} dicts
 
 def get_video_topic_modelling_service(transcription: str) -> VideoTopicModellingService:
     return VideoTopicModellingService(transcription)
