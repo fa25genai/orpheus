@@ -1,0 +1,1 @@
+export const courseId = "IN001"

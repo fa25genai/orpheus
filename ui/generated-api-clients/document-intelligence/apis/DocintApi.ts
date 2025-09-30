@@ -16,10 +16,13 @@
 import * as runtime from '../runtime';
 import type {
   UploadResponse,
+  VideoUploadResponse,
 } from '../models/index';
 import {
     UploadResponseFromJSON,
     UploadResponseToJSON,
+    VideoUploadResponseFromJSON,
+    VideoUploadResponseToJSON,
 } from '../models/index';
 
 export interface DeletesDocumentRequest {
@@ -27,6 +30,11 @@ export interface DeletesDocumentRequest {
 }
 
 export interface UploadsDocumentRequest {
+    courseId: string;
+    body: Blob;
+}
+
+export interface UploadsVideoRequest {
     courseId: string;
     body: Blob;
 }
@@ -116,6 +124,53 @@ export class DocintApi extends runtime.BaseAPI {
      */
     async uploadsDocument(requestParameters: UploadsDocumentRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<UploadResponse> {
         const response = await this.uploadsDocumentRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * uploads a video file
+     */
+    async uploadsVideoRaw(requestParameters: UploadsVideoRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<VideoUploadResponse>> {
+        if (requestParameters['courseId'] == null) {
+            throw new runtime.RequiredError(
+                'courseId',
+                'Required parameter "courseId" was null or undefined when calling uploadsVideo().'
+            );
+        }
+
+        if (requestParameters['body'] == null) {
+            throw new runtime.RequiredError(
+                'body',
+                'Required parameter "body" was null or undefined when calling uploadsVideo().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'video/mp4';
+
+
+        let urlPath = `/v1/video/{courseId}`;
+        urlPath = urlPath.replace(`{${"courseId"}}`, encodeURIComponent(String(requestParameters['courseId'])));
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'POST',
+            headers: headerParameters,
+            query: queryParameters,
+            body: requestParameters['body'] as any,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => VideoUploadResponseFromJSON(jsonValue));
+    }
+
+    /**
+     * uploads a video file
+     */
+    async uploadsVideo(requestParameters: UploadsVideoRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<VideoUploadResponse> {
+        const response = await this.uploadsVideoRaw(requestParameters, initOverrides);
         return await response.value();
     }
 
