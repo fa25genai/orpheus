@@ -2,7 +2,7 @@ from typing import Tuple, Union
 
 from pydantic import StrictBytes, StrictStr
 
-from docint_app.vectorstore.weaviate_graph_store import get_store, get_weaviate_client
+from docint_app.vectorstore.weaviate_graph_store import get_store
 
 
 class MockVideoUploadService:
