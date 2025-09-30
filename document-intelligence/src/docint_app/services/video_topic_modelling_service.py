@@ -1,7 +1,19 @@
 import json
 import re
+from typing import Dict, List, TypedDict
 
 from docint_app.services.ollama_client_service import get_ollama_client
+
+
+class SegmentRange(TypedDict):
+    title: str
+    start_idx: int
+    end_idx: int
+
+
+class SegmentContent(TypedDict):
+    title: str
+    video_chunk: str
 
 
 class VideoTopicModellingService:
@@ -15,15 +27,15 @@ class VideoTopicModellingService:
         sentences = [s.strip() for s in raw if s.strip()]
         return list(enumerate(sentences))
 
-    def _assemble_segments(self, sentences, segments_json) -> dict[str, list[dict[str, str]]]:
+    def _assemble_segments(self, sentences: List[tuple[int, str]], segments_json: Dict[str, List[SegmentRange]]) -> Dict[str, List[SegmentContent]]:
         idx_to_sent = {i: s for i, s in sentences}
-        out = []
+        out: List[SegmentContent] = []
         for seg in segments_json["segments"]:
             chunk = " ".join(idx_to_sent[i] for i in range(seg["start_idx"], seg["end_idx"] + 1))
             out.append({"title": seg["title"], "video_chunk": chunk})
         return {"segments": out}
 
-    def _chunk_with_ollama_ranges(self, sentences) -> str:
+    def _chunk_with_ollama_ranges(self, sentences: List[tuple[int, str]]) -> str:
         system = (
             "You are an expert lecture segmenter.\n"
             "Task: Split the lecture into topic-based segments using the provided sentence list.\n"
@@ -60,9 +72,9 @@ class VideoTopicModellingService:
             options={"temperature": 0, "seed": 42, "raw": True}
         )
 
-        return response['message']['content']
+        return str(response['message']['content'])
 
-    def extract_topics(self) -> list[dict[str, str]]:
+    def extract_topics(self) -> List[SegmentContent]:
         sentences = self._split_sentences(self.transcription)
         raw = self._chunk_with_ollama_ranges(sentences)
         parsed = json.loads(raw)
