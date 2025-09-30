@@ -1,8 +1,8 @@
 /* tslint:disable */
 /* eslint-disable */
 /**
- * Answer Generation Service API
- * API for the Orpheus core orchestration. From the repository: \"The Orpheus System transforms static slides into interactive prompt videos with lifelike professor avatars, combining expressive narration, visual presence, and dynamic content to create engaging, personalized learning experiences.\" License: MIT (see repository). 
+ * Generation Status Service
+ * API for the Orpheus status orchestration. From the repository: \"The Orpheus System transforms static slides into interactive prompt videos with lifelike professor avatars, combining expressive narration, visual presence, and dynamic content to create engaging, personalized learning experiences.\" License: MIT (see repository). 
  *
  * The version of the OpenAPI document: 0.1.0
  * 
@@ -60,6 +60,12 @@ export interface StatusPatch {
     stepSlideStructureGeneration?: StepStatus;
     /**
      * 
+     * @type {StepStatus}
+     * @memberof StatusPatch
+     */
+    stepAudioScriptGeneration?: StepStatus;
+    /**
+     * 
      * @type {number}
      * @memberof StatusPatch
      */
@@ -113,6 +119,7 @@ export function StatusPatchFromJSONTyped(json: any, ignoreDiscriminator: boolean
         'stepLookup': json['stepLookup'] == null ? undefined : StepStatusFromJSON(json['stepLookup']),
         'stepLectureScriptGeneration': json['stepLectureScriptGeneration'] == null ? undefined : StepStatusFromJSON(json['stepLectureScriptGeneration']),
         'stepSlideStructureGeneration': json['stepSlideStructureGeneration'] == null ? undefined : StepStatusFromJSON(json['stepSlideStructureGeneration']),
+        'stepAudioScriptGeneration': json['stepAudioScriptGeneration'] == null ? undefined : StepStatusFromJSON(json['stepAudioScriptGeneration']),
         'stepSlideGeneration': json['stepSlideGeneration'] == null ? undefined : json['stepSlideGeneration'],
         'stepSlidePostprocessing': json['stepSlidePostprocessing'] == null ? undefined : StepStatusFromJSON(json['stepSlidePostprocessing']),
         'stepsAvatarGeneration': json['stepsAvatarGeneration'] == null ? undefined : json['stepsAvatarGeneration'],
@@ -136,6 +143,7 @@ export function StatusPatchToJSONTyped(value?: StatusPatch | null, ignoreDiscrim
         'stepLookup': StepStatusToJSON(value['stepLookup']),
         'stepLectureScriptGeneration': StepStatusToJSON(value['stepLectureScriptGeneration']),
         'stepSlideStructureGeneration': StepStatusToJSON(value['stepSlideStructureGeneration']),
+        'stepAudioScriptGeneration': StepStatusToJSON(value['stepAudioScriptGeneration']),
         'stepSlideGeneration': value['stepSlideGeneration'],
         'stepSlidePostprocessing': StepStatusToJSON(value['stepSlidePostprocessing']),
         'stepsAvatarGeneration': value['stepsAvatarGeneration'],

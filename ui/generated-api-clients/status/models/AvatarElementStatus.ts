@@ -1,8 +1,8 @@
 /* tslint:disable */
 /* eslint-disable */
 /**
- * Answer Generation Service API
- * API for the Orpheus core orchestration. From the repository: \"The Orpheus System transforms static slides into interactive prompt videos with lifelike professor avatars, combining expressive narration, visual presence, and dynamic content to create engaging, personalized learning experiences.\" License: MIT (see repository). 
+ * Generation Status Service
+ * API for the Orpheus status orchestration. From the repository: \"The Orpheus System transforms static slides into interactive prompt videos with lifelike professor avatars, combining expressive narration, visual presence, and dynamic content to create engaging, personalized learning experiences.\" License: MIT (see repository). 
  *
  * The version of the OpenAPI document: 0.1.0
  * 
