@@ -1,0 +1,7 @@
+PDF: ITP2425 W10U02 Domain specific languages.pdf
+Slide: 10
+Characters: 616
+Empty: False
+--------------------------------------------------
+
+Example: Smart Analyzer for Logs (S.E.A.L.)“correlation_id”:”01f97d55-517e-48c3-86c4-c8ae0fd92ca7”,“function”:”status”,“host”:”ip-172-31-16-5”,“message”:”Currently 0 Services are finished.”,“pid”:546,“service”:”Session”,“tid”:768,“time”:”2020-07-05T14:16:00.490692803+00:00”,“type”:”INFO”,“unit”:”DistributedMultistreamTranscodeservice”Node Memory Utilization%MaxAverageMin21:00:0021:05:0021:10:0021:15:0021:20:00@timestamp per 10 secondsNode CPU Utilization%MaxAverageMin21:00:0021:05:0021:10:0021:15:0021:20:00@timestamp per 10 seconds© 2024 Stephan KruscheIntroduction to Programming - W10 Programming Languages24

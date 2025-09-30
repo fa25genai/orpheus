@@ -1,0 +1,25 @@
+PDF: ITP2425 W10U02 Domain specific languages.pdf
+Slide: 20
+Characters: 699
+Empty: False
+--------------------------------------------------
+
+import org.json.*;
+import java.util.*;
+public class Movie {
+// ...
+// Deserialize: JSON -> Movie
+public Movie(JSONObject jsonObject) {
+imdbID = jsonObject.getString("imdbID");
+title = jsonObject.getString("title");
+simplePlot = jsonObject.getString("simplePlot");
+JSONArray genreJsonArray = jsonObject.getJSONArray("genres");
+genres = new String[genreJsonArray.length()];
+for (int i = 0; i < genreJsonArray.length(); i++) {
+genres[i] = genreJsonArray.getString(i);
+}
+year = jsonObject.getInt("year");
+rating = jsonObject.getString("rating");
+}
+JSON can be seen as a mixture of maps (JSONObject) and arrays (JSONArray)
+© 2024 Stephan Krusche Introduction to Programming - W10 Programming Languages 34

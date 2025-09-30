@@ -1,0 +1,275 @@
+{
+  "test_metadata": {
+    "start_time": "2025-09-28T18:01:00.060574",
+    "test_folder": "/Users/raj.vasani/Developer/fa25/orpheus/document-intelligence/test",
+    "test_name": "Ingestion Service Test",
+    "end_time": "2025-09-28T18:03:41.985200"
+  },
+  "tested_pdfs": [
+    {
+      "pdf_name": "ITP2425 W10U01 Overview.pdf",
+      "document_id": "ITP2425 W10U01 Overview",
+      "success": true,
+      "error": null,
+      "stage": "completed",
+      "file_size": 2069148,
+      "slides": [
+        {
+          "slide_no": 1,
+          "text": "Introduction to ProgrammingW10 Programming LanguagesStephan Krusche18 December 2024Technical Univers...",
+          "text_length": 115,
+          "images": 2
+        },
+        {
+          "slide_no": 2,
+          "text": "Schedule 1 16.11.24 Introduction 2 23.11.24 Control Flow in Programming 3 30.11.24 In-Depth Core Con...",
+          "text_length": 588,
+          "images": 0
+        },
+        {
+          "slide_no": 3,
+          "text": "Roadmap \u2022 Apply OOP concepts: abstraction, encapsulation, inheritance and polymorphism \u2022 Use control...",
+          "text_length": 629,
+          "images": 0
+        },
+        {
+          "slide_no": 4,
+          "text": "JanaJasminaCatherineEmaCODING\u00a9 2024 Stephan KruscheIntroduction to Programming - W10 Programming Lan...",
+          "text_length": 109,
+          "images": 5
+        },
+        {
+          "slide_no": 5,
+          "text": "Katherine JohnsonGrace HopperAnne Br\u00fcggemann-KleinFrances AllenMargaret HamiltonChristiane FloydHIDD...",
+          "text_length": 133,
+          "images": 7
+        },
+        {
+          "slide_no": 6,
+          "text": "Outline\n\u2022 Domain specific languages\n\u2022 Syntax trees\n\u2022 Control flow diagrams\n\u2022 Regular expressions\n\u00a9 2...",
+          "text_length": 179,
+          "images": 0
+        },
+        {
+          "slide_no": 7,
+          "text": "What is a programming language? \u2022 Programming languages allow us to give instructions to a computer ...",
+          "text_length": 508,
+          "images": 0
+        },
+        {
+          "slide_no": 8,
+          "text": "Why is there no universal language? 1. Diversity of Applications 2. Performance Requirements 3. Abst...",
+          "text_length": 523,
+          "images": 1
+        },
+        {
+          "slide_no": 9,
+          "text": "Categories translating compiling High-Level Language public void hello() { System.out.println(\"Hello...",
+          "text_length": 346,
+          "images": 1
+        },
+        {
+          "slide_no": 10,
+          "text": "Types of high-level languages \u2022 Procedural e.g. C \u2022 Functional e.g. OCaml \u2022 Object-oriented e.g. Jav...",
+          "text_length": 339,
+          "images": 1
+        },
+        {
+          "slide_no": 11,
+          "text": "Compiled & interpreted languages Source Code: hello.c Compiling Machine Code: (binary) 101000 010101...",
+          "text_length": 355,
+          "images": 1
+        },
+        {
+          "slide_no": 12,
+          "text": "Advantages of compiled & interpreted languages\n\u2022 Advantages of compiled languages\n\u2022 Faster performan...",
+          "text_length": 574,
+          "images": 0
+        },
+        {
+          "slide_no": 13,
+          "text": "Java \u2022 Unique mix: first compiled to an intermediate form (bytecode), then interpreted \u2022 Some might ...",
+          "text_length": 665,
+          "images": 1
+        },
+        {
+          "slide_no": 14,
+          "text": "Bytecode vs. Machine code\nBinary, hexadecimal and macro instructions are not understood by the CPU, ...",
+          "text_length": 637,
+          "images": 0
+        }
+      ],
+      "images": [
+        {
+          "slide_no": 1,
+          "image_idx": 1,
+          "has_caption": true,
+          "caption_preview": "A group of people are skiing or snowshoeing across a snowy mountain ridge under a clear blue sky. Th..."
+        },
+        {
+          "slide_no": 1,
+          "image_idx": 2,
+          "has_caption": true,
+          "caption_preview": "A decorated Christmas tree stands prominently against a pale yellow background sprinkled with small ..."
+        },
+        {
+          "slide_no": 4,
+          "image_idx": 1,
+          "has_caption": true,
+          "caption_preview": "A woman with reddish-brown hair and glasses is smiling at the camera, her hair is blowing in the win..."
+        },
+        {
+          "slide_no": 4,
+          "image_idx": 2,
+          "has_caption": true,
+          "caption_preview": "A woman with long dark hair and sunglasses is smiling at the camera, wearing a white shirt and stand..."
+        },
+        {
+          "slide_no": 4,
+          "image_idx": 3,
+          "has_caption": true,
+          "caption_preview": "A woman with long blonde wavy hair is looking at the camera with a slight smile, her chin resting on..."
+        },
+        {
+          "slide_no": 4,
+          "image_idx": 4,
+          "has_caption": true,
+          "caption_preview": "The image depicts a person sitting and working on a laptop with the word \"CODING\" displayed on the s..."
+        },
+        {
+          "slide_no": 4,
+          "image_idx": 5,
+          "has_caption": true,
+          "caption_preview": "A close-up portrait of a woman with long, blonde, wavy hair and blue eyes, wearing a green turtlenec..."
+        },
+        {
+          "slide_no": 5,
+          "image_idx": 1,
+          "has_caption": true,
+          "caption_preview": "HIDDEN FIGURES UNERKANNTE HELDINNEN"
+        },
+        {
+          "slide_no": 5,
+          "image_idx": 2,
+          "has_caption": true,
+          "caption_preview": "The image is a vibrant, stylized portrait of an elderly African American woman wearing a United Stat..."
+        },
+        {
+          "slide_no": 5,
+          "image_idx": 3,
+          "has_caption": true,
+          "caption_preview": "The image is a colorful illustration of a Black woman with a large afro hairstyle, wearing round gla..."
+        },
+        {
+          "slide_no": 5,
+          "image_idx": 4,
+          "has_caption": true,
+          "caption_preview": "A close-up portrait of an elderly woman with short, curly gray hair and wearing glasses is visible a..."
+        },
+        {
+          "slide_no": 5,
+          "image_idx": 5,
+          "has_caption": true,
+          "caption_preview": "A vibrant pop art style portrait of a woman with long brown hair and round glasses, her face rendere..."
+        },
+        {
+          "slide_no": 5,
+          "image_idx": 6,
+          "has_caption": true,
+          "caption_preview": "The image is a portrait of a woman with short, curly brown hair, fair skin, and light blue eyes, she..."
+        },
+        {
+          "slide_no": 5,
+          "image_idx": 7,
+          "has_caption": true,
+          "caption_preview": "The image is a vibrant, pop art-style portrait of a woman with short, silver hair and large, dark-ri..."
+        },
+        {
+          "slide_no": 8,
+          "image_idx": 1,
+          "has_caption": true,
+          "caption_preview": "Most used programming languages worldwide as of 2023JavaScript 63.61%HTML/CSS 52.97%Python 49.28%SQL..."
+        },
+        {
+          "slide_no": 9,
+          "image_idx": 1,
+          "has_caption": true,
+          "caption_preview": "High-Level Language Assembly Language Machine Language 01101010 10101000 004104011 01000014 binary m..."
+        },
+        {
+          "slide_no": 10,
+          "image_idx": 1,
+          "has_caption": true,
+          "caption_preview": "Paradigms Imperative Procedural Object Oriented Parallel Processing Declarative Logic Functional Dat..."
+        },
+        {
+          "slide_no": 11,
+          "image_idx": 1,
+          "has_caption": true,
+          "caption_preview": "Compiled (eg. C) Source Code: hello.c Compiling 1011000 0101010 1101011 0110011 Ready to Run! Machin..."
+        },
+        {
+          "slide_no": 13,
+          "image_idx": 1,
+          "has_caption": true,
+          "caption_preview": "The image depicts the process of Java program execution. It starts with a .java file which is compil..."
+        }
+      ],
+      "ingestion_results": {
+        "course_id": "test_course_w10",
+        "document_id": "ITP2425 W10U01 Overview",
+        "total_slides": 14,
+        "processed_slides": 14,
+        "total_images": 19,
+        "processed_images": 19,
+        "slide_uuids": [
+          "8fcb141b-cd27-5e61-b9e8-94dbad8c8293",
+          "4ac94eb8-f635-516a-8d63-9ec9f49028e4",
+          "abef6163-fc79-5e21-a92b-a19fe06d0b81",
+          "3d0aa628-0060-5ff0-8947-4cd28f1e553a",
+          "6c860fcc-69b2-54df-a8ec-b4648b64f25e",
+          "1ea8aee2-8718-5c33-8e3e-9feaf38b44f1",
+          "64f98fee-bedf-5802-a4cf-40ba2b8061cd",
+          "28328fa2-ec2d-5f0e-b4f7-63fd932d1e74",
+          "0f6085d8-a96b-5a45-8556-602d22f3a454",
+          "b6b042a3-5049-5bfd-ac39-4efe773d515b",
+          "6a011b42-4a4f-58ff-9bda-a07dce58c669",
+          "42be8e23-2a46-5d96-a9b5-a3fbdd207545",
+          "0efbc80a-6b7d-52d2-96e8-402ad43261c4",
+          "b97f87be-4d7f-517e-84fb-9d0eb22f1ccc"
+        ],
+        "image_ids": [
+          "52f2d0ad-21eb-53cc-9323-d9ca238c4093",
+          "c1be7fc2-4146-510a-9912-3f8f3bb6028f",
+          "405e5e46-85b8-5cc5-8317-72ab747f2dc1",
+          "c5ce71b8-d1fb-57db-9d2b-2a7eb316714e",
+          "5647ea75-c318-5a2d-ba08-660030163e21",
+          "89379226-9d8d-5712-817c-d552f98603fb",
+          "c062d599-6875-5658-a650-a20f2d4329a8",
+          "764d460a-bd2f-59a4-8577-8488ea6ac1fb",
+          "b16cfe7d-59fa-5bee-9011-2cfef3f192f1",
+          "1361fa73-bb70-5aad-a025-868319d6311f",
+          "4e4cf586-489e-567f-8bc6-ff37e2fb5e0e",
+          "cd578fd9-0df2-5a1a-a8f6-bd378abf4222",
+          "fdd8955c-15b6-5006-a7e5-c34126f5fe03",
+          "1fb2d6e4-dab6-5807-ab2b-922ad5c1e8c4",
+          "5995786e-1dac-5710-af1d-0a024dc619bd",
+          "9ca4a959-c1d2-562f-8908-35a082cae968",
+          "755d2a90-1c20-5304-9b4b-9394851dab14",
+          "fe270172-f40b-56cc-9c88-7e2645894f06",
+          "940bb111-b590-5007-b206-fc6a2aff40ab"
+        ],
+        "errors": []
+      }
+    }
+  ],
+  "statistics": {
+    "total_pdfs": 1,
+    "successful_ingestions": 1,
+    "failed_ingestions": 0,
+    "total_slides": 14,
+    "total_images": 19,
+    "slides_in_db": 14,
+    "images_in_db": 19
+  }
+}

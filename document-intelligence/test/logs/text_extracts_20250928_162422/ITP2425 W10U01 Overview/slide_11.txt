@@ -1,0 +1,18 @@
+PDF: ITP2425 W10U01 Overview.pdf
+Slide: 11
+Characters: 352
+Empty: False
+--------------------------------------------------
+
+Compiled & interpreted languages
+Source Code: hello.c
+Compiling
+Machine Code: (binary) 101000 010101 111010 000001
+Ready to Run!
+Source Code: hello.py
+Interpreted: (eg. Python)
+Ready to Run!
+Interpreting
+Virtual Machine
+Machine Code: (binary) 101000 010101 111010 000001
+© 2024 Stephen Krusche Introduction to Programming - W10 Programming Languages 11

@@ -1,0 +1,368 @@
+{
+  "test_metadata": {
+    "start_time": "2025-09-28T15:51:41.250922",
+    "images_folder": "/Users/raj.vasani/Developer/fa25/orpheus/document-intelligence/test/extracted_images/20250928_145314",
+    "test_name": "Image Description Service Test",
+    "end_time": "2025-09-28T15:54:18.681588"
+  },
+  "tested_images": [
+    {
+      "pdf_name": "ITP2425 W10U01 Overview",
+      "page": 1,
+      "image": 1,
+      "filename": "ITP2425 W10U01 Overview_page_01_img_01.png",
+      "success": true,
+      "error": null,
+      "caption": "A group of skiers is traversing a snow-covered mountain ridge under a clear blue sky, with jagged, snow-dusted peaks visible in the background and foreground, and ski tracks visible on the snowy slope they are ascending. The skiers are spaced out and appear to be climbing uphill with poles, and one skier is wearing a red jacket. The scene depicts a winter landscape with a bright, sunny day.",
+      "caption_length": 393,
+      "file_size": 2009213
+    },
+    {
+      "pdf_name": "ITP2425 W10U01 Overview",
+      "page": 1,
+      "image": 2,
+      "filename": "ITP2425 W10U01 Overview_page_01_img_02.png",
+      "success": true,
+      "error": null,
+      "caption": "The image shows a decorated Christmas tree with a star on top and ornaments scattered throughout its branches, set against a pale yellow background with small star-like sparkles, and presents of varying sizes and colors are arranged at the base of the tree, some wrapped with red and green ribbon and bows, and others in blue and green, all suggesting a festive holiday scene.",
+      "caption_length": 376,
+      "file_size": 437171
+    },
+    {
+      "pdf_name": "ITP2425 W10U01 Overview",
+      "page": 4,
+      "image": 1,
+      "filename": "ITP2425 W10U01 Overview_page_04_img_01.png",
+      "success": true,
+      "error": null,
+      "caption": "A woman with reddish-brown hair and glasses is smiling at the camera, her hair is blowing in the wind, she is wearing a gray shirt and a necklace, and the background shows a blurry body of water with green foliage.",
+      "caption_length": 214,
+      "file_size": 489306
+    },
+    {
+      "pdf_name": "ITP2425 W10U01 Overview",
+      "page": 4,
+      "image": 2,
+      "filename": "ITP2425 W10U01 Overview_page_04_img_02.png",
+      "success": true,
+      "error": null,
+      "caption": "A woman with long dark hair and sunglasses is smiling at the camera, wearing a white shirt, with a blurred background featuring a castle and green trees.",
+      "caption_length": 153,
+      "file_size": 146333
+    },
+    {
+      "pdf_name": "ITP2425 W10U01 Overview",
+      "page": 4,
+      "image": 3,
+      "filename": "ITP2425 W10U01 Overview_page_04_img_03.png",
+      "success": true,
+      "error": null,
+      "caption": "A woman with long blonde wavy hair is posing indoors wearing a cream-colored knit sweater, she is looking directly at the camera with a slight smile and her chin resting on her hand, there is a blurred background showing a cityscape through a window and a rope or cord on the right side of the image.",
+      "caption_length": 300,
+      "file_size": 136574
+    },
+    {
+      "pdf_name": "ITP2425 W10U01 Overview",
+      "page": 4,
+      "image": 4,
+      "filename": "ITP2425 W10U01 Overview_page_04_img_04.png",
+      "success": true,
+      "error": null,
+      "caption": "The image depicts a person sitting and using a laptop with the word \"CODING\" displayed on the screen, they are wearing headphones and appear to be engrossed in their work, the color scheme is primarily blue and purple, with a stylized, modern aesthetic and a gear graphic in the background, suggesting a technological or engineering theme.",
+      "caption_length": 339,
+      "file_size": 315121
+    },
+    {
+      "pdf_name": "ITP2425 W10U01 Overview",
+      "page": 4,
+      "image": 5,
+      "filename": "ITP2425 W10U01 Overview_page_04_img_05.png",
+      "success": true,
+      "error": null,
+      "caption": "A close-up portrait of a fair-skinned woman with long blonde hair and blue-green eyes. She is wearing a green turtleneck sweater and a dark blue blazer, and a small silver earring is visible in her left ear. The background is a blurred green foliage, suggesting an outdoor setting. Her makeup is subtle, emphasizing her eyes and lips. She is looking directly at the camera with a neutral expression.",
+      "caption_length": 399,
+      "file_size": 40951
+    },
+    {
+      "pdf_name": "ITP2425 W10U01 Overview",
+      "page": 5,
+      "image": 1,
+      "filename": "ITP2425 W10U01 Overview_page_05_img_01.png",
+      "success": true,
+      "error": null,
+      "caption": "HIDDEN FIGURES UNERKANTE HELDINNEN three women walking towards the viewer in front of a blurred image of a rocket launch and NASA logo.",
+      "caption_length": 135,
+      "file_size": 989727
+    },
+    {
+      "pdf_name": "ITP2425 W10U01 Overview",
+      "page": 5,
+      "image": 2,
+      "filename": "ITP2425 W10U01 Overview_page_05_img_02.png",
+      "success": true,
+      "error": null,
+      "caption": "The image is a vibrant, stylized portrait of an elderly woman wearing a United States Navy officer's hat and glasses. She has warm skin tones with orange and red highlights, and her hair is pulled back in a bun. The background is a colorful, abstract pattern of blues, reds, and purples, creating a dynamic and striking visual effect. The style appears to be inspired by pop art or a digital illustration, with bold lines and flat colors, and a portion of a shoulder board with gold markings is visible in the lower right corner.",
+      "caption_length": 529,
+      "file_size": 724535
+    },
+    {
+      "pdf_name": "ITP2425 W10U01 Overview",
+      "page": 5,
+      "image": 3,
+      "filename": "ITP2425 W10U01 Overview_page_05_img_03.png",
+      "success": true,
+      "error": null,
+      "caption": "The image depicts a portrait of Katherine Johnson, a prominent African American mathematician who worked for NASA. She has a warm, slightly smiling expression and is wearing glasses and large hoop earrings. Her hair is styled in a large afro. She is wearing a colorful patterned shirt with a pink collar and a brown jacket. The background suggests an office environment with vintage computer equipment visible. The artwork style is illustrative and somewhat stylized with vibrant, saturated colors and geometric shapes.",
+      "caption_length": 519,
+      "file_size": 778604
+    },
+    {
+      "pdf_name": "ITP2425 W10U01 Overview",
+      "page": 5,
+      "image": 4,
+      "filename": "ITP2425 W10U01 Overview_page_05_img_04.png",
+      "success": true,
+      "error": null,
+      "caption": "The image is a colorful portrait of an older woman with short, curly gray hair and glasses. She is smiling with her lips parted, showing her teeth, and her eyes are crinkled. She is wearing dark clothing with a colorful, striped scarf around her neck. The background is composed of vertical stripes in shades of purple, green, and red. The style is painterly and resembles a digital illustration with visible brushstrokes and vibrant colors. The woman is looking slightly upwards and to the side. She appears to be wearing hoop earrings.",
+      "caption_length": 537,
+      "file_size": 576612
+    },
+    {
+      "pdf_name": "ITP2425 W10U01 Overview",
+      "page": 5,
+      "image": 5,
+      "filename": "ITP2425 W10U01 Overview_page_05_img_05.png",
+      "success": true,
+      "error": null,
+      "caption": "The image is a vibrant, stylized portrait of a woman with long brown hair and round glasses, her face rendered in a pop art-inspired palette of oranges, yellows, greens, and blues, she is looking upwards with a serene expression, set against a dark, speckled background with a large orange arc visible on the left, and she appears to be wearing a dark blue top and small earrings, the style is characterized by bold, flat colors and a strong emphasis on lines and gradients.",
+      "caption_length": 474,
+      "file_size": 644171
+    },
+    {
+      "pdf_name": "ITP2425 W10U01 Overview",
+      "page": 5,
+      "image": 6,
+      "filename": "ITP2425 W10U01 Overview_page_05_img_06.png",
+      "success": true,
+      "error": null,
+      "caption": "The image is a portrait of a woman with short, curly dark hair and fair skin, she has blue eyes and is wearing purple lipstick. She is wearing an orange collared shirt over a navy blue patterned jacket. The background is a collage of various texts and illustrations in shades of yellow, green, red, and white, creating a vibrant and eclectic backdrop. The style of the portrait is illustrative, with distinct linework used to depict the hair and clothing.",
+      "caption_length": 455,
+      "file_size": 875815
+    },
+    {
+      "pdf_name": "ITP2425 W10U01 Overview",
+      "page": 5,
+      "image": 7,
+      "filename": "ITP2425 W10U01 Overview_page_05_img_07.png",
+      "success": true,
+      "error": null,
+      "caption": "The image is a vibrant pop art style portrait of a woman with short, wavy gray hair and large, black-framed glasses. She is smiling slightly, revealing reddish-pink lips. Her skin tone is fair with subtle shading. She is wearing a blue jacket over a dark garment. The background is a bold, geometric pattern in shades of red, orange, and yellow, characteristic of pop art aesthetics. The overall style is highly stylized with thick lines and flat colors, creating a striking and graphic representation.",
+      "caption_length": 502,
+      "file_size": 622379
+    },
+    {
+      "pdf_name": "ITP2425 W10U01 Overview",
+      "page": 8,
+      "image": 1,
+      "filename": "ITP2425 W10U01 Overview_page_08_img_01.png",
+      "success": true,
+      "error": null,
+      "caption": "Most used programming languages worldwide as of 2023 JavaScript 63.61% HTML/CSS 52.97% Python 49.28% SQL 48.66% TypeScript 38.87% Bash/Shell (all shells) 32.37% Java 30.55% C# 27.62% C++ 22.42% C 19.34%",
+      "caption_length": 202,
+      "file_size": 140992
+    },
+    {
+      "pdf_name": "ITP2425 W10U01 Overview",
+      "page": 9,
+      "image": 1,
+      "filename": "ITP2425 W10U01 Overview_page_09_img_01.png",
+      "success": true,
+      "error": null,
+      "caption": "Less Control, Speed & Complexity, High-Level Language, public void hello(){System.out.printf(\"Hello there\");}, Assembly Language, mov ax,bx, add ax,cx, mul ax,ax, mov bx,ax, Machine Language, 0110111010, 1010100000, 001101011, 010100011, binary, \u201ctranslating\u201d \u201ccompiling\u201d",
+      "caption_length": 271,
+      "file_size": 631636
+    },
+    {
+      "pdf_name": "ITP2425 W10U01 Overview",
+      "page": 10,
+      "image": 1,
+      "filename": "ITP2425 W10U01 Overview_page_10_img_01.png",
+      "success": true,
+      "error": null,
+      "caption": "Paradigms Imperative Procedural Object Oriented Parallel Processing Declarative Logic Functional Dataflow Database",
+      "caption_length": 114,
+      "file_size": 41665
+    },
+    {
+      "pdf_name": "ITP2425 W10U01 Overview",
+      "page": 11,
+      "image": 1,
+      "filename": "ITP2425 W10U01 Overview_page_11_img_01.png",
+      "success": true,
+      "error": null,
+      "caption": "Compiled (eg. C) Source Code: hello.c Compiling 1011000 0101010 1101010 0110011 Ready to Run! Interpreted (eg. Python) Source Code: hello.py Ready to Run! Interpreting Virtual Machine Machine Code (binary) 1011000 0101010 1101010 0110011",
+      "caption_length": 237,
+      "file_size": 493134
+    },
+    {
+      "pdf_name": "ITP2425 W10U01 Overview",
+      "page": 13,
+      "image": 1,
+      "filename": "ITP2425 W10U01 Overview_page_13_img_01.png",
+      "success": true,
+      "error": null,
+      "caption": "The image depicts the Java compilation and execution process. A .java file is fed into the Java Compiler (javac), which compiles it into a .class file. This .class file is then loaded by the Class Loader, which is a component of the Java Virtual Machine (JVM). The loaded bytecode is then verified by the Bytecode Verifier, another component of the JVM, to ensure its integrity and security. Finally, the Java Runtime System within the JVM executes the verified bytecode, interacting with the Native OS as needed.",
+      "caption_length": 513,
+      "file_size": 183126
+    },
+    {
+      "pdf_name": "ITP2425 W10U02 Domain specific languages",
+      "page": 5,
+      "image": 1,
+      "filename": "ITP2425 W10U02 Domain specific languages_page_05_img_01.png",
+      "success": true,
+      "error": null,
+      "caption": "SEAL Welcome, Moin, \u041f\u0440\u0438\u0432\u0435\u0442, Bonjour, ... This page introduces you to the diploma thesis Smart Encoding Analyzer for Logs or as we like to call it: S.E.A.L.",
+      "caption_length": 155,
+      "file_size": 230721
+    },
+    {
+      "pdf_name": "ITP2425 W10U02 Domain specific languages",
+      "page": 6,
+      "image": 1,
+      "filename": "ITP2425 W10U02 Domain specific languages_page_06_img_01.png",
+      "success": true,
+      "error": null,
+      "caption": "S.E.A.L. Tutorial Introduction This tutorial will walk you through how to use S.E.A.L. on your local computer. Prerequisites This tutorial expects you to have Docker up and running on your computer. You might have to follow the segment Using the Docker images in production of this tutorial to get Elasticsearch up and running in Docker.",
+      "caption_length": 337,
+      "file_size": 104932
+    },
+    {
+      "pdf_name": "ITP2425 W10U02 Domain specific languages",
+      "page": 10,
+      "image": 1,
+      "filename": "ITP2425 W10U02 Domain specific languages_page_10_img_01.png",
+      "success": true,
+      "error": null,
+      "caption": "The image shows four time series graphs representing MTU Service Duration, MTU total CPU Time, Node Memory Utilization, and Node CPU Utilization over a period from 21:00:00 to 21:35:00 with timestamps per 10 seconds. The MTU Service Duration graph displays a relatively stable average around 20-30ms, with minimal fluctuations, indicated by a green line, and minimal to moderate max and min values represented by red and blue lines respectively. The MTU total CPU Time graph shows an average CPU time of approximately 40ms, with minor fluctuations, and low max/min values. The Node Memory Utilization graph demonstrates a consistently high average memory utilization of around 80-90%, with moderate to significant fluctuations in max and min values. Finally, the Node CPU Utilization graph shows a steep increase in CPU utilization starting around 21:25:00, reaching almost 100%, with fluctuating max and min values, signifying a surge in CPU usage towards the end of the observed period.",
+      "caption_length": 988,
+      "file_size": 124985
+    },
+    {
+      "pdf_name": "ITP2425 W10U02 Domain specific languages",
+      "page": 13,
+      "image": 1,
+      "filename": "ITP2425 W10U02 Domain specific languages_page_13_img_01.png",
+      "success": true,
+      "error": null,
+      "caption": "The image shows four time series graphs monitoring MTU service duration, MTU total CPU time, node memory utilization, and node CPU utilization over a period from 21:00:00 to 21:35:00 with timestamps per 10 seconds. The MTU service duration graph shows a relatively stable average around 20-30 with minimal variation in max and min. MTU total CPU time stays consistently around 40-50 with similar max and min. Node memory utilization starts around 20 and rises steadily to 80 then back down, demonstrating significant fluctuations between max, average, and min. Node CPU utilization mirrors this, showing a sharp increase from 20 to 90 then declining, displaying large variations between max, average, and min.",
+      "caption_length": 709,
+      "file_size": 124985
+    },
+    {
+      "pdf_name": "ITP2425 W10U02 Domain specific languages",
+      "page": 15,
+      "image": 1,
+      "filename": "ITP2425 W10U02 Domain specific languages_page_15_img_01.png",
+      "success": true,
+      "error": null,
+      "caption": "ex04-1 connects to httpclient which connects to httpcore, commons-logging, and commons-codec. jersey-server connects to jersey-core which connects to jsr311-api and asm. jersey-client connects to jersey-core. jsr311-api has Group ID: javax.ws.rs, Artifact ID: jsr311-api, Version: 1.1.1.",
+      "caption_length": 287,
+      "file_size": 11166
+    },
+    {
+      "pdf_name": "ITP2425 W10U02 Domain specific languages",
+      "page": 15,
+      "image": 2,
+      "filename": "ITP2425 W10U02 Domain specific languages_page_15_img_02.png",
+      "success": true,
+      "error": null,
+      "caption": "A minimalist, black silhouette of an elephant facing to the right, with a raised trunk and a white line creating an internal shape suggesting an eye and mouth. The elephant has short legs and a curved back, appearing stylized and modern.",
+      "caption_length": 237,
+      "file_size": 8684
+    },
+    {
+      "pdf_name": "ITP2425 W10U03 Syntax trees",
+      "page": 3,
+      "image": 1,
+      "filename": "ITP2425 W10U03 Syntax trees_page_03_img_01.png",
+      "success": true,
+      "error": null,
+      "caption": "<if statement> ::= <if condition> Then <statement> <if condition> ::= <expression> <relational operator> <expression> <relational operator> ::= <><|=><> <expression> ::= <expression> + <term> <expression> ::= <term> <term> ::= <factor> <term> <factor> ::= <identifier> <factor> ::= <number> <factor> ::= <string literal> <statements> ::= <statement> <statements> <statement> ::= <assignment> <if statement> <for statement> <assignment> ::= <identifier> <expression> <identifier> ::= <letter> <identifier> <identifier> <digit> <letter> ::= a|b|c|d|...|A|B|C|D|... <digit> ::= 0|1|2|3|4|5|6|7|8|9 <number> ::= <integer> <integer> <integer> ::= <digit> <integer> <digit> <string literal> ::= <quote> <characters> <quote> <characters> ::= <letter> <digit> <characters> <quote> ::= \"",
+      "caption_length": 778,
+      "file_size": 489609
+    },
+    {
+      "pdf_name": "ITP2425 W10U03 Syntax trees",
+      "page": 4,
+      "image": 1,
+      "filename": "ITP2425 W10U03 Syntax trees_page_04_img_01.png",
+      "success": true,
+      "error": null,
+      "caption": "2*7+3 AST is a tree representing the abstract syntax of the expression 2*7+3 where + is the root node with * and 3 as children and * has 2 and 7 as children. Parse tree shows the derivation of the expression where expr is the root node with term and term as children, the left term has + as a child, + has factor and factor as children, the first factor has * as a child and * has factor as a child, and the second factor has 7 as a child, and the factor has 3 as a child, the leftmost factor has 2 as a child.",
+      "caption_length": 510,
+      "file_size": 114696
+    },
+    {
+      "pdf_name": "ITP2425 W10U03 Syntax trees",
+      "page": 10,
+      "image": 1,
+      "filename": "ITP2425 W10U03 Syntax trees_page_10_img_01.png",
+      "success": true,
+      "error": null,
+      "caption": "The image depicts a compilation process with three stages starting with an input source code on a computer screen labeled \u201cSymbol (! \u2018!\u201d)\u201d. Stage one is Lexical Analysis, transforming the input into a series of tokens represented by stacked boxes. Stage two is Syntax Analysis, building an Abstract Syntax Tree (AST) from those tokens. The AST is a hierarchical representation of the code's structure. Finally, Stage three is Code Generation, visualizing code being built by a crane with the final output of \u201c!\u201d. The bottom text labels the input as \u201cinput\u201d and the stacked boxes as \u201ctokens\u201d, and the tree is labeled \u201cAST\u201d.",
+      "caption_length": 622,
+      "file_size": 269366
+    },
+    {
+      "pdf_name": "ITP2425 W10U03 Syntax trees",
+      "page": 13,
+      "image": 1,
+      "filename": "ITP2425 W10U03 Syntax trees_page_13_img_01.png",
+      "success": true,
+      "error": null,
+      "caption": "cond expr name x comp > expr number 0",
+      "caption_length": 37,
+      "file_size": 40989
+    },
+    {
+      "pdf_name": "ITP2425 W10U03 Syntax trees",
+      "page": 13,
+      "image": 2,
+      "filename": "ITP2425 W10U03 Syntax trees_page_13_img_02.png",
+      "success": true,
+      "error": null,
+      "caption": "The image depicts a parse tree representing the statement \"write (1)\". The root node is labeled \"stmt\", which branches down to \"expr\". \"expr\" further branches down to \"number\". The terminal nodes, which are the actual tokens of the statement, are \"write\", \"(\", \"1\", \")\", and \";\". The red lines represent the relationships between the nodes, showing how the statement is broken down into its constituent parts according to a grammar.",
+      "caption_length": 432,
+      "file_size": 37907
+    },
+    {
+      "pdf_name": "ITP2425 W10U03 Syntax trees",
+      "page": 13,
+      "image": 3,
+      "filename": "ITP2425 W10U03 Syntax trees_page_13_img_03.png",
+      "success": true,
+      "error": null,
+      "caption": "The image depicts a parse tree representing a statement. The root node is labeled \"stmt\", branching down to \"expr\". The \"expr\" node then branches down to \"number\". The terminal nodes, or leaves, of the tree are \"write\", \"(\", \"0\", \")\", and \";\". This structure suggests a simple statement that might be interpreted as writing the number 0 to an output, and the semicolon likely serves as a statement terminator.",
+      "caption_length": 409,
+      "file_size": 38449
+    },
+    {
+      "pdf_name": "ITP2425 W10U03 Syntax trees",
+      "page": 14,
+      "image": 1,
+      "filename": "ITP2425 W10U03 Syntax trees_page_14_img_01.png",
+      "success": true,
+      "error": null,
+      "caption": "program decl type name stmt name expr name comp number stmt expr number stmt expr number int x x = readInt() if x > 0 write 1 else write 0",
+      "caption_length": 138,
+      "file_size": 270281
+    }
+  ],
+  "statistics": {
+    "total_images": 32,
+    "successful_captions": 32,
+    "failed_captions": 0,
+    "empty_captions": 0
+  }
+}

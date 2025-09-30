@@ -1,0 +1,403 @@
+{
+  "test_metadata": {
+    "start_time": "2025-09-28T16:16:27.079825",
+    "test_folder": "/Users/raj.vasani/Developer/fa25/orpheus/document-intelligence/test",
+    "test_name": "Text Extraction Service Test",
+    "end_time": "2025-09-28T16:24:22.117654"
+  },
+  "tested_pdfs": [
+    {
+      "pdf_name": "ITP2425 W10U01 Overview.pdf",
+      "success": true,
+      "error": null,
+      "slides": [
+        {
+          "slide_number": 1,
+          "text": "Introduction to ProgrammingW10 Programming LanguagesStephan Krusche18 December 2024Technical University of Munich",
+          "text_length": 113,
+          "is_empty": false,
+          "preview": "Introduction to ProgrammingW10 Programming LanguagesStephan Krusche18 December 2024Technical Univers..."
+        },
+        {
+          "slide_number": 2,
+          "text": "Schedule 1 16.11.24 Introduction 2 23.11.24 Control Flow in Programming 3 30.11.24 In-Depth Core Concepts* 4 06.12.24 Core Data Structures 5 13.12.24 Code Reuse and Structure 6 20.12.24 Type Flexibility and Safety 7 27.12.24 In-Depth Object Orientation* 8 04.01.25 Functional Programming Essentials 9 11.01.25 Algorithms and Data Handling 10 18.01.25 Programming Languages 11 08.01.25 Graphical User Interfaces 12 15.01.25 Recursion 13 22.01.25 Concurrency 14 29.01.25 Beyond Programming 15 05.02.25 Course Review \u00a9 2024 Krusche Introduction to Programming - W10 Programming Languages 2",
+          "text_length": 586,
+          "is_empty": false,
+          "preview": "Schedule 1 16.11.24 Introduction 2 23.11.24 Control Flow in Programming 3 30.11.24 In-Depth Core Con..."
+        },
+        {
+          "slide_number": 3,
+          "text": "Roadmap \u2022 Apply OOP concepts: abstraction, encapsulation, inheritance and polymorphism \u2022 Use control structures and data types \u2022 Use enums, annotations, generics, collections, iterators, lambdas, and streams \u2022 Apply error handling and implement algorithms \u2022 Learning goals \u2022 Explain the differences between compiled and interpreted languages \u2022 Explain the differences between general purpose and domain specific languages \u2022 Create a syntax tree for a simple program \u2022 Model control flow diagrams \u2022 Evaluate if words adhere to a regular expression \u00a9 2024 Stephan Krusche Introduction to Programming - W10 Programming Languages 3",
+          "text_length": 627,
+          "is_empty": false,
+          "preview": "Roadmap \u2022 Apply OOP concepts: abstraction, encapsulation, inheritance and polymorphism \u2022 Use control..."
+        },
+        {
+          "slide_number": 4,
+          "text": "JanaJasminaCatherineEmaCODING\u00a9 2024 Stephan KruscheIntroduction to Programming - W10 Programming Languages4",
+          "text_length": 107,
+          "is_empty": false,
+          "preview": "JanaJasminaCatherineEmaCODING\u00a9 2024 Stephan KruscheIntroduction to Programming - W10 Programming Lan..."
+        },
+        {
+          "slide_number": 5,
+          "text": "Katherine JohnsonGrace HopperAnne Br\u00fcgemann-KleinFrances AllenMargaret HamiltonChristiane FloydHIDDEN FIGURESUNERKANNTE HELDINNEN5",
+          "text_length": 130,
+          "is_empty": false,
+          "preview": "Katherine JohnsonGrace HopperAnne Br\u00fcgemann-KleinFrances AllenMargaret HamiltonChristiane FloydHIDDE..."
+        },
+        {
+          "slide_number": 6,
+          "text": "Outline\n\u2022 Domain specific languages\n\u2022 Syntax trees\n\u2022 Control flow diagrams\n\u2022 Regular expressions\n\u00a92024 Stephan Krusche Introduction to Programming - W10 Programming Languages 6",
+          "text_length": 176,
+          "is_empty": false,
+          "preview": "Outline\n\u2022 Domain specific languages\n\u2022 Syntax trees\n\u2022 Control flow diagrams\n\u2022 Regular expressions\n\u00a920..."
+        },
+        {
+          "slide_number": 7,
+          "text": "https://www.computerscience.org/resources/computer-programming-languages\n\u00a92024 Stephan Krusche Introduction to Programming - W10 Programming Languages 7 \u2022 Programming languages allow us to give instructions to a computer \u2022 Many different human languages \u2192 many computer programming languages \u2022 Code cannot be directly understood by a computer: it must first be translated into a lower language that the computer can execute, called a binary \u2022 Translating code into binary is called compiling or compilation \u2022 Every language, from C to Python to Java, has its own distinct features, as well as commonalities with other languages",
+          "text_length": 627,
+          "is_empty": false,
+          "preview": "https://www.computerscience.org/resources/computer-programming-languages\n\u00a92024 Stephan Krusche Intro..."
+        },
+        {
+          "slide_number": 8,
+          "text": "Why is there no universal language? 1. Diversity of Applications 2. Performance Requirements 3. Abstraction Levels 4. Paradigm Differences 5. Evolving Needs 6. Community and Ecosystem 7. Legacy Systems https://www.statista.com/statistics/793628/worldwide-developer-survey-most-used-languages/ \u00a92024 Stephan Krusche Introduction to Programming - W10 Programming Languages JavaScript 63.61% HTML/CSS 52.97% Python 49.28% SQL 48.66% TypeScript 38.87% Bash/Shell (all shells) 32.77% Java 30.55% C# 27.62% C++ 22.42% C 19.34% 8",
+          "text_length": 522,
+          "is_empty": false,
+          "preview": "Why is there no universal language? 1. Diversity of Applications 2. Performance Requirements 3. Abst..."
+        },
+        {
+          "slide_number": 9,
+          "text": "Categories\nLess\nControl, Speed & Complexity\nmore\nHigh-Level Language\npublic void hello(){ System.out.print(\"Hello there\"); }\nAssembly Language\nmov ax, bx\nadd ax, cx\nmul ax, ax\nmov bx, ax\nMachine Language\n0110111010\n1010111000\n00111011\n010100011\nbinary\n\u00a9 2024 Krusche Introduction to Programming - W10 Programming Languages 9",
+          "text_length": 324,
+          "is_empty": false,
+          "preview": "Categories\nLess\nControl, Speed & Complexity\nmore\nHigh-Level Language\npublic void hello(){ System.out..."
+        },
+        {
+          "slide_number": 10,
+          "text": "Types of high-level languages \u2022 Procedural e.g. C \u2022 Functional e.g. OCaml \u2022 Object-oriented e.g. Java \u2022 Scripting e.g. JavaScript \u2022 Logic e.g. Prolog Paradigms Imperative Declarative Procedural Object Oriented Parallel Processing Logic Functional Database \u00a9 2024 Stephan Krusche Introduction to Programming - W10 Programming Languages 10",
+          "text_length": 337,
+          "is_empty": false,
+          "preview": "Types of high-level languages \u2022 Procedural e.g. C \u2022 Functional e.g. OCaml \u2022 Object-oriented e.g. Jav..."
+        },
+        {
+          "slide_number": 11,
+          "text": "Compiled & interpreted languages\nSource Code: hello.c\nCompiling\nMachine Code: (binary) 101000 010101 111010 000001\nReady to Run!\nSource Code: hello.py\nInterpreted: (eg. Python)\nReady to Run!\nInterpreting\nVirtual Machine\nMachine Code: (binary) 101000 010101 111010 000001\n\u00a9 2024 Stephen Krusche Introduction to Programming - W10 Programming Languages 11",
+          "text_length": 352,
+          "is_empty": false,
+          "preview": "Compiled & interpreted languages\nSource Code: hello.c\nCompiling\nMachine Code: (binary) 101000 010101..."
+        },
+        {
+          "slide_number": 12,
+          "text": "Advantages of compiled & interpreted languages\n\u2022 Advantages of compiled languages\n\u2022 Faster performance due to translation to machine code in advance\n\u2022 Opportunity to apply quite powerful optimizations during the compile stage\n\u2022 Advantages of interpreted languages\n\u2022 Easier to implement (writing good compilers is very hard)\n\u2022 No need to run a compilation stage: can execute code directly on-the-fly\n\u2022 Better suited for dynamic languages due to on-the-fly code changes and immediate feedback\n\u00a9 2024 Stephan Krusche Introduction to Programming - W10 Programming Languages 12",
+          "text_length": 572,
+          "is_empty": false,
+          "preview": "Advantages of compiled & interpreted languages\n\u2022 Advantages of compiled languages\n\u2022 Faster performan..."
+        },
+        {
+          "slide_number": 13,
+          "text": "Java \u2022 Unique mix: first compiled to an intermediate form (bytecode), then interpreted \u2022 Some might argue that Java is actually a compiled language, as source code gets compiled into bytecode, which is a valid point \u2022 The Java Virtual Machine (JVM) performs many optimizations: machine code is often already generated and cached \u2192 no actual interpretation going on at runtime \u2022 For more details read: https://www.scaler.com/topics/how-java-program-works/ .java file Java Compiler (javac) .class file Java Virtual Machine Native OS Java Runtime System Bytecode Verifier Class Loader \u00a9 2024 Stephan Krusche Introduction to Programming - W10 Programming Languages 13",
+          "text_length": 663,
+          "is_empty": false,
+          "preview": "Java \u2022 Unique mix: first compiled to an intermediate form (bytecode), then interpreted \u2022 Some might ..."
+        },
+        {
+          "slide_number": 14,
+          "text": "Bytecode vs. MachinecodeBinary, hexadecimal and macro instructions are not understood directly by the CPU, but are dependent on an interpreterBinary instructions that are directly understandable by the CPU and directly executedMust be translated into machine code to executeLowest level, directly executableNon-runnable code generated after compilationSet of instructions in machine languagePlatform-independent depends on the virtual machineNot platform independent depends on the system architecture and native instructions associated with the machine\u00a9 2024 Stephan KruscheIntroduction to Programming - W10 Programming Languages14",
+          "text_length": 632,
+          "is_empty": false,
+          "preview": "Bytecode vs. MachinecodeBinary, hexadecimal and macro instructions are not understood directly by th..."
+        }
+      ],
+      "total_slides": 14,
+      "file_size": 2069148,
+      "total_characters": 5768,
+      "empty_slides": 0,
+      "non_empty_slides": 14
+    },
+    {
+      "pdf_name": "ITP2425 W10U02 Domain specific languages.pdf",
+      "success": true,
+      "error": null,
+      "slides": [
+        {
+          "slide_number": 1,
+          "text": "Outline\n\u2022 Overview\n\u2022 Domain specific languages\n\u2022 Syntax trees\n\u2022 Control flow diagrams\n\u2022 Regular expressions\n\u00a9 2024 Stephen Krusche Introduction to Programming - W10 Programming Languages 15",
+          "text_length": 189,
+          "is_empty": false,
+          "preview": "Outline\n\u2022 Overview\n\u2022 Domain specific languages\n\u2022 Syntax trees\n\u2022 Control flow diagrams\n\u2022 Regular expr..."
+        },
+        {
+          "slide_number": 2,
+          "text": "Domain Specific Language (DSL) \u2022 Specialized in a particular application domain \u2022 In contrast to general purpose languages (GPL), e.g. Java, which are broadly applicable across domains \u2022 There is a wide variety of DSLs for common domains, such as HTML for web pages \u2022 The line between GPLs and DSLs is not always sharp \u2022 A language may have specialized features for a particular domain but be applicable more broadly \u2022 Conversely, it may in principle be capable of broad application but in practice used primarily for a specific domain \u00a9 2024 Stephan Krusche Introduction to Programming - W10 Programming Languages 16",
+          "text_length": 617,
+          "is_empty": false,
+          "preview": "Domain Specific Language (DSL) \u2022 Specialized in a particular application domain \u2022 In contrast to gen..."
+        },
+        {
+          "slide_number": 3,
+          "text": "Advantages and disadvantages of DSLs\n+ Efficiency\n+ Integration between developers and application domain experts\n+ Independent of the target platform\n+ Increased quality\n- Narrows the use\n- Learning curve\n- Additional effort for configuration\n- DSL creators need domain knowledge as well as language-development knowledge\n\u00a9 2024 Stephan Krusche Introduction to Programming - W10 Programming Languages 17",
+          "text_length": 404,
+          "is_empty": false,
+          "preview": "Advantages and disadvantages of DSLs\n+ Efficiency\n+ Integration between developers and application d..."
+        },
+        {
+          "slide_number": 4,
+          "text": "Examples\n\u2022 Web: HTML\n\u2022 Document writing: LaTeX, Typst, Markdown\n\u2022 Data exchange: JSON, XML, YAML\n\u2022 Modeling: UML (PlantUML)\n\u2022 Data management: SQL and its variants\n\u2022 Business rules: Drools\n\u2022 Hardware: Verilog, VHDL\n\u2022 Build tools: Maven, Gradle\n\u2022 Shell: sh, Bash, CSH, MS-DOS, Windows Terminal, PowerShell\n\u2022 Numerical computation and simulation: MATLAB (commercial), GNU Octave, Scilab\n\u2022 Various types of parsers and generators: Lex, YACC, GNU Bison, ANTLR\n\u00a9 2024 Stephen Krusche Introduction to Programming - W10 Programming Languages 18",
+          "text_length": 537,
+          "is_empty": false,
+          "preview": "Examples\n\u2022 Web: HTML\n\u2022 Document writing: LaTeX, Typst, Markdown\n\u2022 Data exchange: JSON, XML, YAML\n\u2022 M..."
+        },
+        {
+          "slide_number": 5,
+          "text": "HTML: HyperText Markup Language\nHTML is the standard markup language for documents, designed to be displayed in a web browser.\nIt can be assisted by technologies such as Cascading Style Sheets (CSS) and scripting languages such as JavaScript (JS)\nCheatsheet: https://htmlcheatsheet.com\nTry it out: https://html-online.com/editor\nExample\n<!doctype html>\n<html lang=\"en\">\n<head>\n</head>\n<body id=\"top\" class=\"main_Background\">\n<h2 color title=\"Welcome, Moin, \u041f\u0440\u0438\u0432\u0435\u0442, Bonjour, ...\">\n</html>\n\u00a9 2024 Stephan Krusche\nIntroduction to Programming - W10 Programming Languages\n19\nSEAL\nWelcome, Moin, \u041f\u0440\u0438\u0432\u0435\u0442, Bonjour, ...\nThis page introduces you to the diploma thesis: Smart Encoding Analyzer for Logs or as we like to call it: S.E.A.L.",
+          "text_length": 726,
+          "is_empty": false,
+          "preview": "HTML: HyperText Markup Language\nHTML is the standard markup language for documents, designed to be d..."
+        },
+        {
+          "slide_number": 6,
+          "text": "Markdown\nUsed primarily for documentation\nTry it out: stacked.it/app#\n\nExample\nS.E.A.L. Tutorial\nIntroduction\nThis tutorial will walk you through how to use S.E.A.L. on your local computer.\nPrerequisites\nThis tutorial expects you to have Docker up and running on your computer. You might have to follow the segment \u2018Using the Docker images\u2019 in production of this tutorial to get Elasticsearch up and running in Docker.\nElement\nHeading\nBold\nItalic\nBlockquote\nOrdered List\nUnordered List\nCode\nHorizontal Rule\nLink\nImage\nMarkdown Syntax\n# H1\n## H2\n### H3\n**bold text**\n*italicized text*\n> blockquote\n1. First item\n2. Second item\n3. Third item\n- First item\n- Second item\n- Third item\n`code`\n---\n[title](https://www.example.com)\n![alt text](image.jpg)\n\u00a92024 Stephan Krusche\nIntroduction to Programming - W10 Programming Languages \n20",
+          "text_length": 828,
+          "is_empty": false,
+          "preview": "Markdown\nUsed primarily for documentation\nTry it out: stacked.it/app#\n\nExample\nS.E.A.L. Tutorial\nInt..."
+        },
+        {
+          "slide_number": 7,
+          "text": "JSON: JavaScript Object Notation\nOpen standard format\nUses human readable text to transmit objects consisting of key value pairs\nLanguage independent data format\nStructure of JSON: https://www.json.org/json-en.html\nTry it out: https://jsoneditoronline.org/\nExample\nMovie\n- imdbID: String\n- title: String\n- simplePlot: String\n- genres: [String]\n- year: int\n- rating: String\nhiddenFigures: Movie\nimdbID = \"tt4846340\"\ntitle = \"Hidden Figures\"\nsimplePlot = \"Three ...\"\ngenres = [\"History\", \"Drama\"]\nyear = 2016\nrating = \"7.8\"\n{\n\"imdbID\": \"tt4846340\",\n\"title\": \"Hidden Figures\",\n\"simplePlot\": \"Three ...\",\n\"genres\": [\"History\", \"Drama\"],\n\"year\": 2016,\n\"rating\": \"7.8\"\n}\n\u00a9 2024 Stephen Krusche\nIntroduction to Programming - W10 Programming Languages\n21",
+          "text_length": 746,
+          "is_empty": false,
+          "preview": "JSON: JavaScript Object Notation\nOpen standard format\nUses human readable text to transmit objects c..."
+        },
+        {
+          "slide_number": 8,
+          "text": "XML\u2022 The extensible language defines a set of rules for encoding documents in a format that is both human-readable and machine-readable\u2022 Try it out: www.tutorialspoint.com/online xml editor.htmExampleObjectMovie- imdbID: String- title: String- simplePlot: String- genres: [String]- year: int- rating: StringhiddenFigures: MovieimdbID = \"tt4846340\"title = \"Hidden Figures\"simplePlot = \"Three ...\"genres = [\"History\", \"Drama\"]year = 2016rating = \"7.8\"XML<?xml version=\"1.0\" encoding=\"UTF-8\"?> <movie><imdbID>tt4846340</imdbID><title>Hidden Figures</title><simplePlot>Three ...</simplePlot><genres><element>History</element><element>Drama</element></genres><year>2016</year><rating>7.8</rating></movie>\u00a9 2024 Stephen Krusche Introduction to Programming - W10 Programming Languages22",
+          "text_length": 779,
+          "is_empty": false,
+          "preview": "XML\u2022 The extensible language defines a set of rules for encoding documents in a format that is both ..."
+        },
+        {
+          "slide_number": 9,
+          "text": "YAML: YAML Ain't Markup Language\nYAML is a human- and machine-readable data serialization format\nOften used for configurations and data exchange between languages with different data structures.\nTry it out: https://codebeauty.org/yaml-editor-online\nExample\n\nClass\nMovie\n- imdbID: String\n- title: String\n- simplePlot: String\n- genres: [String]\n- year: int\n- rating: String\n\nObject\nhiddenFigures: Movie\nimdbID = \"tt4846340\"\ntitle = \"Hidden Figures\"\nsimplePlot = \"Three ...\"\ngenres = [\"History\", \"Drama\"]\nyear = 2016\nrating = \"7.8\"\n\nYAML\nmovie:\nimdb: \"tt4846340\"\ntitle: \"Hidden Figures\"\nsimplePlot: \"Three ...\"\ngenres:\n- \"History\"\n- \"Drama\"\nyear: 2016\nrating: \"7.8\"\n\u00a9 2024 Stephen Krusche Introduction to Programming - W10 Programming Languages 23",
+          "text_length": 744,
+          "is_empty": false,
+          "preview": "YAML: YAML Ain't Markup Language\nYAML is a human- and machine-readable data serialization format\nOft..."
+        },
+        {
+          "slide_number": 10,
+          "text": "Example: Smart Analyzer for Logs (S.E.A.L.)\u201ccorrelation_id\u201d:\u201d01f97d55-517e-48c3-86c4-c8ae0fd92ca7\u201d,\u201cfunction\u201d:\u201dstatus\u201d,\u201chost\u201d:\u201dip-172-31-16-5\u201d,\u201cmessage\u201d:\u201dCurrently 0 Services are finished.\u201d,\u201cpid\u201d:546,\u201cservice\u201d:\u201dSession\u201d,\u201ctid\u201d:768,\u201ctime\u201d:\u201d2020-07-05T14:16:00.490692803+00:00\u201d,\u201ctype\u201d:\u201dINFO\u201d,\u201cunit\u201d:\u201dDistributedMultistreamTranscodeservice\u201dNode Memory Utilization%MaxAverageMin21:00:0021:05:0021:10:0021:15:0021:20:00@timestamp per 10 secondsNode CPU Utilization%MaxAverageMin21:00:0021:05:0021:10:0021:15:0021:20:00@timestamp per 10 seconds\u00a9 2024 Stephan KruscheIntroduction to Programming - W10 Programming Languages24",
+          "text_length": 616,
+          "is_empty": false,
+          "preview": "Example: Smart Analyzer for Logs (S.E.A.L.)\u201ccorrelation_id\u201d:\u201d01f97d55-517e-48c3-86c4-c8ae0fd92ca7\u201d,\u201c..."
+        },
+        {
+          "slide_number": 11,
+          "text": "Example: Dataflow of S.E.A.L. kubernetes docker Google Cloud beats kafka logstash elasticsearch kibana Zookeeper ElastAlert by yet another Curator slack \u00a9 2024 Stephan Krusche Introduction to Programming - W10 Programming Languages 25",
+          "text_length": 234,
+          "is_empty": false,
+          "preview": "Example: Dataflow of S.E.A.L. kubernetes docker Google Cloud beats kafka logstash elasticsearch kiba..."
+        },
+        {
+          "slide_number": 12,
+          "text": "Example: Dataflow of S.A.L. Input: 100.000 log files in the JSON format {\u201ccorrelation_id\u201d:\u201c01f97d55-517e-48c3-86c4-c8ae0fd9f2ca\u201d,\u201cfunction\u201d:\u201cstatus\u201d,\u201chost\u201d:\u201cip-172-31-16-5\u201d,\u201cmessage\u201d:\u201cCurrently 0 Services are finished.\u201d,\u201cpid\u201d:768,\u201cservice\u201d:\u201cSession\u201d,\u201ccid\u201d:768,\u201ctime\u201d:\u201c2020-07-05T14:16:00.490692803+00:00\u201d,\u201ctype\u201d:\u201cINFO\u201d,\u201cunit\u201d:\u201cDistributedMultistreamTranscodeService\u201d} \u00a9 2024 Stephen Krusche Introduction to Programming - W10 Programming Languages 26 kubernetes docker beats kafka logstash elasticsearch kibana Zookeeper ElastAlert Curator slack",
+          "text_length": 544,
+          "is_empty": false,
+          "preview": "Example: Dataflow of S.A.L. Input: 100.000 log files in the JSON format {\u201ccorrelation_id\u201d:\u201c01f97d55-..."
+        },
+        {
+          "slide_number": 13,
+          "text": "Example: Dataflow of S.A.L. kibana-Dashboard Max Average Min 21:00:00 21:05:00 21:10:00 21:15:00 21:20:00 21:25:00 @timestamp per 10 seconds Node CPU Utilization Max Average Min 21:00:00 21:05:00 21:10:00 21:15:00 21:20:00 21:25:00 @timestamp per 10 seconds Output: Filtered data displayed in graphs kubernetes docker beats kafka logstash elasticsearch kibana ZooKeeper ElastAlert Curator slack \u00a9 2024 Stephan Krusche Introduction to Programming - W10 Programming Languages 27",
+          "text_length": 476,
+          "is_empty": false,
+          "preview": "Example: Dataflow of S.A.L. kibana-Dashboard Max Average Min 21:00:00 21:05:00 21:10:00 21:15:00 21:..."
+        },
+        {
+          "slide_number": 14,
+          "text": "Example: Dataflow of S.A.L. version: '3.3' services: kibana: image: docker.elasticco/kibana:$ELK_VERSION container_name: kibana volumes: type: bind source: ./kibana/kibana.yml target: /usr/share/kibana.yml read_only: true networks: sealnet: ipv4_address: 172.28.1.4 ports: \"5601:5601\" depends_on: elasticsearch networks: sealnet: ipam: driver: default config: subnet: 172.28.0.0/16 volumes: Introduction to Programming - W10 Programming Languages 28 kubernetes docker beats kafka logstash elasticsearch kibana ZooKeeper ElastAlert Curator slack",
+          "text_length": 544,
+          "is_empty": false,
+          "preview": "Example: Dataflow of S.A.L. version: '3.3' services: kibana: image: docker.elasticco/kibana:$ELK_VER..."
+        },
+        {
+          "slide_number": 15,
+          "text": "Gradle \u2022 Open-source build automation tool designed to be flexible enough to build almost any type of software \u2022 Resolve dependencies: download libraries, frameworks, and plugins from a central repository \u2192 simplifies reuse \u2022 Build software \u2192 typical tasks: clean, compile, build, test \u2022 Documentation: https://docs.gradle.org/current/userguide/getting_started_eng.html Dependency example ex04_1 httpclient httpcore commons-logging commons-codec jersey-server jersey-core jsr31-api asm jersey-client jersey-core Group ID: javax.ws.rs Artifact ID: jsr31-api Version: 1.1.1 \u00a92024 Stephan Krusche Introduction to Programming \u2013 W10 Programming Languages 29",
+          "text_length": 652,
+          "is_empty": false,
+          "preview": "Gradle \u2022 Open-source build automation tool designed to be flexible enough to build almost any type o..."
+        },
+        {
+          "slide_number": 16,
+          "text": "Let's create a Gradle project in IntelliJ plugins { id 'java' } group 'de.tum.ase' version '1.0-SNAPSHOT' repositories { mavenCentral() } dependencies { testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1' testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1' } test { useJUnitPlatform() } https://github.com/sintum/java-json-demo Introduction to Programming - W10 Programming Languages 30 2024 Stephen Krusche",
+          "text_length": 429,
+          "is_empty": false,
+          "preview": "Let's create a Gradle project in IntelliJ plugins { id 'java' } group 'de.tum.ase' version '1.0-SNAP..."
+        },
+        {
+          "slide_number": 17,
+          "text": "Dependencies \u2022 External libraries can be added easily \u2022 Maven central repository search: https://search.maven.org \u2022 Let\u2019s adapt build.gradle and add a common dependency: json 20231013 plugins { id \u2018java\u2019 id \u2018org.checkerframework\u2019 version \u20180.6.37\u2019 id \u2018application\u2019 } repositories { mavenCentral() } dependencies { implementation \u2018org.json:json:20231013\u2019 checkerframework \u2018org.checkerframework:checker:3.42.0\u2019 } application { mainClass = \u2018de.tum.in.ase.Main\u2019 } \u00a92024 Stephan Krusche Introduction to Programming - W10 Programming Languages 31",
+          "text_length": 539,
+          "is_empty": false,
+          "preview": "Dependencies \u2022 External libraries can be added easily \u2022 Maven central repository search: https://sea..."
+        },
+        {
+          "slide_number": 18,
+          "text": "import java.util.*;\npublic class Movie {\nprivate String imdbID;\nprivate String title;\nprivate String simplePlot;\nprivate String[] genres;\nprivate int year;\nprivate String rating;\npublic Movie(String imdbID, String title, String simplePlot, String[] genres, int year, String rating) {\nthis.imdbID = imdbID;\nthis.title = title;\nthis.simplePlot = simplePlot;\nthis.genres = genres;\nthis.year = year;\nthis.rating = rating;\n}\n@Override\npublic String toString() {\nreturn \"Movie{\" + \"imdbID=\\\"\" + imdbID + \"\\\"\" + \", title=\\\"\" + title + \"\\\"\" + \", simplePlot=\\\"\" + simplePlot + \"\\\"\" + \", genres=\" + Arrays.toString(genres) + \", year=\" + year + \", rating=\\\"\" + rating + \"\\\"\" + \"}\";\n}\n}\n\u00a9 2024 Stephan Krusche Introduction to Programming - W10 Programming Languages 32",
+          "text_length": 756,
+          "is_empty": false,
+          "preview": "import java.util.*;\npublic class Movie {\nprivate String imdbID;\nprivate String title;\nprivate String..."
+        },
+        {
+          "slide_number": 19,
+          "text": "import org.json.*;import java.util.*;public class Movie { // ... //Serialize: Movie -> JSONpublic JSONObject toJson() {JSONObject json = new JSONObject();json.put(\"imdbID\", imdbID);json.put(\"title\", title);json.put(\"genres\", List.of(genres));json.put(\"simplePlot\", simplePlot);json.put(\"year\", year);json.put(\"rating\", rating);return json;} }JSON can be seen as a mixture of maps (JSONObject) and arrays (JSONArray) \u00a9 2024 Stephan Krusche Introduction to Programming - W10 Programming Languages 33",
+          "text_length": 497,
+          "is_empty": false,
+          "preview": "import org.json.*;import java.util.*;public class Movie { // ... //Serialize: Movie -> JSONpublic JS..."
+        },
+        {
+          "slide_number": 20,
+          "text": "import org.json.*;\nimport java.util.*;\npublic class Movie {\n// ...\n// Deserialize: JSON -> Movie\npublic Movie(JSONObject jsonObject) {\nimdbID = jsonObject.getString(\"imdbID\");\ntitle = jsonObject.getString(\"title\");\nsimplePlot = jsonObject.getString(\"simplePlot\");\nJSONArray genreJsonArray = jsonObject.getJSONArray(\"genres\");\ngenres = new String[genreJsonArray.length()];\nfor (int i = 0; i < genreJsonArray.length(); i++) {\ngenres[i] = genreJsonArray.getString(i);\n}\nyear = jsonObject.getInt(\"year\");\nrating = jsonObject.getString(\"rating\");\n}\nJSON can be seen as a mixture of maps (JSONObject) and arrays (JSONArray)\n\u00a9 2024 Stephan Krusche Introduction to Programming - W10 Programming Languages 34",
+          "text_length": 699,
+          "is_empty": false,
+          "preview": "import org.json.*;\nimport java.util.*;\npublic class Movie {\n// ...\n// Deserialize: JSON -> Movie\npub..."
+        },
+        {
+          "slide_number": 21,
+          "text": "import org.json.JSONObject;public class Main {public static void main(String[] args) {Movie hiddenFiguresMovie = new Movie(\"tt4846340\", \"Hidden Figures\", \"Three ...\", new String[] {\"History\", \"Drama\"}, 2016, \"7.8\");String jsonString = serialize(hiddenFiguresMovie);System.out.println(jsonString);Movie anotherHiddenFigureMovie = deserialize(jsonString);System.out.println(anotherHiddenFigureMovie);} // Serialize - Movie -> JSON Stringpublic static String serialize(Movie movie) {JSONObject jsonObject = movie.toJson();return jsonObject.toString(4);} public static Movie deserialize(String jsonString) {JSONObject jsonObject = new JSONObject(jsonString);return new Movie(jsonObject);} } {\"year\": 2016,\"imdbID\": \"tt4846340\",\"genres\": [\"History\",\"Drama\"],\"rating\": \"7.8\"},\"title\": \"Hidden Figures\"Movie(imdbID=tt4846340\", title=\"Hidden Figures\", genres=[History, Drama], year=2016, rating=7.8) \u00a9 2024 Krusche Introduction to Programming - W10 Programming Languages 35",
+          "text_length": 965,
+          "is_empty": false,
+          "preview": "import org.json.JSONObject;public class Main {public static void main(String[] args) {Movie hiddenFi..."
+        }
+      ],
+      "total_slides": 21,
+      "file_size": 692054,
+      "total_characters": 12521,
+      "empty_slides": 0,
+      "non_empty_slides": 21
+    },
+    {
+      "pdf_name": "ITP2425 W10U03 Syntax trees.pdf",
+      "success": true,
+      "error": null,
+      "slides": [
+        {
+          "slide_number": 1,
+          "text": "Outline\n\u2022 Overview\n\u2022 Domain specific languages\n\u2022 Syntax trees\n\u2022 Control flow diagrams\n\u2022 Regular expressions\n\u00a9 2024 Stephan Krusche Introduction to Programming - W10 Programming Languages 37",
+          "text_length": 189,
+          "is_empty": false,
+          "preview": "Outline\n\u2022 Overview\n\u2022 Domain specific languages\n\u2022 Syntax trees\n\u2022 Control flow diagrams\n\u2022 Regular expr..."
+        },
+        {
+          "slide_number": 2,
+          "text": "Motivation \u2022 Grammar refers to a set of rules that defines the structure and syntax of the language. \u2022 Grammar in English: past perfect for the past in reported speech. After I had finished my presentation, I realized that I had forgotten to include an important detail. \u2022 Grammar in programming languages: if + expression for(\u2026; \u2026; \u2026) int number; if (number > 0) { System.out.println(\"The number is positive!\"); } for (int i = 0; i < 10; i++) { System.out.println(\"Number: \" + i); } \u2022 Adherence to grammatical rules trumps immediate meaning. \u00a9 2024 Krusche Introduction to Programming - W10 Programming Languages 38",
+          "text_length": 616,
+          "is_empty": false,
+          "preview": "Motivation \u2022 Grammar refers to a set of rules that defines the structure and syntax of the language...."
+        },
+        {
+          "slide_number": 3,
+          "text": "Generation of the parse <if condition> Then <statement> End If <if condition> Then <statements> Else <statement> End If <condition> <expression> <relational operator> <expression> <relational operator> <><=><><=>< <expression> <term> <term> <expression> <term> <term> <factor> <factor> <term> <factor> <identifier> <number> <expression> <string literal> <statements> <statement> <statements> <assignment> <identifier> <expression> <identifier> <letter> <identifier> <letter> <digit> <0> <1> <2> <3> <4> <5> <6> <7> <8> <9> <number> <integer> <integer> <integer> <digit> <integer> <digit> <string literal> <quote> <character> <quote> <characters> <quote> <character> <characters> <quote> If Temperature < 0 Then Description = \u201cFreezing\u201d End If \u00a9 2024 Stephan Krusche Introduction to Programming - W10 Programming Languages 39",
+          "text_length": 824,
+          "is_empty": false,
+          "preview": "Generation of the parse <if condition> Then <statement> End If <if condition> Then <statements> Else..."
+        },
+        {
+          "slide_number": 4,
+          "text": "AST2 * 7 + 3Parse treeexprterm+termfactor*factorfactor273\u00a9 2024 KruscheIntroduction to Programming - W10 Programming Languages40",
+          "text_length": 128,
+          "is_empty": false,
+          "preview": "AST2 * 7 + 3Parse treeexprterm+termfactor*factorfactor273\u00a9 2024 KruscheIntroduction to Programming -..."
+        },
+        {
+          "slide_number": 5,
+          "text": "Syntax tree\n\u2022 Tree representation of the syntactic structure of text (often source code) written in a formal language\n\u2022 Each node of the tree denotes a construct in the text\n\u2022 The syntax is abstract: it does not represent every detail, but just the structural or content-related details\n\u2022 For example: grouping parentheses are implicit in the tree structure, so these do not have to be represented as separate nodes\n\u2022 A syntactic construct like if-else statement may be denoted by means of a single node with e.g. three branches\n\u2022 Used in compilers, program analysis and program transformation systems\n\u00a9 2024 Stephan Krusche Introduction to Programming - W10 Programming Languages 41",
+          "text_length": 683,
+          "is_empty": false,
+          "preview": "Syntax tree\n\u2022 Tree representation of the syntactic structure of text (often source code) written in ..."
+        },
+        {
+          "slide_number": 6,
+          "text": "Example: Euclidean algorithm (greatest common divisor) while b \u2260 0: if a > b: a := a - b else: b := b - a return a \u00a9 2024 Stephen Krusche Introduction to Programming - W10 Programming Languages 42 statement sequence while condition compare op: \u2260 body return variable name: a variable name: b constant value: 0 branch if-body else-body assign assign variable name: a variable name: b bin op: - variable name: b bin op: - variable name: a variable name: b",
+          "text_length": 453,
+          "is_empty": false,
+          "preview": "Example: Euclidean algorithm (greatest common divisor) while b \u2260 0: if a > b: a := a - b else: b := ..."
+        },
+        {
+          "slide_number": 7,
+          "text": "Motivation for syntax trees\nWidely used in compilers to represent the program\nUsually the result of the syntax analysis phase of a compiler\nServe as an intermediate representation of the program\nHave a strong impact on the final output of the compiler\nProperties\nCan be edited and enhanced with information such as properties and annotations\nDo not need to include inessential punctuation or delimiters\nContain extra information about the program\nExample: store the position in the source code to print useful messages\n\u00a9 2024 Stephan Krusche Introduction to Programming - W10 Programming Languages 43",
+          "text_length": 600,
+          "is_empty": false,
+          "preview": "Motivation for syntax trees\nWidely used in compilers to represent the program\nUsually the result of ..."
+        },
+        {
+          "slide_number": 8,
+          "text": "Design \u2022 The design of a syntax tree is often closely linked with the design of a compiler and its expected features \u2022 Core requirements \u2022 Variable types and the location of each declaration in the source code must be preserved \u2022 The order of executable statements must be explicitly represented and well defined \u2022 Left and right components of binary operations must be stored and correctly identified \u2022 Identifiers and their assigned values must be stored for assignment statements \u00a92024 Stephan Krusche Introduction to Programming - W10 Programming Languages 44",
+          "text_length": 563,
+          "is_empty": false,
+          "preview": "Design \u2022 The design of a syntax tree is often closely linked with the design of a compiler and its e..."
+        },
+        {
+          "slide_number": 9,
+          "text": "Usage \u2022 Semantic analysis: the compiler checks for correct usage of the program and the language \u2022 Creation of symbol tables based on the abstract syntax tree (AST) during semantic analysis \u2022 Verification: a complete traversal of the tree allows verification of the correctness of the program \u2022 Code generation: the syntax tree serves as the base for code generation \u2022 Often used to generate an intermediate representation, sometimes called an intermediate language, for the code generation 2024 Stephan Krusche Introduction to Programming - W10 Programming Languages 45",
+          "text_length": 570,
+          "is_empty": false,
+          "preview": "Usage \u2022 Semantic analysis: the compiler checks for correct usage of the program and the language \u2022 C..."
+        },
+        {
+          "slide_number": 10,
+          "text": "Compiler \u2022 ASTs are tree representations of code \u2022 Fundamental part of the way a compiler works \u2022 When a compiler transforms some code there are fundamentally the following steps 1. Lexical analysis 2. Syntax analysis 3. Code generation input tokens AST \u00a9 2024 Stephan Krusche Introduction to Programming - W10 Programming Languages 46",
+          "text_length": 335,
+          "is_empty": false,
+          "preview": "Compiler \u2022 ASTs are tree representations of code \u2022 Fundamental part of the way a compiler works \u2022 Wh..."
+        },
+        {
+          "slide_number": 11,
+          "text": "Integrated development (IDE) \u2022 Many features of an IDE depend on ASTs, e.g. \u2022 Code formatting \u2022 Code highlighting \u2022 Code refactoring \u2022 Round-trip capability \u2022 Create the AST of the source code \u2022 Manipulate the AST (e.g. rename variables) \u2022 Write the changes back to the source code \u2192 Easy to change code programmatically (using strongly typed objects in the AST) \u00a9 2024 Stephan Krusche Introduction to Programming - W10 Programming Languages 47",
+          "text_length": 444,
+          "is_empty": false,
+          "preview": "Integrated development (IDE) \u2022 Many features of an IDE depend on ASTs, e.g. \u2022 Code formatting \u2022 Code..."
+        },
+        {
+          "slide_number": 12,
+          "text": "int x;\nx = readInt();\nif (x > 0) {\nwrite(1);\n} else {\nwrite(0);\n}\n\u2022 The hierarchical structure of program fragments can be visualized by means of syntax trees.\n\u2022 Note: we ignore { and } in the syntax tree.\n\u00a9 2024 Stephan Krusche Introduction to Programming - W10 Programming Languages 48",
+          "text_length": 287,
+          "is_empty": false,
+          "preview": "int x;\nx = readInt();\nif (x > 0) {\nwrite(1);\n} else {\nwrite(0);\n}\n\u2022 The hierarchical structure of pr..."
+        },
+        {
+          "slide_number": 13,
+          "text": "Syntax \u2022 Syntax trees for x > 0 and write(0); and write(1); \u2022 Leaves: tokens \u2022 Internal nodes: names of program \u2022 \u00a9 2024 Stephan Krusche Introduction to Programming - W10 Programming Languages 49 x > 0 write(0); write(1); name comp number number number",
+          "text_length": 252,
+          "is_empty": false,
+          "preview": "Syntax \u2022 Syntax trees for x > 0 and write(0); and write(1); \u2022 Leaves: tokens \u2022 Internal nodes: names..."
+        },
+        {
+          "slide_number": 14,
+          "text": "int x ; x = readInt() ; if (x > 0) { write(1) ; } else { write(0) ; } Note: we ignore { and } in the syntax tree Introduction to Programming - W10 Programming Languages 50",
+          "text_length": 171,
+          "is_empty": false,
+          "preview": "int x ; x = readInt() ; if (x > 0) { write(1) ; } else { write(0) ; } Note: we ignore { and } in the..."
+        },
+        {
+          "slide_number": 15,
+          "text": "Exercise W10E02\nCreate a syntax tree for the following program\nUse Apollon on https://apollon.ase.in.tum.de to model it\nint x = readInt();\nwhile (x > 0) {\nwrite(x);\nx = x - 1;\n}\nHint: ignore { and } in the syntax tree\n\u00a9 2024 Stephan Krusche Introduction to Programming - W10 Programming Languages 51",
+          "text_length": 299,
+          "is_empty": false,
+          "preview": "Exercise W10E02\nCreate a syntax tree for the following program\nUse Apollon on https://apollon.ase.in..."
+        }
+      ],
+      "total_slides": 15,
+      "file_size": 835358,
+      "total_characters": 6414,
+      "empty_slides": 0,
+      "non_empty_slides": 15
+    }
+  ],
+  "statistics": {
+    "total_pdfs": 3,
+    "total_slides": 50,
+    "successful_extractions": 50,
+    "failed_extractions": 0,
+    "empty_extractions": 0
+  }
+}

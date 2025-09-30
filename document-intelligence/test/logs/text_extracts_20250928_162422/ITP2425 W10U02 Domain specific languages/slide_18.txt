@@ -1,0 +1,28 @@
+PDF: ITP2425 W10U02 Domain specific languages.pdf
+Slide: 18
+Characters: 756
+Empty: False
+--------------------------------------------------
+
+import java.util.*;
+public class Movie {
+private String imdbID;
+private String title;
+private String simplePlot;
+private String[] genres;
+private int year;
+private String rating;
+public Movie(String imdbID, String title, String simplePlot, String[] genres, int year, String rating) {
+this.imdbID = imdbID;
+this.title = title;
+this.simplePlot = simplePlot;
+this.genres = genres;
+this.year = year;
+this.rating = rating;
+}
+@Override
+public String toString() {
+return "Movie{" + "imdbID=\"" + imdbID + "\"" + ", title=\"" + title + "\"" + ", simplePlot=\"" + simplePlot + "\"" + ", genres=" + Arrays.toString(genres) + ", year=" + year + ", rating=\"" + rating + "\"" + "}";
+}
+}
+© 2024 Stephan Krusche Introduction to Programming - W10 Programming Languages 32

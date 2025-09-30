@@ -1,0 +1,203 @@
+{
+  "test_timestamp": "2025-09-28T21:47:31.650741",
+  "base_url": "http://localhost:28947",
+  "queries": [
+    {
+      "query": "photosynthesis in plant cells and chloroplast function",
+      "description": "Biology query (should return no relevant results)",
+      "status": "success",
+      "total_hits": 0,
+      "slides_found": 0,
+      "images_found": 0,
+      "top_similarity_score": 0,
+      "slides_details": []
+    },
+    {
+      "query": "neural networks and deep learning algorithms machine learning",
+      "description": "AI/ML query (should return no relevant results)",
+      "status": "success",
+      "total_hits": 0,
+      "slides_found": 0,
+      "images_found": 0,
+      "top_similarity_score": 0,
+      "slides_details": []
+    },
+    {
+      "query": "quantum computing qubits superposition entanglement",
+      "description": "Quantum computing query (should return no relevant results)",
+      "status": "success",
+      "total_hits": 0,
+      "slides_found": 0,
+      "images_found": 0,
+      "top_similarity_score": 0,
+      "slides_details": []
+    },
+    {
+      "query": "What is a method signature in java",
+      "description": "should match W01U04 content",
+      "status": "success",
+      "total_hits": 0,
+      "slides_found": 0,
+      "images_found": 0,
+      "top_similarity_score": 0,
+      "slides_details": []
+    },
+    {
+      "query": "What are basic data types in Java",
+      "description": "Basic types query (should match W01U03 content)",
+      "status": "success",
+      "total_hits": 0,
+      "slides_found": 0,
+      "images_found": 0,
+      "top_similarity_score": 0,
+      "slides_details": []
+    },
+    {
+      "query": "What is public static void main in Java",
+      "description": "Methods query (should match W01U04 content)",
+      "status": "success",
+      "total_hits": 0,
+      "slides_found": 0,
+      "images_found": 0,
+      "top_similarity_score": 0,
+      "slides_details": []
+    },
+    {
+      "query": "UML class diagrams unified modeling language software design",
+      "description": "UML query (should match W01U05 content)",
+      "status": "success",
+      "total_hits": 0,
+      "slides_found": 0,
+      "images_found": 0,
+      "top_similarity_score": 0,
+      "slides_details": []
+    },
+    {
+      "query": "What is an expression in java",
+      "description": "Expressions query (should match W02U01 content)",
+      "status": "success",
+      "total_hits": 0,
+      "slides_found": 0,
+      "images_found": 0,
+      "top_similarity_score": 0,
+      "slides_details": []
+    },
+    {
+      "query": "programming languages compiled interpreted Java",
+      "description": "Course-specific programming query (should match W10 content)",
+      "status": "success",
+      "total_hits": 1,
+      "slides_found": 1,
+      "images_found": 1,
+      "top_similarity_score": 0.7845791810264081,
+      "slides_details": [
+        {
+          "document_id": "ITP2425 W10U01 Overview",
+          "slide_no": 13,
+          "course_id": "test_course_w10",
+          "scores": {
+            "fused": 0.7845791810264081,
+            "text_similarity": 0.7926476540086649,
+            "image_similarity": 0.7523052890973811,
+            "text_distance": 0.2615946
+          },
+          "content_preview": "Java • Unique mix: first compiled to an intermediate form (bytecode), then interpreted • Some might argue that Java is actually a compiled language, a..."
+        }
+      ]
+    },
+    {
+      "query": "Stephan Krusche Introduction to Programming W10",
+      "description": "Instructor and course-specific query (should match W10 content)",
+      "status": "success",
+      "total_hits": 3,
+      "slides_found": 3,
+      "images_found": 8,
+      "top_similarity_score": 0.8228908434433473,
+      "slides_details": [
+        {
+          "document_id": "ITP2425 W10U01 Overview",
+          "slide_no": 1,
+          "course_id": "test_course_w10",
+          "scores": {
+            "fused": 0.8228908434433473,
+            "text_similarity": 0.8730557321674547,
+            "image_similarity": 0.6222312885469172,
+            "text_distance": 0.14540225
+          },
+          "content_preview": "Introduction to ProgrammingW10 Programming LanguagesStephan Krusche18 December 2024Technical University of Munich\n\n"
+        },
+        {
+          "document_id": "ITP2425 W10U01 Overview",
+          "slide_no": 4,
+          "course_id": "test_course_w10",
+          "scores": {
+            "fused": 0.8148670168420051,
+            "text_similarity": 0.87201679783398,
+            "image_similarity": 0.5862678928741055,
+            "text_distance": 0.1467669
+          },
+          "content_preview": "JanaJasminaCatherineEmaCODING© 2024 Stephan KruscheIntroduction to Programming - W10 Programming Languages4\n\n"
+        },
+        {
+          "document_id": "test_course_w01u02_20250928_212715",
+          "slide_no": 16,
+          "course_id": "test_course_w01u02",
+          "scores": {
+            "fused": 0.7525928229846381,
+            "text_similarity": 0.7800595985814867,
+            "image_similarity": 0.6427257205972441,
+            "text_distance": 0.28195333
+          },
+          "content_preview": "Example: points in R2distpXyφ© 2024 Stephen Krusche Introduction to Programming - W01 Introduction63\n\n"
+        }
+      ]
+    },
+    {
+      "query": "for loops and while loops in programming iteration control structures",
+      "description": "Control structures query (similar to programming but not covered in these slides)",
+      "status": "success",
+      "total_hits": 0,
+      "slides_found": 0,
+      "images_found": 0,
+      "top_similarity_score": 0,
+      "slides_details": []
+    },
+    {
+      "query": "arrays lists data structures memory allocation",
+      "description": "Data structures query (programming-related but not specifically covered)",
+      "status": "success",
+      "total_hits": 0,
+      "slides_found": 0,
+      "images_found": 0,
+      "top_similarity_score": 0,
+      "slides_details": []
+    },
+    {
+      "query": "exception handling try catch finally error management",
+      "description": "Exception handling query (advanced topic not in basic slides)",
+      "status": "success",
+      "total_hits": 0,
+      "slides_found": 0,
+      "images_found": 0,
+      "top_similarity_score": 0,
+      "slides_details": []
+    },
+    {
+      "query": "software testing unit testing debugging code quality",
+      "description": "Testing concepts query (software engineering but not in these slides)",
+      "status": "success",
+      "total_hits": 0,
+      "slides_found": 0,
+      "images_found": 0,
+      "top_similarity_score": 0,
+      "slides_details": []
+    }
+  ],
+  "summary": {
+    "total_tests": 14,
+    "successful_tests": 14,
+    "tests_with_results": 2,
+    "success_rate": 100.0,
+    "results_rate": 14.285714285714285
+  }
+}

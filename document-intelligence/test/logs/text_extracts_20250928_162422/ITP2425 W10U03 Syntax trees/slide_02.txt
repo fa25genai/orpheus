@@ -1,0 +1,7 @@
+PDF: ITP2425 W10U03 Syntax trees.pdf
+Slide: 2
+Characters: 616
+Empty: False
+--------------------------------------------------
+
+Motivation • Grammar refers to a set of rules that defines the structure and syntax of the language. • Grammar in English: past perfect for the past in reported speech. After I had finished my presentation, I realized that I had forgotten to include an important detail. • Grammar in programming languages: if + expression for(…; …; …) int number; if (number > 0) { System.out.println("The number is positive!"); } for (int i = 0; i < 10; i++) { System.out.println("Number: " + i); } • Adherence to grammatical rules trumps immediate meaning. © 2024 Krusche Introduction to Programming - W10 Programming Languages 38

@@ -1,0 +1,7 @@
+PDF: ITP2425 W10U01 Overview.pdf
+Slide: 4
+Characters: 107
+Empty: False
+--------------------------------------------------
+
+JanaJasminaCatherineEmaCODING© 2024 Stephan KruscheIntroduction to Programming - W10 Programming Languages4

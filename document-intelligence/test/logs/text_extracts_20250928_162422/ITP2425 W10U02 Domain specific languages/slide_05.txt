@@ -1,0 +1,25 @@
+PDF: ITP2425 W10U02 Domain specific languages.pdf
+Slide: 5
+Characters: 726
+Empty: False
+--------------------------------------------------
+
+HTML: HyperText Markup Language
+HTML is the standard markup language for documents, designed to be displayed in a web browser.
+It can be assisted by technologies such as Cascading Style Sheets (CSS) and scripting languages such as JavaScript (JS)
+Cheatsheet: https://htmlcheatsheet.com
+Try it out: https://html-online.com/editor
+Example
+<!doctype html>
+<html lang="en">
+<head>
+</head>
+<body id="top" class="main_Background">
+<h2 color title="Welcome, Moin, Привет, Bonjour, ...">
+</html>
+© 2024 Stephan Krusche
+Introduction to Programming - W10 Programming Languages
+19
+SEAL
+Welcome, Moin, Привет, Bonjour, ...
+This page introduces you to the diploma thesis: Smart Encoding Analyzer for Logs or as we like to call it: S.E.A.L.

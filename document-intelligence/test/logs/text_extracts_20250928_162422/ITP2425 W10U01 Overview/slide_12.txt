@@ -1,0 +1,15 @@
+PDF: ITP2425 W10U01 Overview.pdf
+Slide: 12
+Characters: 572
+Empty: False
+--------------------------------------------------
+
+Advantages of compiled & interpreted languages
+• Advantages of compiled languages
+• Faster performance due to translation to machine code in advance
+• Opportunity to apply quite powerful optimizations during the compile stage
+• Advantages of interpreted languages
+• Easier to implement (writing good compilers is very hard)
+• No need to run a compilation stage: can execute code directly on-the-fly
+• Better suited for dynamic languages due to on-the-fly code changes and immediate feedback
+© 2024 Stephan Krusche Introduction to Programming - W10 Programming Languages 12

@@ -1,0 +1,16 @@
+PDF: ITP2425 W10U02 Domain specific languages.pdf
+Slide: 3
+Characters: 404
+Empty: False
+--------------------------------------------------
+
+Advantages and disadvantages of DSLs
++ Efficiency
++ Integration between developers and application domain experts
++ Independent of the target platform
++ Increased quality
+- Narrows the use
+- Learning curve
+- Additional effort for configuration
+- DSL creators need domain knowledge as well as language-development knowledge
+© 2024 Stephan Krusche Introduction to Programming - W10 Programming Languages 17

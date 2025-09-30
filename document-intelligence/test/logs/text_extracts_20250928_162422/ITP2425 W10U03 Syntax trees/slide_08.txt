@@ -1,0 +1,7 @@
+PDF: ITP2425 W10U03 Syntax trees.pdf
+Slide: 8
+Characters: 563
+Empty: False
+--------------------------------------------------
+
+Design • The design of a syntax tree is often closely linked with the design of a compiler and its expected features • Core requirements • Variable types and the location of each declaration in the source code must be preserved • The order of executable statements must be explicitly represented and well defined • Left and right components of binary operations must be stored and correctly identified • Identifiers and their assigned values must be stored for assignment statements ©2024 Stephan Krusche Introduction to Programming - W10 Programming Languages 44

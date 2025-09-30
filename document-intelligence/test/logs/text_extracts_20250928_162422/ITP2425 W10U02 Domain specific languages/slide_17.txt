@@ -1,0 +1,7 @@
+PDF: ITP2425 W10U02 Domain specific languages.pdf
+Slide: 17
+Characters: 539
+Empty: False
+--------------------------------------------------
+
+Dependencies • External libraries can be added easily • Maven central repository search: https://search.maven.org • Let’s adapt build.gradle and add a common dependency: json 20231013 plugins { id ‘java’ id ‘org.checkerframework’ version ‘0.6.37’ id ‘application’ } repositories { mavenCentral() } dependencies { implementation ‘org.json:json:20231013’ checkerframework ‘org.checkerframework:checker:3.42.0’ } application { mainClass = ‘de.tum.in.ase.Main’ } ©2024 Stephan Krusche Introduction to Programming - W10 Programming Languages 31

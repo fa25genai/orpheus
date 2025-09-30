@@ -1,0 +1,153 @@
+{
+  "test_timestamp": "2025-09-28T21:47:16.765294",
+  "base_url": "http://localhost:28947",
+  "queries": [
+    {
+      "query": "photosynthesis in plant cells and chloroplast function",
+      "description": "Biology query (should return no relevant results)",
+      "status": "success",
+      "total_hits": 0,
+      "slides_found": 0,
+      "images_found": 0,
+      "top_similarity_score": 0,
+      "slides_details": []
+    },
+    {
+      "query": "neural networks and deep learning algorithms machine learning",
+      "description": "AI/ML query (should return no relevant results)",
+      "status": "success",
+      "total_hits": 0,
+      "slides_found": 0,
+      "images_found": 0,
+      "top_similarity_score": 0,
+      "slides_details": []
+    },
+    {
+      "query": "quantum computing qubits superposition entanglement",
+      "description": "Quantum computing query (should return no relevant results)",
+      "status": "success",
+      "total_hits": 0,
+      "slides_found": 0,
+      "images_found": 0,
+      "top_similarity_score": 0,
+      "slides_details": []
+    },
+    {
+      "query": "What is a method signature in java",
+      "description": "should match W01U04 content",
+      "status": "success",
+      "total_hits": 0,
+      "slides_found": 0,
+      "images_found": 0,
+      "top_similarity_score": 0,
+      "slides_details": []
+    },
+    {
+      "query": "What are basic data types in Java",
+      "description": "Basic types query (should match W01U03 content)",
+      "status": "success",
+      "total_hits": 0,
+      "slides_found": 0,
+      "images_found": 0,
+      "top_similarity_score": 0,
+      "slides_details": []
+    },
+    {
+      "query": "What is public static void main in Java",
+      "description": "Methods query (should match W01U04 content)",
+      "status": "success",
+      "total_hits": 0,
+      "slides_found": 0,
+      "images_found": 0,
+      "top_similarity_score": 0,
+      "slides_details": []
+    },
+    {
+      "query": "UML class diagrams unified modeling language software design",
+      "description": "UML query (should match W01U05 content)",
+      "status": "success",
+      "total_hits": 0,
+      "slides_found": 0,
+      "images_found": 0,
+      "top_similarity_score": 0,
+      "slides_details": []
+    },
+    {
+      "query": "What is an expression in java",
+      "description": "Expressions query (should match W02U01 content)",
+      "status": "success",
+      "total_hits": 0,
+      "slides_found": 0,
+      "images_found": 0,
+      "top_similarity_score": 0,
+      "slides_details": []
+    },
+    {
+      "query": "programming languages compiled interpreted Java",
+      "description": "Course-specific programming query (should match W10 content)",
+      "status": "success",
+      "total_hits": 0,
+      "slides_found": 0,
+      "images_found": 0,
+      "top_similarity_score": 0,
+      "slides_details": []
+    },
+    {
+      "query": "Stephan Krusche Introduction to Programming W10",
+      "description": "Instructor and course-specific query (should match W10 content)",
+      "status": "success",
+      "total_hits": 0,
+      "slides_found": 0,
+      "images_found": 0,
+      "top_similarity_score": 0,
+      "slides_details": []
+    },
+    {
+      "query": "for loops and while loops in programming iteration control structures",
+      "description": "Control structures query (similar to programming but not covered in these slides)",
+      "status": "success",
+      "total_hits": 0,
+      "slides_found": 0,
+      "images_found": 0,
+      "top_similarity_score": 0,
+      "slides_details": []
+    },
+    {
+      "query": "arrays lists data structures memory allocation",
+      "description": "Data structures query (programming-related but not specifically covered)",
+      "status": "success",
+      "total_hits": 0,
+      "slides_found": 0,
+      "images_found": 0,
+      "top_similarity_score": 0,
+      "slides_details": []
+    },
+    {
+      "query": "exception handling try catch finally error management",
+      "description": "Exception handling query (advanced topic not in basic slides)",
+      "status": "success",
+      "total_hits": 0,
+      "slides_found": 0,
+      "images_found": 0,
+      "top_similarity_score": 0,
+      "slides_details": []
+    },
+    {
+      "query": "software testing unit testing debugging code quality",
+      "description": "Testing concepts query (software engineering but not in these slides)",
+      "status": "success",
+      "total_hits": 0,
+      "slides_found": 0,
+      "images_found": 0,
+      "top_similarity_score": 0,
+      "slides_details": []
+    }
+  ],
+  "summary": {
+    "total_tests": 14,
+    "successful_tests": 14,
+    "tests_with_results": 0,
+    "success_rate": 100.0,
+    "results_rate": 0.0
+  }
+}

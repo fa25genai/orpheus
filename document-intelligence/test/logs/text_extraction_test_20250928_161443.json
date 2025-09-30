@@ -1,0 +1,41 @@
+{
+  "test_metadata": {
+    "start_time": "2025-09-28T16:14:43.027319",
+    "test_folder": "/Users/raj.vasani/Developer/fa25/orpheus/document-intelligence/test",
+    "test_name": "Text Extraction Service Test",
+    "end_time": "2025-09-28T16:14:43.034585"
+  },
+  "tested_pdfs": [
+    {
+      "pdf_name": "ITP2425 W10U01 Overview.pdf",
+      "success": false,
+      "error": "No text extracted",
+      "slides": [],
+      "total_slides": 0,
+      "file_size": 2069148
+    },
+    {
+      "pdf_name": "ITP2425 W10U02 Domain specific languages.pdf",
+      "success": false,
+      "error": "No text extracted",
+      "slides": [],
+      "total_slides": 0,
+      "file_size": 692054
+    },
+    {
+      "pdf_name": "ITP2425 W10U03 Syntax trees.pdf",
+      "success": false,
+      "error": "No text extracted",
+      "slides": [],
+      "total_slides": 0,
+      "file_size": 835358
+    }
+  ],
+  "statistics": {
+    "total_pdfs": 3,
+    "total_slides": 0,
+    "successful_extractions": 0,
+    "failed_extractions": 3,
+    "empty_extractions": 0
+  }
+}

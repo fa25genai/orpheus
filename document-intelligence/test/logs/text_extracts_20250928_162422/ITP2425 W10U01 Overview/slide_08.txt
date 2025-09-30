@@ -1,0 +1,7 @@
+PDF: ITP2425 W10U01 Overview.pdf
+Slide: 8
+Characters: 522
+Empty: False
+--------------------------------------------------
+
+Why is there no universal language? 1. Diversity of Applications 2. Performance Requirements 3. Abstraction Levels 4. Paradigm Differences 5. Evolving Needs 6. Community and Ecosystem 7. Legacy Systems https://www.statista.com/statistics/793628/worldwide-developer-survey-most-used-languages/ ©2024 Stephan Krusche Introduction to Programming - W10 Programming Languages JavaScript 63.61% HTML/CSS 52.97% Python 49.28% SQL 48.66% TypeScript 38.87% Bash/Shell (all shells) 32.77% Java 30.55% C# 27.62% C++ 22.42% C 19.34% 8

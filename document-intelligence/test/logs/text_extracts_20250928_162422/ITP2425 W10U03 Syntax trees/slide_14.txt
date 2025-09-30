@@ -1,0 +1,7 @@
+PDF: ITP2425 W10U03 Syntax trees.pdf
+Slide: 14
+Characters: 171
+Empty: False
+--------------------------------------------------
+
+int x ; x = readInt() ; if (x > 0) { write(1) ; } else { write(0) ; } Note: we ignore { and } in the syntax tree Introduction to Programming - W10 Programming Languages 50

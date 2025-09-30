@@ -1,0 +1,115 @@
+Outline
+• General orientation of the the course
+• Object oriented programming
+• Basic types and their operations
+• Methods
+• UML class diagrams
+© 2024 Stephan Krusche Introduction to Programming - W01 Introduction 93
+
+Methods realize the dynamic behavior of objects and define functionsint average(int v1, int v2) {return (v1 + v2) / 2; }int fahrenheit(int celsius) {return (celsius * 9) / 5 + 32; }double voltage(double resistance, double current) {return resistance * current; }© 2024 Stephan Krusche Introduction to Programming - W01 Introduction94
+
+Method signature • The interface of a mathematical function consists of the name of the function, an ordered list of (formal) parameters and their types, and the return type • A method signature in Java consists of • Name of the method • Ordered list of (formal) parameters and their types (this determines the order and number) • Note: in Java, the return type is not part of the method signature • Examples int fahrenheit(int celsius) { return (celsius * 9) / 5 + 32; } double fahrenheit(double celsius) { return (celsius * 9) / 5 + 32; } © 2024 Stephan Krusche Introduction to Programming - W01 Introduction 95
+
+Method call
+Example: Ohm's law
+double v(double r, double i) { return r * i; }
+v: voltage
+i: current
+r: resistance
+double r1 = 3.0;
+double v1 = v(r1, 2.0);
+Syntax: methodname(actualparameter)
+Result: An element of the method
+What is the value of v1?
+© 2024 Stephan Krusche Introduction to Programming - W01 Introduction 96
+
+Example: cylinder volume
+• Mathematical notation volume(r, h) = r² * π * h
+• Java declaration double circleArea(double radius) { return radius * radius * 3.1416; }
+double cylinderVolume(double height, double radius) { return height * circleArea(radius); }
+• circleArea(2.0) returns the value 12.5664
+• cylinderVolume(1.5, 2.0) evaluates the expression 1.5 * circleArea(2.0) and returns the value 18.8496
+©2024 Stephan Krusche Introduction to Programming - W01 Introduction 97
+
+Constructors are special methods that initialize attributes after reserving memory with new. Constructors do not define a return type (you do not return anything, because they will automatically create a new object and return it). Formal parameters can be used for initialization. Example class Rational { double numerator, denominator; Rational(double n, double d) { numerator = n; denominator = d; } } © 2024 Stephan Krusche Introduction to Programming - W01 Introduction 98
+
+The void return type
+The void return type is used when a method does not return a value
+The method is then called procedure
+Example void alarm(String message) { System.out.println("DANGER: " + message); }
+No return necessary
+Procedures can still change the state of an object (i.e. have side effects)
+Declaration void methodName(formalParameterList) { // body }
+Usage methodName(actualParameterList);
+© 2024 Krusche Introduction to Programming - W01 Introduction 99
+
+Current object
+• Normally the method depends on the state of the current object
+→ This related object must be specified when calling
+• This means that within a method it must be possible to address this reference object ("itself")
+• For this purpose there is the keyword this
+© 2024 Stephan Krusche Introduction to Programming - W01 Introduction 100
+
+Example: using this in the constructorclass Point {double x, y;Point(double x, double y) {this.x = x;this.y = y;} } © 2024 Stephan Krusche Introduction to Programming - W01 Introduction 101
+
+Use of object state in methods • Example: define method shift in class Point class Point { double x, y; public Point(double x, double y) { this.x = x; this.y = y; } void shift(double dx, double dy) { this.x = this.x + dx; this.y = this.y + dy; } } • Call Point p = new Point(3.0, 4.0); p.shift(2.0, 4.0); • Call syntax object.methodName(parameter); If no object is specified → this is always used implicitly © 2024 Stephen Krusche Introduction to Programming - W01 Introduction 102
+
+Reference - static methods A static method is independent of the state of concrete objects Example class Weather { static int fahrenheint(int celsius) { return (celsius * 9) / 5 + 32; } } Question: can static methods have side effects? Weather.fahrenheint(15); Syntax static returnType methodName(parameter) { // method body } Call syntax ClassName.methodName(parameters) © 2024 Krusche Introduction to Programming - W01 Introduction 103
+
+The main method
+• One static method is special: the main() method
+class K {
+public static void main(String[] args) {
+//...
+}
+}
+• main(p1,...,pn) in class K will be called when you execute java K after compiling K
+• The arguments p1,...,pn are stored in a field called args
+Covered later
+© 2024 Stephan Krusche Introduction to Programming - W01 Introduction 104
+
+public class Playground { public static void main(String[] args) { if (args.length > 0) { System.out.println("First argument: " + args[0]); } else { System.out.println("No arguments provided"); } } Run the application with an argument Open the run configuration and add the argument here © 2024 Krusche Introduction to Programming - W01 Introduction 105 Application Playground Name: Playground Store as project file Run on: Local machine Manage targets... Run configurations may be executed locally or on a target: for example in a Docker container or on a remote host using SSH Build and run Modify options XlM java 17 SDK of "Playground" - cp Playground.main de.tum.in.ase.Playground "Hello World"
+
+Example: PointMove pointsCurrent coordinatesclass Point{double x, y;void shift(double dx, double dy) {this.x = this.x + dx;this.y = this.y + dy;} }double getX() {return this.x;}double getY() {return this.y;}© 2024 Stephan KruscheIntroduction to Programming - W01 Introduction106
+
+Move linesExample: lines in R2Conceptp1p2y2y1x1x2© 2024 Stephan KruscheIntroduction to Programming - W01 Introduction107class Line {Point p1;Point p2;Line(Point p1, Point p2) {this.p1 = p1;this.p2 = p2;}void shift(double dx, double dy) {this.p1.shift(dx, dy);this.p2.shift(dx, dy);}
+
+References and method calls
+In Java, call-by-value is used for parameter passing in method calls
+Definition of call-by-value: when calling methods, all statements in the parameters are first evaluated completely
+Then, the values of those statements are passed as a copy to the called method
+Note: values of non-primitive types (i.e. objects) are references
+→ A copy of the reference is passed
+This can be used to still change the state of the referenced object
+© 2024 Stephan Krusche Introduction to Programming - W01 Introduction 108
+
+Local variables (1)
+Serve as auxiliary memory for intermediate results in methods
+Are stored on the so-called runtime
+Exist only as long as the method is processed
+Example (calculation of the area of a circle)
+double circleArea(double radius) {
+double radiusSquare = radius * radius;
+return radiusSquare * 3.1416;
+}
+© 2024 Stephan Krusche Introduction to Programming - W01 Introduction 109
+
+Local variables In Java, parameters are local variables that are initialized when the method is called (call-by-value) Example int foo(int a) { int x = a + 1; a = x * x; return a + x; } foo(a) int a int x x = a + 1; a = x * x; return a + x; Attention: simple argument types (int, float, ...) are handled differently than complex types (Book, Author, ...) © 2024 Stephan Krusche Introduction to Programming - W01 Introduction 110 You should not change input parameters in a method // bad programming style (Parameter)
+
+Local variables - differences to attributes
+Declaration
+Lifetime
+Accessible
+Purpose
+Within methods
+Method call
+Only within a method
+Cache for values
+Outside of methods
+Lifetime of the associated object
+For all methods of the class
+State of the object
+© 2024 Krusche
+Introduction to Programming - W01 Introduction
+111
+

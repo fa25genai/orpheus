@@ -1,0 +1,7 @@
+PDF: ITP2425 W10U03 Syntax trees.pdf
+Slide: 11
+Characters: 444
+Empty: False
+--------------------------------------------------
+
+Integrated development (IDE) • Many features of an IDE depend on ASTs, e.g. • Code formatting • Code highlighting • Code refactoring • Round-trip capability • Create the AST of the source code • Manipulate the AST (e.g. rename variables) • Write the changes back to the source code → Easy to change code programmatically (using strongly typed objects in the AST) © 2024 Stephan Krusche Introduction to Programming - W10 Programming Languages 47

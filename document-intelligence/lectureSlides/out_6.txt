@@ -1,0 +1,65 @@
+Introduction to ProgrammingW02 Control Flow in ProgrammingStephan Krusche23 October 2024Technical University of Munich
+
+Schedule 1 16.10.24 Introduction 2 23.10.24 Control in Programming 3 30.10.24 In-Depth Core Concepts* 4 06.11.24 Core Data Structures 5 13.11.24 Code Reuse and Structure 6 20.11.24 Type Flexibility and Safety 7 27.11.24 In-Depth Object Orientation* 8 04.12.24 Functional Programming Essentials 9 11.12.24 Algorithms and Data Handling 10 18.12.24 Programming Languages 11 08.01.25 Graphical User Interfaces 12 15.01.25 Recursion 13 22.01.25 Concurrency 14 29.01.25 Beyond Programming 15 05.02.25 Course Review * Repetition © 2024 Krische Introduction to Programming - W02 Control in Programming 2
+
+Roadmap
+• Understand the difference between objects and classes
+• Implement attributes, constructors and methods
+• Instantiate objects using constructors and invoke methods
+• Learning goals
+• Implement conditional statements using if and switch
+• Properly deal with null values
+• Implement iterations using for, while and do-while
+• Use arrays to store multiple elements of the same type
+• Implement basic operations such as search and sort
+© 2024 Stephen Krusche Introduction to Programming - W02 Control Flow in Programming 3
+
+Outline • Expressions and statements • Conditional selection • Iteration • Arrays • Search • Sort © 2024 Stephan Krusche Introduction to Programming - W02 Control Flow in Programming 4
+
+Motivation• A programming language should• Provide data structures• Allow operations on data• Provide control structures for flow control• We have already looked first at data structures and operations• Control structures use statements and expressions© 2024 KruscheIntroduction to Programming - W02 Control Flow in Programming5
+
+Expressions
+Appear in a program…
+… on the right side of assignments x = expression;
+… as arguments of methods f(expression1, ..., expressionn);
+… in the body of functions return expression;
+Each expression has a type
+Examples
+Expression of type double (3.0 + y) * 4.0
+Expression of type String "Hello" + " " + "World" + 2
+Expression of type Point new Point(1.0, 2.0)
+Expression of type boolean x == 2 Also called condition
+© 2024 Krische Introduction to Programming - W02 Control Flow in Programming 6
+
+Expressions are composed as follows Variable or Attribute f(expression1, ..., expressionn) (if return type is not void) new Binary operator, e.g. a + b or c - d Expression1 ⊕ Expression2 ⊕ expression Unary operator, e.g. - fahrenheit(15) Two other expressions in Java instanceof class membership test ? : conditional expression (if-then-else, ternary operator) © 2024 Stephen Krusche Introduction to Programming - W02 Control flow in Programming 7
+
+Statements Typically cause a change of state End with a semicolon (;) and do not have a type In Java, there are a variety of statements Declaration of local variables int x; Assignment x = y; Method call (if return type is void) f(x, 1); Block statement { statement1; … ; statementn; } Return statement return expression; © 2024 Stephan Krusche Introduction to Programming - W02 Control Flow in Programming 8
+
+Comparison expression - statement
+Yes
+No
+Calculation
+Execution
+Evaluates a value
+Changes the state
+Without ;
+With ;
+Statements may contain expressions
+The body of each statement is always a sequence of statements
+In Java, there are also so-called expression statements
+These are statements that can also be used as an expression at the time
+Example: i++
+© 2024 Stephan Krusche Introduction to Programming - W02 Control Flow in Programming 9
+
+SequenceExampleint x, y, result;x = InputReader.readInt("Number 1");y = InputReader.readInt("Number 2");result = x + y;System.out.println("Sum: " + result);Note: please copy the InputReader on https://gist.github.com/krusche/f8bdf092159cc272f5e3ff513f2b1cb5© 2024 Stephan KruscheIntroduction to Programming - W02 Control Flow in Programming10
+
+Sequence of statements
+• Only one operation is performed at any time
+• Each operation is performed exactly once after the other
+• None is repeated, none omitted
+• Order of execution as defined in the program code
+• At the end of the last operation, the program execution ends
+→ A sequence of statements only allows very simple programs
+→ We need more powerful control structures
+© 2024 Stephan Krusche Introduction to Programming - W02 Control Flow in Programming 11
+

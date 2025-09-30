@@ -1,0 +1,7 @@
+PDF: ITP2425 W10U01 Overview.pdf
+Slide: 14
+Characters: 632
+Empty: False
+--------------------------------------------------
+
+Bytecode vs. MachinecodeBinary, hexadecimal and macro instructions are not understood directly by the CPU, but are dependent on an interpreterBinary instructions that are directly understandable by the CPU and directly executedMust be translated into machine code to executeLowest level, directly executableNon-runnable code generated after compilationSet of instructions in machine languagePlatform-independent depends on the virtual machineNot platform independent depends on the system architecture and native instructions associated with the machine© 2024 Stephan KruscheIntroduction to Programming - W10 Programming Languages14

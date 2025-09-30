@@ -1,0 +1,17 @@
+PDF: ITP2425 W10U03 Syntax trees.pdf
+Slide: 7
+Characters: 600
+Empty: False
+--------------------------------------------------
+
+Motivation for syntax trees
+Widely used in compilers to represent the program
+Usually the result of the syntax analysis phase of a compiler
+Serve as an intermediate representation of the program
+Have a strong impact on the final output of the compiler
+Properties
+Can be edited and enhanced with information such as properties and annotations
+Do not need to include inessential punctuation or delimiters
+Contain extra information about the program
+Example: store the position in the source code to print useful messages
+© 2024 Stephan Krusche Introduction to Programming - W10 Programming Languages 43

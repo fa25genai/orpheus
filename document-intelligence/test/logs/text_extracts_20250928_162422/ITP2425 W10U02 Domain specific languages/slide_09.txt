@@ -1,0 +1,41 @@
+PDF: ITP2425 W10U02 Domain specific languages.pdf
+Slide: 9
+Characters: 744
+Empty: False
+--------------------------------------------------
+
+YAML: YAML Ain't Markup Language
+YAML is a human- and machine-readable data serialization format
+Often used for configurations and data exchange between languages with different data structures.
+Try it out: https://codebeauty.org/yaml-editor-online
+Example
+
+Class
+Movie
+- imdbID: String
+- title: String
+- simplePlot: String
+- genres: [String]
+- year: int
+- rating: String
+
+Object
+hiddenFigures: Movie
+imdbID = "tt4846340"
+title = "Hidden Figures"
+simplePlot = "Three ..."
+genres = ["History", "Drama"]
+year = 2016
+rating = "7.8"
+
+YAML
+movie:
+imdb: "tt4846340"
+title: "Hidden Figures"
+simplePlot: "Three ..."
+genres:
+- "History"
+- "Drama"
+year: 2016
+rating: "7.8"
+© 2024 Stephen Krusche Introduction to Programming - W10 Programming Languages 23
