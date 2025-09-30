@@ -4,7 +4,6 @@ export interface UploadedFile {
   size: number;
   type: string;
   status: "uploading" | "completed" | "error";
-  progress: number;
   url?: string;
   documentId?: string;
 }

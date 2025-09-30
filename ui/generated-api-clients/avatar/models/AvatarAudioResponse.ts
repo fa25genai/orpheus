@@ -16,51 +16,51 @@ import { mapValues } from '../runtime';
 /**
  * 
  * @export
- * @interface AvatarImageResponse
+ * @interface AvatarAudioResponse
  */
-export interface AvatarImageResponse {
+export interface AvatarAudioResponse {
     /**
      * 
      * @type {string}
-     * @memberof AvatarImageResponse
+     * @memberof AvatarAudioResponse
      */
     id: string;
     /**
      * 
      * @type {string}
-     * @memberof AvatarImageResponse
+     * @memberof AvatarAudioResponse
      */
     avatarId: string;
     /**
      * 
      * @type {string}
-     * @memberof AvatarImageResponse
+     * @memberof AvatarAudioResponse
      */
     filePath: string;
     /**
      * 
      * @type {string}
-     * @memberof AvatarImageResponse
+     * @memberof AvatarAudioResponse
      */
     mimeType?: string | null;
     /**
      * 
      * @type {number}
-     * @memberof AvatarImageResponse
+     * @memberof AvatarAudioResponse
      */
     sizeBytes?: number | null;
     /**
      * 
      * @type {Date}
-     * @memberof AvatarImageResponse
+     * @memberof AvatarAudioResponse
      */
     createdAt: Date;
 }
 
 /**
- * Check if a given object implements the AvatarImageResponse interface.
+ * Check if a given object implements the AvatarAudioResponse interface.
  */
-export function instanceOfAvatarImageResponse(value: object): value is AvatarImageResponse {
+export function instanceOfAvatarAudioResponse(value: object): value is AvatarAudioResponse {
     if (!('id' in value) || value['id'] === undefined) return false;
     if (!('avatarId' in value) || value['avatarId'] === undefined) return false;
     if (!('filePath' in value) || value['filePath'] === undefined) return false;
@@ -68,11 +68,11 @@ export function instanceOfAvatarImageResponse(value: object): value is AvatarIma
     return true;
 }
 
-export function AvatarImageResponseFromJSON(json: any): AvatarImageResponse {
-    return AvatarImageResponseFromJSONTyped(json, false);
+export function AvatarAudioResponseFromJSON(json: any): AvatarAudioResponse {
+    return AvatarAudioResponseFromJSONTyped(json, false);
 }
 
-export function AvatarImageResponseFromJSONTyped(json: any, ignoreDiscriminator: boolean): AvatarImageResponse {
+export function AvatarAudioResponseFromJSONTyped(json: any, ignoreDiscriminator: boolean): AvatarAudioResponse {
     if (json == null) {
         return json;
     }
@@ -87,11 +87,11 @@ export function AvatarImageResponseFromJSONTyped(json: any, ignoreDiscriminator:
     };
 }
 
-export function AvatarImageResponseToJSON(json: any): AvatarImageResponse {
-    return AvatarImageResponseToJSONTyped(json, false);
+export function AvatarAudioResponseToJSON(json: any): AvatarAudioResponse {
+    return AvatarAudioResponseToJSONTyped(json, false);
 }
 
-export function AvatarImageResponseToJSONTyped(value?: AvatarImageResponse | null, ignoreDiscriminator: boolean = false): any {
+export function AvatarAudioResponseToJSONTyped(value?: AvatarAudioResponse | null, ignoreDiscriminator: boolean = false): any {
     if (value == null) {
         return value;
     }

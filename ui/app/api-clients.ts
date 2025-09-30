@@ -1,6 +1,7 @@
 import {Configuration, CoreApi} from "@/generated-api-clients/core";
 import {
-  Configuration as AvatarConfiguration,
+  AvatarApi,
+  Configuration as VideoConfiguration,
   VideoApi,
 } from "@/generated-api-clients/avatar";
 import {
@@ -18,9 +19,15 @@ export const coreApi = new CoreApi(
   })
 );
 
-export const avatarApi = new VideoApi(
-  new AvatarConfiguration({
+export const videoApi = new VideoApi(
+  new VideoConfiguration({
     basePath: "http://localhost:9000",
+  })
+);
+
+export const avatarApi = new AvatarApi(
+  new VideoConfiguration({
+    basePath: "http://localhost:3000",
   })
 );
 
