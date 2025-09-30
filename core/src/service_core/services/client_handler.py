@@ -369,7 +369,7 @@ async def process_prompt(prompt_id: str, prompt_request: PromptRequest) -> None:
             if avatar_tasks:
                 await asyncio.gather(*avatar_tasks)
 
-            tracker.log(f"SUCCESS: Completed processing for {prompt_id}")
+            tracker.log(f"Completed processing for {prompt_id}")
     except Exception as exception:
         logger.error(
             f"Failed processing for {prompt_id}: {exception}", exc_info=exception
