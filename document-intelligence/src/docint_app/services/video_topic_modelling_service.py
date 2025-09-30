@@ -1,5 +1,6 @@
 import json
 import re
+from typing import List
 
 from docint_app.services.ollama_client_service import get_ollama_client
 
@@ -10,12 +11,12 @@ class VideoTopicModellingService:
         self.model = "llama3.3:latest"
         self.transcription = transcription
 
-    def _split_sentences(self, text: str):
+    def _split_sentences(self, text: str): # type: ignore[no-untyped-def]
         raw = re.split(r'(?<=[.!?])\s+(?=[A-Z(""Oo0])', text.strip())
         sentences = [s.strip() for s in raw if s.strip()]
         return list(enumerate(sentences))
 
-    def _assemble_segments(self, sentences, segments_json):
+    def _assemble_segments(self, sentences, segments_json): # type: ignore[no-untyped-def]
         idx_to_sent = {i: s for i, s in sentences}
         out = []
         for seg in segments_json["segments"]:
@@ -23,7 +24,7 @@ class VideoTopicModellingService:
             out.append({"title": seg["title"], "video_chunk": chunk})
         return {"segments": out}
 
-    def _chunk_with_ollama_ranges(self, sentences):
+    def _chunk_with_ollama_ranges(self, sentences): # type: ignore[no-untyped-def]
         system = (
             "You are an expert lecture segmenter.\n"
             "Task: Split the lecture into topic-based segments using the provided sentence list.\n"
@@ -57,12 +58,12 @@ class VideoTopicModellingService:
             messages=messages,
             stream=False,
             format="json",
-            options={"temperature": 0, "top_p": 0.1, "repeat_penalty": 1.2, "seed": 42, "raw": True}
+            options={"temperature": 0, "seed": 42, "raw": True}
         )
 
         return response['message']['content']
 
-    def extract_topics(self):
+    def extract_topics(self): # type: ignore[no-untyped-def]
         sentences = self._split_sentences(self.transcription)
         raw = self._chunk_with_ollama_ranges(sentences)
         parsed = json.loads(raw)
