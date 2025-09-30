@@ -11,6 +11,7 @@ from app.workers.queues import AUDIO_QUEUE, JOBS, eta_seconds, folder_url, purge
 
 router = APIRouter(prefix="/v1/video", tags=["video"])
 
+logger = logging.getLogger("Client Handler")
 
 @router.post(
     "/generate",
@@ -19,6 +20,8 @@ router = APIRouter(prefix="/v1/video", tags=["video"])
     responses={400: {"model": ErrorModel}, 401: {"model": ErrorModel}, 500: {"model": ErrorModel}},
 )
 def request_video_generation(payload: GenerateRequest, response: Response, request: Request) -> Union[GenerationAcceptedResponse, JSONResponse]:
+    logger.debug(f"received slide with number: {GenerateRequest.slideNumber}")
+    
     now = utcnow()
     purge_stale_jobs(now)
 
