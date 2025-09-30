@@ -53,4 +53,4 @@ The following configuration options are available (using environment variables)
 | `STATUS_SERVICE_HOST`         | Base URL of where to reach the **Generation Status Service**                                        | `http://status-service:19910`        |
 
 Depending on the selected LLM models, the appropriate environment variables with API secrets have to be defined as well.
-Please refer to the [.env.example](.env.example) file for further details.
+Please refer to the [.env.example](exampleEnv) file for further details.
