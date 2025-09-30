@@ -49,6 +49,8 @@ import requests
 import weaviate
 from weaviate.classes.query import Filter, MetadataQuery
 
+from docint_app.services.embedding_service import get_embedding_service
+
 
 class WeaviateError(RuntimeError):
     pass
@@ -405,7 +407,7 @@ class WeaviateGraphStore:
         # Generate deterministic UUID from course_id and chunk_id
         name = f"VideoChunk::{course_id}::{chunk_id}"
         uid = str(uuid.uuid5(uuid.NAMESPACE_URL, name))
-        
+
         payload = {
             "class": "VideoChunk",
             "id": uid,
@@ -427,237 +429,11 @@ class WeaviateGraphStore:
             self._put(f"/v1/objects/{uid}", payload)
         return uid
 
-    # Query (dual-channel with fusion: text on Slide + image-description on SlideImage)
-    def search_slides_fused_with_images(
-        self,
-        *,
-        query_vector: Sequence[float],
-        course_id: Optional[str] = None,
-        k: int = 5,
-        image_query_vector: Optional[Sequence[float]] = None,
-        alpha: float = 0.8,  # Default weight for text is now 80%
-        similarity_threshold: float = 0.70,  # Results must meet this score
-        per_slide_image_agg: str = "max",  # How to aggregate image scores per slide
-        include_distance: bool = True,  # Whether to include distance information
-    ) -> List[Dict[str, Any]]:
-        """
-        Retrieves slides by fusing text and image similarity scores without normalization.
-          1. Perform separate searches for relevant slides (text) and images.
-          2. Calculating an absolute fused score for each unique slide found.
-          3. Filtering out any slides that do not meet the `similarity_threshold`.
-          4. Ranking the remaining relevant slides and returning the top-k.
-        """
-        print("[DEBUG] search_slides_fused_with_images called with:")
-        print(f"  - course_id: {course_id}")
-        print(f"  - k: {k}")
-        print(f"  - alpha: {alpha}")
-        print(f"  - similarity_threshold: {similarity_threshold}")
-        print(f"  - per_slide_image_agg: {per_slide_image_agg}")
-        print(f"  - query_vector length: {len(query_vector) if query_vector else 'None'}")
-        print(f"  - image_query_vector length: {len(image_query_vector) if image_query_vector else 'None'}")
-
-        # Text ANN on Slide
-        where_clause = ""
-        if course_id:
-            where_clause = f'where: {{ operator: Equal, path: ["courseId"], valueText: "{course_id}" }}'
-        print(f"[DEBUG] where_clause: {where_clause}")
-
-        gql_slides = f"""
-        {{
-          Get {{
-            Slide(
-              nearVector: {{ vector: {json.dumps(list(query_vector))} }}
-              {where_clause}
-              limit: {int(max(k * 5, 50))}
-            ) {{
-              courseId, documentId, slideNo, slideDescription,
-              _additional {{ id, distance }}
-            }}
-          }}
-        }}
-        """
-        print("[DEBUG] GraphQL query for slides:")
-        print(gql_slides)
-
-        res_slides = self._post("/v1/graphql", {"query": gql_slides})
-        print(f"[DEBUG] Raw slide search response: {res_slides}")
-
-        slide_hits = res_slides.get("data", {}).get("Get", {}).get("Slide", []) or []
-        print(f"[DEBUG] Found {len(slide_hits)} slide hits")
-        for i, hit in enumerate(slide_hits):
-            print(f"  Slide {i}: courseId={hit.get('courseId')}, slideNo={hit.get('slideNo')}, distance={hit.get('_additional', {}).get('distance')}")
-
-        text_scores: Dict[tuple, float] = {}
-        slide_meta: Dict[tuple, Dict[str, Any]] = {}
-        for s in slide_hits:
-            key = (s.get("courseId"), s.get("slideNo"))
-            dist = (s.get("_additional") or {}).get("distance")
-            text_scores[key] = self._similarity_from_distance(dist)
-            slide_meta[key] = s
-
-        print(f"[DEBUG] Text scores computed: {text_scores}")
-        print(f"[DEBUG] Slide metadata keys: {list(slide_meta.keys())}")
-
-        # Image-description ANN on SlideImage
-        img_vec = image_query_vector if image_query_vector is not None else query_vector
-        print(f"[DEBUG] Using image vector - is separate: {image_query_vector is not None}")
-
-        gql_images = f"""
-        {{
-          Get {{
-            SlideImage(
-              nearVector: {{ vector: {json.dumps(list(img_vec))} }}
-              {where_clause}
-              limit: {int(max(k * 10, 100))}
-            ) {{
-              courseId, documentId, slideNo,
-              _additional {{ id, distance }}
-            }}
-          }}
-        }}
-        """
-        print("[DEBUG] GraphQL query for images:")
-        print(gql_images)
-
-        res_images = self._post("/v1/graphql", {"query": gql_images})
-        print(f"[DEBUG] Raw image search response: {res_images}")
-
-        img_hits = res_images.get("data", {}).get("Get", {}).get("SlideImage", []) or []
-        print(f"[DEBUG] Found {len(img_hits)} image hits")
-        for i, hit in enumerate(img_hits):
-            print(f"  Image {i}: courseId={hit.get('courseId')}, slideNo={hit.get('slideNo')}, distance={hit.get('_additional', {}).get('distance')}")
-
-        from collections import defaultdict
-
-        per_slide_image_sims: Dict[tuple, List[float]] = defaultdict(list)
-        for im in img_hits:
-            key = (im.get("courseId"), im.get("slideNo"))
-            dist = (im.get("_additional") or {}).get("distance")
-            sim_score = self._similarity_from_distance(dist)
-            per_slide_image_sims[key].append(sim_score)
-            print(f"[DEBUG] Image similarity for slide {key}: distance={dist}, similarity={sim_score}")
-
-        print(f"[DEBUG] Per-slide image similarities: {dict(per_slide_image_sims)}")
-
-        # Aggregate image scores per slide using the specified method
-        image_scores: Dict[tuple, float] = {}
-        for key, vals in per_slide_image_sims.items():
-            if vals:
-                if per_slide_image_agg == "mean":
-                    image_scores[key] = sum(vals) / len(vals)
-                else:  # default to "max"
-                    image_scores[key] = max(vals)
-                print(f"[DEBUG] Aggregated image score for slide {key}: {image_scores[key]} (method: {per_slide_image_agg})")
-
-        print(f"[DEBUG] Final image scores: {image_scores}")
-
-        # Fuse scores without normalization
-        fused_scores: Dict[tuple, float] = {}
-        all_slide_keys = set(text_scores.keys()) | set(image_scores.keys())
-        print(f"[DEBUG] All unique slide keys found: {all_slide_keys}")
-        print(f"[DEBUG] Text score keys: {set(text_scores.keys())}")
-        print(f"[DEBUG] Image score keys: {set(image_scores.keys())}")
-
-        for key in all_slide_keys:
-            text_sim = text_scores.get(key, 0.0)
-            image_sim = image_scores.get(key, 0.0)
-
-            # Direct weighted sum
-            fused_score = (alpha * text_sim) + ((1.0 - alpha) * image_sim)
-            fused_scores[key] = fused_score
-            print(f"[DEBUG] Fused score for slide {key}: text={text_sim}, image={image_sim}, fused={fused_score}")
-
-        print(f"[DEBUG] All fused scores: {fused_scores}")
-
-        # Filter by threshold, then sort and limit
-        # Only keep slides that meet the similarity threshold
-        relevant_slides = {key: score for key, score in fused_scores.items() if score >= similarity_threshold}
-        print(f"[DEBUG] Slides meeting threshold {similarity_threshold}: {relevant_slides}")
-        print(f"[DEBUG] Filtered out {len(fused_scores) - len(relevant_slides)} slides below threshold")
-
-        # Sort the relevant slides by their fused score, descending
-        sorted_slides = sorted(relevant_slides.items(), key=lambda item: item[1], reverse=True)
-        print(f"[DEBUG] Sorted relevant slides: {sorted_slides}")
-
-        # Get the keys for the top k slides
-        top_keys = [key for key, score in sorted_slides[:k]]
-        print(f"[DEBUG] Top {k} slide keys selected: {top_keys}")
-
-        # Assemble final results
-        out: List[Dict[str, Any]] = []
-        print(f"[DEBUG] Starting to assemble final results for {len(top_keys)} slides")
-
-        for i, key in enumerate(top_keys):
-            c_id, s_no = key
-            print(f"[DEBUG] Processing slide {i + 1}/{len(top_keys)}: {key}")
-
-            # Get metadata for the slide, falling back to a direct fetch if it wasn't in the initial text search
-            s_meta = slide_meta.get(key)
-            if not s_meta:
-                print(f"[DEBUG] Slide metadata not found in cache, fetching directly for {key}")
-                # This fallback is for slides that were found only through an image match
-                gql_one = f"""
-                {{
-                    Get {{
-                    Slide(
-                        where: {{
-                        operator: And,
-                        operands: [
-                            {{ operator: Equal, path: ["courseId"], valueText: "{c_id}" }},
-                            {{ operator: Equal, path: ["slideNo"],  valueInt: {int(s_no)} }}
-                        ]
-                        }},
-                        limit: 1
-                    ) {{
-                        courseId, documentId, slideNo, slideDescription,
-                        _additional {{ id }}
-                    }}
-                    }}
-                }}
-                """
-                res_one = self._post("/v1/graphql", {"query": gql_one})
-                print(f"[DEBUG] Direct fetch response for slide {key}: {res_one}")
-                recs = res_one.get("data", {}).get("Get", {}).get("Slide", []) or []
-                s_meta = recs[0] if recs else {}
-                print(f"[DEBUG] Retrieved slide metadata: {s_meta}")
-            else:
-                print(f"[DEBUG] Using cached slide metadata for {key}")
-
-            # Fetch all images for the final slide
-            print(f"[DEBUG] Fetching images for slide {key}")
-            images_full = self._fetch_all_images_for_slide(c_id, s_no)
-            print(f"[DEBUG] Found {len(images_full)} images for slide {key}")
-
-            # Correctly retrieve the calculated scores from the dictionaries
-            final_fused_score = fused_scores.get(key, 0.0)
-            final_text_sim = text_scores.get(key, 0.0)
-            final_image_sim = image_scores.get(key, 0.0)
-            text_dist = (slide_meta.get(key, {}).get("_additional") or {}).get("distance") if key in slide_meta else None
-
-            print(f"[DEBUG] Final scores for slide {key}:")
-            print(f"  - fused: {final_fused_score}")
-            print(f"  - text similarity: {final_text_sim}")
-            print(f"  - image similarity: {final_image_sim}")
-            print(f"  - text distance: {text_dist}")
-
-            result_slide = {
-                "id": (s_meta.get("_additional") or {}).get("id"),
-                "courseId": c_id,
-                "documentId": s_meta.get("documentId"),
-                "slideNo": s_no,
-                "slideDescription": s_meta.get("slideDescription", ""),
-                # Flatten scores to top level for RetrievalService compatibility
-                "fusedScore": final_fused_score,
-                "similarityText": final_text_sim,
-                "bestImageSimilarity": final_image_sim,
-                "distanceText": text_dist,
-                "images": [{"id": (im.get("_additional") or {}).get("id"), "description": im.get("description", ""), "imageBase64": im.get("imageBase64")} for im in images_full],
-            }
-            print(f"[DEBUG] Adding slide result {i + 1}: {result_slide['courseId']}/{result_slide['slideNo']}")
-            out.append(result_slide)
-
-        print(f"[DEBUG] Final search results: {len(out)} slides returned")
-        return out
+    def test_upsert_video_chunk(self) -> str:
+        to_upsert = 'A for loop is a control structure used to repeat a block of code a specific number of times. It is especially useful when you know in advance how many iterations you need. In most programming languages, a for loop consists of an initialization, a condition, and an update step. For example, it can be used to iterate over a range of numbers or through elements of a collection like a list. By using for loops, repetitive tasks can be written more concisely and clearly. This makes code easier to maintain and less error-prone compared to writing the same instructions multiple times.' # noqa: E501
+        text_vector = get_embedding_service().embed_text(to_upsert)
+        uid = self.upsert_video_chunk(course_id="W2", lecture_id="lecture456", chunk_id="chunk789", text=to_upsert, text_vector=text_vector)
+        return uid
 
     def client_search_slides_fused_with_images(
         self,
@@ -665,6 +441,7 @@ class WeaviateGraphStore:
         query_vector: Sequence[float],
         course_id: str,
         k: int = 5,
+        similarity_threshold: float = 0.80,
     ) -> List[Dict[str, Any]]:
         """
         Simple implementation using weaviate client to search slides and their images.
@@ -693,7 +470,7 @@ class WeaviateGraphStore:
         slide_query = slides.query.near_vector(
             near_vector=query_vector,  # your query vector goes here
             limit=k,
-            certainty=0.8,
+            certainty=similarity_threshold,
             return_metadata=MetadataQuery(distance=True, certainty=True),
             filters=Filter.by_property("courseId").equal(course_id),
         )
@@ -709,16 +486,8 @@ class WeaviateGraphStore:
             return []
 
         # Build filters for each (documentId, slideNo) pair
-        slide_image_filters = [
-            Filter.all_of([
-                Filter.by_property("documentId").equal(doc_id),
-                Filter.by_property("slideNo").equal(slide_no)
-            ])
-            for doc_id, slide_no in slide_hits_document_ids
-        ]
-        slide_image_query = slideImages.query.fetch_objects(
-            filters=Filter.any_of(slide_image_filters)
-        )
+        slide_image_filters = [Filter.all_of([Filter.by_property("documentId").equal(doc_id), Filter.by_property("slideNo").equal(slide_no)]) for doc_id, slide_no in slide_hits_document_ids]
+        slide_image_query = slideImages.query.fetch_objects(filters=Filter.any_of(slide_image_filters))
 
         slide_image_hits = slide_image_query.objects
         print(f"[WeaviateClientSearch] Retrieved {len(slide_image_hits)} slide images")
@@ -786,64 +555,132 @@ class WeaviateGraphStore:
         print(f"[WeaviateClientSearch] Returning {len(final_results)} results")
         return final_results
 
-    def search_video_chunks(
+    def client_search_video_chunks(
         self,
         *,
         query_vector: Sequence[float],
         course_id: Optional[str] = None,
         k: int = 5,
-        include_distance: bool = True,
         similarity_threshold: float = 0.80,
     ) -> List[Dict[str, Any]]:
         """
-        Search VideoChunk objects by text similarity.
-        
-        :param query_vector: Query embedding vector
-        :param course_id: Optional filter by course ID
-        :param k: Number of results to return
-        :param include_distance: Whether to include distance in results
-        :param similarity_threshold: Minimum similarity threshold (0.0 to 1.0)
-        :return: List of video chunk hits with similarity scores
-        """
-        where_clause = ""
+        Simple implementation using weaviate client to search video chunks.
+"""
+        print("[WeaviateClientSearch] Starting client_search_video_chunks")
+        print("[WeaviateClientSearch] Parameters:")
+        print(f"[WeaviateClientSearch]   - course_id: {course_id}")
+        print(f"[WeaviateClientSearch]   - k: {k}")
+        print(f"[WeaviateClientSearch]   - similarity_threshold: {similarity_threshold}")
+        print(f"[WeaviateClientSearch]   - query_vector length: {len(query_vector) if query_vector else 'None'}")
+
+        print("[WeaviateClientSearch] Getting weaviate client...")
+        client = get_weaviate_client()
+        print(f"[WeaviateClientSearch] Client obtained: {type(client)}")
+
+        # Search video chunks using client
+        print("[WeaviateClientSearch] Building video chunk query...")
+        print(f"[WeaviateClientSearch] Query vector first 5 elements: {query_vector[:5] if len(query_vector) >= 5 else query_vector}")
+
+        video_chunks = client.collections.get("VideoChunk")
+
+        # Build the query with optional course filter
         if course_id:
-            where_clause = (
-                'where: { operator: Equal, path: ["courseId"], valueText: "%s" }' % course_id
+            chunk_query = video_chunks.query.near_vector(
+                near_vector=query_vector,
+                limit=k,
+                certainty=similarity_threshold,  # Using similarity_threshold as certainty
+                return_metadata=MetadataQuery(distance=True, certainty=True),
+                filters=Filter.by_property("courseId").equal(course_id),
             )
-        
-        gql_query = f"""
-        {{
-          Get {{
-            VideoChunk(
-              nearVector: {{ vector: {json.dumps(list(query_vector))} }}
-              {where_clause}
-              limit: {int(k)}
-            ) {{
-              courseId
-              chunkId
-              text
-              _additional {{ id {"distance" if include_distance else ""} }}
-            }}
-          }}
-        }}
-        """
-        
-        res = self._post("/v1/graphql", {"query": gql_query})
-        chunk_hits = res.get("data", {}).get("Get", {}).get("VideoChunk", []) or []
-        
-        # Filter by similarity threshold if specified
-        filtered_hits = []
-        for chunk in chunk_hits:
-            dist = (chunk.get("_additional") or {}).get("distance") if include_distance else None
-            similarity = self._similarity_from_distance(dist)
-            
-            if similarity >= similarity_threshold:
-                chunk["similarity"] = similarity
-                if include_distance:
-                    chunk["distance"] = dist
-                filtered_hits.append(chunk)
-        
-        return filtered_hits
+        else:
+            chunk_query = video_chunks.query.near_vector(
+                near_vector=query_vector,
+                limit=k,
+                certainty=similarity_threshold,
+                return_metadata=MetadataQuery(distance=True, certainty=True),
+            )
+
+        chunk_hits = chunk_query.objects
+        print(f"[WeaviateClientSearch] Found {len(chunk_hits)} video chunk hits")
+
+        if len(chunk_hits) == 0:
+            print("[WeaviateClientSearch] No video chunk hits found, returning empty list")
+            return []
+
+        # Build output
+        print("[WeaviateClientSearch] Building final results...")
+        final_results = []
+
+        # Build results for each chunk hit
+        for chunk_idx, chunk in enumerate(chunk_hits):
+            print(f"[WeaviateClientSearch] Processing chunk {chunk_idx + 1}/{len(chunk_hits)}")
+
+            chunk_props = chunk.properties
+            chunk_metadata = chunk.metadata
+
+            print(f"[WeaviateClientSearch] Chunk {chunk_idx}: courseId={chunk_props.get('courseId')}, chunkId={chunk_props.get('chunkId')}")
+            print(f"[WeaviateClientSearch]   Distance: {chunk_metadata.distance}, Certainty: {chunk_metadata.certainty}")
+            print(f"[WeaviateClientSearch]   Text preview: {(chunk_props.get('text', '') or '')[:100]}...")
+
+            # Calculate similarity from distance using the existing method
+            similarity = self._similarity_from_distance(chunk_metadata.distance)
+
+            result_chunk = {
+                "id": chunk.uuid,
+                "courseId": chunk_props.get("courseId"),
+                "lectureId": chunk_props.get("lectureId"),
+                "chunkId": chunk_props.get("chunkId"),
+                "text": chunk_props.get("text", ""),
+                "distance": chunk_metadata.distance,
+                "certainty": chunk_metadata.certainty,
+                "similarity": similarity,
+            }
+
+            print(f"[WeaviateClientSearch] Chunk confidence scores - Distance: {chunk_metadata.distance}, Certainty: {chunk_metadata.certainty}, Similarity: {similarity}")
+            print(f"[WeaviateClientSearch] Added chunk {chunk_props.get('chunkId')} to results")
+
+            final_results.append(result_chunk)
+
+        print("[WeaviateClientSearch] Completed processing all chunks")
+        print(f"[WeaviateClientSearch] Final results count: {len(final_results)}")
+        print("[WeaviateClientSearch] Final results summary:")
+        for i, result in enumerate(final_results):
+            distance = result.get("distance")
+            similarity = result.get("similarity")
+            certainty = result.get("certainty")
+            print(f"[WeaviateClientSearch]   Result {i}: courseId={result.get('courseId')}, chunkId={result.get('chunkId')}")
+            print(f"[WeaviateClientSearch]   Confidence: distance={distance}, similarity={similarity}, certainty={certainty}")
+
+        print(f"[WeaviateClientSearch] Returning {len(final_results)} results")
+        return final_results
+
+    def client_get_both_slides_and_video_chunks(
+        self,
+        *,
+        query_vector: Sequence[float],
+        course_id: Optional[str] = None,
+        k: int = 5,
+        similarity_threshold: float = 0.80
+    ) -> Dict[str, Any]:
+        slide_hits = self.client_search_slides_fused_with_images(
+            query_vector=query_vector,
+            course_id=course_id,
+            k=k,
+            similarity_threshold=similarity_threshold
+        )
+
+        video_chunk_hits = self.client_search_video_chunks(
+            query_vector=query_vector,
+            course_id=course_id,
+            k=k,
+            similarity_threshold=similarity_threshold
+        )
+
+        print(f"Retrieved {len(slide_hits)} hits from store")
+
+        # Convert to OpenAPI format
+        response: Dict[str, Any] = self.to_retrieval_response(slide_hits, video_chunk_hits)
+        return response
 
     # Test/Debug functions
     def get_all_data_for_course(self, course_id: str) -> Dict[str, Any]:
@@ -896,35 +733,76 @@ class WeaviateGraphStore:
 
     # Mapping to OpenAPI response shape
     @staticmethod
-    def to_retrieval_response(slide_hits: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def to_retrieval_response(
+        slide_hits: List[Dict[str, Any]] = None,
+        video_chunk_hits: List[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
         """
-        Convert hits into your OpenAPI RetrievalResponse:
-          {
+        Convert slide hits and video chunk hits into your OpenAPI RetrievalResponse:
+        {
             "content": ["string", ...],
             "images": [{"image":"<base64>", "description":"..."}, ...]
-          }
+        }
 
         Strategy:
-          - For content[], we include title + body (+ captionsText if present) concisely.
-          - For images[], we attach all images from the top hits.
+        - Merge slides and video chunks based on certainty scores (highest first)
+        - For content[], include slideDescription from slides and text from video chunks
+        - For images[], attach all images from slide hits only
+        - Items are ordered by certainty score descending
         """
         content: List[str] = []
         images: List[Dict[str, str]] = []
 
-        for h in slide_hits:
-            desc = (h.get("slideDescription") or "").strip()
-            if desc:
-                content.append(desc)
+        # Normalize inputs
+        slide_hits = slide_hits or []
+        video_chunk_hits = video_chunk_hits or []
 
-            for im in h.get("images", []):
-                img_b64 = im.get("imageBase64")
-                if img_b64:
-                    images.append(
-                        {
+        # Create combined list with type indicator and certainty score
+        combined_items = []
+
+        # Add slides to combined list
+        for slide in slide_hits:
+            certainty = slide.get("certainty", 0.0)
+            combined_items.append({
+                "type": "slide",
+                "certainty": certainty,
+                "item": slide
+            })
+
+        # Add video chunks to combined list
+        for chunk in video_chunk_hits:
+            certainty = chunk.get("certainty", 0.0)
+            combined_items.append({
+                "type": "video_chunk",
+                "certainty": certainty,
+                "item": chunk
+            })
+
+        # Sort combined items by certainty score (highest first)
+        combined_items.sort(key=lambda x: x["certainty"], reverse=True)
+
+        # Process items in order of certainty
+        for item in combined_items:
+            if item["type"] == "slide":
+                slide = item["item"]
+                desc = (slide.get("slideDescription") or "").strip()
+                if desc:
+                    content.append(desc)
+
+                # Collect images from slides
+                for im in slide.get("images", []):
+                    img_b64 = im.get("imageBase64")
+                    if img_b64:
+                        images.append({
                             "image": img_b64,
                             "description": im.get("description") or "",
-                        }
-                    )
+                        })
+
+            elif item["type"] == "video_chunk":
+                chunk = item["item"]
+                text = (chunk.get("text") or "").strip()
+                if text:
+                    content.append(text)
 
         return {"content": content, "images": images}
 
@@ -943,3 +821,13 @@ def get_weaviate_client() -> weaviate.WeaviateClient:
         # Optionally, raise an error or attempt reconnection here.
         _weaviate_instance = weaviate.connect_to_local(host="docint-weaviate", port=28947)
     return _weaviate_instance
+
+_store_instance: Optional[WeaviateGraphStore] = None
+
+def get_store() -> WeaviateGraphStore:
+    global _store_instance
+
+    if _store_instance is None:
+        _store_instance = WeaviateGraphStore()
+
+    return _store_instance

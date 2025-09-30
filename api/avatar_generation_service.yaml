@@ -44,7 +44,7 @@ paths:
         - name: slot
           in: query
           required: false
-          description: optional: default | beginning | ending
+          description: "one of: default | beginning | ending"
           schema:
             anyOf:
               - type: string

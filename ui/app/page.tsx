@@ -68,11 +68,10 @@ export default function Home() {
       if (status?.stepSlidePostprocessing !== "DONE") return;
 
       const baseUrl = `http://localhost:3000/videos/jobs/${promptId}/`;
-
       const readyVideos: string[] = status.stepsAvatarGeneration
         .map(
           (step, index) =>
-            step.video === "DONE" ? `${baseUrl}${index}.mp4` : null // TODO: change to starting index 0
+            step.video === "DONE" ? `${baseUrl}${index}.mp4` : null
         )
         // needed to filter out all nulls
         .filter((url): url is string => url !== null);
