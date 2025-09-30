@@ -71,7 +71,7 @@ class StatusManager:
         reference: str,
         listener: typing.Callable[[Status], Awaitable[None]],
     ) -> None:
-        async with self.mutex:
+        with self.mutex:
             if prompt_id not in self.listeners:
                 self.listeners[prompt_id] = {}
             self.listeners[prompt_id][reference] = listener
