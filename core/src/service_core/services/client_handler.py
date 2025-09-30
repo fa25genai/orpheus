@@ -18,7 +18,7 @@ from service_core.services import (
 from service_core.services.user_summary import summarize_content_with_llama
 from service_status.models.status_patch import StatusPatch
 from service_status.models.step_status import StepStatus
-from service_core.services.services_models.voice_script import VoiceTrackResponse
+from service_core.services.services_models.voice_track import VoiceTrackResponse
 
 load_dotenv()
 
