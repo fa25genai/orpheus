@@ -16,10 +16,10 @@ import json
 from typing import AsyncGenerator
 import asyncio
 
+from service_core.models.prompt_request import PromptRequest
 from service_core.models.slides.generation_accepted_response import (
     GenerationAcceptedResponse,
 )
-from service_core.models.user_profile import UserProfile
 from service_core.services.helpers.debug import debug_print, enable_debug
 from service_core.services.helpers.llm import ask_llm
 from service_core.services.helpers.loaders import load_prompt
@@ -29,9 +29,8 @@ from service_core.services.services_models.voice_track import VoiceTrackResponse
 async def generate_narrations(
     lecture_script: str,
     example_slides: GenerationAcceptedResponse,
-    user_profile: UserProfile,
+    prompt_request: PromptRequest,
     prompt_id: str,
-    course_id: str,
     debug: bool = False,
 ) -> AsyncGenerator[VoiceTrackResponse, None]:
     """
@@ -45,12 +44,11 @@ async def generate_narrations(
 
     Returns:
         str: A JSON string containing the generated slide narrations.
-        :param debug:
-        :param course_id:
-        :param user_profile:
         :param lecture_script:
+        :param prompt_request:
         :param example_slides:
         :param prompt_id:
+        :param debug:
     """
 
     if debug:
@@ -71,11 +69,13 @@ async def generate_narrations(
     # Load the prompt templates
     prompt_templates = json.loads(prompt_templates_json)
     print("\n\nGenerating page narrations:", len(pages), flush=True)
-    for i, page in enumerate(pages):
+    for index, page in enumerate(pages):
         page_content = page.content
         # Build the prompt using the templates
         prompt_parts = [
-            prompt_templates["base_prompt"].format(user_profile=user_profile),
+            prompt_templates["base_prompt"].format(
+                user_profile=prompt_request.user_persona
+            ),
             prompt_templates["lecture_script_section"].format(
                 lecture_script=lecture_script
             ),
@@ -85,10 +85,10 @@ async def generate_narrations(
             prompt_templates["slide_content_section"].format(page_content=page_content),
         ]
 
-        # Add specific instructions for first or last slide
-        if i == 0:
+        # Add specific instructions for the first or last slide
+        if index == 0:
             prompt_parts.append(prompt_templates["first_slide_instruction"])
-        elif i == len(pages) - 1:
+        elif index == len(pages) - 1:
             prompt_parts.append(prompt_templates["last_slide_instruction"])
 
         # Add the narration request
@@ -98,17 +98,21 @@ async def generate_narrations(
         prompt = "\n\n".join(prompt_parts)
         narration = await asyncio.to_thread(ask_llm, prompt)
 
-        debug_print(f"--- Slide {i + 1} ---")
+        debug_print(f"--- Slide {index + 1} ---")
         debug_print(f"Content: {page_content}")
         debug_print(f"Generated Narration: {narration}\n")
 
-        narration_history += f"Slide {i + 1} Narration: {narration}\n"
+        narration_history += f"Slide {index + 1} Narration: {narration}\n"
+
+        if not prompt_request.user_persona:
+            raise ValueError("User persona must be defined")
+
         voice_script_request = VoiceTrackResponse(
             promptId=prompt_id,
-            courseId=course_id,
+            courseId=prompt_request.course_id,
             voiceTrack=narration,
-            slideNumber=i,
-            userProfile=user_profile,
+            slideNumber=index,
+            userProfile=prompt_request.user_persona,
         )
 
         yield voice_script_request

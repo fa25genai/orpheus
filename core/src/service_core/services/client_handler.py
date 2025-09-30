@@ -270,9 +270,8 @@ async def generate_voice_scripts(
         narration_stream = narration_generation.generate_narrations(
             lecture_script,
             slides_data,
-            prompt_request.user_persona,
+            prompt_request,
             prompt_id,
-            prompt_request.course_id,
         )
 
         slide_index = 0
