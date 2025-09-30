@@ -20,7 +20,7 @@ from service_core.models.slides.generation_accepted_response import (
 )
 from service_core.models.user_profile import UserProfile
 from service_core.services.helpers.debug import debug_print, enable_debug
-from service_core.services.helpers.llm import create_llm
+from service_core.services.helpers.llm import ask_llm
 from service_core.services.helpers.loaders import load_prompt
 
 
@@ -46,7 +46,6 @@ def generate_narrations(
     if debug:
         enable_debug()
 
-    llm = create_llm()
 
     # slides_data = json.loads(example_slides.model_dump_json())
     if not example_slides.structure:
@@ -90,7 +89,7 @@ def generate_narrations(
 
         # Join all parts with newlines
         prompt = "\n\n".join(prompt_parts)
-        response = llm.invoke(prompt)
+        response = ask_llm(prompt)
         narration = response
 
         debug_print(f"--- Slide {i + 1} ---")

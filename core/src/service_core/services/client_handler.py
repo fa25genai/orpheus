@@ -32,16 +32,16 @@ from service_core.services.services_models.voice_track import VoiceTrackResponse
 
 load_dotenv()
 
-# DI_API_URL = "http://docint:25565"
-# SLIDES_API_URL = "http://slides:30606"
-# AVATAR_API_URL = "http://avatar-video-producer:9000"
-# STATUS_API_URL = "http://status-service:19910"
+DI_API_URL = "http://docint:25565"
+SLIDES_API_URL = "http://slides:30606"
+AVATAR_API_URL = "http://avatar-video-producer:9000"
+STATUS_API_URL = "http://status-service:19910"
 
 # Use this when you start the service locally outside a docker container
-DI_API_URL = "http://localhost:25565"
-SLIDES_API_URL = "http://localhost:30606"
-AVATAR_API_URL = "http://localhost:9000"
-STATUS_API_URL = "http://localhost:19910"
+# DI_API_URL = "http://localhost:25565"
+# SLIDES_API_URL = "http://localhost:30606"
+# AVATAR_API_URL = "http://localhost:9000"
+# STATUS_API_URL = "http://localhost:19910"
 
 DEBUG = int(os.getenv("ORPHEUS_DEBUG", "0"))  # DEBUG enabled by default
 
@@ -139,6 +139,7 @@ async def query_document_intelligence(
         )
         di_response.raise_for_status()
         resp = BatchRetrievalResponse.from_dict(di_response.json())
+        logger.debug(f"DI Response: {resp}")
         await update_status(prompt_id, StatusPatch(stepLookup=StepStatus.DONE), client)
         return resp.results
     except Exception as exception:
@@ -297,6 +298,7 @@ async def avatar_video_producer(
     voice_script: Dict[str, Any], client: httpx.AsyncClient
 ) -> httpx.Response:
     try:
+        logger.debug(f"Request to avatar of type {type(voice_script)}: {voice_script}")
         avatar_response = await client.post(
             f"{AVATAR_API_URL}/v1/video/generate",
             json=voice_script,
