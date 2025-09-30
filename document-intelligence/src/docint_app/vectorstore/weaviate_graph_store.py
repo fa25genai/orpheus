@@ -331,6 +331,7 @@ class WeaviateGraphStore:
             self._post("/v1/objects", payload)
         except WeaviateError as e:
             # Duplicate/exists -> update instead
+            print(f"Slide upsert POST failed, trying PUT: {e}")
             self._put(f"/v1/objects/{uid}", payload)
         return uid
 
@@ -426,6 +427,7 @@ class WeaviateGraphStore:
             self._post("/v1/objects", payload)
         except WeaviateError as e:
             # Duplicate/exists -> update instead
+            print(f"VideoChunk upsert POST failed, trying PUT: {e}")
             self._put(f"/v1/objects/{uid}", payload)
         return uid
 
