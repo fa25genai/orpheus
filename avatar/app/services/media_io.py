@@ -6,12 +6,14 @@ from typing import Optional
 from uuid import UUID
 
 import requests
+import logging
 from sqlalchemy.orm import Session
 
 from app.schemas import UserProfile
 from app.workers.queues import job_dir
 from media import avatar_queries  # keep your existing module
 
+logger = logging.getLogger("media_io.py")
 
 def generate_audio(
     voiceTrack: Optional[str],
@@ -24,7 +26,7 @@ def generate_audio(
     slot: str = "default",
 ) -> str | None:
     if prompt_id is None:
-        print("[generate_audio] prompt_id is required")
+        logger.error("generate_audio: prompt_id is required")
         return None
 
     audio_api_url = os.getenv("GEN_AUDIO", "http://localhost:7000/v1/audio/generate")
@@ -34,12 +36,12 @@ def generate_audio(
     try:
         ref = avatar_queries.get_latest_audio_for_course_slot(db, str(course_id), slot)
         if not ref or not getattr(ref, "file_path", None):
-            print("[generate_audio] No DB voice found; using fallback sample.")
+            logger.warning("generate_audio: no audio found for course_id and slot")
             ref_path = Path("/app/database/voice_sample/krusche_voice_v2.mp3")
         else:
             ref_path = Path(ref.file_path)
             if not ref_path.is_file():
-                print(f"[generate_audio] DB voice not found on disk: {ref_path}")
+                logger.warning(f"generate_audio: DB voice not found on disk: {ref_path}")
                 ref_path = Path("/app/database/voice_sample/krusche_voice_v2.mp3")
 
         suffix = ref_path.suffix.lower()
@@ -48,7 +50,7 @@ def generate_audio(
         is_debug = os.getenv("DEBUG", "").lower() == "debug"
         data = {"voiceTrack": voiceTrack or "", "debug": "true" if is_debug else "false", "promptId": str(prompt_id)}
 
-        print(f"[generate_audio] Posting to {audio_api_url} with {ref_path}")
+        logger.info(f"generate_audio {prompt_id}#{voiceTrack}: Posting to {audio_api_url} with {ref_path}")
         with ref_path.open("rb") as f:
             resp = requests.post(
                 audio_api_url,
@@ -61,9 +63,9 @@ def generate_audio(
 
             if "application/json" in (resp.headers.get("Content-Type") or "").lower():
                 try:
-                    print(f"[generate_audio] Unexpected JSON response: {resp.json()}")
-                except Exception:
-                    print("[generate_audio] Unexpected JSON response (could not parse).")
+                    logger.error(f"[generate_audio] Unexpected JSON response: {resp.json()}")
+                except Exception as exception:
+                    logger.error("[generate_audio] Unexpected JSON response (could not parse).", exc_info=exception)
                 return None
 
             tmp_path = wav_path.with_suffix(".wav.part")
@@ -75,19 +77,19 @@ def generate_audio(
                 os.fsync(out.fileno())
 
         if not tmp_path.exists() or tmp_path.stat().st_size == 0:
-            print("[generate_audio] Empty file received")
+            logger.error("[generate_audio] Empty file received")
             tmp_path.unlink(missing_ok=True)
             return None
 
         tmp_path.replace(wav_path)
-        print(f"[generate_audio] OK -> {wav_path}")
+        logger.info(f"[generate_audio] OK -> {wav_path}")
         return str(wav_path)
 
-    except requests.RequestException as e:
-        print(f"[generate_audio] Request error: {e}")
+    except requests.RequestException as exception:
+        logger.error(f"[generate_audio] Request error", exc_info=exception)
         return None
-    except Exception as e:
-        print(f"[generate_audio] Unexpected error: {e}")
+    except Exception as exception:
+        logger.error("[generate_audio] Unexpected error", exc_info=exception)
         return None
 
 
@@ -100,7 +102,7 @@ def generate_video(
     source_image_path: Optional[str] = None,
 ) -> Optional[str]:
     if prompt_id is None or video_counter is None:
-        print("[generate_video] prompt_id and video_counter are required")
+        logger.error("generate_video: prompt_id and video_counter are required")
         return None
 
     video_api_url = os.getenv("GEN_VIDEO", "http://localhost:8000/infer")
@@ -110,22 +112,22 @@ def generate_video(
 
     resolved_audio = audio_path or f"{job_folder}/{video_counter}.wav"
     if not Path(resolved_audio).is_file():
-        print(f"[generate_video] Audio file not found: {resolved_audio}")
+        logger.error(f"[generate_video] Audio file not found: {resolved_audio}")
         return None
 
     source_path = source_image_path
     if not source_path or not Path(source_path).is_file():
-        print(f"[generate_video] Source image not found: {source_path}; using fallback sample.")
+        logger.warning(f"[generate_video] Source image not found: {source_path}, using fallback sample")
         source_path = "/app/database/avatar_sample/krusche_image.png"
     if not Path(source_path).is_file():
-        print(f"[generate_video] Source image not found: {source_path}")
+        logger.error(f"[generate_video] Source image not found: {source_path}")
         return None
 
     is_debug = os.getenv("DEBUG", "").lower() in {"debug"}
     data = {"debug": is_debug}
 
     try:
-        print(f"[generate_video] Posting to {video_api_url}")
+        logger.info(f"[generate_video] Posting to {video_api_url} with {resolved_audio} and {source_path}")
         with (
             open(resolved_audio, "rb") as audio_f,
             open(source_path, "rb") as image_f,
@@ -141,7 +143,7 @@ def generate_video(
             ) as resp,
         ):
             if resp.status_code >= 400:
-                print(f"[generate_video] HTTP {resp.status_code}: {resp.text[:200]}")
+                logger.error(f"[generate_video] HTTP {resp.status_code}: {resp.text[:200]}")
                 return None
 
             with temp_path.open("wb") as f:
@@ -152,17 +154,17 @@ def generate_video(
                 os.fsync(f.fileno())
 
         if temp_path.stat().st_size == 0:
-            print("[generate_video] empty file received")
+            logger.debug("[generate_video] Empty file received")
             temp_path.unlink(missing_ok=True)
             return None
 
         temp_path.replace(final_path)
-        print(f"[generate_video] OK -> {final_path}")
+        logger.debug(f"[generate_video] OK -> {temp_path}")
         return str(final_path)
 
-    except requests.RequestException as e:
-        print(f"[generate_video] Request error: {e}")
+    except requests.RequestException as exception:
+        logger.error(f"[generate_video] Request error", exc_info=exception)
         return None
-    except Exception as e:
-        print(f"[generate_video] Unexpected error: {e}")
+    except Exception as exception:
+        logger.error("[generate_video] Unexpected error", exc_info=exception)
         return None
