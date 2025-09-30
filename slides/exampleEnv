@@ -1,0 +1,24 @@
+# Ollama LLM configuration
+# OLLAMA_LLM_HOST=https://gpu.aet.cit.tum.de/ollama
+# OLLAMA_LLM_KEY=your-ollama-api-key
+
+# Google GenAI configuration
+# GOOGLE_API_KEY=your_api_key
+
+# OpenAI configuration
+# OPENAI_API_KEY=your_openai_api_key
+
+# AWS Bedrock configuration
+AWS_REGION=eu-central-1
+AWS_BEARER_TOKEN_BEDROCK=your_bedrock_api_key
+
+# LLM models to use for different tasks
+# These models must be available in your Ollama instance
+AWS_PROVIDER=amazon
+SPLITTING_MODEL=arn:aws:bedrock:eu-central-1:176766376972:inference-profile/eu.amazon.nova-micro-v1:0
+SLIDESGEN_MODEL=arn:aws:bedrock:eu-central-1:176766376972:inference-profile/eu.amazon.nova-micro-v1:0
+
+POSTPROCESSING_SERVICE_HOST=http://slides-postprocessing:30607
+STATUS_SERVICE_HOST=http://status-service:19910
+
+DEBUG=1

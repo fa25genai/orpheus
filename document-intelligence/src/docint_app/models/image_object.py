@@ -31,7 +31,7 @@ class ImageObject(BaseModel):
     """
     ImageObject
     """ # noqa: E501
-    image: Optional[StrictStr] = Field(default=None, description="Base64-encoded image.")
+    image: Optional[StrictStr] = Field(default=None, description="Base64-encoded image in data URI format (e.g., 'data:image/jpeg;base64,/9j/4gIoSUNDX1BST0ZJTEUAAQEAAAIYAAAAAAIQAABtbnRyUkdCIFhZWi...').")
     description: Optional[StrictStr] = Field(default=None, description="Short description of the image.")
     __properties: ClassVar[List[str]] = ["image", "description"]
 

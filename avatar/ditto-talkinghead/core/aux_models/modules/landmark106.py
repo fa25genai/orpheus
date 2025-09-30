@@ -1,8 +1,9 @@
 # insightface
 from __future__ import division
-import onnxruntime
+
 import cv2
 import numpy as np
+import onnxruntime
 from skimage import transform as trans
 
 

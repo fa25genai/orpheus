@@ -42,27 +42,30 @@ paths:
             schema:
               type: object
               required:
-                - slideMessages
+                - voiceTrack
+                - slideNumber
                 - promptId
                 - courseId
                 - userProfile
               properties:
-                slideMessages:
-                  type: array
-                  description: "Per-slide text blocks in order."
-                  minItems: 1
-                  items:
-                    type: string
-                    description: "The spoken/script text for one slide."
-                    minLength: 1
+                voiceTrack:
+                  type: string
+                  description: "The voice track that the avatar shall speak."
+                  example: "Willkommen zur Vorlesung über For-Loops! Wir werden heute lernen, wie man Aktionen in Programmen wiederholt – ähnlich wie beim Wiederholen von Liegestützen beim Training. For-Loops ermöglichen es uns, Code effizienter und übersichtlicher zu gestalten."
+                slideNumber:
+                  type: integer
+                  minimum: 0
+                  description: "Zero-based slide index matching audio/video filenames."
+                  example: 4
                 promptId:
                   type: string
                   format: uuid
-                  description: >
-                    Unique identifier of the lecture to which the slides will belong.
+                  description: Unique identifier of the question to which the answer belongs.
+                  example: 019986cc-7327-7145-81fb-f72014daa20b
                 courseId:
                   type: string
                   description: "Course ID used to identify the correct professor/avatar resources."
+                  example: "IN001"
                 userProfile:
                   $ref: "#/components/schemas/UserProfile"
       responses:
@@ -210,45 +213,39 @@ paths:
 components:
   schemas:
     UserProfile:
-      type: object
-      description: "Information about the user and their preferences."
-      required:
-        - id
-        - role
-        - language
+      type: "object"
       properties:
         id:
-          type: string
-          description: "Unique identifier of the user."
+          type: "string"
+          format: "uuid"
+          description: "Unique identifier for the user."
+          example: "a1b2c3d4-e5f6-7890-1234-567890abcdef"
         role:
-          type: string
-          enum: [ student, instructor ]
-          description: "User's role."
+          type: "string"
+          enum: [ "student", "instructor" ]
         language:
-          type: string
-          enum: [ german, english ]
-          description: "Primary language."
+          type: "string"
+          enum: [ "german", "english" ]
         preferences:
-          type: object
-          description: "Generation/presentation preferences."
+          type: "object"
           properties:
             answerLength:
-              type: string
-              enum: [ short, medium, long ]
+              type: "string"
+              enum: [ "short", "medium", "long" ]
             languageLevel:
-              type: string
-              enum: [ basic, intermediate, advanced ]
+              type: "string"
+              enum: [ "basic", "intermediate", "advanced" ]
             expertiseLevel:
-              type: string
-              enum: [ beginner, intermediate, advanced, expert ]
+              type: "string"
+              enum: [ "beginner", "intermediate", "advanced", "expert" ]
             includePictures:
-              type: string
-              enum: [ none, few, many ]
-        enrolled_courses:
-          type: array
-          description: "Course IDs the user is enrolled in."
+              type: "string"
+              enum: [ "none", "few", "many" ]
+        enrolledCourses:
+          type: "array"
           items:
-            type: string
+            type: "string"
+            example: ["IN001", "IN002"]
 
     GenerationAcceptedResponse:
       type: object

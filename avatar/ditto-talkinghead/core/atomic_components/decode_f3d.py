@@ -1,6 +1,5 @@
 from ..models.decoder import Decoder
 
-
 """
 # __init__
 decoder_cfg = {

@@ -5,7 +5,12 @@ services:
       context: ./slides
       dockerfile: Dockerfile
     env_file:
-      - ./slides/.env # ask Krasi
+      - path: .env
+        required: false
+      - path: ./slides/.env
+        required: false
+    depends_on:
+      - status-service
     ports:
       - "30606:30606"
     networks:
@@ -16,7 +21,10 @@ services:
       context: ./slides/postprocessing
       dockerfile: Dockerfile
     env_file:
-      - ./slides/postprocessing/.env # ask Krasi
+      - path: .env
+        required: false
+      - path: slides/postprocessing/.env.bak
+        required: false
     ports:
       - "30607:30607"
     networks:
@@ -45,7 +53,8 @@ services:
     networks:
       - orpheus
     depends_on:
-      - slides-service
+      - core-service
+      - status-service
 
   docint-service:
     container_name: docint
@@ -53,7 +62,10 @@ services:
       context: ./document-intelligence
       dockerfile: Dockerfile
     env_file:
-      - ./document-intelligence/.env # ask Krasi
+      - path: .env
+        required: false
+      - path: document-intelligence/.env.bak
+        required: false
     ports:
       - "25565:25565"
     networks:
@@ -88,14 +100,16 @@ services:
       - orpheus
     restart: unless-stopped
 
-
   core-service:
     container_name: core
     build:
       context: ./core
       dockerfile: Dockerfile
     env_file:
-      - ./core/.env # ask Krasi
+      - path: .env
+        required: false
+      - path: core/.env.bak
+        required: false
     ports:
       - "8000:8000"
     networks:
@@ -104,6 +118,7 @@ services:
       - docint-service
       - slides-service
       - avatar-video-producer
+      - status-service
 
   avatar-delivery:
     build:
@@ -113,14 +128,13 @@ services:
       - avatar_file_storage:/data
     networks:
       - orpheus
-    ports:
-      - "8080:80"
 
   avatar-video-producer:
     build:
       context: ./avatar
       dockerfile: Dockerfile
     environment:
+      DEBUG: "debug"
       VIDEO_ROOT: "/data/jobs"
       PUBLIC_VIDEOS_BASE: "/videos/jobs"
       GEN_AUDIO: "https://gpu.aet.cit.tum.de/avatar/audio/v1/audio/generate"
@@ -133,6 +147,16 @@ services:
       - "9000:9000"
     depends_on:
       - avatar-delivery
+      - status-service
+
+  status-service:
+    build:
+      context: ./status
+      dockerfile: Dockerfile
+    networks:
+      - orpheus
+    ports:
+      - "19910:19910"
 
 networks:
   orpheus: {}

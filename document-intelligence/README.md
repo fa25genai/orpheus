@@ -11,3 +11,17 @@ docker build -t docint-app .
 
 docker run -p 25565:25565 -v "$(pwd)/src:/app/src" --env-file .env docint-app
 ```
+
+## Local Setup
+
+```bash
+cd document-intelligence
+poetry install
+```
+
+## Quality Checks
+
+```bash
+poetry run ruff check .
+poetry run mypy src
+```

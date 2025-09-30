@@ -5,14 +5,16 @@ This file defines various neural network modules and utility functions, includin
 normalizations, and functions for spatial transformation and tensor manipulation.
 """
 
-from torch import nn
-import torch.nn.functional as F
-import torch
-import torch.nn.utils.spectral_norm as spectral_norm
+import collections.abc
 import math
 import warnings
-import collections.abc
 from itertools import repeat
+
+import torch
+import torch.nn.functional as F
+import torch.nn.utils.spectral_norm as spectral_norm
+from torch import nn
+
 
 def kp2gaussian(kp, spatial_size, kp_variance):
     """

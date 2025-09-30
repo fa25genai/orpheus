@@ -12,15 +12,16 @@ Do not edit the class manually.
 """  # noqa: E501
 
 from __future__ import annotations
+
+import json
 import pprint
 import re  # noqa: F401
-import json
+from typing import Any, ClassVar, Dict, List, Optional, Set
 
 from pydantic import BaseModel, ConfigDict, StrictStr, field_validator
-from typing import Any, ClassVar, Dict, List, Optional
-from service_slides.clients.postprocessing.models.slideset_with_id import SlidesetWithId
-from typing import Set
 from typing_extensions import Self
+
+from service_slides.clients.postprocessing.models.slideset_with_id import SlidesetWithId
 
 
 class StoreSlidesetRequest(BaseModel):
@@ -96,9 +97,7 @@ class StoreSlidesetRequest(BaseModel):
         _obj = cls.model_validate(
             {
                 "theme": obj.get("theme"),
-                "slideset": SlidesetWithId.from_dict(obj["slideset"])
-                if obj.get("slideset") is not None
-                else None,
+                "slideset": SlidesetWithId.from_dict(obj["slideset"]) if obj.get("slideset") is not None else None,
             }
         )
         return _obj

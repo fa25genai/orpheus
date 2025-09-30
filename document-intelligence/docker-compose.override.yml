@@ -1,0 +1,6 @@
+services:
+  docint-service:
+    volumes:
+      - ./src:/app/src
+      # Add any other volumes you need here
+      # - ./data:/app/data

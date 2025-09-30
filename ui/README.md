@@ -60,6 +60,14 @@ Run the following command from the `ui` directory:
     -o ./generated-api-clients/document-intelligence
     ```
 
+    6. Generate them for status service
+    ```bash
+    pnpm exec openapi-generator-cli generate \
+    -i ../api/generation_status_service.yaml \
+    -g typescript-fetch \
+    -o ./generated-api-clients/status
+    ```
+
 ### Docker setup
 1. How to create the docker image
     ```bash
@@ -73,3 +81,10 @@ Run the following command from the `ui` directory:
     # or
     docker compose up
     ```
+
+The following configuration options are available (using environment variables)
+
+| Environment Variable          | Description                                                                                         | Default value                        |
+|-------------------------------|-----------------------------------------------------------------------------------------------------|--------------------------------------|
+| `NEXT_PUBLIC_ORPHEUS_DEBUG`               | Displays additional infos in the UI for debugging                |                                      |
+

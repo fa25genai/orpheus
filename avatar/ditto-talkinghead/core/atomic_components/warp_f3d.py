@@ -1,6 +1,5 @@
 from ..models.warp_network import WarpNetwork
 
-
 """
 # __init__
 warp_network_cfg = {

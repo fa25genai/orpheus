@@ -1,5 +1,6 @@
-import re
 import json
+import re
+
 import numpy as np
 
 
