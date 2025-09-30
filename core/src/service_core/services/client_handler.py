@@ -36,10 +36,10 @@ AVATAR_API_URL = "http://avatar-video-producer:9000"
 STATUS_API_URL = "http://status-service:19910"
 
 # Use this when you start the service locally outside a docker container
-# DI_API_URL = "http://localhost:25565"
-# SLIDES_API_URL = "http://localhost:30606"
-# AVATAR_API_URL = "http://localhost:9000"
-# STATUS_API_URL = "http://localhost:19910"
+DI_API_URL = "http://localhost:25565"
+SLIDES_API_URL = "http://localhost:30606"
+AVATAR_API_URL = "http://localhost:9000"
+STATUS_API_URL = "http://localhost:19910"
 
 DEBUG = int(os.getenv("ORPHEUS_DEBUG", "0"))  # DEBUG enabled by default
 
@@ -248,6 +248,11 @@ async def generate_voice_scripts(
     prompt_id: str,
 ) -> List[asyncio.Task[httpx.Response]]:
     logger.info(f"Generating voice scripts for prompt `{prompt_id}`")
+    await update_status(
+        prompt_id,
+        StatusPatch(stepLectureScriptGeneration=StepStatus.IN_PROGRESS),
+        client,
+    )
     try:
         tasks: List[asyncio.Task[httpx.Response]] = []
         if DEBUG:
@@ -276,6 +281,12 @@ async def generate_voice_scripts(
 
         slide_index = 0
 
+        await update_status(
+            prompt_id,
+            StatusPatch(stepLectureScriptGeneration=StepStatus.DONE),
+            client,
+        )
+
         async for voice_script_payload in narration_stream:
             logger.debug(
                 f"Received narration segment {slide_index}, scheduling avatar task."
@@ -292,6 +303,11 @@ async def generate_voice_scripts(
     except Exception as exception:
         logger.error(
             "Voice track generation failed during streaming", exc_info=exception
+        )
+        await update_status(
+            prompt_id,
+            StatusPatch(stepLectureScriptGeneration=StepStatus.FAILED),
+            client,
         )
         return []
 

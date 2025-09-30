@@ -35,7 +35,6 @@ class CoreApiImpl(BaseCoreApi):  # type: ignore[no-untyped-call]
                     "User persona must be defined for prompt requests from client."
                 )
 
-            # TODO test if user_persona is provided
             prompt_request.user_persona.id = uuid4()  # TODO: Remove this workaround when client provides user_persona.id (see issue #<issue-number>)
             tracker.log(f"Initializing CoreThreadPoolExecutor for {prompt_id}")
             executor.submit(process_prompt_handler, prompt_id, prompt_request)

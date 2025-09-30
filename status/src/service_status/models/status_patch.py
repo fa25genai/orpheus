@@ -43,6 +43,9 @@ class StatusPatch(BaseModel):
     step_slide_structure_generation: Optional[StepStatus] = Field(
         default=None, alias="stepSlideStructureGeneration"
     )
+    step_audio_script_generation: Optional[StepStatus] = Field(
+        default=None, alias="stepAudioScriptGeneration"
+    )
     step_slide_generation: Optional[StrictInt] = Field(default=None, alias="stepSlideGeneration")
     step_slide_postprocessing: Optional[StepStatus] = Field(
         default=None, alias="stepSlidePostprocessing"
