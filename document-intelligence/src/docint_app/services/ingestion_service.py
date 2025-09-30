@@ -7,6 +7,7 @@ import os
 from typing import Any, Dict, List, Optional, TypedDict
 
 from docint_app.services.embedding_service import get_embedding_service
+from docint_app.services.video_topic_modelling_service import VideoTopicModellingService
 from docint_app.vectorstore.weaviate_graph_store import get_store
 
 
@@ -158,6 +159,49 @@ class IngestionService:
 
         return results
 
+    async def ingest_video_transcription(
+        self,
+        course_id: str,
+        video_id: str,
+        transcription_text: str,
+    ) -> None:
+        """
+        Ingest video transcription text into the system.
+        """
+
+        topic_modeling_service = VideoTopicModellingService(transcription_text)
+        chunks = topic_modeling_service.extract_topics()
+        
+        # embed chunks like the ingest method
+        try:
+            # Ensure schema exists
+            print("Ensuring Weaviate schema exists...")
+            self.store.ensure_schema()
+            print("Schema validation completed")
+
+            # Extract chunk texts for embedding
+            chunk_texts = [chunk["video_chunk"] for chunk in chunks]
+            print(f"Generating embeddings for {len(chunk_texts)} video chunks...")
+            
+            # Generate embeddings for all chunks
+
+            chunk_vectors = self.embedder.embed_batch(chunk_texts)
+            print(f"Generated {len(chunk_vectors)} chunk embeddings")
+            
+            # Process each chunk (similar to slide processing in ingest method)
+            for i, (chunk_text, vec) in enumerate(zip(chunk_texts, chunk_vectors)):
+                print(f"Processing chunk {i+1}/{len(chunks)}")
+                self.store.upsert_video_chunk(
+                    course_id=course_id,
+                    lecture_id=video_id,
+                    chunk_id=str(i),
+                    text=chunk_text,
+                    text_vector=vec,
+                )
+                
+        except Exception as e:
+            print(f"Failed during video transcription embedding: {e}")
+            return          
 
 _instance: Optional[IngestionService] = None
 
