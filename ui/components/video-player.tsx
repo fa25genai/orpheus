@@ -1,17 +1,22 @@
-import {useRef, useState, useEffect, useCallback} from "react";
+import {useRef, useState, useEffect, useCallback, useImperativeHandle, forwardRef} from "react";
 import {Card} from "@/components/ui/card";
 import {Button} from "@/components/ui/button";
 import {Pause, Play, Volume2} from "lucide-react";
+
+export interface VideoPlayerHandle {
+  next: () => void;
+  prev: () => void;
+  getIndex: () => number;
+  goTo: (index: number) => void;
+}
 
 type CustomVideoPlayerProps = {
   sources: string[];
   onBeforeNext?: (index: number) => void;
 };
 
-export default function VideoPlayer({
-  sources,
-  onBeforeNext,
-}: CustomVideoPlayerProps) {
+const VideoPlayer = forwardRef<VideoPlayerHandle, CustomVideoPlayerProps>(
+  ({ sources, onBeforeNext }, ref) => {
   const [isPlaying, setIsPlaying] = useState(true);
   const [showControls, setShowControls] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -91,6 +96,29 @@ export default function VideoPlayer({
     }
   }, [currentIndex, isPlaying, playbackRate, active]);
 
+  useImperativeHandle(ref, () => ({
+      next: () => {
+        if (currentIndex < sources.length - 1) {
+          onBeforeNext?.(currentIndex + 1);
+          setActive((p) => (p === 0 ? 1 : 0));
+          setCurrentIndex((i) => i + 1);
+        }
+      },
+      prev: () => {
+        if (currentIndex > 0) {
+          setActive((p) => (p === 0 ? 1 : 0));
+          setCurrentIndex((i) => i - 1);
+        }
+      },
+      goTo: (index: number) => {
+        if (index >= 0 && index < sources.length) {
+          setActive((p) => (p === 0 ? 1 : 0));
+          setCurrentIndex(index);
+        }
+      },
+      getIndex: () => currentIndex,
+    }));
+
   return (
     <Card
       className="relative p-0 bg-card border-border overflow-hidden rounded-2xl"
@@ -156,3 +184,7 @@ export default function VideoPlayer({
     </Card>
   );
 }
+);
+
+VideoPlayer.displayName = "VideoPlayer";
+export default VideoPlayer;

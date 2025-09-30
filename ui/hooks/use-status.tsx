@@ -1,12 +1,23 @@
 "use client";
-import {useEffect, useState} from "react";
+import {useEffect, useMemo, useState} from "react";
 import {Status} from "@/generated-api-clients/status";
+import {mockStatusFinished} from "@/data/status";
 
 export function useStatus(promptId?: string) {
   const [status, setStatus] = useState<Status | null>(null);
 
+  const mockMode = useMemo(
+    () => (process.env.NEXT_PUBLIC_MOCK_MODE || "").toLowerCase() === "true" || process.env.NEXT_PUBLIC_MOCK_MODE === "1",
+    []
+  );
+
   useEffect(() => {
     if (!promptId) return;
+
+    if (mockMode) {
+      setStatus(mockStatusFinished);
+      return;
+    }
 
     // Use correct protocol depending on page
     const protocol = window.location.protocol === "https:" ? "wss" : "ws";
@@ -42,7 +53,7 @@ export function useStatus(promptId?: string) {
       console.log("Cleaning up WebSocket");
       ws.close();
     };
-  }, [promptId]);
+  }, [promptId, mockMode]);
 
   return status;
 }
