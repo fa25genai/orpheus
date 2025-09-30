@@ -11,7 +11,9 @@ class VideoTopicModellingService:
         self.transcription = transcription
 
     def _split_sentences(self, text: str):
-        raw = re.split(r'(?<=[.!?])\s+(?=[A-Z(""Oo0])', text.strip())
+        # Split sentences on punctuation followed by whitespace and a capital letter.
+        # This handles most standard sentence boundaries.
+        raw = re.split(r'(?<=[.!?])\s+(?=[A-Z])', text.strip())
         sentences = [s.strip() for s in raw if s.strip()]
         return list(enumerate(sentences))
 
