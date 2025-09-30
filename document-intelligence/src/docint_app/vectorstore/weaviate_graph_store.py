@@ -380,10 +380,20 @@ class WeaviateGraphStore:
           3. Filtering out any slides that do not meet the `similarity_threshold`.
           4. Ranking the remaining relevant slides and returning the top-k.
         """
+        print(f"[DEBUG] search_slides_fused_with_images called with:")
+        print(f"  - course_id: {course_id}")
+        print(f"  - k: {k}")
+        print(f"  - alpha: {alpha}")
+        print(f"  - similarity_threshold: {similarity_threshold}")
+        print(f"  - per_slide_image_agg: {per_slide_image_agg}")
+        print(f"  - query_vector length: {len(query_vector) if query_vector else 'None'}")
+        print(f"  - image_query_vector length: {len(image_query_vector) if image_query_vector else 'None'}")
+        
         # Text ANN on Slide 
         where_clause = ""
         if course_id:
             where_clause = f'where: {{ operator: Equal, path: ["courseId"], valueText: "{course_id}" }}'
+        print(f"[DEBUG] where_clause: {where_clause}")
         
         gql_slides = f"""
         {{
@@ -399,8 +409,16 @@ class WeaviateGraphStore:
           }}
         }}
         """
+        print(f"[DEBUG] GraphQL query for slides:")
+        print(gql_slides)
+        
         res_slides = self._post("/v1/graphql", {"query": gql_slides})
+        print(f"[DEBUG] Raw slide search response: {res_slides}")
+        
         slide_hits = res_slides.get("data", {}).get("Get", {}).get("Slide", []) or []
+        print(f"[DEBUG] Found {len(slide_hits)} slide hits")
+        for i, hit in enumerate(slide_hits):
+            print(f"  Slide {i}: courseId={hit.get('courseId')}, slideNo={hit.get('slideNo')}, distance={hit.get('_additional', {}).get('distance')}")
 
         text_scores: Dict[tuple, float] = {}
         slide_meta: Dict[tuple, Dict[str, Any]] = {}
@@ -409,9 +427,14 @@ class WeaviateGraphStore:
             dist = (s.get("_additional") or {}).get("distance")
             text_scores[key] = self._similarity_from_distance(dist)
             slide_meta[key] = s
+        
+        print(f"[DEBUG] Text scores computed: {text_scores}")
+        print(f"[DEBUG] Slide metadata keys: {list(slide_meta.keys())}")
 
         # Image-description ANN on SlideImage 
         img_vec = image_query_vector if image_query_vector is not None else query_vector
+        print(f"[DEBUG] Using image vector - is separate: {image_query_vector is not None}")
+        
         gql_images = f"""
         {{
           Get {{
@@ -426,15 +449,27 @@ class WeaviateGraphStore:
           }}
         }}
         """
+        print(f"[DEBUG] GraphQL query for images:")
+        print(gql_images)
+        
         res_images = self._post("/v1/graphql", {"query": gql_images})
+        print(f"[DEBUG] Raw image search response: {res_images}")
+        
         img_hits = res_images.get("data", {}).get("Get", {}).get("SlideImage", []) or []
+        print(f"[DEBUG] Found {len(img_hits)} image hits")
+        for i, hit in enumerate(img_hits):
+            print(f"  Image {i}: courseId={hit.get('courseId')}, slideNo={hit.get('slideNo')}, distance={hit.get('_additional', {}).get('distance')}")
 
         from collections import defaultdict
         per_slide_image_sims: Dict[tuple, List[float]] = defaultdict(list)
         for im in img_hits:
             key = (im.get("courseId"), im.get("slideNo"))
             dist = (im.get("_additional") or {}).get("distance")
-            per_slide_image_sims[key].append(self._similarity_from_distance(dist))
+            sim_score = self._similarity_from_distance(dist)
+            per_slide_image_sims[key].append(sim_score)
+            print(f"[DEBUG] Image similarity for slide {key}: distance={dist}, similarity={sim_score}")
+        
+        print(f"[DEBUG] Per-slide image similarities: {dict(per_slide_image_sims)}")
         
         # Aggregate image scores per slide using the specified method
         image_scores: Dict[tuple, float] = {}
@@ -444,10 +479,16 @@ class WeaviateGraphStore:
                     image_scores[key] = sum(vals) / len(vals)
                 else:  # default to "max"
                     image_scores[key] = max(vals)
+                print(f"[DEBUG] Aggregated image score for slide {key}: {image_scores[key]} (method: {per_slide_image_agg})")
+
+        print(f"[DEBUG] Final image scores: {image_scores}")
 
         # Fuse scores without normalization 
         fused_scores: Dict[tuple, float] = {}
         all_slide_keys = set(text_scores.keys()) | set(image_scores.keys())
+        print(f"[DEBUG] All unique slide keys found: {all_slide_keys}")
+        print(f"[DEBUG] Text score keys: {set(text_scores.keys())}")
+        print(f"[DEBUG] Image score keys: {set(image_scores.keys())}")
 
         for key in all_slide_keys:
             text_sim = text_scores.get(key, 0.0)
@@ -456,25 +497,36 @@ class WeaviateGraphStore:
             # Direct weighted sum
             fused_score = (alpha * text_sim) + ((1.0 - alpha) * image_sim)
             fused_scores[key] = fused_score
+            print(f"[DEBUG] Fused score for slide {key}: text={text_sim}, image={image_sim}, fused={fused_score}")
+
+        print(f"[DEBUG] All fused scores: {fused_scores}")
 
         # Filter by threshold, then sort and limit 
         # Only keep slides that meet the similarity threshold
         relevant_slides = {key: score for key, score in fused_scores.items() if score >= similarity_threshold}
+        print(f"[DEBUG] Slides meeting threshold {similarity_threshold}: {relevant_slides}")
+        print(f"[DEBUG] Filtered out {len(fused_scores) - len(relevant_slides)} slides below threshold")
 
         # Sort the relevant slides by their fused score, descending
         sorted_slides = sorted(relevant_slides.items(), key=lambda item: item[1], reverse=True)
+        print(f"[DEBUG] Sorted relevant slides: {sorted_slides}")
         
         # Get the keys for the top k slides
         top_keys = [key for key, score in sorted_slides[:k]]
+        print(f"[DEBUG] Top {k} slide keys selected: {top_keys}")
 
         # Assemble final results
         out: List[Dict[str, Any]] = []
-        for key in top_keys:
+        print(f"[DEBUG] Starting to assemble final results for {len(top_keys)} slides")
+        
+        for i, key in enumerate(top_keys):
             c_id, s_no = key
+            print(f"[DEBUG] Processing slide {i+1}/{len(top_keys)}: {key}")
             
             # Get metadata for the slide, falling back to a direct fetch if it wasn't in the initial text search
             s_meta = slide_meta.get(key)
             if not s_meta:
+                print(f"[DEBUG] Slide metadata not found in cache, fetching directly for {key}")
                 # This fallback is for slides that were found only through an image match
                 gql_one = f"""
                 {{
@@ -496,19 +548,31 @@ class WeaviateGraphStore:
                 }}
                 """
                 res_one = self._post("/v1/graphql", {"query": gql_one})
+                print(f"[DEBUG] Direct fetch response for slide {key}: {res_one}")
                 recs = res_one.get("data", {}).get("Get", {}).get("Slide", []) or []
                 s_meta = recs[0] if recs else {}
+                print(f"[DEBUG] Retrieved slide metadata: {s_meta}")
+            else:
+                print(f"[DEBUG] Using cached slide metadata for {key}")
 
             # Fetch all images for the final slide
+            print(f"[DEBUG] Fetching images for slide {key}")
             images_full = self._fetch_all_images_for_slide(c_id, s_no)
+            print(f"[DEBUG] Found {len(images_full)} images for slide {key}")
             
             # Correctly retrieve the calculated scores from the dictionaries
             final_fused_score = fused_scores.get(key, 0.0)
             final_text_sim = text_scores.get(key, 0.0)
             final_image_sim = image_scores.get(key, 0.0)
             text_dist = (slide_meta.get(key, {}).get("_additional") or {}).get("distance") if key in slide_meta else None
+            
+            print(f"[DEBUG] Final scores for slide {key}:")
+            print(f"  - fused: {final_fused_score}")
+            print(f"  - text similarity: {final_text_sim}")
+            print(f"  - image similarity: {final_image_sim}")
+            print(f"  - text distance: {text_dist}")
 
-            out.append({
+            result_slide = {
                 "id": (s_meta.get("_additional") or {}).get("id"),
                 "courseId": c_id,
                 "documentId": s_meta.get("documentId"),
@@ -523,7 +587,11 @@ class WeaviateGraphStore:
                     {"id": (im.get("_additional") or {}).get("id"), "description": im.get("description", ""), "imageBase64": im.get("imageBase64")}
                     for im in images_full
                 ],
-            })
+            }
+            print(f"[DEBUG] Adding slide result {i+1}: {result_slide['courseId']}/{result_slide['slideNo']}")
+            out.append(result_slide)
+            
+        print(f"[DEBUG] Final search results: {len(out)} slides returned")
         return out
     
     # Test/Debug functions
