@@ -42,5 +42,4 @@ def _start_workers() -> None:
         Thread(target=cleanup_worker.loop, name="job-cleanup", daemon=True).start()
         _cleanup_started.set()
 
-
 # Run: uvicorn main:app --host 0.0.0.0 --port 8080 --reload
