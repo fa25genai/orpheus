@@ -245,7 +245,7 @@ async def generate_voice_scripts(
         if DEBUG:
             for i in range(14):
                 voice_script = mock_service.create_voice_script(i)
-                logger.debug(f"voice track: {voice_script}")
+                logger.debug(f"voice script: {voice_script}")
                 task = generate_avatar_video(voice_script, i, client)
                 if task:
                     tasks.append(task)
