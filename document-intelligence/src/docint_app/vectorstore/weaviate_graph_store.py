@@ -708,7 +708,17 @@ class WeaviateGraphStore:
             print("[WeaviateClientSearch] No slide hits found, returning empty list")
             return []
 
-        slide_image_query = slideImages.query.fetch_objects(filters=Filter.any_of([Filter.all_of([Filter.by_property("documentId").equal(doc_id), Filter.by_property("slideNo").equal(slide_no)]) for doc_id, slide_no in slide_hits_document_ids]))
+        # Build filters for each (documentId, slideNo) pair
+        slide_image_filters = [
+            Filter.all_of([
+                Filter.by_property("documentId").equal(doc_id),
+                Filter.by_property("slideNo").equal(slide_no)
+            ])
+            for doc_id, slide_no in slide_hits_document_ids
+        ]
+        slide_image_query = slideImages.query.fetch_objects(
+            filters=Filter.any_of(slide_image_filters)
+        )
 
         slide_image_hits = slide_image_query.objects
         print(f"[WeaviateClientSearch] Retrieved {len(slide_image_hits)} slide images")
