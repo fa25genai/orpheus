@@ -11,9 +11,9 @@ models/GenerateRequest.ts
 models/GenerationAcceptedResponse.ts
 models/GenerationStatusResponse.ts
 models/HTTPValidationError.ts
-models/LocationInner.ts
 models/Preferences.ts
 models/UserProfile.ts
 models/ValidationError.ts
+models/ValidationErrorLocInner.ts
 models/index.ts
 runtime.ts

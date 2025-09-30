@@ -9,7 +9,7 @@ export * from './GenerateRequest';
 export * from './GenerationAcceptedResponse';
 export * from './GenerationStatusResponse';
 export * from './HTTPValidationError';
-export * from './LocationInner';
 export * from './Preferences';
 export * from './UserProfile';
 export * from './ValidationError';
+export * from './ValidationErrorLocInner';
