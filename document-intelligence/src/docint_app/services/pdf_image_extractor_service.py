@@ -5,7 +5,7 @@ PDF Image Extraction Service using PyMuPDF
 import base64
 from io import BytesIO
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 import fitz  # PyMuPDF
 from PIL import Image, ImageStat
@@ -91,6 +91,11 @@ class PDFImageExtractorService:
         return result
 
 
+_instance: Optional[PDFImageExtractorService] = None
+
+
 def get_pdf_image_extractor_service() -> PDFImageExtractorService:
-    """Factory function to get PDFImageExtractorService instance."""
-    return PDFImageExtractorService()
+    global _instance
+    if _instance is None:
+        _instance = PDFImageExtractorService()
+    return _instance

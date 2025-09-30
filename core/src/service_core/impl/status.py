@@ -1,4 +1,3 @@
-
 # coding: utf-8
 
 """
@@ -33,17 +32,42 @@ except ImportError:
 class StatusPatch(BaseModel):
     """
     StatusPatch
-    """ # noqa: E501
-    step_understanding: Optional[StepStatus] = Field(default=None, alias="stepUnderstanding")
+    """  # noqa: E501
+
+    step_understanding: Optional[StepStatus] = Field(
+        default=None, alias="stepUnderstanding"
+    )
     step_lookup: Optional[StepStatus] = Field(default=None, alias="stepLookup")
-    step_lecture_script_generation: Optional[StepStatus] = Field(default=None, alias="stepLectureScriptGeneration")
-    step_slide_structure_generation: Optional[StepStatus] = Field(default=None, alias="stepSlideStructureGeneration")
-    step_slide_generation: Optional[StrictInt] = Field(default=None, alias="stepSlideGeneration")
-    step_slide_postprocessing: Optional[StepStatus] = Field(default=None, alias="stepSlidePostprocessing")
-    steps_avatar_generation: Optional[Dict[str, Any]] = Field(default=None, alias="stepsAvatarGeneration")
+    step_lecture_script_generation: Optional[StepStatus] = Field(
+        default=None, alias="stepLectureScriptGeneration"
+    )
+    step_slide_structure_generation: Optional[StepStatus] = Field(
+        default=None, alias="stepSlideStructureGeneration"
+    )
+    step_slide_generation: Optional[StrictInt] = Field(
+        default=None, alias="stepSlideGeneration"
+    )
+    step_slide_postprocessing: Optional[StepStatus] = Field(
+        default=None, alias="stepSlidePostprocessing"
+    )
+    steps_avatar_generation: Optional[Dict[str, Any]] = Field(
+        default=None, alias="stepsAvatarGeneration"
+    )
     lecture_summary: Optional[StrictStr] = Field(default=None, alias="lectureSummary")
-    slide_structure: Optional[SlideStructure] = Field(default=None, alias="slideStructure")
-    __properties: ClassVar[List[str]] = ["stepUnderstanding", "stepLookup", "stepLectureScriptGeneration", "stepSlideStructureGeneration", "stepSlideGeneration", "stepSlidePostprocessing", "stepsAvatarGeneration", "lectureSummary", "slideStructure"]
+    slide_structure: Optional[SlideStructure] = Field(
+        default=None, alias="slideStructure"
+    )
+    __properties: ClassVar[List[str]] = [
+        "stepUnderstanding",
+        "stepLookup",
+        "stepLectureScriptGeneration",
+        "stepSlideStructureGeneration",
+        "stepSlideGeneration",
+        "stepSlidePostprocessing",
+        "stepsAvatarGeneration",
+        "lectureSummary",
+        "slideStructure",
+    ]
 
     model_config = {
         "populate_by_name": True,
@@ -91,14 +115,16 @@ class StatusPatch(BaseModel):
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
 
-        _obj = cls.model_validate({
-            "stepUnderstanding": obj.get("stepUnderstanding"),
-            "stepLookup": obj.get("stepLookup"),
-            "stepLectureScriptGeneration": obj.get("stepLectureScriptGeneration"),
-            "stepSlideStructureGeneration": obj.get("stepSlideStructureGeneration"),
-            "stepSlideGeneration": obj.get("stepSlideGeneration"),
-            "stepSlidePostprocessing": obj.get("stepSlidePostprocessing"),
-            "stepsAvatarGeneration": obj.get("stepsAvatarGeneration"),
-            "lectureSummary": obj.get("lectureSummary")
-        })
+        _obj = cls.model_validate(
+            {
+                "stepUnderstanding": obj.get("stepUnderstanding"),
+                "stepLookup": obj.get("stepLookup"),
+                "stepLectureScriptGeneration": obj.get("stepLectureScriptGeneration"),
+                "stepSlideStructureGeneration": obj.get("stepSlideStructureGeneration"),
+                "stepSlideGeneration": obj.get("stepSlideGeneration"),
+                "stepSlidePostprocessing": obj.get("stepSlidePostprocessing"),
+                "stepsAvatarGeneration": obj.get("stepsAvatarGeneration"),
+                "lectureSummary": obj.get("lectureSummary"),
+            }
+        )
         return _obj
