@@ -66,13 +66,13 @@ def request_video_generation(payload: GenerateRequest, response: Response, reque
 
 
 @router.get("/{promptId}/status", response_model=GenerationStatusResponse, responses={404: {"model": ErrorModel}})
-def get_generation_status(promptId: UUID) -> Union[GenerationStatusResponse, JSONResponse]:
+def get_generation_status(prompt_id: UUID) -> Union[GenerationStatusResponse, JSONResponse]:
     purge_stale_jobs()
-    job = JOBS.get(promptId)
+    job = JOBS.get(prompt_id)
     if not job:
         return JSONResponse(status_code=404, content={"code": "NOT_FOUND", "message": "Request not found"})
     job.lastTouched = utcnow()
-    JOBS[promptId] = job
+    JOBS[prompt_id] = job
     return GenerationStatusResponse(
         promptId=job.promptId,
         status=job.status,
