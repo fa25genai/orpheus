@@ -33,8 +33,7 @@ export function StatusDisplayer({status}: StatusDisplayerProps) {
   const debug = ["yes", "1", "true"].includes(
     (process.env.NEXT_PUBLIC_ORPHEUS_DEBUG || "").toLowerCase()
   );
-  console.log(debug);
-
+  
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       <Card className="w-full max-w-6xl mx-auto shadow-md">

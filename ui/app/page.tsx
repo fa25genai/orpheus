@@ -16,7 +16,7 @@ import VideoPlayer from "@/components/video-player";
 import {Card} from "@/components/ui/card";
 import SlidevEmbed, {SlidevEmbedHandle} from "@/components/slidev-embed";
 import {useStatus} from "@/hooks/use-status";
-import { courseId } from "@/data/course";
+import {courseId} from "@/data/course";
 
 export default function Home() {
   const [personaLevel, setPersonaLevel] = useState<PersonaLevel>("beginner");
@@ -68,7 +68,7 @@ export default function Home() {
     async function updateVideoSources() {
       if (status?.stepSlidePostprocessing !== "DONE") return;
 
-      const baseUrl = `http://localhost:3000/videos/jobs/${promptId}`; //TODO: change to promptId
+      const baseUrl = `http://localhost:3000/videos/jobs/${promptId}/`;
 
       const readyVideos: string[] = status.stepsAvatarGeneration
         .map(
