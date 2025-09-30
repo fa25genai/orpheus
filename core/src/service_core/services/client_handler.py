@@ -129,7 +129,10 @@ async def query_document_intelligence(
         await update_status(prompt_id, StatusPatch(stepLookup=StepStatus.DONE), client)
         return di_data
     except Exception as exception:
-        logger.error(f"Error querying Document Intelligence for prompt {prompt_id}", exc_info=exception)
+        logger.error(
+            f"Error querying Document Intelligence for prompt {prompt_id}",
+            exc_info=exception,
+        )
         await update_status(
             prompt_id, StatusPatch(stepLookup=StepStatus.FAILED), client
         )
