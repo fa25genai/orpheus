@@ -96,6 +96,7 @@ class StatusManager:
             stepLookup=StepStatus.NOT_STARTED,
             stepLectureScriptGeneration=StepStatus.NOT_STARTED,
             stepSlideStructureGeneration=StepStatus.NOT_STARTED,
+            stepAudioScriptGeneration=StepStatus.NOT_STARTED,
             stepSlideGeneration=0,
             stepSlidePostprocessing=StepStatus.NOT_STARTED,
             stepsAvatarGeneration=[],

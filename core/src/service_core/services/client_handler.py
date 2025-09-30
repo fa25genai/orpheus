@@ -37,10 +37,10 @@ AVATAR_API_URL = "http://avatar-video-producer:9000"
 STATUS_API_URL = "http://status-service:19910"
 
 # Use this when you start the service locally outside a docker container
-# DI_API_URL = "http://localhost:25565"
-# SLIDES_API_URL = "http://localhost:30606"
-# AVATAR_API_URL = "http://localhost:9000"
-# STATUS_API_URL = "http://localhost:19910"
+DI_API_URL = "http://localhost:25565"
+SLIDES_API_URL = "http://localhost:30606"
+AVATAR_API_URL = "http://localhost:9000"
+STATUS_API_URL = "http://localhost:19910"
 
 DEBUG = int(os.getenv("ORPHEUS_DEBUG", "0"))  # DEBUG enabled by default
 
@@ -250,6 +250,11 @@ async def generate_voice_scripts(
     course_id: str,
 ) -> List[asyncio.Task[httpx.Response]]:
     tracker.log("Generating voice script")
+    await update_status(
+        prompt_id,
+        StatusPatch(stepLectureScriptGeneration=StepStatus.IN_PROGRESS),
+        client,
+    )
     try:
         voice_script: Dict[str, Any]
         tasks: List[asyncio.Task[httpx.Response]] = []
@@ -267,32 +272,39 @@ async def generate_voice_scripts(
         logger.debug(f"slides data: {slides_data}")
 
         narration_stream = narration_generation.generate_narrations(
-            lecture_script, 
-            slides_data, 
-            user, 
-            prompt_id,
-            course_id
+            lecture_script, slides_data, user, prompt_id, course_id
         )
 
         slide_index = 0
-        
+
+        await update_status(
+            prompt_id,
+            StatusPatch(stepLectureScriptGeneration=StepStatus.DONE),
+            client,
+        )
+
         async for voice_script_payload in narration_stream:
-            logger.debug(f"Received narration segment {slide_index}, scheduling avatar task.")
-            
-            task = generate_avatar_video(
-                voice_script_payload, 
-                slide_index,
-                client
+            logger.debug(
+                f"Received narration segment {slide_index}, scheduling avatar task."
             )
+
+            task = generate_avatar_video(voice_script_payload, slide_index, client)
             if task:
                 tasks.append(task)
-                
+
             slide_index += 1
-            
+
         return tasks
 
     except Exception as exception:
-        logger.error("Voice track generation failed during streaming", exc_info=exception)
+        logger.error(
+            "Voice track generation failed during streaming", exc_info=exception
+        )
+        await update_status(
+            prompt_id,
+            StatusPatch(stepLectureScriptGeneration=StepStatus.FAILED),
+            client,
+        )
         return []
 
 
