@@ -10,7 +10,6 @@ from typing import Iterable
 
 import requests
 
-
 DEFAULT_BASE_URL = "http://localhost:9000"
 COURSE_ID = "3fa85f64-5717-4562-b3fc-2c963f66a999"
 
@@ -86,13 +85,11 @@ def main() -> int:
 
         if resp.status_code != 202:
             print(
-                "[FAIL] prompt=%s slide=%s -> %s %s"
-                % (spec.prompt_id, spec.slide_number, resp.status_code, resp.text[:160]),
+                "[FAIL] prompt=%s slide=%s -> %s %s" % (spec.prompt_id, spec.slide_number, resp.status_code, resp.text[:160]),
             )
         else:
             print(
-                "[OK] prompt=%s slide=%s -> Location=%s"
-                % (spec.prompt_id, spec.slide_number, resp.headers.get("Location", "-")),
+                "[OK] prompt=%s slide=%s -> Location=%s" % (spec.prompt_id, spec.slide_number, resp.headers.get("Location", "-")),
             )
             success += 1
 

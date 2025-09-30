@@ -44,7 +44,7 @@ EXT = {
 
 # ----- SQLAlchemy models -----
 # If you already have a Base, remove this and from your_module import Base
-class Base(DeclarativeBase):
+class Base(DeclarativeBase):  # type: ignore[misc]
     pass
 
 
@@ -90,7 +90,7 @@ class AvatarAudio(Base):
 
 
 # ----- Pydantic responses (optional but nice) -----
-class AvatarImageResponse(BaseModel):
+class AvatarImageResponse(BaseModel):  # type: ignore[misc]
     id: UUID
     avatarId: UUID
     filePath: str
@@ -99,7 +99,7 @@ class AvatarImageResponse(BaseModel):
     createdAt: datetime
 
 
-class AvatarAudioResponse(BaseModel):
+class AvatarAudioResponse(BaseModel):  # type: ignore[misc]
     id: UUID
     avatarId: UUID
     filePath: str
@@ -108,7 +108,7 @@ class AvatarAudioResponse(BaseModel):
     createdAt: datetime
 
 
-class AvatarCreatedResponse(BaseModel):
+class AvatarCreatedResponse(BaseModel):  # type: ignore[misc]
     avatarId: UUID
     name: Optional[str] = None
     courseId: Optional[UUID] = None

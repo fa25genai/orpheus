@@ -26,7 +26,10 @@ from .avatar_media import (
 
 def _get_avatar_or_404(db: Session, course_id: UUID, slot: Optional[str]) -> Avatar:
     the_slot = _normalize_slot(slot) if slot is not None else CourseAvatarSlot.default
-    avatar = db.query(Avatar).filter(Avatar.course_id == str(course_id), Avatar.slot == the_slot.value).first()
+    avatar = cast(
+        Optional[Avatar],
+        db.query(Avatar).filter(Avatar.course_id == str(course_id), Avatar.slot == the_slot.value).first(),
+    )
     if not avatar:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

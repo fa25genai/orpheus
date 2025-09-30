@@ -12,7 +12,7 @@ from typing import Any, Dict, List, Literal, Optional
 from uuid import UUID
 
 # --- Third-party ---
-import requests
+import requests  # type: ignore[import-untyped]
 from fastapi import Depends, FastAPI, File, Form, Query, Request, Response, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -92,14 +92,14 @@ def _update_avatar_generation_step_status(prompt_id: UUID, slide_index: int, *, 
 # ---------------------------
 
 
-class Preferences(BaseModel):
+class Preferences(BaseModel):  # type: ignore[misc]
     answerLength: Optional[Literal["short", "medium", "long"]] = None
     languageLevel: Optional[Literal["basic", "intermediate", "advanced"]] = None
     expertiseLevel: Optional[Literal["beginner", "intermediate", "advanced", "expert"]] = None
     includePictures: Optional[Literal["none", "few", "many"]] = None
 
 
-class UserProfile(BaseModel):
+class UserProfile(BaseModel):  # type: ignore[misc]
     id: str
     role: Literal["student", "instructor"]
     language: Literal["german", "english"]
@@ -110,7 +110,7 @@ class UserProfile(BaseModel):
 VoiceTrack = Annotated[str, StringConstraints(min_length=1)]
 
 
-class GenerateRequest(BaseModel):
+class GenerateRequest(BaseModel):  # type: ignore[misc]
     voiceTrack: VoiceTrack
     slideNumber: int = Field(..., ge=0)
     promptId: UUID
@@ -119,17 +119,17 @@ class GenerateRequest(BaseModel):
     slot: Literal["default", "beginning", "ending"] = "default"  # NEW
 
 
-class ErrorModel(BaseModel):
+class ErrorModel(BaseModel):  # type: ignore[misc]
     code: Optional[str] = None
     message: Optional[str] = None
 
 
-class GenerationAcceptedResponse(BaseModel):
+class GenerationAcceptedResponse(BaseModel):  # type: ignore[misc]
     promptId: UUID
     createdAt: datetime
 
 
-class GenerationStatusResponse(BaseModel):
+class GenerationStatusResponse(BaseModel):  # type: ignore[misc]
     promptId: UUID
     status: Literal["IN_PROGRESS", "FAILED", "DONE"]
     lastUpdated: datetime
@@ -138,7 +138,7 @@ class GenerationStatusResponse(BaseModel):
     error: Optional[ErrorModel] = None
 
 
-class SlideTask(BaseModel):
+class SlideTask(BaseModel):  # type: ignore[misc]
     promptId: UUID
     courseId: str
     userProfile: UserProfile
@@ -147,7 +147,7 @@ class SlideTask(BaseModel):
     slot: Literal["default", "beginning", "ending"] = "default"
 
 
-class VideoTask(BaseModel):
+class VideoTask(BaseModel):  # type: ignore[misc]
     promptId: UUID
     courseId: str
     userProfile: UserProfile
@@ -174,7 +174,7 @@ def get_db() -> Generator[Session, None, None]:
         db.close()
 
 
-@app.on_event("startup")
+@app.on_event("startup")  # type: ignore[misc]
 def _startup_create_tables() -> None:
     media.Base.metadata.create_all(engine)
     _start_worker_once()
@@ -196,7 +196,7 @@ def folder_url(prompt_id: UUID) -> str:
 # ---------------------------
 
 
-@app.post(
+@app.post(  # type: ignore[misc]
     "/v1/avatars",
     status_code=201,
     response_model=media.AvatarCreatedResponse,
@@ -220,7 +220,7 @@ def create_avatar(
     )
 
 
-@app.get(
+@app.get(  # type: ignore[misc]
     "/v1/avatars/by-course/{courseId}",
     response_model=List[media.AvatarCreatedResponse],
     tags=["avatar"],
@@ -234,7 +234,7 @@ def get_avatars_by_course_endpoint(
 
 
 # Replace only IMAGE
-@app.post(
+@app.post(  # type: ignore[misc]
     "/v1/avatars/{courseId}/{slot}/image",
     response_model=media.AvatarCreatedResponse,
     tags=["avatar"],
@@ -249,7 +249,7 @@ def replace_avatar_image_endpoint(
 
 
 # Replace only AUDIO
-@app.post(
+@app.post(  # type: ignore[misc]
     "/v1/avatars/{courseId}/{slot}/audio",
     response_model=media.AvatarCreatedResponse,
     tags=["avatar"],
@@ -268,7 +268,7 @@ def replace_avatar_audio_endpoint(
 # ---------------------------
 
 
-class Job(BaseModel):
+class Job(BaseModel):  # type: ignore[misc]
     promptId: UUID
     status: Literal["IN_PROGRESS", "FAILED", "DONE"]
     lastUpdated: datetime
@@ -700,7 +700,7 @@ def _start_worker_once() -> None:
 # ---------------------------
 
 
-@app.post(
+@app.post(  # type: ignore[misc]
     "/v1/video/generate",
     response_model=GenerationAcceptedResponse,
     status_code=202,
@@ -764,7 +764,7 @@ def request_video_generation(payload: GenerateRequest, response: Response, reque
     return GenerationAcceptedResponse(promptId=payload.promptId, createdAt=now)
 
 
-@app.get(
+@app.get(  # type: ignore[misc]
     "/v1/video/{promptId}/status",
     response_model=GenerationStatusResponse,
     responses={404: {"model": ErrorModel}},
