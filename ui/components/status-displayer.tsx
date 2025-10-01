@@ -137,6 +137,11 @@ export function StatusDisplayer({status, promptId}: StatusDisplayerProps) {
             promptId={promptId}
           />
           <StepItem
+            title="Video Script Generation"
+            state={status.stepAudioScriptGeneration}
+            promptId={promptId}
+          />
+          <StepItem
             title="Avatar Generation"
             state={statusAvatarGeneration}
             promptId={promptId}

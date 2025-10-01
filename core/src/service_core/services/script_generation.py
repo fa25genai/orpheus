@@ -77,9 +77,7 @@ def generate_script_llm(
 
     persona_dict["id"] = str(persona_dict["id"])
 
-    # print("Refining lecture content for persona:")
     persona_str = json.dumps(persona_dict, indent=2, ensure_ascii=False)
-    # print(persona_str)
     content_str = json.dumps(
         list(
             map(
@@ -90,7 +88,6 @@ def generate_script_llm(
         indent=2,
         ensure_ascii=False,
     )
-    # print(content_str)
     prompt = f"""
         You are an expert AI assistant specializing in personalized educational content creation. Your purpose is to transform raw educational material into an engaging and effective lecture script tailored to a specific learner's profile.\n\n
         Your task is to synthesize the provided content into a single, coherent lecture script.
@@ -125,7 +122,6 @@ def generate_script_llm(
     ]
     }}
     """
-    # print(prompt)
     max_retries = 3
     for attempt in range(max_retries):
         try:

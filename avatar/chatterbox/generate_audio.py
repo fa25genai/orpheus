@@ -51,6 +51,7 @@ def numbers_to_words(text: str) -> str:
 # Pydantic models
 # =========================
 
+
 class Preferences(BaseModel):
     answerLength: Optional[Literal["short", "medium", "long"]] = None
     languageLevel: Optional[Literal["basic", "intermediate", "advanced"]] = None
@@ -86,12 +87,12 @@ app = FastAPI(
 
 
 def generate_audio(
-        voiceTrack: str,
-        *,
-        user_profile: Optional[UserProfile] = None,
-        tmp_dir: Path,
-        reference_voice_path: Path,
-        promptId: str,
+    voiceTrack: str,
+    *,
+    user_profile: Optional[UserProfile] = None,
+    tmp_dir: Path,
+    reference_voice_path: Path,
+    promptId: str,
 ) -> str:
     """
     Create per-slide audio files from text using Chatterbox TTS
@@ -150,10 +151,11 @@ def health():
 
 @app.post("/v1/audio/generate")
 async def generate_audio_endpoint(
-        voice_file: UploadFile = File(..., description="Reference voice MP3 (raw file, not base64)"),
-        voiceTrack: Optional[str] = Form(None, description="Single slide text"),
-        debug: str = Form("not debug", description="is debug?"),
-        promptId: str = Form(None, description="Prompt ID"), ):
+    voice_file: UploadFile = File(..., description="Reference voice MP3 (raw file, not base64)"),
+    voiceTrack: Optional[str] = Form(None, description="Single slide text"),
+    debug: str = Form("not debug", description="is debug?"),
+    promptId: str = Form(None, description="Prompt ID"),
+):
     """
     Accepts multipart/form-data:
       - voice_file: MP3 file upload
@@ -169,7 +171,7 @@ async def generate_audio_endpoint(
     if not voiceTrack:
         raise HTTPException(status_code=400, detail="Provide 'voiceTrack' input.")
 
-    if debug == 'debug':
+    if debug == "debug":
         mock_path = Path(os.getenv("VOICE_GEN_DEBUG_WAV_PATH", "./debug/mock.wav"))
         return FileResponse(
             path=str(mock_path),
@@ -202,13 +204,7 @@ async def generate_audio_endpoint(
         print(f"✓ saved uploaded voice_file to {ref_mp3_path}")
 
         # Call your internal generator (expects a file path for reference voice)
-        path = generate_audio(
-            voiceTrack=voiceTrack,
-            user_profile=None,
-            tmp_dir=tmp_dir,
-            reference_voice_path=ref_mp3_path,
-            promptId=promptId
-        )
+        path = generate_audio(voiceTrack=voiceTrack, user_profile=None, tmp_dir=tmp_dir, reference_voice_path=ref_mp3_path, promptId=promptId)
 
         if not path:
             _cleanup()
@@ -242,9 +238,4 @@ async def generate_audio_endpoint(
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(
-        "generate_audio:app",
-        host="0.0.0.0",
-        port=8000,
-        reload=True
-    )
+    uvicorn.run("generate_audio:app", host="0.0.0.0", port=8000, reload=True)

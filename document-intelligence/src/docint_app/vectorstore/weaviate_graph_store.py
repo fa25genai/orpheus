@@ -430,7 +430,7 @@ class WeaviateGraphStore:
         return uid
 
     def test_upsert_video_chunk(self) -> str:
-        to_upsert = 'A for loop is a control structure used to repeat a block of code a specific number of times. It is especially useful when you know in advance how many iterations you need. In most programming languages, a for loop consists of an initialization, a condition, and an update step. For example, it can be used to iterate over a range of numbers or through elements of a collection like a list. By using for loops, repetitive tasks can be written more concisely and clearly. This makes code easier to maintain and less error-prone compared to writing the same instructions multiple times.' # noqa: E501
+        to_upsert = "A for loop is a control structure used to repeat a block of code a specific number of times. It is especially useful when you know in advance how many iterations you need. In most programming languages, a for loop consists of an initialization, a condition, and an update step. For example, it can be used to iterate over a range of numbers or through elements of a collection like a list. By using for loops, repetitive tasks can be written more concisely and clearly. This makes code easier to maintain and less error-prone compared to writing the same instructions multiple times."  # noqa: E501
         text_vector = get_embedding_service().embed_text(to_upsert)
         uid = self.upsert_video_chunk(course_id="W2", lecture_id="lecture456", chunk_id="chunk789", text=to_upsert, text_vector=text_vector)
         return uid
@@ -654,20 +654,8 @@ class WeaviateGraphStore:
         print(f"[WeaviateClientSearch] Returning {len(final_results)} results")
         return final_results
 
-    def client_get_both_slides_and_video_chunks(
-        self,
-        *,
-        query_vector: Sequence[float],
-        course_id: Optional[str] = None,
-        k: int = 5,
-        similarity_threshold: float = 0.80
-    ) -> Dict[str, Any]:
-        slide_hits = self.client_search_slides_fused_with_images(
-            query_vector=query_vector,
-            course_id=course_id,
-            k=k,
-            similarity_threshold=similarity_threshold
-        )
+    def client_get_both_slides_and_video_chunks(self, *, query_vector: Sequence[float], course_id: Optional[str] = None, k: int = 5, similarity_threshold: float = 0.80) -> Dict[str, Any]:
+        slide_hits = self.client_search_slides_fused_with_images(query_vector=query_vector, course_id=course_id, k=k, similarity_threshold=similarity_threshold)
 
         video_chunk_hits = self.client_search_video_chunks(
             query_vector=query_vector,
@@ -822,7 +810,9 @@ def get_weaviate_client() -> weaviate.WeaviateClient:
         _weaviate_instance = weaviate.connect_to_local(host="docint-weaviate", port=28947)
     return _weaviate_instance
 
+
 _store_instance: Optional[WeaviateGraphStore] = None
+
 
 def get_store() -> WeaviateGraphStore:
     global _store_instance
