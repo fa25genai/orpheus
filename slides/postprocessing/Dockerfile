@@ -27,7 +27,8 @@ RUN npm install -g @pnpm/exe playwright-chromium && \
     npx playwright install-deps chromium && \
     git clone https://github.com/fa25genai/slidev.git /install/slidev/ && \
     cd /install/slidev && \
-    pnpm install && \
+    pnpm add -D sass-embedded && \
+    pnpm install --no-cache && \
     pnpm -w build && \
     ln -s /install/slidev/packages/slidev/bin/slidev.mjs /usr/local/bin/slidev && \
     npm cache clean --force
@@ -37,8 +38,10 @@ WORKDIR /app
 COPY src src
 COPY pyproject.toml README.md ./
 
+ENV THEME_PACKAGE=slidev-theme-tum-0.2.1.tgz
+
 # Add predefined sli.dev themes
-ADD themes/slidev-theme-tum-0.1.0.tgz /etc/slidev/themes/theme-tum/
+ADD themes/${THEME_PACKAGE} /etc/slidev/themes/theme-tum/
 RUN cd /etc/slidev/themes/theme-tum/package && \
     npm install --no-cache
 
