@@ -141,6 +141,11 @@ services:
       GEN_VIDEO: "https://gpu.aet.cit.tum.de/avatar/video/infer"
       AVATARS_OUTPUT_DIR: "/data/avatars"
       DATABASE_URL: "sqlite:////data/app.db"
+    env_file:
+      - path: .env
+        required: false
+      - path: avatar/.env
+        required: false
     volumes:
       - avatar_file_storage:/data
     networks:
