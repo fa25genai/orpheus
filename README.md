@@ -95,17 +95,17 @@ tbd
 #### Student View
 
 1. Choose level of expertise: 
-![alt text](Snapshot_2025-10-02_16-41-23.png)
+![alt text](StudentView_Step1.png)
 As a user it is possible to select a suitable character. 
 
 2. Enter your question or choose from the predefined ones: 
-![alt text](Snapshot_2025-10-02_16-48-44.png)
+![alt text](StudentView_Step2.png)
 
 3. Wait for for the generation process. In the meantime a textual answer will be given. The lectre will start as soon as the first video is done: 
-![alt text](Snapshot_2025-10-02_16-50-04.png)
+![alt text](StudentView_Step3.png)
 
 4. Watch the video:
-![alt text](Snapshot_2025-10-02_16-54-31.png)
+![alt text](StudentView_Step4.png)
 
 ### Development Setup
 
