@@ -53,7 +53,7 @@ class LayoutParserDetector(FigureDetector):
                     if resampling is not None:
                         linear = getattr(resampling, "BILINEAR", None)
                 if linear is not None:
-                    Image.LINEAR = linear
+                    setattr(Image, "LINEAR", linear)
 
             self._lp = lp
             weights_path = self._ensure_publaynet_weights()

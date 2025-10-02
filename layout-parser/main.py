@@ -9,7 +9,7 @@ if not hasattr(Image, "LINEAR"):
         if resampling is not None:
             linear = getattr(resampling, "BILINEAR", None)
     if linear is not None:
-        Image.LINEAR = linear
+        setattr(Image, "LINEAR", linear)
 
 
 def main() -> None:
