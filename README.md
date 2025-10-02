@@ -6,21 +6,21 @@ expressive narration, visual presence, and dynamic content to create engaging, p
 ## Table of Contents
 
 - [Architecture](#architecture)
-  - [Service Components](#service-components) 
-  - [API Interface Documentation](#api-interface-documentation)
+    - [Service Components](#service-components)
+    - [API Interface Documentation](#api-interface-documentation)
 - [Getting Started](#getting-started)
-  - [User Guide](#user-guide)
-    - [Lecturer View](#lecturer-view)
-    - [Student View](#student-view)
-  - [Development Setup](#development-setup)
-    - [1. Install Python 3.13.7 using pyenv](#1-install-python-31317-using-pyenv)
-      - [Linux (Debian/Ubuntu)](#linux-debianubuntu)
-      - [macOS](#macos)
-      - [Windows (PowerShell, run as Administrator)](#windows-powershell-run-as-administrator)
-    - [2. Install Poetry 2.2.1](#2-install-poetry-221)
-      - [Linux / macOS](#linux--macos)
-      - [Windows (PowerShell)](#windows-powershell)
-  - [Deployment](#deployment)
+    - [User Guide](#user-guide)
+        - [Lecturer View](#lecturer-view)
+        - [Student View](#student-view)
+    - [Development Setup](#development-setup)
+        - [1. Install Python 3.13.7 using pyenv](#1-install-python-31317-using-pyenv)
+            - [Linux (Debian/Ubuntu)](#linux-debianubuntu)
+            - [macOS](#macos)
+            - [Windows (PowerShell, run as Administrator)](#windows-powershell-run-as-administrator)
+        - [2. Install Poetry 2.2.1](#2-install-poetry-221)
+            - [Linux / macOS](#linux--macos)
+            - [Windows (PowerShell)](#windows-powershell)
+    - [Deployment](#deployment)
 
 ## Architecture
 
@@ -37,16 +37,18 @@ Once you edited the diagram, make sure to export it as svg to replace the existi
 
 ### Service Components
 
-The Orpheus system is composed of multiple specialized services, each handling different aspects of the lecture generation pipeline. Below you can find links to the technology-specific documentation and implementation details for each service component.
+The Orpheus system is composed of multiple specialized services, each handling different aspects of the lecture
+generation pipeline. Below you can find links to the technology-specific documentation and implementation details for
+each service component.
 
-| Service | Documentation |
-|---------|---------------|
-| **Avatar Service** | [orpheus/avatar](https://github.com/fa25genai/orpheus/tree/develop/avatar) |
-| **Core Service** | [orpheus/core](https://github.com/fa25genai/orpheus/tree/develop/core) |
+| Service                           | Documentation                                                                             |
+|-----------------------------------|-------------------------------------------------------------------------------------------|
+| **Avatar Service**                | [orpheus/avatar](https://github.com/fa25genai/orpheus/tree/develop/avatar)                |
+| **Core Service**                  | [orpheus/core](https://github.com/fa25genai/orpheus/tree/develop/core)                    |
 | **Document Intelligence Service** | [orpheus/docint](https://github.com/fa25genai/orpheus/tree/develop/document-intelligence) |
-| **Slides Service** | [orpheus/slides](https://github.com/fa25genai/orpheus/tree/develop/slides) |
-| **Status Service** | [orpheus/status](https://github.com/fa25genai/orpheus/tree/develop/status) |
-| **User Interface** | [orpheus/ui](https://github.com/fa25genai/orpheus/tree/develop/ui) |
+| **Slides Service**                | [orpheus/slides](https://github.com/fa25genai/orpheus/tree/develop/slides)                |
+| **Status Service**                | [orpheus/status](https://github.com/fa25genai/orpheus/tree/develop/status)                |
+| **User Interface**                | [orpheus/ui](https://github.com/fa25genai/orpheus/tree/develop/ui)                        |
 
 <!--
 TODOS
@@ -69,8 +71,6 @@ make sure that services and subteams are actually using the apis from the api fo
 
 gather info about not yet exposed APIs (Slide Push Service, Video Push Service, Generated Avatar Service, Generated Slide Service)
 -->
-
-TODO @Florian
 
 | Service                          | Description                                                                                                              | OpenAPI Specification                                                                                                                                                                                                                                                                              |
 |----------------------------------|--------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -100,13 +100,16 @@ tbd
 
 ### Development Setup
 
-#### Environment Variables 
+#### Environment Variables
+
 1. Add a `.env` file in the root directory
     ```bash
     cp exampleEnv .env
     ```
-2. Make sure to supply values for at least one AI-Model (e.g. `AWS_BEARER_TOKEN_BEDROCK` + `MODEL_NAME` or `LLAMA_API_KEY` + `LLAMA_MODEL` + `LLAMA_API_URL`)
-   - If you only supply AWS credentials, they will be used. If you supply LLAMA credentials they will be used as a fallback (So you do only need to supply one set of credentials for the system to work
+2. Make sure to supply values for at least one AI-Model (e.g. `AWS_BEARER_TOKEN_BEDROCK` + `MODEL_NAME` or
+   `LLAMA_API_KEY` + `LLAMA_MODEL` + `LLAMA_API_URL`)
+    - If you only supply AWS credentials, they will be used. If you supply LLAMA credentials they will be used as a
+      fallback (So you do only need to supply one set of credentials for the system to work
 3. You can overwrite the global `.env` file values with service specific `.env` files
 
 #### 1. Install Python 3.13.7 using pyenv
@@ -288,7 +291,8 @@ We use [Poetry](https://python-poetry.org/) as our dependency and environment ma
 
 ### Deployment
 
-Run this command in your root directory to build all services, start them up under the project name orpheus, and pull any necessary images:
+Run this command in your root directory to build all services, start them up under the project name orpheus, and pull
+any necessary images:
 
 ```powershell
 docker compose -p orpheus up --build
