@@ -99,10 +99,8 @@ There are three different avatar uploads necessary
 Furthermore, the lecturer should upload a voice sample. There also three voice samples necessary with the exact same usage as the avatar.
 
 Lastly, the lecturer should upload their course slides and / or already recorded lecture videos.
-This information is 
+This information is inserted into the database from the document intelligence team. For more information, see the [docint README](./document-intelligence/README.md). 
 
-
-The lecturer is responsible for uploading lecture slides and lecture videos
 
 
 #### Student View
