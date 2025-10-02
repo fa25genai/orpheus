@@ -117,7 +117,9 @@ async def summarize_and_send(
             summary = "A for loop is a control flow statement that allows code to be executed repeatedly, typically used to iterate over sequences or iterable objects.\n\nIt features a basic syntax that specifies an item variable and an iterable collection of objects, such as a list or tuple.\n\nFor loops can be nested.\n\nThey often utilize functions like range() to generate number sequences.\n\nFlow control options include break to exit the loop prematurely, and continue to skip the current iteration.\n\nAn else block can be added, which executes after the loop finishes unless the loop was terminated by a break."
             await send_summary_to_endpoint(prompt_id, summary, client)
             return
+        logger.info("Generating summary for prompt `{prompt_id}`")
         summary = summarize_content_with_llama(content, user_prompt)
+        logger.debug(f'Summary for prompt `{prompt_id}` ("{user_prompt}): {summary}')
         await send_summary_to_endpoint(prompt_id, summary, client)
     except Exception as e:
         logger.error(f"Error summarizing content for prompt {prompt_id}", exc_info=e)
@@ -187,6 +189,10 @@ async def generate_script(
 
         refined_output: LectureScriptWithAssets = script_generation.generate_script(
             retrieved_content, prompt_request.user_persona
+        )
+        logger.debug(f"Generated Lecture Script:\n{refined_output.lecture_script}")
+        logger.debug(
+            f"Lecture script uses assets:\n{[asset.name for asset in refined_output.assets]}"
         )
         await update_status(
             prompt_id, StatusPatch(stepLectureScriptGeneration=StepStatus.DONE), client
@@ -292,6 +298,12 @@ async def generate_voice_scripts(
             logger.debug(
                 f"Received narration segment {slide_index}, scheduling avatar task."
             )
+            logger.debug(
+                "narration for slide %s#%s: %s",
+                prompt_id,
+                slide_index,
+                voice_script_payload.voiceTrack,
+            )
 
             task = generate_avatar_video(voice_script_payload, client)
             if task:
@@ -374,6 +386,10 @@ async def process_prompt(prompt_id: str, prompt_request: PromptRequest) -> None:
             lecture_script = refined_output.lecture_script
             slides_data: GenerationAcceptedResponse = await generate_slides(
                 prompt_request, prompt_id, lecture_script, refined_output, client
+            )
+            logger.debug(
+                "Generated slide pages: %s",
+                slides_data.structure.pages if slides_data.structure else [],
             )
 
             if prompt_request.user_persona is None:
