@@ -9,7 +9,6 @@ from ..app_state import app_state
 from ..models.prompt_request import PromptRequest
 from ..models.prompt_response import PromptResponse
 from ..services.client_handler import process_prompt
-from .tracker import tracker
 
 import logging
 
