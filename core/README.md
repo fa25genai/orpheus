@@ -38,7 +38,7 @@ If you have questions about these implementation (and of course other core stuff
 - AWS API key expires every hour (we are only using it because it is much faster than the Ollama instance)
 - Ollama is responding with good answers but slow
 - GPT5 gives better script and voice tracks, but it takes too much time
-- follows structured output (gives formal correct structured output, so no JSON parsing that could yield mistakes is required)
+- follows structured output (gives formally correct structured output, so no JSON parsing that could yield mistakes is required)
 - Response parsing has to be configured based on the LLM model used
 - Smaller AWS model (Nova Lite and Nova Micro) is not able to find the connection between the retrieved content and the user query
 
