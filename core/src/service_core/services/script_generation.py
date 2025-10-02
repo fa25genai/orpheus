@@ -104,7 +104,7 @@ def generate_script_llm(
         * Examples & Analogies: Use relevant examples from the retrieved content and adapt them to the persona's interests and preferences. You MUST NOT make up examples of your own.\n
         * Language: The entire lecture script MUST be written in the language specified in the persona's language field.\n\n
         * Code examples: If appropriate to the topic, you may provide code examples. Prefer to use existing examples from the content over creating your own. Your examples must be working and valid code. You always have to specify the language for an example.\n
-        * Images: If assets in 2. RETRIEVED_CONTENT are empty, don't reference any images. You MUST ONLY use images from the given RETRIEVED_CONTENT \n
+        * Images: If assets in 2. RETRIEVED_CONTENT are empty, don't reference any images. You MUST ONLY use images from the given RETRIEVED_CONTENT.\n
         * Image Integration: Strategically identify points in the lecture where a given image would significantly enhance understanding. You MUST ONLY use images from the given content. Do NOT make up images.\n
         * In the lectureScript, reference the image with the filename (e.g., [Here you can see filename_1.jpg])\n
         * For each referenced image, add a corresponding object to the Images list in the final JSON output.\n
