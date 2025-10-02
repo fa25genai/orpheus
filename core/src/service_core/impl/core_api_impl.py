@@ -11,11 +11,14 @@ from ..models.prompt_response import PromptResponse
 from ..services.client_handler import process_prompt
 from .tracker import tracker
 
+import logging
 
-def get_executor(prompt_id: UUID) -> ThreadPoolExecutor:
+logger = logging.getLogger("Core API Implementation")
+
+
+def get_executor() -> ThreadPoolExecutor:
     with app_state.lock:
         if app_state.executor is None:
-            # print(f"")
             app_state.executor = ThreadPoolExecutor()
     return app_state.executor
 
@@ -26,14 +29,13 @@ class CoreApiImpl(BaseCoreApi):  # type: ignore[no-untyped-call]
     ) -> PromptResponse:
         try:
             prompt_id = uuid4()
-            # with ThreadPoolExecutor(max_workers=3) as executor:
-            #     print(executor)
-            #     if executor is None:
-            #         raise RuntimeError("The ProcessPoolExecutor is not available. Check the application startup logs.")
-            #     # loop = asyncio.get_event_loop()
-            #     executor.submit(process_prompt_handler, prompt_id, prompt_request)
-            #     print(prompt_id)
-            executor = get_executor(prompt_id)
+            executor = get_executor()
+            if prompt_request.user_persona is None:
+                raise ValueError(
+                    "User persona must be defined for prompt requests from client."
+                )
+
+            prompt_request.user_persona.id = uuid4()  # TODO: Remove this workaround when client provides user_persona.id (see issue #<issue-number>)
             tracker.log(f"Initializing CoreThreadPoolExecutor for {prompt_id}")
             executor.submit(process_prompt_handler, prompt_id, prompt_request)
 
@@ -50,6 +52,8 @@ class CoreApiImpl(BaseCoreApi):  # type: ignore[no-untyped-call]
 def process_prompt_handler(prompt_id: UUID, prompt_request: PromptRequest) -> None:
     try:
         asyncio.run(process_prompt(str(prompt_id), prompt_request))
-        tracker.log(f"SUCCESS: Closing CoreThreadPoolExecutor for {prompt_id}")
-    except Exception as e:
-        print(f"A critical error occurred for prompt [{prompt_id}]: {e}")
+        tracker.log(f"Closing CoreThreadPoolExecutor for {prompt_id}")
+    except Exception as exception:
+        logger.error(
+            f"An unexpected error occurred for prompt `{prompt_id}`", exc_info=exception
+        )

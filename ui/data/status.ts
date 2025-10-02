@@ -15,6 +15,7 @@ export const mockStatus: Status = {
     {video: "DONE", audio: "DONE"},
     {video: "DONE", audio: "DONE"},
   ],
+  stepAudioScriptGeneration: "DONE",
   lectureSummary: "string",
   slideStructure: {
     pages: [

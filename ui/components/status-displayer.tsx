@@ -1,17 +1,43 @@
 import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
 import {Status, StepStatus} from "@/generated-api-clients/status/models";
-import {CheckCircle, CircleX, Loader2} from "lucide-react";
+import {CheckCircle, CircleX, Clock, Loader2} from "lucide-react";
+import {useEffect} from "react";
+import {toast} from "sonner";
+import {Skeleton} from "./ui/skeleton";
 
-function StepItem({title, state}: {title: string; state: StepStatus}) {
-  if (state === "NOT_STARTED") return null; // <--- Hides unfinished steps
+function StepItem({
+  title,
+  state,
+  promptId,
+}: {
+  title: string;
+  state: StepStatus;
+  promptId: string;
+}) {
+  useEffect(() => {
+    if (state === "FAILED") {
+      toast.error("Error occurred", {
+        description: `Please open a support ticket with your promptId: ${promptId}`,
+        action: {
+          label: "Copy promptId",
+          onClick: () => {
+            navigator.clipboard.writeText(promptId);
+            toast.success("PromptId copied to clipboard");
+          },
+        },
+      });
+    }
+  }, [state, promptId]);
 
   let icon = null;
   if (state === "IN_PROGRESS") {
     icon = <Loader2 className="h-5 w-5 animate-spin text-blue-500" />;
   } else if (state === "DONE") {
     icon = <CheckCircle className="h-5 w-5 text-green-500" />;
+  } else if (state === "NOT_STARTED") {
+    icon = <Clock className="h-5 w-5 text-gray-400" />;
   } else {
-    icon = <CircleX className="h-5 w-5 text-gray-400" />;
+    icon = <CircleX className="h-5 w-5 text-red-400" />;
   }
 
   return (
@@ -24,16 +50,52 @@ function StepItem({title, state}: {title: string; state: StepStatus}) {
 
 interface StatusDisplayerProps {
   status: Status;
+  promptId: string;
 }
 
-export function StatusDisplayer({status}: StatusDisplayerProps) {
-  // Count total slides
+export function StatusDisplayer({status, promptId}: StatusDisplayerProps) {
   const totalSlides = status.slideStructure?.pages?.length ?? 0;
   const generatedSlides = status.stepSlideGeneration ?? 0;
+
+  function avatarGenerationStatus(): StepStatus {
+    if (status.stepsAvatarGeneration.length === 0) return "NOT_STARTED";
+
+    if (
+      status.stepsAvatarGeneration.every((avatar) => avatar.video === "DONE")
+    ) {
+      return "DONE";
+    }
+
+    if (
+      status.stepsAvatarGeneration.some(
+        (avatar) => avatar.video === "IN_PROGRESS"
+      )
+    ) {
+      return "IN_PROGRESS";
+    }
+
+    return "NOT_STARTED";
+  }
+
+  const statusAvatarGeneration = avatarGenerationStatus();
+
+  function slideGenerationStatus(): StepStatus {
+    if (generatedSlides == 0) {
+      return "NOT_STARTED";
+    }
+
+    if (generatedSlides === totalSlides) {
+      return "DONE";
+    }
+
+    return "IN_PROGRESS";
+  }
+
   const debug = ["yes", "1", "true"].includes(
     (process.env.NEXT_PUBLIC_ORPHEUS_DEBUG || "").toLowerCase()
   );
-  console.log(debug);
+
+  const slideGeneration: StepStatus = slideGenerationStatus();
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -44,48 +106,102 @@ export function StatusDisplayer({status}: StatusDisplayerProps) {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <StepItem title="Understanding" state={status.stepUnderstanding} />
-          <StepItem title="Lecture Lookup" state={status.stepLookup} />
+          <StepItem
+            title="Understanding"
+            state={status.stepUnderstanding}
+            promptId={promptId}
+          />
+          <StepItem
+            title="Lecture Lookup"
+            state={status.stepLookup}
+            promptId={promptId}
+          />
           <StepItem
             title="Generate Script"
             state={status.stepLectureScriptGeneration}
+            promptId={promptId}
           />
           <StepItem
             title="Slide Structure Generation"
             state={status.stepSlideStructureGeneration}
+            promptId={promptId}
+          />
+          <StepItem
+            title="Slide Generation"
+            state={slideGeneration}
+            promptId={promptId}
           />
           <StepItem
             title="Slide Post Processing"
             state={status.stepSlidePostprocessing}
+            promptId={promptId}
+          />
+          <StepItem
+            title="Video Script Generation"
+            state={status.stepAudioScriptGeneration}
+            promptId={promptId}
+          />
+          <StepItem
+            title="Avatar Generation"
+            state={statusAvatarGeneration}
+            promptId={promptId}
           />
 
           {/* Slide Generation Progress */}
           <div>
-            <h3 className="font-semibold text-sm text-muted-foreground mb-2">
-              Slide Generation
-            </h3>
-            <p className="text-sm">
-              {generatedSlides} / {totalSlides} slides generated
-            </p>
+            <h3 className="text-xl font-bold mb-2">Slide Generation</h3>
+            {totalSlides != 0 && (
+              <p className="font-medium">
+                {generatedSlides} / {totalSlides} slides generated
+              </p>
+            )}
+
+            {totalSlides == 0 && (
+              <div className="flex items-center font-medium gap-2">
+                <Skeleton className="h-4 w-8 rounded" />{" "}
+                <span className="text-muted-foreground">/</span>
+                <Skeleton className="h-4 w-8 rounded" />{" "}
+                <span>slides generated</span>
+              </div>
+            )}
           </div>
 
           {/* Avatar Generation Progress */}
           <div>
-            <h3 className="font-semibold text-sm text-muted-foreground mb-2">
-              Avatar Generation
-            </h3>
-            {status.stepsAvatarGeneration.map((step, index) => (
-              <div key={index} className="space-y-1">
-                <StepItem
-                  title={`Avatar ${index + 1} - Audio`}
-                  state={step.audio as StepStatus}
-                />
-                <StepItem
-                  title={`Avatar ${index + 1} - Video`}
-                  state={step.video as StepStatus}
-                />
+            <h3 className="text-xl font-bold mb-2">Avatar Generation</h3>
+            {status.stepsAvatarGeneration.length == 0 && (
+              <div className="flex items-center font-medium gap-2">
+                <Skeleton className="h-4 w-8 rounded" />{" "}
+                <span className="text-muted-foreground">/</span>
+                <Skeleton className="h-4 w-8 rounded" />{" "}
+                <span>avatars generated</span>
               </div>
-            ))}
+            )}
+            {status.stepsAvatarGeneration.length != 0 && (
+              <p className="font-medium">
+                {
+                  status.stepsAvatarGeneration.filter(
+                    (avatar) => avatar.video === "DONE"
+                  ).length
+                }{" "}
+                / {status.stepsAvatarGeneration.length} avatars generated
+              </p>
+            )}
+            {debug &&
+              status.stepsAvatarGeneration.map((step, index) => (
+                <div key={index} className="space-y-1">
+                  <StepItem
+                    title={`Avatar ${index} - Audio`}
+                    state={step.audio as StepStatus}
+                    promptId={promptId}
+                  />
+                  <StepItem
+                    title={`Avatar ${index} - Video`}
+                    state={step.video as StepStatus}
+                    promptId={promptId}
+                  />
+                </div>
+              ))}
           </div>
           {debug && (
             <div>
@@ -109,13 +225,17 @@ export function StatusDisplayer({status}: StatusDisplayerProps) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p>
-            {status.lectureSummary ? (
-              status.lectureSummary
-            ) : (
-              <Loader2 className="h-5 w-5 animate-spin text-blue-500" />
-            )}
-          </p>
+          {status.lectureSummary ? (
+            <p>{status.lectureSummary}</p>
+          ) : (
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-full rounded" />
+              <Skeleton className="h-4 w-2/3 rounded" />
+              <Skeleton className="h-4 w-2/3 rounded" />
+              <Skeleton className="h-4 w-1/3 rounded" />
+            </div>
+          )}
+
           {debug && (
             <pre className="bg-black text-white my-4 p-4 rounded overflow-x-auto">
               {JSON.stringify(status, null, 2)}

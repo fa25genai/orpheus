@@ -1,8 +1,8 @@
 /* tslint:disable */
 /* eslint-disable */
 /**
- * Answer Generation Service API
- * API for the Orpheus core orchestration. From the repository: \"The Orpheus System transforms static slides into interactive prompt videos with lifelike professor avatars, combining expressive narration, visual presence, and dynamic content to create engaging, personalized learning experiences.\" License: MIT (see repository). 
+ * Generation Status Service
+ * API for the Orpheus status orchestration. From the repository: \"The Orpheus System transforms static slides into interactive prompt videos with lifelike professor avatars, combining expressive narration, visual presence, and dynamic content to create engaging, personalized learning experiences.\" License: MIT (see repository). 
  *
  * The version of the OpenAPI document: 0.1.0
  * 
@@ -32,13 +32,14 @@ export interface SlideStructure {
      * @type {Array<SlideItem>}
      * @memberof SlideStructure
      */
-    pages?: Array<SlideItem>;
+    pages: Array<SlideItem>;
 }
 
 /**
  * Check if a given object implements the SlideStructure interface.
  */
 export function instanceOfSlideStructure(value: object): value is SlideStructure {
+    if (!('pages' in value) || value['pages'] === undefined) return false;
     return true;
 }
 
@@ -52,7 +53,7 @@ export function SlideStructureFromJSONTyped(json: any, ignoreDiscriminator: bool
     }
     return {
         
-        'pages': json['pages'] == null ? undefined : ((json['pages'] as Array<any>).map(SlideItemFromJSON)),
+        'pages': ((json['pages'] as Array<any>).map(SlideItemFromJSON)),
     };
 }
 
@@ -67,7 +68,7 @@ export function SlideStructureToJSONTyped(value?: SlideStructure | null, ignoreD
 
     return {
         
-        'pages': value['pages'] == null ? undefined : ((value['pages'] as Array<any>).map(SlideItemToJSON)),
+        'pages': ((value['pages'] as Array<any>).map(SlideItemToJSON)),
     };
 }
 

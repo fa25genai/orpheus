@@ -16,6 +16,7 @@ import VideoPlayer, {VideoPlayerHandle} from "@/components/video-player";
 import {Card} from "@/components/ui/card";
 import SlidevEmbed, {SlidevEmbedHandle} from "@/components/slidev-embed";
 import {useStatus} from "@/hooks/use-status";
+import {courseId} from "@/data/course";
 
 export default function Home() {
   const [personaLevel, setPersonaLevel] = useState<PersonaLevel>("beginner");
@@ -47,7 +48,7 @@ export default function Home() {
       const response: PromptResponse = await coreApi.createLectureFromPrompt({
         promptRequest: {
           prompt,
-          courseId: "IN001",
+          courseId,
           userPersona: personas.find((person) => person.id === personaLevel)
             ?.userProfile,
         },
@@ -166,7 +167,9 @@ export default function Home() {
                 </div>
               </div>
 
-              {status && <StatusDisplayer status={status} />}
+              {status && (
+                <StatusDisplayer promptId={promptId} status={status} />
+              )}
 
               {status?.stepSlidePostprocessing === "DONE" && (
                 <div

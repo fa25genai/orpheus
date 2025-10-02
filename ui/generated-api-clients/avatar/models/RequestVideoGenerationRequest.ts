@@ -28,14 +28,19 @@ import {
  */
 export interface RequestVideoGenerationRequest {
     /**
-     * Per-slide text blocks in order.
-     * @type {Array<string>}
+     * The voice track that the avatar shall speak.
+     * @type {string}
      * @memberof RequestVideoGenerationRequest
      */
-    slideMessages: Array<string>;
+    voiceTrack: string;
     /**
-     * Unique identifier of the lecture to which the slides will belong.
-     * 
+     * Zero-based slide index matching audio/video filenames.
+     * @type {number}
+     * @memberof RequestVideoGenerationRequest
+     */
+    slideNumber: number;
+    /**
+     * Unique identifier of the question to which the answer belongs.
      * @type {string}
      * @memberof RequestVideoGenerationRequest
      */
@@ -58,7 +63,8 @@ export interface RequestVideoGenerationRequest {
  * Check if a given object implements the RequestVideoGenerationRequest interface.
  */
 export function instanceOfRequestVideoGenerationRequest(value: object): value is RequestVideoGenerationRequest {
-    if (!('slideMessages' in value) || value['slideMessages'] === undefined) return false;
+    if (!('voiceTrack' in value) || value['voiceTrack'] === undefined) return false;
+    if (!('slideNumber' in value) || value['slideNumber'] === undefined) return false;
     if (!('promptId' in value) || value['promptId'] === undefined) return false;
     if (!('courseId' in value) || value['courseId'] === undefined) return false;
     if (!('userProfile' in value) || value['userProfile'] === undefined) return false;
@@ -75,7 +81,8 @@ export function RequestVideoGenerationRequestFromJSONTyped(json: any, ignoreDisc
     }
     return {
         
-        'slideMessages': json['slideMessages'],
+        'voiceTrack': json['voiceTrack'],
+        'slideNumber': json['slideNumber'],
         'promptId': json['promptId'],
         'courseId': json['courseId'],
         'userProfile': UserProfileFromJSON(json['userProfile']),
@@ -93,7 +100,8 @@ export function RequestVideoGenerationRequestToJSONTyped(value?: RequestVideoGen
 
     return {
         
-        'slideMessages': value['slideMessages'],
+        'voiceTrack': value['voiceTrack'],
+        'slideNumber': value['slideNumber'],
         'promptId': value['promptId'],
         'courseId': value['courseId'],
         'userProfile': UserProfileToJSON(value['userProfile']),

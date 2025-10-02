@@ -98,7 +98,6 @@ class ConvNeXtV2(nn.Module):
         num_kp = kwargs.get('num_kp', 24)  # the number of implicit keypoints
         self.fc_kp = nn.Linear(dims[-1], 3 * num_kp)  # implicit keypoints
 
-        # print('dims[-1]: ', dims[-1])
         self.fc_scale = nn.Linear(dims[-1], 1)  # scale
         self.fc_pitch = nn.Linear(dims[-1], num_bins)  # pitch bins
         self.fc_yaw = nn.Linear(dims[-1], num_bins)  # yaw bins

@@ -23,7 +23,7 @@ services:
     env_file:
       - path: .env
         required: false
-      - path: slides/postprocessing/.env.bak
+      - path: slides/postprocessing/.env
         required: false
     ports:
       - "30607:30607"
@@ -64,7 +64,7 @@ services:
     env_file:
       - path: .env
         required: false
-      - path: document-intelligence/.env.bak
+      - path: document-intelligence/.env
         required: false
     ports:
       - "25565:25565"
@@ -108,7 +108,7 @@ services:
     env_file:
       - path: .env
         required: false
-      - path: core/.env.bak
+      - path: core/.env
         required: false
     ports:
       - "8000:8000"
@@ -139,6 +139,8 @@ services:
       PUBLIC_VIDEOS_BASE: "/videos/jobs"
       GEN_AUDIO: "https://gpu.aet.cit.tum.de/avatar/audio/v1/audio/generate"
       GEN_VIDEO: "https://gpu.aet.cit.tum.de/avatar/video/infer"
+      AVATARS_OUTPUT_DIR: "/data/avatars"
+      DATABASE_URL: "sqlite:////data/app.db"
     volumes:
       - avatar_file_storage:/data
     networks:

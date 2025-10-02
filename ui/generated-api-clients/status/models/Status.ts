@@ -1,8 +1,8 @@
 /* tslint:disable */
 /* eslint-disable */
 /**
- * Answer Generation Service API
- * API for the Orpheus core orchestration. From the repository: \"The Orpheus System transforms static slides into interactive prompt videos with lifelike professor avatars, combining expressive narration, visual presence, and dynamic content to create engaging, personalized learning experiences.\" License: MIT (see repository). 
+ * Generation Status Service
+ * API for the Orpheus status orchestration. From the repository: \"The Orpheus System transforms static slides into interactive prompt videos with lifelike professor avatars, combining expressive narration, visual presence, and dynamic content to create engaging, personalized learning experiences.\" License: MIT (see repository). 
  *
  * The version of the OpenAPI document: 0.1.0
  * 
@@ -67,6 +67,12 @@ export interface Status {
     stepSlideStructureGeneration: StepStatus;
     /**
      * 
+     * @type {StepStatus}
+     * @memberof Status
+     */
+    stepAudioScriptGeneration: StepStatus;
+    /**
+     * 
      * @type {number}
      * @memberof Status
      */
@@ -107,6 +113,7 @@ export function instanceOfStatus(value: object): value is Status {
     if (!('stepLookup' in value) || value['stepLookup'] === undefined) return false;
     if (!('stepLectureScriptGeneration' in value) || value['stepLectureScriptGeneration'] === undefined) return false;
     if (!('stepSlideStructureGeneration' in value) || value['stepSlideStructureGeneration'] === undefined) return false;
+    if (!('stepAudioScriptGeneration' in value) || value['stepAudioScriptGeneration'] === undefined) return false;
     if (!('stepSlideGeneration' in value) || value['stepSlideGeneration'] === undefined) return false;
     if (!('stepSlidePostprocessing' in value) || value['stepSlidePostprocessing'] === undefined) return false;
     if (!('stepsAvatarGeneration' in value) || value['stepsAvatarGeneration'] === undefined) return false;
@@ -127,6 +134,7 @@ export function StatusFromJSONTyped(json: any, ignoreDiscriminator: boolean): St
         'stepLookup': StepStatusFromJSON(json['stepLookup']),
         'stepLectureScriptGeneration': StepStatusFromJSON(json['stepLectureScriptGeneration']),
         'stepSlideStructureGeneration': StepStatusFromJSON(json['stepSlideStructureGeneration']),
+        'stepAudioScriptGeneration': StepStatusFromJSON(json['stepAudioScriptGeneration']),
         'stepSlideGeneration': json['stepSlideGeneration'],
         'stepSlidePostprocessing': StepStatusFromJSON(json['stepSlidePostprocessing']),
         'stepsAvatarGeneration': ((json['stepsAvatarGeneration'] as Array<any>).map(AvatarElementStatusFromJSON)),
@@ -150,6 +158,7 @@ export function StatusToJSONTyped(value?: Status | null, ignoreDiscriminator: bo
         'stepLookup': StepStatusToJSON(value['stepLookup']),
         'stepLectureScriptGeneration': StepStatusToJSON(value['stepLectureScriptGeneration']),
         'stepSlideStructureGeneration': StepStatusToJSON(value['stepSlideStructureGeneration']),
+        'stepAudioScriptGeneration': StepStatusToJSON(value['stepAudioScriptGeneration']),
         'stepSlideGeneration': value['stepSlideGeneration'],
         'stepSlidePostprocessing': StepStatusToJSON(value['stepSlidePostprocessing']),
         'stepsAvatarGeneration': ((value['stepsAvatarGeneration'] as Array<any>).map(AvatarElementStatusToJSON)),
