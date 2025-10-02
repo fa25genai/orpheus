@@ -1,0 +1,14 @@
+.git
+.gitignore
+__pycache__
+.pytest_cache
+.venv
+*.pyc
+*.pyo
+*.pyd
+*.swp
+*.zip
+example-*.png
+figure_*.png
+*.DS_Store
+
