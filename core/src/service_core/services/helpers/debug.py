@@ -16,4 +16,4 @@ def disable_debug() -> None:
 
 def debug_print(message: str) -> None:
     if DEBUG_ENABLED:
-        print(f"[DEBUG {datetime.datetime.now().isoformat()}]: {message}")
+        print(f"[DEBUG {datetime.datetime.now().isoformat()}]: {message}", flush=True)
