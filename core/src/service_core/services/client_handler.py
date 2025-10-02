@@ -86,6 +86,7 @@ async def retrieve_subqueries_from_prompt(
         )
         return subqueries
     except Exception as exception:
+        logger.error(f'Failed to retrieve subqueries for prompt `{prompt_id}`', exc_info=exception)
         await update_status(
             prompt_id, StatusPatch(stepUnderstanding=StepStatus.FAILED), client
         )
