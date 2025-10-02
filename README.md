@@ -6,10 +6,12 @@ expressive narration, visual presence, and dynamic content to create engaging, p
 ## Table of Contents
 
 - [Architecture](#architecture)
-  - [Service Components](#service-components)
-- [API Interface Documentation](#api-interface-documentation)
+  - [Service Components](#service-components) 
+  - [API Interface Documentation](#api-interface-documentation)
 - [Getting Started](#getting-started)
-  - [Deployment](#deployment)
+  - [User Guide](#user-guide)
+    - [Lecturer View](#lecturer-view)
+    - [Student View](#student-view)
   - [Development Setup](#development-setup)
     - [1. Install Python 3.13.7 using pyenv](#1-install-python-31317-using-pyenv)
       - [Linux (Debian/Ubuntu)](#linux-debianubuntu)
@@ -18,6 +20,7 @@ expressive narration, visual presence, and dynamic content to create engaging, p
     - [2. Install Poetry 2.2.1](#2-install-poetry-221)
       - [Linux / macOS](#linux--macos)
       - [Windows (PowerShell)](#windows-powershell)
+  - [Deployment](#deployment)
 
 ## Architecture
 
@@ -42,6 +45,7 @@ The Orpheus system is composed of multiple specialized services, each handling d
 | **Core Service** | [orpheus/core](https://github.com/fa25genai/orpheus/tree/develop/core) |
 | **Document Intelligence Service** | [orpheus/docint](https://github.com/fa25genai/orpheus/tree/develop/document-intelligence) |
 | **Slides Service** | [orpheus/slides](https://github.com/fa25genai/orpheus/tree/develop/slides) |
+| **Status Service** | [orpheus/status](https://github.com/fa25genai/orpheus/tree/develop/status) |
 | **User Interface** | [orpheus/ui](https://github.com/fa25genai/orpheus/tree/develop/ui) |
 
 <!--
@@ -51,7 +55,7 @@ Open questions:
 * "Answer Generation Service" is not an optimal name yet, "Orchestration" might be better but harder to understand what it actually does if you do not know the project at all?
 -->
 
-## API Interface Documentation
+### API Interface Documentation
 
 <!--
 TODO 
@@ -82,9 +86,15 @@ gather info about not yet exposed APIs (Slide Push Service, Video Push Service, 
 
 ## Getting Started
 
-### Deployment
+### User Guide
 
-TODO - add docker startup commands and instructions
+#### Lecturer View
+
+tbd
+
+#### Student View
+
+tbd
 
 ### Development Setup
 
@@ -264,3 +274,7 @@ We use [Poetry](https://python-poetry.org/) as our dependency and environment ma
     ```powershell
     poetry --version
     ```
+
+### Deployment
+
+TODO - add docker startup commands and instructions

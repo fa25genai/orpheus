@@ -1,16 +1,38 @@
-## Orpheus Core AI Service
+# Orpheus Core AI Service
 The Orpheus System transforms static slides into interactive lecture videos with lifelike professor avatars, combining expressive narration, visual presence, and dynamic content to create engaging, personalized learning experiences.
 
 This service is the core backend component responsible for orchestrating the AI-driven content generation.
 
-# Prerequisites
+## Table of Contents
+
+- [Technology Stack](#technology-stack)
+  - [Currently Used Frameworks](#currently-used-frameworks)
+  - [Good/Bad Experiences](#goodbad-experiences)
+- [Prerequisites](#prerequisites)
+- [Development Workflow](#development-workflow)
+  - [Running the Service](#running-the-service)
+  - [Running with Docker](#running-with-docker-only-core-service)
+  - [Tests](#tests)
+  - [Quality Checks](#quality-checks)
+
+## Technology Stack
+
+### Currently Used Frameworks
+
+TODO - Document the frameworks currently in use
+
+### Good/Bad Experiences
+
+TODO - Document experiences, lessons learned, and recommendations
+
+## Prerequisites
 
 ``` 
 cd core
 poetry install
 ```
 
-# Development Workflow
+## Development Workflow
 This project uses a schema-first approach. The single source of truth for the API's structure is the OpenAPI specification file.
 
 1. Modifying the API
@@ -28,7 +50,7 @@ openapi-generator generate -i service_core_v1.yaml -g python-fastapi -o . --pack
 
 Your Logic (**EDIT HERE**): All your business logic should be implemented in the `src/service_core/impl/core_api_impl.py` file. This file is designed to be safe and will not be overwritten.
 
-# Running the Service
+### Running the Service
 1. Run the API Server
 
 ```
@@ -37,7 +59,7 @@ poetry run uvicorn service_core.main:app --reload
 
 The server will be available at `http://127.0.0.1:8000`.
 
-## Running with Docker (**ONLY CORE SERVICE**)
+### Running with Docker (**ONLY CORE SERVICE**)
 
 To build and run the service using Docker, execute the following commands from the root of the `core` directory:
 
@@ -49,7 +71,7 @@ docker run --name core-ai -it --rm -p 8000:8000 service-core
 
 This will build the image and start the service on port 8000.
 
-## Tests
+### Tests
 
 To run the tests:
 
@@ -58,7 +80,7 @@ pip3 install pytest
 PYTHONPATH=src pytest tests
 ```
 
-## Quality Checks
+### Quality Checks
 
 ```bash
 poetry run ruff check .
