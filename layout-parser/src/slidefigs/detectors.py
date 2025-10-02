@@ -1,3 +1,5 @@
+"""Figure detection wrappers built on top of LayoutParser/Detectron2."""
+
 from __future__ import annotations
 
 import logging
@@ -16,6 +18,8 @@ log = logging.getLogger(__name__)
 
 @dataclass
 class Detection:
+    """Normalized detection output from a detector backend."""
+
     box: Box
     score: float
     label: str = "Figure"
@@ -23,22 +27,34 @@ class Detection:
 
 @dataclass
 class DetectionResult:
+    """Collection wrapper for detections returned by a detector."""
+
     detections: list[Detection]
 
 
 class FigureDetector:
+    """Abstract detector interface that outputs :class:`DetectionResult` objects."""
+
     def detect(self, image: np.ndarray) -> DetectionResult:  # image in RGB
+        """Detect figures in the provided RGB image."""
+
         raise NotImplementedError
 
 
 class LayoutParserDetector(FigureDetector):
+    """Detect figures using LayoutParser with the PubLayNet Detectron2 model."""
+
     def __init__(self, score_thresh: float = 0.8, figure_thresh: float = 0.9) -> None:
+        """Initialize confidence thresholds and lazy-load placeholders."""
+
         self.score_thresh = score_thresh
         self.figure_thresh = figure_thresh
         self._model: Any | None = None
         self._init_error: str | None = None
 
     def _ensure_model(self) -> None:
+        """Instantiate the underlying LayoutParser Detectron2 model if needed."""
+
         if self._model is not None or self._init_error is not None:
             return
         try:
@@ -72,6 +88,8 @@ class LayoutParserDetector(FigureDetector):
             log.warning("Failed to initialize LayoutParser model: %s", e)
 
     def detect(self, image: np.ndarray) -> DetectionResult:
+        """Run the detector on an RGB image and return figure bounding boxes."""
+
         self._ensure_model()
         if self._model is None:
             # No fallback. We require detectron in Docker.
@@ -94,6 +112,8 @@ class LayoutParserDetector(FigureDetector):
         return DetectionResult(detections)
 
     def _ensure_publaynet_weights(self) -> str:
+        """Download PubLayNet weights if absent and return the local path."""
+
         # Download PubLayNet Faster R-CNN R50-FPN 3x weights once to a stable path.
         # Using explicit download avoids iopath cache filenames that include querystrings.
         url = os.getenv(
@@ -124,6 +144,8 @@ class LayoutParserDetector(FigureDetector):
 
 
 def get_detector(preferred: str | None = None) -> FigureDetector:
+    """Return the default LayoutParser-based figure detector."""
+
     # Always use LayoutParser/Detectron2. No OpenCV-only mode.
     det = LayoutParserDetector()
     det._ensure_model()

@@ -1,37 +1,98 @@
 Slides Figure Extraction Service
+================================
 
-This project provides a FastAPI microservice that accepts a slide image (PNG/JPEG) and returns all detected figures as individual images via an HTTP API.
+This project exposes a FastAPI microservice that identifies figures inside slide
+images (PNG or JPEG) and returns the cropped regions as base64 encoded PNGs. The
+runtime leans on `layoutparser` + Detectron2 with the PubLayNet Faster R-CNN
+model so the same behaviour is available locally and in Docker.
 
-In Docker, the service always uses LayoutParser + Detectron2 with the PubLayNet model (Figure class) for high-quality detection.
+How It Works
+------------
 
-Quickstart (local)
+1. An uploaded slide image is loaded with Pillow and converted to an RGB NumPy
+   array.
+2. `LayoutParserDetector` lazily initialises the PubLayNet Detectron2 model and
+   runs inference.
+3. Each figure block above the confidence threshold is cropped, converted to PNG
+   in-memory, and returned to the caller together with the detection score and
+   bounding box.
+4. The detector downloads model weights once to `WEIGHTS_DIR` (defaults to
+   `/weights`) so repeated invocations reuse cached assets.
 
-- Install dependencies with Poetry:
-  - Install Poetry if needed: pip install poetry
-  - poetry install
-  - Run the API: poetry run slidefigs-api
-  - The service listens on http://127.0.0.1:8156
+API Surface
+-----------
 
-Usage
+| Method | Path       | Description                          |
+| ------ | ---------- | ------------------------------------ |
+| GET    | `/healthz` | Lightweight readiness probe.         |
+| POST   | `/extract` | Detect figures and return PNG crops. |
 
-- Extract figures as JSON with base64 PNG data:
-  curl -X POST \
-    -F "file=@example-slide.png" \
-    http://127.0.0.1:8156/extract | jq
+### `/extract`
+
+Multipart form-data request with a single field named `file` (PNG/JPEG). A
+successful response resembles:
+
+```json
+{
+  "count": 2,
+  "items": [
+    {
+      "score": 0.97,
+      "box": {"x1": 422, "y1": 185, "x2": 739, "y2": 568},
+      "image": {
+        "format": "png",
+        "width": 317,
+        "height": 383,
+        "data": "iVBORw0KGgoAAAANSUhEUgAA..."
+      }
+    }
+  ]
+}
+```
+
+When no figures are detected, the service responds with `{ "count": 0, "items": [] }`.
+
+Configuration
+-------------
+
+| Variable              | Default     | Purpose                                                                 |
+| --------------------- | ----------- | ------------------------------------------------------------------------ |
+| `HOST`                | `0.0.0.0`   | Bind address for the uvicorn server.                                     |
+| `PORT`                | `8156`      | HTTP port exposed by the service.                                        |
+| `WEIGHTS_DIR`         | `/weights`  | Directory used to cache PubLayNet weights.                               |
+| `PUBLAYNET_MODEL_URL` | Dropbox URL | Override to supply an alternative model artefact location if necessary. |
+
+Quickstart (Local)
+------------------
+
+1. Install Poetry if needed: `pip install poetry`.
+2. Install dependencies: `poetry install`.
+3. Launch the API: `poetry run slidefigs-api`.
+4. Interact with the service at `http://127.0.0.1:8156`.
+
+Example extraction call:
+
+```bash
+curl -X POST \
+  -F "file=@example-slide.png" \
+  http://127.0.0.1:8156/extract | jq
+```
 
 Docker
+------
 
-- Build the image:
-  docker build -t slides-figure-service .
+```bash
+docker build -t slides-figure-service .
+docker run --rm -p 8156:8156 slides-figure-service
+```
 
-- Run the container:
-  docker run --rm -p 8156:8156 slides-figure-service
-
-LayoutParser in Docker
-
-The Docker image installs Torch (CPU), Torchvision (CPU), and Detectron2 CPU wheels, and uses the PubLayNet model via LayoutParser’s Detectron2 integration.
+The Docker image includes CPU builds of PyTorch, Torchvision, and Detectron2 so
+that the PubLayNet weights can load without extra configuration.
 
 Notes
+-----
 
-- The /extract endpoint returns `{ "count": 0, "items": [] }` when no figures are found.
-- Running locally without Docker requires installing Detectron2 in your environment; the API expects it to be available.
+- Running outside of Docker still requires Detectron2; ensure it is available in
+  your Python environment before starting the service.
+- The service performs no persistent storage of extracted figures—the PNG data
+  is generated on the fly per request.

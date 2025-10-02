@@ -1,3 +1,5 @@
+"""FastAPI application for extracting figure crops from slide images."""
+
 from __future__ import annotations
 
 import base64
@@ -17,6 +19,12 @@ log = logging.getLogger(__name__)
 
 
 async def _read_image_file(file: UploadFile) -> np.ndarray:
+    """Return the uploaded image as an RGB NumPy array.
+
+    Invalid payloads raise an :class:`HTTPException` with a 400 status code.
+    The temporary upload is always closed before returning.
+    """
+
     try:
         data = await file.read()
         if not data:
@@ -34,16 +42,22 @@ async def _read_image_file(file: UploadFile) -> np.ndarray:
 
 
 def create_app() -> FastAPI:
+    """Instantiate and configure the FastAPI service."""
+
     app = FastAPI(title="Slides Figure Extraction Service", version="0.1.0")
 
     @app.get("/healthz")
     def healthz() -> dict[str, str]:
+        """Expose a basic readiness probe for orchestration."""
+
         return {"status": "ok"}
 
     @app.post("/extract")
     async def extract(
         file: UploadFile = File(..., description="Slide image file (PNG/JPEG)"),
     ) -> JSONResponse:
+        """Detect figure regions and return cropped images as base64 PNG blobs."""
+
         image = await _read_image_file(file)
         detector = get_detector()
         result = detector.detect(image)
@@ -79,6 +93,8 @@ app = create_app()
 
 
 def main() -> None:  # pragma: no cover
+    """Run the service with uvicorn using environment configuration."""
+
     import uvicorn
 
     host = os.getenv("HOST", "0.0.0.0")

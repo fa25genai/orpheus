@@ -1,3 +1,5 @@
+"""Utility helpers for manipulating bounding boxes and geometry."""
+
 from __future__ import annotations
 
 from collections.abc import Iterable
@@ -6,25 +8,37 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class Box:
+    """Axis-aligned bounding box defined by pixel corners."""
+
     x1: int
     y1: int
     x2: int
     y2: int
 
     def width(self) -> int:
+        """Return the box width in pixels (clamped to zero)."""
+
         return max(0, self.x2 - self.x1)
 
     def height(self) -> int:
+        """Return the box height in pixels (clamped to zero)."""
+
         return max(0, self.y2 - self.y1)
 
     def area(self) -> int:
+        """Return the non-negative area of the box in pixels squared."""
+
         return self.width() * self.height()
 
     def as_tuple(self) -> tuple[int, int, int, int]:
+        """Return coordinates as a ``(x1, y1, x2, y2)`` tuple."""
+
         return (self.x1, self.y1, self.x2, self.y2)
 
 
 def clip_box(box: Box, w: int, h: int) -> Box:
+    """Clamp the box coordinates so they stay within an image of size ``w`` x ``h``."""
+
     x1 = max(0, min(w, box.x1))
     y1 = max(0, min(h, box.y1))
     x2 = max(0, min(w, box.x2))
@@ -38,6 +52,8 @@ def clip_box(box: Box, w: int, h: int) -> Box:
 
 
 def iou(a: Box, b: Box) -> float:
+    """Compute the intersection-over-union between two boxes."""
+
     ix1 = max(a.x1, b.x1)
     iy1 = max(a.y1, b.y1)
     ix2 = min(a.x2, b.x2)
@@ -52,6 +68,8 @@ def iou(a: Box, b: Box) -> float:
 
 
 def merge_overlaps(boxes: Iterable[Box], iou_threshold: float = 0.3) -> list[Box]:
+    """Perform a greedy merge of overlapping boxes using an IoU threshold."""
+
     # Simple NMS-style merge: keep boxes with max area and drop overlaps
     sorted_boxes = sorted(boxes, key=lambda b: b.area(), reverse=True)
     kept: list[Box] = []
