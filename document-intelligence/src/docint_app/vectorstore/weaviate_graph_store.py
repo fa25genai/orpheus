@@ -280,14 +280,11 @@ class WeaviateGraphStore:
     # Upserts (objects + vectors + references)
     @staticmethod
     def _default_slide_uuid(document_id: str, slide_no: int) -> str:
-        # Deterministic UUIDv5 from stable natural key
-        name = f"Slide::{document_id}::{slide_no:04d}"
-        return str(uuid.uuid5(uuid.NAMESPACE_URL, name))
+        return str(uuid.uuid4())
 
     @staticmethod
     def _default_image_uuid(document_id: str, slide_no: int, idx: int) -> str:
-        name = f"SlideImage::{document_id}::{slide_no:04d}::img::{idx:02d}"
-        return str(uuid.uuid5(uuid.NAMESPACE_URL, name))
+        return str(uuid.uuid4())
 
     def upsert_slide(
         self,
@@ -404,9 +401,7 @@ class WeaviateGraphStore:
         Uses POST to create; on conflict falls back to PUT to update (idempotent).
         :return: UUID used for the video chunk
         """
-        # Generate deterministic UUID from course_id and chunk_id
-        name = f"VideoChunk::{course_id}::{chunk_id}"
-        uid = str(uuid.uuid5(uuid.NAMESPACE_URL, name))
+        uid = str(uuid.uuid4())
 
         payload = {
             "class": "VideoChunk",
@@ -420,13 +415,8 @@ class WeaviateGraphStore:
             "vector": list(text_vector),
         }
 
-        # Try create first (POST); if it already exists, update (PUT)
-        try:
-            self._post("/v1/objects", payload)
-        except WeaviateError as e:
-            # Duplicate/exists -> update instead
-            print(f"VideoChunk upsert POST failed, trying PUT: {e}")
-            self._put(f"/v1/objects/{uid}", payload)
+        self._post("/v1/objects", payload)
+        
         return uid
 
     def test_upsert_video_chunk(self) -> str:
