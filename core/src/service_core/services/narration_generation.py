@@ -43,7 +43,7 @@ async def generate_narrations(
         prompt_id (str): The prompt identifier.
         debug (bool, optional): If True, enables debug output.
     ---\n### RULES & GUIDELINES\n---\n\n    
-        *Text Formatting: The Lecture script should be human readable. Remove any quotation marks around the text.Rewrite this to be readable by a tts module. Don't change content or meaning.\n\n
+        *Text Formatting: The Lecture script should be human readable. Remove any quotation marks around the text. Rewrite this to be readable by a tts module. Don't change content or meaning.\n\n
         * Coding text: If the lecture script contains code snippets, reformat them in an actual text that resembles code instead of code. Example: "System.out.println(abc[i])" should be read as "system dot out dot print line a b c index i".\n\n
         * Math text: If the lecture script contains mathematical expressions, reformat them in an actual text. Example "- should be minus", "> should be greater than", and so on.\n\n
     ---\n### OUTPUT FORMAT\n---\n\n
