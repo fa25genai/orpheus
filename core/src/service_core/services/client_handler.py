@@ -60,30 +60,36 @@ async def update_status(
 async def retrieve_subqueries_from_prompt(
     prompt_request: PromptRequest, prompt_id: str, client: httpx.AsyncClient
 ) -> List[str]:
-    logger.info(f"Decomposing inputs for prompt `{prompt_id}`")
-    await update_status(
-        prompt_id, StatusPatch(stepUnderstanding=StepStatus.IN_PROGRESS), client
-    )
+    try:
+        logger.info(f"Decomposing inputs for prompt `{prompt_id}`")
+        await update_status(
+            prompt_id, StatusPatch(stepUnderstanding=StepStatus.IN_PROGRESS), client
+        )
 
-    subqueries: List[str]
-    if DEBUG:
-        subqueries = mock_service.create_decomposed_question().get("subqueries", [])
+        subqueries: List[str]
+        if DEBUG:
+            subqueries = mock_service.create_decomposed_question().get("subqueries", [])
+            await update_status(
+                prompt_id, StatusPatch(stepUnderstanding=StepStatus.DONE), client
+            )
+            return subqueries
+
+        subqueries = decompose_input.decompose_question(prompt_request.prompt).get(
+            "subqueries", []
+        )
+
+        logger.debug(f"subqueries retrieved from prompt: {subqueries}")
+
+        # FIX: [no-any-return]
         await update_status(
             prompt_id, StatusPatch(stepUnderstanding=StepStatus.DONE), client
         )
         return subqueries
-
-    subqueries = decompose_input.decompose_question(prompt_request.prompt).get(
-        "subqueries", []
-    )
-
-    logger.debug(f"subqueries retrieved from prompt: {subqueries}")
-
-    # FIX: [no-any-return]
-    await update_status(
-        prompt_id, StatusPatch(stepUnderstanding=StepStatus.DONE), client
-    )
-    return subqueries
+    except Exception as exception:
+        await update_status(
+            prompt_id, StatusPatch(stepUnderstanding=StepStatus.FAILED), client
+        )
+        raise exception
 
 
 async def send_summary_to_endpoint(
