@@ -221,7 +221,7 @@ export function StatusDisplayer({status, promptId}: StatusDisplayerProps) {
       <Card>
         <CardHeader>
           <CardTitle className="text-xl font-bold">
-            Preliminary Answer
+            Initial Explanation
           </CardTitle>
         </CardHeader>
         <CardContent>

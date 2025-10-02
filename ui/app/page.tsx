@@ -17,18 +17,22 @@ import {Card} from "@/components/ui/card";
 import SlidevEmbed, {SlidevEmbedHandle} from "@/components/slidev-embed";
 import {useStatus} from "@/hooks/use-status";
 import {courseId} from "@/data/course";
+import {VideoSource} from "@/types/video-playback";
+import {StepStatus} from "@/generated-api-clients/status";
+import VideoSkeleton from "@/components/skeletons/video-skeleton";
 
 export default function Home() {
   const [personaLevel, setPersonaLevel] = useState<PersonaLevel>("beginner");
   const [messages, setMessages] = useState<string[]>([]);
   const [prompt, setPrompt] = useState<string>("");
   const [promptId, setPromptId] = useState<string>("");
-  const [sources, setSources] = useState<string[]>([]);
+  const [sources, setSources] = useState<VideoSource[]>([]);
   const status = useStatus(promptId);
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const slidevRef = useRef<SlidevEmbedHandle>(null);
   const outputRef = useRef<HTMLDivElement>(null);
+
   async function getPromptId(prompt: string) {
     try {
       const response: PromptResponse = await coreApi.createLectureFromPrompt({
@@ -39,17 +43,10 @@ export default function Home() {
             ?.userProfile,
         },
       });
-      console.log("Received prompt ID:", response.promptId);
-
       return response.promptId;
     } catch (error) {
       console.error("Failed to get prompt ID:", error);
-      toast.error("Failed to get prompt ID.", {
-        action: {
-          label: "Close",
-          onClick: () => toast.dismiss(),
-        },
-      });
+      toast.error("Failed to get prompt ID.");
     }
   }
 
@@ -57,8 +54,8 @@ export default function Home() {
     if (e) e.preventDefault();
     if (!input.trim()) return;
 
-    const promptId = await getPromptId(input);
-    if (promptId) setPromptId(promptId);
+    const pid = await getPromptId(input);
+    if (pid) setPromptId(pid);
 
     setMessages([input]);
     setPrompt("");
@@ -66,20 +63,22 @@ export default function Home() {
 
   useEffect(() => {
     async function updateVideoSources() {
-      if (status?.stepSlidePostprocessing !== "DONE") return;
-
+      if (status?.stepSlidePostprocessing !== StepStatus.Done) return;
       const baseUrl = `http://localhost:3000/videos/jobs/${promptId}/`;
-      const readyVideos: string[] = status.stepsAvatarGeneration
-        .map(
-          (step, index) =>
-            step.video === "DONE" ? `${baseUrl}${index}.mp4` : null
-        )
-        // needed to filter out all nulls
-        .filter((url): url is string => url !== null);
 
-      setSources(readyVideos);
+      const videos: VideoSource[] = status.stepsAvatarGeneration.map(
+        (step, index) => ({
+          url: step.video === StepStatus.Done ? `${baseUrl}${index}.mp4` : null,
+          videoPlayed: sources[index]?.videoPlayed ?? false,
+          videoStatus:
+            step.video === StepStatus.InProgress ||
+            step.video === StepStatus.Done
+              ? step.video
+              : StepStatus.InProgress,
+        })
+      );
+      setSources(videos);
     }
-
     updateVideoSources();
   }, [status, promptId]);
 
@@ -118,9 +117,8 @@ export default function Home() {
           <GuideCards
             persona={personaLevel}
             guideText={guideText}
-            onSelect={(question) => handleSubmit(question, undefined)}
+            onSelect={(question) => handleSubmit(question)}
           />
-
           <div className="fixed bottom-20 right-0 left-0 mx-auto max-w-6xl">
             <ChatInput
               handleSubmit={handleSubmit}
@@ -130,10 +128,11 @@ export default function Home() {
           </div>
         </section>
       )}
+
       {messages.length > 0 && (
         <section className="max-w-6xl flex flex-col mx-auto space-y-6 pb-20">
-          {messages.map((msg, index) => (
-            <div key={index} className="space-y-6">
+          {messages.map((msg, idx) => (
+            <div key={idx} className="space-y-6">
               <div className="flex justify-end">
                 <div className="bg-primary text-primary-foreground px-6 py-3 rounded-2xl max-w-2xl">
                   <p className="text-lg">{msg}</p>
@@ -144,14 +143,13 @@ export default function Home() {
                 <StatusDisplayer promptId={promptId} status={status} />
               )}
 
-              {status?.stepSlidePostprocessing === "DONE" &&
-                status?.stepsAvatarGeneration?.slice(0, 4).every((step) => {
-                  return step.video === "DONE";
-                }) && (
-                  <div
-                    ref={outputRef}
-                    className="grid grid-cols-1 md:grid-cols-3 gap-6"
-                  >
+              {status?.stepSlidePostprocessing === StepStatus.Done && (
+                <div
+                  ref={outputRef}
+                  className="grid grid-cols-1 md:grid-cols-3 gap-6"
+                >
+                  {status.stepsAvatarGeneration?.length > 0 &&
+                  status.stepsAvatarGeneration[0].video === StepStatus.Done ? (
                     <VideoPlayer
                       sources={sources}
                       onBeforeNext={() => {
@@ -159,20 +157,24 @@ export default function Home() {
                         slidevRef.current?.next();
                       }}
                     />
-                    <Card className="p-8 bg-card border-border md:col-span-2">
-                      <SlidevEmbed
-                        baseUrl={`http://localhost:30608/web/${promptId}`}
-                        className="h-98"
-                        ref={slidevRef}
-                      />
-                    </Card>
-                  </div>
-                )}
+                  ) : (
+                    <VideoSkeleton />
+                  )}
+
+                  <Card className="p-8 bg-card border-border md:col-span-2">
+                    <SlidevEmbed
+                      baseUrl={`http://localhost:30608/web/${promptId}`}
+                      className="h-98"
+                      ref={slidevRef}
+                    />
+                  </Card>
+                </div>
+              )}
             </div>
           ))}
           <div ref={bottomRef}></div>
 
-          {status?.stepSlidePostprocessing === "DONE" && (
+          {status?.stepSlidePostprocessing === StepStatus.Done && (
             <div className="fixed bottom-4 right-0 left-0 mx-auto max-w-6xl">
               <ChatInput
                 handleSubmit={handleSubmit}
