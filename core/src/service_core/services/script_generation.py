@@ -126,7 +126,7 @@ def generate_script_llm(
     """
     max_retries = 3
 
-    def extract_json(text):
+    def extract_json(text: str) -> str:
         # Remove code block markers and stray text
         text = re.sub(r"^```json|```$", "", text, flags=re.MULTILINE).strip()
         # Find first { ... } block
@@ -143,7 +143,7 @@ def generate_script_llm(
 
             if not success:
                 # Try to extract JSON from messy output
-                cleaned = extract_json(raw)
+                cleaned: str = extract_json(raw)
                 success, result = try_parse_json(cleaned)
             if success:
                 print(json.dumps(result, indent=2, ensure_ascii=False))
@@ -156,8 +156,10 @@ def generate_script_llm(
             with open(log_path, "w", encoding="utf-8") as f:
                 f.write(raw)
 
-            # Explicitly raise JSONDecodeError to trigger retry
-            raise json.JSONDecodeError("Failed to parse JSON", raw, 0)
+            # Explicitly raise JSONDecodeError to trigger retry, include attempt number
+            raise json.JSONDecodeError(
+                f"Failed to parse JSON on attempt {attempt+1}", raw, 0
+            )
 
         except json.JSONDecodeError as e:
             print(f"JSON parsing error on attempt {attempt + 1}: {e}")
