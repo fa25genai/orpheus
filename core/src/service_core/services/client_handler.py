@@ -291,7 +291,7 @@ async def generate_voice_scripts(
                 tasks.append(task)
 
             slide_index += 1
-        
+
         await update_status(
             prompt_id,
             StatusPatch(stepAudioScriptGeneration=StepStatus.DONE),
@@ -398,3 +398,7 @@ async def process_prompt(prompt_id: str, prompt_request: PromptRequest) -> None:
                 "If you started the server as docker component make sure the URLs for DI_API_URL are referencing docker addresses (e.g. http://docint:25565). "
                 "If you started the server as standalone make sure the URLs for DI_API_URL are pointing to the correct host and port (e.g. http://localhost:25565)."
             )
+
+        await update_status(
+            prompt_id, StatusPatch(stepUnderstanding=StepStatus.FAILED), client
+        )
