@@ -79,9 +79,9 @@ gather info about not yet exposed APIs (Slide Push Service, Video Push Service, 
 | **Slide Generation Service**     | Generates lecture slides that conform to the layout of the respective course from a detailed lecture script.             | [Slide Generation Service](./api/slide_generation_service.yaml)                                                                                                                                                                                                                                    |
 | **Slide Postprocessing Service** | Converts slides to HTML and uploads generated code to the `Generated Slide Delivery` (CDN) for distribution.             | [Slide Postprocessing Service](./api/slide-postprocessing_service.yaml)                                                                                                                                                                                                                            |
 | **Avatar Generation Service**    | Produces short videos of lifelike professor avatars from a given text for the voice track with expressive narration.     | [Avatar Generation Service](./api/avatar_generation_service.yaml)                                                                                                                                                                                                                                  |
-| **Video Push Service**           | Uploads generated avatar videos to the `Generated Avatar Delivery` (CDN) for distribution.                               | TODO gather info                                                                                                                                                                                                                                                                                   |
-| **Content Location Service**     | Returns the CDN location of a slide / avatar video of a related `promptId`.                                              | Note: not these services are not used and implemented yet, currently still relying on polling and respective status requests <br> [Slides Content Location Service](./api/content_location_service_slides.yaml) <br> [Avatar Content Location Service](./api/content_location_service_avatar.yaml) |
-| **Generated Avatar Service**     | Provides the generated avatar videos, retrieved by related `promptId`.                                                   | TODO gather info about CDN                                                                                                                                                                                                                                                                         |
+| **Video Push Service**           | Uploads generated avatar videos to the `Generated Avatar Delivery` (CDN) for distribution.                               | Documentation pending—capture upload workflow, retry policy, and CDN hand-off details.                                                                                                                                                                                                             |
+| **Content Location Service**     | Returns the CDN location of a slide / avatar video of a related `promptId`.                                              | Planned service; today we still rely on polling plus status requests. Specs to be finalised: <br> [Slides Content Location Service](./api/content_location_service_slides.yaml) <br> [Avatar Content Location Service](./api/content_location_service_avatar.yaml)                                  |
+| **Generated Avatar Service**     | Provides the generated avatar videos, retrieved by related `promptId`.                                                   | Needs documentation of CDN endpoints, caching strategy, and access patterns.                                                                                                                                                                                                                       |
 | **Generated Slide Service**      | Provides the generated slides. Retrieval is done with the related `promptId`.                                            | [Generated Slides Service](slides/delivery/README.md)                                                                                                                                                                                                                                              |
 
 ## Getting Started
@@ -94,8 +94,18 @@ tbd
 
 #### Student View
 
-1. Choose level of expertise:
+1. Choose level of expertise: 
 ![alt text](Snapshot_2025-10-02_16-41-23.png)
+As a user it is possible to select a suitable character. 
+
+2. Enter your question or choose from the predefined ones: 
+![alt text](Snapshot_2025-10-02_16-48-44.png)
+
+3. Wait for for the generation process. In the meantime a textual answer will be given. The lectre will start as soon as the first video is done: 
+![alt text](Snapshot_2025-10-02_16-50-04.png)
+
+4. Watch the video:
+![alt text](Snapshot_2025-10-02_16-54-31.png)
 
 ### Development Setup
 
