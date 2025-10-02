@@ -34,7 +34,9 @@ class CoreApiImpl(BaseCoreApi):  # type: ignore[no-untyped-call]
                     "User persona must be defined for prompt requests from client."
                 )
 
-            prompt_request.user_persona.id = uuid4()  # TODO: Remove this workaround when client provides user_persona.id
+            prompt_request.user_persona.id = (
+                uuid4()
+            )  # TODO: Remove this workaround when client provides user_persona.id
             executor.submit(process_prompt_handler, prompt_id, prompt_request)
 
             return PromptResponse(promptId=prompt_id)

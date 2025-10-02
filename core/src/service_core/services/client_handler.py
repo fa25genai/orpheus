@@ -291,7 +291,7 @@ async def generate_voice_scripts(
                 tasks.append(task)
 
             slide_index += 1
-        
+
         await update_status(
             prompt_id,
             StatusPatch(stepAudioScriptGeneration=StepStatus.DONE),
