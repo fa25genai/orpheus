@@ -93,7 +93,7 @@ async def retrieve_subqueries_from_prompt(
         await update_status(
             prompt_id, StatusPatch(stepUnderstanding=StepStatus.FAILED), client
         )
-        raise exception
+        raise
 
 
 async def send_summary_to_endpoint(
