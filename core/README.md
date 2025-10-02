@@ -92,19 +92,3 @@ docker run --name core-ai -it --rm -p 8000:8000 service-core
 ```
 
 This will build the image and start the service on port 8000.
-
-### Tests
-
-To run the tests:
-
-```bash
-pip3 install pytest
-PYTHONPATH=src pytest tests
-```
-
-### Quality Checks
-
-```bash
-poetry run ruff check .
-poetry run mypy src
-```
