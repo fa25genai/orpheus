@@ -138,7 +138,7 @@ class AzureVideoTranscriberService:
                         time.sleep(self._RATE_LIMIT_DELAY_SECONDS)
                     else:
                         safe_print(f"❌ Potential Rate Limit (429) error after {self.max_retries} attempts. Aborting.")
-                        return f"[Error: RateLimitError nach {self.max_retries} Wiederholungen]"
+                        return f"[Error: RateLimitError after {self.max_retries} retries]"
                 else:
                     return f"An unhandled error occurred during transcription: {e}"
         return "[Error: Unknown error during transcription]"
@@ -152,7 +152,7 @@ class AzureVideoTranscriberService:
         try:
             safe_print(f"🎬 Chunk {chunk_id}: Extracting {start_time:.2f}s to {start_time + chunk_duration:.2f}s")
             
-            # Extraktion nur einmal durchführen
+            # Extract audio chunk if not already exists
             if not os.path.exists(chunk_filename):
                 self._extract_audio_chunk_ffmpeg(video_path, start_time, chunk_duration, chunk_filename)
             
