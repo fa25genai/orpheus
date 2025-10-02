@@ -90,7 +90,58 @@ gather info about not yet exposed APIs (Slide Push Service, Video Push Service, 
 
 #### Lecturer View
 
-tbd
+The **lecturer view** can be accessed via the **Admin Button** located at the top right.
+
+To personalize the course delivery, the lecturer is required to upload both **avatar images** and **voice samples**, followed by the relevant **course materials**.
+
+---
+
+##### 👤 Avatar Uploads
+<div style="text-align: center;">
+  <img src="./lecturer-avatar-upload.png" alt="Lecturer Avatar Upload" style="max-width: 100%; height: auto;">
+</div>
+
+Three distinct avatars should be provided to represent different stages of the lecture:
+
+- **Beginning Avatar**  
+  - Used at the beginning of the lecture.  
+  - Recommended: a **happy facial expression** to create a welcoming atmosphere.  
+
+- **Default/Middle Avatar**  
+  - Used during the main lecture delivery.  
+  - Recommended: a **neutral facial expression** to maintain focus.  
+
+- **Ending Avatar**  
+  - Used at the end of the lecture.  
+  - Recommended: a **happy facial expression** to close on a positive note.  
+
+---
+
+##### 🎙️ Voice Samples
+<div style="text-align: center;">
+  <img src="./lecturer-audio-upload.png" alt="Lecturer Audio Upload" style="max-width: 100%; height: auto;">
+</div>
+
+Similarly, three voice samples should be uploaded, aligned with the same lecture stages as the avatars:
+
+- **Beginning Voice Sample** — welcoming and engaging.  
+- **Default/Middle Voice Sample** — clear and neutral delivery.  
+- **Ending Voice Sample** — positive and encouraging tone.  
+
+---
+
+##### 📑 Course Materials
+<div style="text-align: center;">
+  <img src="./lecturer-material-upload.png" alt="Lecturer Material Upload" style="max-width: 100%; height: auto;">
+</div>
+
+- Upload course slides and/or pre-recorded lecture videos.  
+- These materials will be processed and integrated into the system by the **Document Intelligence Team**.  
+- For further details, refer to the [Document Intelligence README](./document-intelligence/README.md).  
+
+---
+
+
 
 #### Student View
 
