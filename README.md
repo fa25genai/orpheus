@@ -106,10 +106,12 @@ tbd
     ```bash
     cp exampleEnv .env
     ```
-2. Make sure to supply values for at least one AI-Model (e.g. `AWS_BEARER_TOKEN_BEDROCK` + `MODEL_NAME` or
-   `LLAMA_API_KEY` + `LLAMA_MODEL` + `LLAMA_API_URL`)
-    - If you only supply AWS credentials, they will be used. If you supply LLAMA credentials they will be used as a
-      fallback (So you do only need to supply one set of credentials for the system to work
+2. Make sure to supply values for at least one AI-Model (e.g. AWS) and define the respective model names (`MODEL_NAME`, `SPLITTING_MODEL`, `SLIDESGEN_MODEL`)
+   1. How to get AWS Keys?
+      1. You need an AWS Hackathon Account
+      2. Go to https://slalom-hackathon.awsapps.com/start/#/?tab=accounts
+      3. Go to slalom_IsbUsersPS
+      4. ...
 3. You can overwrite the global `.env` file values with service specific `.env` files
 
 #### 1. Install Python 3.13.7 using pyenv
