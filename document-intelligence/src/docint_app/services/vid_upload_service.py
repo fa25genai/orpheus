@@ -9,8 +9,10 @@ from datetime import datetime
 from pathlib import Path
 from threading import Lock
 from typing import Any, Optional, Tuple, Union
+
 from pydantic import StrictBytes, StrictStr
-from docint_app.services.ingestion_service import IngestionService 
+
+from docint_app.services.ingestion_service import IngestionService
 from docint_app.services.transcribe_video_service import AzureVideoTranscriberService, get_transcriber_service
 
 # --- Helper for thread-safe printing ---
