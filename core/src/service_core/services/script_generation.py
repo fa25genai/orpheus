@@ -14,6 +14,8 @@ Output format:
 """
 
 import json
+import re
+import os
 
 # -----------------------------
 # JSON helpers
@@ -123,32 +125,38 @@ def generate_script_llm(
     }}
     """
     max_retries = 3
+
+    def extract_json(text):
+        # Remove code block markers and stray text
+        text = re.sub(r"^```json|```$", "", text, flags=re.MULTILINE).strip()
+        # Find first { ... } block
+        match = re.search(r"{.*}", text, re.DOTALL)
+        if match:
+            return match.group(0)
+        return text
+
     for attempt in range(max_retries):
         try:
             raw_message = ask_llm(prompt)
-
             raw: str = str(raw_message)
             success, result = try_parse_json(raw)
 
-            # print(f"\nBreak point (attempt {attempt + 1}): {raw}")
-
             if not success:
-                # Clean the response: remove markdown and trim whitespace
-                if "```json" in raw:
-                    raw = raw.split("```json")[1].split("```")[0]
-                elif "```" in raw:
-                    raw = raw.split("```")[1].split("```")[0]
-
-                raw = raw.strip()
-
-                # Try to parse JSON
-                success, result = try_parse_json(raw)
+                # Try to extract JSON from messy output
+                cleaned = extract_json(raw)
+                success, result = try_parse_json(cleaned)
             if success:
                 print(json.dumps(result, indent=2, ensure_ascii=False))
                 return LectureScriptWithReducedAssets(**result)
 
-            # If it didn't work, this will raise JSONDecodeError and trigger retry
-            # This is useful for debugging the raw output on failure.
+            # If it didn't work, log the raw output for debugging
+            log_dir = "llm_failed_outputs"
+            os.makedirs(log_dir, exist_ok=True)
+            log_path = os.path.join(log_dir, f"failed_output_attempt_{attempt+1}.txt")
+            with open(log_path, "w", encoding="utf-8") as f:
+                f.write(raw)
+
+            # This will raise JSONDecodeError and trigger retry
             json.loads(raw)
 
         except json.JSONDecodeError as e:
