@@ -87,12 +87,12 @@ app = FastAPI(
 
 
 def generate_audio(
-    voiceTrack: str,
-    *,
-    user_profile: Optional[UserProfile] = None,
-    tmp_dir: Path,
-    reference_voice_path: Path,
-    promptId: str,
+        voiceTrack: str,
+        *,
+        user_profile: Optional[UserProfile] = None,
+        tmp_dir: Path,
+        reference_voice_path: Path,
+        promptId: str,
 ) -> str:
     """
     Create per-slide audio files from text using Chatterbox TTS
@@ -151,10 +151,10 @@ def health():
 
 @app.post("/v1/audio/generate")
 async def generate_audio_endpoint(
-    voice_file: UploadFile = File(..., description="Reference voice MP3 (raw file, not base64)"),
-    voiceTrack: Optional[str] = Form(None, description="Single slide text"),
-    debug: str = Form("not debug", description="is debug?"),
-    promptId: str = Form(None, description="Prompt ID"),
+        voice_file: UploadFile = File(..., description="Reference voice MP3 (raw file, not base64)"),
+        voiceTrack: Optional[str] = Form(None, description="Single slide text"),
+        debug: str = Form("not debug", description="is debug?"),
+        promptId: str = Form(None, description="Prompt ID"),
 ):
     """
     Accepts multipart/form-data:

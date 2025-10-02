@@ -138,7 +138,7 @@ def generate_video(
             f"[generate_video] Source image not found: {source_path}, using fallback sample",
             flush=True,
         )
-        source_path = "/app/database/avatar_sample/krusche_image.png"
+        source_path = "/app/database/avatar_sample/krusche_image_2.png"
     if not Path(source_path).is_file():
         logger.error(f"[generate_video] Source image not found: {source_path}")
         print(f"[generate_video] Source image not found: {source_path}", flush=True)
