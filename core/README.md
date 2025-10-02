@@ -20,8 +20,8 @@ This service is the core backend component responsible for orchestrating the AI-
 ### Currently Used Frameworks
 
 - [Langchain](https://www.langchain.com/) (so we can exchange the models underneath) <br>
-  <i>We are using it more like a library right now, we only use it to instantiate the connector to the LLM</i>
-- [Amazon Nova Pro](https://eu-central-1.console.aws.amazon.com/bedrock/home?region=eu-central-1#/inference-profiles/eu.amazon.nova-pro-v1:0) (Using langchain_aws, Ollama, and Gemini are also implemented → See /helpers/shared_llm.py)
+  - We are using it more like a library right now, we only use it to instantiate the connector to the LLM
+- [Amazon Nova Pro](https://eu-central-1.console.aws.amazon.com/bedrock/home?region=eu-central-1#/inference-profiles/eu.amazon.nova-pro-v1:0) (Using langchain_aws, Ollama, and Gemini are also implemented → See [/helpers/shared_llm.py](./src/service_core/services/llm_chain/shared_llm.py))
 - [Docker](https://www.docker.com/) for Infrastructure
 - [OpenAPI](https://www.openapis.org/) specification for endpoints (and generating code from it)
   [openapi-generator](https://formulae.brew.sh/formula/openapi-generator) 7.15.0
@@ -29,11 +29,15 @@ This service is the core backend component responsible for orchestrating the AI-
 
 ### Good/Bad Experiences
 
-- AWS API key expires every hour (we are only using it because it is much faster than the Ollama instance)
-- Ollama is responding with good answers but slow
-- GPT5 gives better script and voice tracks, but it takes too much time
-- follows structured output (gives formal correct structured output, so no JSON parsing that could yield mistakes is required)
+- [AWS API key](https://eu-central-1.console.aws.amazon.com/bedrock/home?region=eu-central-1#/api-keys/long-term/create) expires every hour with our current hackathon licenses <br> 
+  - We are using AWS models because they are much faster than the Ollama instance
+  - We often ran into rate limits as we shared the keys with 3-5 people who were developing and testing the software
+  - We were only able to generate short-term keys and no long-term keys.
+- [Ollama](https://ollama.com/) is responding with good answers but slow
+- [GPT5](https://platform.openai.com/docs/guides/latest-model) gives better script and voice tracks, but it takes too much time
+   - follows structured output (gives formal correct structured output, so no JSON parsing that could yield mistakes is required)
 - Response parsing has to be configured based on the LLM model used
+- Huge docker images that take O(10 minutes) to build
 - Smaller AWS model (Nova Lite and Nova Micro) is not able to find the connection between the retrieved content and the user query
 
 ## Prerequisites
