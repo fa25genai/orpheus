@@ -6,21 +6,21 @@ expressive narration, visual presence, and dynamic content to create engaging, p
 ## Table of Contents
 
 - [Architecture](#architecture)
-  - [Service Components](#service-components) 
-  - [API Interface Documentation](#api-interface-documentation)
+    - [Service Components](#service-components)
+    - [API Interface Documentation](#api-interface-documentation)
 - [Getting Started](#getting-started)
-  - [User Guide](#user-guide)
-    - [Lecturer View](#lecturer-view)
-    - [Student View](#student-view)
-  - [Development Setup](#development-setup)
-    - [1. Install Python 3.13.7 using pyenv](#1-install-python-31317-using-pyenv)
-      - [Linux (Debian/Ubuntu)](#linux-debianubuntu)
-      - [macOS](#macos)
-      - [Windows (PowerShell, run as Administrator)](#windows-powershell-run-as-administrator)
-    - [2. Install Poetry 2.2.1](#2-install-poetry-221)
-      - [Linux / macOS](#linux--macos)
-      - [Windows (PowerShell)](#windows-powershell)
-  - [Deployment](#deployment)
+    - [User Guide](#user-guide)
+        - [Lecturer View](#lecturer-view)
+        - [Student View](#student-view)
+    - [Development Setup](#development-setup)
+        - [1. Install Python 3.13.7 using pyenv](#1-install-python-31317-using-pyenv)
+            - [Linux (Debian/Ubuntu)](#linux-debianubuntu)
+            - [macOS](#macos)
+            - [Windows (PowerShell, run as Administrator)](#windows-powershell-run-as-administrator)
+        - [2. Install Poetry 2.2.1](#2-install-poetry-221)
+            - [Linux / macOS](#linux--macos)
+            - [Windows (PowerShell)](#windows-powershell)
+    - [Deployment](#deployment)
 
 ## Architecture
 
@@ -37,16 +37,18 @@ Once you edited the diagram, make sure to export it as svg to replace the existi
 
 ### Service Components
 
-The Orpheus system is composed of multiple specialized services, each handling different aspects of the lecture generation pipeline. Below you can find links to the technology-specific documentation and implementation details for each service component.
+The Orpheus system is composed of multiple specialized services, each handling different aspects of the lecture
+generation pipeline. Below you can find links to the technology-specific documentation and implementation details for
+each service component.
 
-| Service | Documentation |
-|---------|---------------|
-| **Avatar Service** | [orpheus/avatar](https://github.com/fa25genai/orpheus/tree/develop/avatar) |
-| **Core Service** | [orpheus/core](https://github.com/fa25genai/orpheus/tree/develop/core) |
+| Service                           | Documentation                                                                             |
+|-----------------------------------|-------------------------------------------------------------------------------------------|
+| **Avatar Service**                | [orpheus/avatar](https://github.com/fa25genai/orpheus/tree/develop/avatar)                |
+| **Core Service**                  | [orpheus/core](https://github.com/fa25genai/orpheus/tree/develop/core)                    |
 | **Document Intelligence Service** | [orpheus/docint](https://github.com/fa25genai/orpheus/tree/develop/document-intelligence) |
-| **Slides Service** | [orpheus/slides](https://github.com/fa25genai/orpheus/tree/develop/slides) |
-| **Status Service** | [orpheus/status](https://github.com/fa25genai/orpheus/tree/develop/status) |
-| **User Interface** | [orpheus/ui](https://github.com/fa25genai/orpheus/tree/develop/ui) |
+| **Slides Service**                | [orpheus/slides](https://github.com/fa25genai/orpheus/tree/develop/slides)                |
+| **Status Service**                | [orpheus/status](https://github.com/fa25genai/orpheus/tree/develop/status)                |
+| **User Interface**                | [orpheus/ui](https://github.com/fa25genai/orpheus/tree/develop/ui)                        |
 
 <!--
 TODOS
@@ -159,6 +161,20 @@ Similarly, three voice samples should be uploaded, aligned with the same lecture
 
 ### Development Setup
 
+#### Environment Variables
+
+1. Add a `.env` file in the root directory
+    ```bash
+    cp exampleEnv .env
+    ```
+2. Make sure to supply values for at least one AI-Model (e.g. AWS) and define the respective model names (`MODEL_NAME`, `SPLITTING_MODEL`, `SLIDESGEN_MODEL`)
+   1. How to get AWS Keys?
+      1. You need an AWS Hackathon Account
+      2. Go to https://slalom-hackathon.awsapps.com/start/#/?tab=accounts
+      3. Go to slalom_IsbUsersPS
+      4. ...
+3. You can overwrite the global `.env` file values with service specific `.env` files
+
 #### 1. Install Python 3.13.7 using pyenv
 
 The project is based on python 3.13.7.
@@ -247,6 +263,39 @@ Expected output: Python 3.13.7
     ```powershell
     Invoke-WebRequest -UseBasicParsing -Uri "https://raw.githubusercontent.com/pyenv-win/pyenv-win/master/pyenv-win/install-pyenv-win.ps1" -OutFile "./install-pyenv-win.ps1"; &"./install-pyenv-win.ps1"; Remove-Item "./install-pyenv-win.ps1"
     ```
+<details>
+<summary>Troubleshooting Common Installation Issues</summary>
+
+### 1. Script Execution is Disabled
+-   **Issue:** You receive an error in PowerShell stating `...cannot be loaded because running scripts is disabled on this system.`
+-   **What to do:** This is due to PowerShell's Execution Policy. Run PowerShell as **Administrator** and execute the following command to allow the script to run for the current session, then try the installation command again.
+    ```powershell
+    Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process
+    ```
+
+### 2. `pyenv` Command Not Found After Installation
+-   **Issue:** After the installer finishes, opening a new terminal and typing `pyenv` results in a `command not found` error.
+-   **What to do:** The installer couldn't modify your User `PATH` environment variable correctly, or your terminal session needs to be refreshed.
+    1.  **Restart your terminal:** Close and reopen PowerShell/CMD completely.
+    2.  **Restart your computer:** A full restart will ensure environment variables are reloaded.
+    3.  **Manually add to PATH:** If it still fails, you must add the following two paths to your User `PATH` environment variables.
+        - `%USERPROFILE%\.pyenv\pyenv-win\bin`
+        - `%USERPROFILE%\.pyenv\pyenv-win\shims`
+
+### 3. System Python Overrides `pyenv` Version
+-   **Issue:** You've set a Python version with `pyenv global` or `pyenv local`, but running `python --version` shows your old system version (or opens the Microsoft Store).
+-   **What to do:** This is a `PATH` priority issue.
+    1.  **Disable Windows App Execution Aliases:** Go to `Start > Manage App Execution Aliases` and turn **off** the aliases for `python.exe` and `python3.exe`. This is the most common cause.
+    2.  **Check your `PATH` order:** Ensure the `pyenv` `shims` and `bin` paths appear *before* any other Python installation paths in your environment variables.
+
+### 4. Shims Are Not Working for New Packages
+-   **Issue:** You install a package with a command-line tool (like `pipx` or `poetry`) using `pip`, but the command isn't available in your terminal.
+-   **What to do:** You need to rebuild the `pyenv` shims so it's aware of the new executable.
+    ```powershell
+    pyenv rehash
+    ```
+
+</details>
 2. Add pyenv to your PowerShell session
    The following lines are automatically added to your $PROFILE.
    You may need to run them manually for the current session or restart your terminal.
@@ -338,4 +387,9 @@ We use [Poetry](https://python-poetry.org/) as our dependency and environment ma
 
 ### Deployment
 
-TODO - add docker startup commands and instructions
+Run this command in your root directory to build all services, start them up under the project name orpheus, and pull
+any necessary images:
+
+```bash
+docker compose -p orpheus up --build
+```
