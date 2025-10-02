@@ -39,56 +39,88 @@ def loop() -> None:
         JOBS[pid] = job
 
         audio_done = False
+        audio_failure_reported = False
+        last_exception: Exception | None = None
+        last_failure_message: str | None = None
+        max_attempts = 3
+
         try:
-            with SessionLocal() as db:
-                update_avatar_generation_step_status(pid, task.slideNo, audio="IN_PROGRESS")
+            update_avatar_generation_step_status(pid, task.slideNo, audio="IN_PROGRESS")
 
-                aurl = generate_audio(
-                    voiceTrack=task.text,
-                    course_id=task.courseId,
-                    prompt_id=pid,
-                    user_profile=task.userProfile,
-                    audio_counter=task.slideNo,
-                    db=db,
-                    slot=getattr(task, "slot", "default"),
-                )
-
-                if aurl:
-                    update_avatar_generation_step_status(pid, task.slideNo, audio="DONE")
-                    audio_done = True
-
-                    update_avatar_generation_step_status(pid, task.slideNo, video="IN_PROGRESS")
-
-                    source_path = None
-                    try:
-                        img = avatar_queries.get_latest_image_for_course_slot(
-                            db,
+            for attempt in range(1, max_attempts + 1):
+                try:
+                    with SessionLocal() as db:
+                        aurl = generate_audio(
+                            voiceTrack=task.text,
                             course_id=task.courseId,
+                            prompt_id=pid,
+                            user_profile=task.userProfile,
+                            audio_counter=task.slideNo,
+                            db=db,
                             slot=getattr(task, "slot", "default"),
                         )
-                        source_path = img.file_path
-                    except Exception as e:
-                        print(f"[audio-worker] no image for course/slot: {e!r}")
+                        if aurl:
+                            source_path = None
+                            try:
+                                img = avatar_queries.get_latest_image_for_course_slot(
+                                    db,
+                                    course_id=task.courseId,
+                                    slot=getattr(task, "slot", "default"),
+                                )
+                                source_path = img.file_path
+                            except Exception as image_exc:
+                                print(f"[audio-worker] no image for course/slot: {image_exc!r}")
 
-                    from app.schemas import VideoTask
+                            from app.schemas import VideoTask
 
-                    VIDEO_QUEUE.put(
-                        VideoTask(
-                            promptId=pid,
-                            courseId=task.courseId,
-                            userProfile=task.userProfile,
-                            slideNo=task.slideNo,
-                            audioPath=aurl,
-                            slot=getattr(task, "slot", "default"),
-                            sourceImagePath=source_path,
+                            VIDEO_QUEUE.put(
+                                VideoTask(
+                                    promptId=pid,
+                                    courseId=task.courseId,
+                                    userProfile=task.userProfile,
+                                    slideNo=task.slideNo,
+                                    audioPath=aurl,
+                                    slot=getattr(task, "slot", "default"),
+                                    sourceImagePath=source_path,
+                                )
+                            )
+                            update_avatar_generation_step_status(pid, task.slideNo, audio="DONE")
+                            audio_done = True
+                            update_avatar_generation_step_status(pid, task.slideNo, video="IN_PROGRESS")
+                            break
+
+                        last_failure_message = "generate_audio returned no audio path"
+                        print(
+                            f"[audio-worker] audio attempt {attempt}/{max_attempts} returned no audio for slide {task.slideNo} ({pid})"
                         )
+
+                except Exception as audio_exc:
+                    last_exception = audio_exc
+                    last_failure_message = str(audio_exc)
+                    print(
+                        f"[audio-worker] audio attempt {attempt}/{max_attempts} failed for slide {task.slideNo} ({pid}): {audio_exc!r}"
                     )
-                else:
-                    update_avatar_generation_step_status(pid, task.slideNo, audio="FAILED")
 
-        except Exception as e:
+                if audio_done:
+                    break
+
+                if attempt < max_attempts:
+                    print(
+                        f"[audio-worker] retrying audio generation for slide {task.slideNo} ({pid}) after failure"
+                    )
+
             if not audio_done:
                 update_avatar_generation_step_status(pid, task.slideNo, audio="FAILED")
+                audio_failure_reported = True
+                message = last_failure_message or "Audio generation failed"
+                if last_exception is not None:
+                    raise RuntimeError(message) from last_exception
+                raise RuntimeError(message)
+
+        except Exception as e:
+            if not audio_done and not audio_failure_reported:
+                update_avatar_generation_step_status(pid, task.slideNo, audio="FAILED")
+                audio_failure_reported = True
             print(f"[audio-worker] error on slide {task.slideNo} for {pid}: {e!r}")
             job = JOBS.get(pid)
             if job:
