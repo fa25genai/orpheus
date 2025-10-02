@@ -41,7 +41,7 @@ STATUS_API_URL = "http://status-service:19910"
 # AVATAR_API_URL = "http://localhost:9000"
 # STATUS_API_URL = "http://localhost:19910"
 
-DEBUG = int(os.getenv("ORPHEUS_DEBUG", "0"))  # DEBUG enabled by default
+DEBUG = int(os.getenv("ORPHEUS_DEBUG", "0"))  # DEBUG disabled by default
 
 logger = logging.getLogger("Client Handler")
 
