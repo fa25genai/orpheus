@@ -15,7 +15,6 @@ Output format:
 
 import json
 import re
-import os
 
 # -----------------------------
 # JSON helpers
