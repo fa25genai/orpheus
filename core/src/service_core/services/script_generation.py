@@ -130,7 +130,7 @@ def generate_script_llm(
         # Remove code block markers and stray text
         text = re.sub(r"^```json|```$", "", text, flags=re.MULTILINE).strip()
         # Find first { ... } block
-        match = re.search(r"{.*}", text, re.DOTALL)
+        match = re.search(r"{.*?}", text, re.DOTALL)
         if match:
             return match.group(0)
         return text
@@ -150,7 +150,7 @@ def generate_script_llm(
                 return LectureScriptWithReducedAssets(**result)
 
             # If it didn't work, log the raw output for debugging
-            log_dir = "llm_failed_outputs"
+            log_dir = os.getenv("LLM_FAILED_LOG_DIR", os.path.join(os.getcwd(), "logs", "llm_failed_outputs"))
             os.makedirs(log_dir, exist_ok=True)
             log_path = os.path.join(log_dir, f"failed_output_attempt_{attempt+1}.txt")
             with open(log_path, "w", encoding="utf-8") as f:
