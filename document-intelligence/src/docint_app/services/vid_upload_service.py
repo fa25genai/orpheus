@@ -9,28 +9,17 @@ from datetime import datetime
 from pathlib import Path
 from threading import Lock
 from typing import Any, Optional, Tuple, Union
-
 from pydantic import StrictBytes, StrictStr
-
-from docint_app.services.ingestion_service import IngestionService  # Annahme: Der existierende IngestionService
-
-# --- Importe der Kernkomponenten (Annahme basierend auf Ihrem Projektstruktur) ---
-# Import des Transkriptions- und Verarbeitungs-Service aus der vorherigen Antwort
+from docint_app.services.ingestion_service import IngestionService 
 from docint_app.services.transcribe_video_service import AzureVideoTranscriberService, get_transcriber_service
 
-# --- Hilfsfunktion (zur thread-sicheren Ausgabe, beibehalten) ---
+# --- Helper for thread-safe printing ---
 print_lock = Lock()
 def safe_print(*args: Any, **kwargs: Any) -> None:
-    """Thread-sichere Ausgabe."""
+    """Thread-safe print function."""
     with print_lock:
         print(*args, **kwargs)
 # --------------------------------------------------------------------------------
-
-
-# 
-
-## II. Video Upload Service Implementierung
-
 
 class VideoUploadService:
     def __init__(self, base_url: str = "http://docint-weaviate:28947", storage_dir: str = "uploaded_videos"):
@@ -39,18 +28,16 @@ class VideoUploadService:
 
         Args:
             base_url: Weaviate database URL
-            storage_dir: Directory to store uploaded videos (optional, da der ProcessingService
-                         die temporäre Speicherung übernimmt, aber für persistente Speicherung nützlich).
+            storage_dir: Directory to store uploaded videos (optional).
         """
         base_url = os.getenv("WEAVIATE_URL", base_url)
         safe_print(f"Initializing VideoUploadService with base_url: {base_url}")
         
         try:
-            # Nutzt den Service, der die Azure-Transkriptionslogik kapselt
             self.video_processor: AzureVideoTranscriberService = get_transcriber_service()
             self.ingestion_service = IngestionService(base_url=base_url)
             
-            # Persistenter Speicherort (optional, nur für langfristige Ablage des Originals)
+        
             self.storage_dir = Path(storage_dir)
             self.storage_dir.mkdir(exist_ok=True)
             
@@ -71,21 +58,21 @@ class VideoUploadService:
         Returns:
             Tuple of (saved_file_path, document_id)
         """
-        # Erstelle Zeitstempel und bereinige den Dateinamen
+        # create timestamp
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         file_suffix = Path(original_filename).suffix or ".mp4"
         base_name = Path(original_filename).stem or "video"
 
-        # Erstelle Kursverzeichnis
+        # create course directory if not exists
         course_dir = self.storage_dir / course_id
         course_dir.mkdir(exist_ok=True)
 
-        # Generiere Dokument-ID und Dateiname
+        # generate unique document ID and filename
         document_id = f"{course_id}_{base_name}_{timestamp}"
         filename = f"{document_id}{file_suffix}"
         file_path = course_dir / filename
 
-        # Speichere die Videodatei
+        # save video bytes to file
         with open(file_path, "wb") as f:
             f.write(video_bytes)
 
@@ -113,7 +100,7 @@ class VideoUploadService:
         elif isinstance(body, bytes):
             video_bytes = body
         elif isinstance(body, str):
-            # Annahme: Bei String ist es entweder Base64-kodiert oder der Rohinhalt (encode)
+            # Assume base64 or raw string
             try:
                 import base64
                 video_bytes = base64.b64decode(body)
@@ -145,32 +132,16 @@ class VideoUploadService:
             raise ValueError("course_id must be a non-empty string")
         
         try:
-            # 1. Video-Bytes und Dateiname extrahieren
+            # 1. extract video bytes and save video to persistent storage
             video_bytes, original_filename = self._extract_video_info(body)
             video_path, document_id = self._save_video(course_id, original_filename, video_bytes)
             print(f"video saved with ID: {document_id}")
-            # 2. Transkription durchführen (nutzt den VideoProcessingService)
-            # Hinweis: Der VideoProcessingService speichert die Videodaten temporär 
-            # für FFmpeg und Azure, um die Transkription zu ermöglichen.
+            # 2. Transcribe video to text
             print(video_path)
             transcription = get_transcriber_service().transcribe_video_parallel(video_path=video_path)
-            #print(f"TRANSCRIPTION DONE: {transcription}")
-        
             
-            # 4. Ingest in die Vektordatenbank
-            # Da es ein Video ist, injizieren wir das Transkript als einen Textblock.
+            # 3. Ingest in the vector database
             safe_print("Ingesting data into vector database...")
-            
-            # Metadaten für das Video
-            """video_metadata = { # dont need metadata for now -- delete everything that is not used
-                "document_type": "Video",
-                "original_filename": original_filename,
-                "storage_path": video_path,
-                "duration_seconds": self.video_processor.transcriber._get_video_duration(video_path) # Dauer abrufen
-            }"""
-
-            # Verwende den Ingestion Service, um das Transkript zu speichern
-            # Wir behandeln das gesamte Transkript als EINEN grossen Text-Slide/Dokument
             await self.ingestion_service.ingest_video_transcription(
                 course_id=course_id,
                 video_id=document_id,
@@ -185,7 +156,7 @@ class VideoUploadService:
             raise
 
 
-# --- Factory-Funktion ---
+# --- Factory-function ---
 _video_instance: Optional[VideoUploadService] = None
 
 def get_upload_video_service() -> VideoUploadService:

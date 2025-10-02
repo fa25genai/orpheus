@@ -59,35 +59,35 @@ class PDFImageExtractorService:
         except Exception as e:
             raise Exception(f"Failed to open PDF: {e}")
         result = []
-        print(f"Öffne PDF: {pdf_path} | Seiten: {len(pdf)}")
+        print(f"Opening PDF: {pdf_path} | Pages: {len(pdf)}")
         try:
             for page_number, page in enumerate(pdf, start=1):
-                print(f"\n[Seite {page_number}] Verarbeitung gestartet...")
+                print(f"\n[Page {page_number}] processing started...")
                 page_items = []
                 images = page.get_images(full=True)
-                print(f"  Gefundene Bilder: {len(images)}")
+                print(f"  Found images: {len(images)}")
                 for img_index, (xref, smask, *_) in enumerate(images, start=1):
                     if smask:  # Skip soft masks
-                        print(f"    [Bild {img_index}] Soft-Maske erkannt → übersprungen")
+                        print(f"    [Image {img_index}] soft-mask recognized → skipped")
                         continue
                     try:
                         info = pdf.extract_image(xref)
                         img_bytes = info["image"]
                         if self._is_black_square(img_bytes):
-                            print(f"    [Bild {img_index}] Schwarzes Kästchen erkannt → übersprungen")
+                            print(f"    [Image {img_index}] black box detected → skipped")
                             continue
-                        print(f"    [Bild {img_index}] extrahiert (Größe: {len(img_bytes)} Bytes)")
+                        print(f"    [Image {img_index}] extracted (Size: {len(img_bytes)} bytes)")
                         page_items.append({"data": f"data:image/{info['ext']};base64,{base64.b64encode(img_bytes).decode('utf-8')}"})
                     except Exception as e:
-                        print(f"    [Bild {img_index}] Fehler beim Extrahieren: {e}")
+                        print(f"    [Image {img_index}] error during extraction: {e}")
                         continue
                 if not page_items:
-                    print(f"  Keine gültigen Bilder auf Seite {page_number}")
+                    print(f"  No valid images on page {page_number}")
                 result.append(page_items)
         finally:
             pdf.close()
         total_images = sum(len(p) for p in result)
-        print(f"\nExtraktion abgeschlossen. Seiten: {len(result)} | Bilder insgesamt: {total_images}")
+        print(f"\nExtraction done. Pages: {len(result)} | Images overall: {total_images}")
         return result
 
 

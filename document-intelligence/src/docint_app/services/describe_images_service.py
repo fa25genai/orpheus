@@ -80,7 +80,7 @@ class ImageDescriptionService:
         out: List[List[Dict[str, str]]] = []
         for page_idx, page_items in enumerate(images_grouped, start=1):
             if not page_items:
-                print(f"[Seite {page_idx}] (keine Bilder)")
+                print(f"[Page {page_idx}] (no images found)")
                 out.append([])
                 continue
 
@@ -89,12 +89,12 @@ class ImageDescriptionService:
                 caption = self._get_image_caption(item["data"])
                 page_out.append({"data": item["data"], "caption": caption})
                 # Print caption directly
-                cap = caption or "<leer oder blockiert>"
-                print(f"[Seite {page_idx}, Bild {img_idx}] {cap}")
+                cap = caption or "<empty or blocked>"
+                print(f"[Page {page_idx}, image {img_idx}] {cap}")
             out.append(page_out)
 
         total = sum(len(p) for p in out)
-        print(f"Seiten: {len(out)} | Bilder: {total}")
+        print(f"Pages: {len(out)} | images: {total}")
 
         return out
 
