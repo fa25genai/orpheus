@@ -90,7 +90,20 @@ gather info about not yet exposed APIs (Slide Push Service, Video Push Service, 
 
 #### Lecturer View
 
-tbd
+The lecturer should set up their course by uploading an avatar image for the personalized talking head:
+There are three different avatar uploads necessary
+- Upload an avatar for the beginning of the lecture, this is relevant for the introduction. It's recommended to upload a happy face.
+- Upload an avatar for the middle of the lecture, this is relevant for the lecture content itself. It's recommended to upload a neutral face.
+- Upload an avatar for the end of the lecture, this is relevant for the conclusion. It's recommended to upload a happy face.
+
+Furthermore, the lecturer should upload a voice sample. There also three voice samples necessary with the exact same usage as the avatar.
+
+Lastly, the lecturer should upload their course slides and / or already recorded lecture videos.
+This information is 
+
+
+The lecturer is responsible for uploading lecture slides and lecture videos
+
 
 #### Student View
 
