@@ -33,6 +33,7 @@ They are available in different branches (but where abondend through Ferienakade
 - Azure OpenAI with structured output through instructor (ONLY WAY TO ENSURE CORRECT ANSWER)(no parsing needed) :[baeurle/aws-llm-with-structured-output](https://github.com/fa25genai/orpheus/tree/baeurle/aws-llm-with-structured-output)
 
 If you have questions about these implementation (and of course other core stuff), reach out to Lukas Bäurle [st187218@stud.uni-stuttgart.de](mailto://st187218@stud.uni-stuttgart.de)
+
 ### Good/Bad Experiences
 
 - [AWS API key](https://eu-central-1.console.aws.amazon.com/bedrock/home?region=eu-central-1#/api-keys/long-term/create) expires every hour with our current hackathon licenses <br>
