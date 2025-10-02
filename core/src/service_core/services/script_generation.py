@@ -14,6 +14,7 @@ Output format:
 """
 
 import json
+import re
 
 # -----------------------------
 # JSON helpers
@@ -123,26 +124,26 @@ def generate_script_llm(
     }}
     """
     max_retries = 3
+
+    def extract_json(text: str) -> str:
+        # Remove code block markers and stray text
+        text = re.sub(r"^```json|```$", "", text, flags=re.MULTILINE).strip()
+        # Find first { ... } block
+        match = re.search(r"{.*?}", text, re.DOTALL)
+        if match:
+            return match.group(0)
+        return text
+
     for attempt in range(max_retries):
         try:
             raw_message = ask_llm(prompt)
-
             raw: str = str(raw_message)
             success, result = try_parse_json(raw)
 
-            # print(f"\nBreak point (attempt {attempt + 1}): {raw}")
-
             if not success:
-                # Clean the response: remove markdown and trim whitespace
-                if "```json" in raw:
-                    raw = raw.split("```json")[1].split("```")[0]
-                elif "```" in raw:
-                    raw = raw.split("```")[1].split("```")[0]
-
-                raw = raw.strip()
-
-                # Try to parse JSON
-                success, result = try_parse_json(raw)
+                # Try to extract JSON from messy output
+                cleaned: str = extract_json(raw)
+                success, result = try_parse_json(cleaned)
             if success:
                 print(json.dumps(result, indent=2, ensure_ascii=False))
                 return LectureScriptWithReducedAssets(**result)
