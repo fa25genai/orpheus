@@ -106,7 +106,7 @@ def generate_script_llm(
         * Code examples: If appropriate to the topic, you may provide code examples. Prefer to use existing examples from the content over creating your own. Your examples must be working and valid code. You always have to specify the language for an example.\n
         * Image Integration: Strategically identify points in the lecture where a given image would significantly enhance understanding.\n
         * You MUST ONLY use images from the given content. Do NOT include new image names. If there is no fitting image provided, try to use text instead.\n
-        * In the lectureScript, reference the image with the filename (e.g., [Here you can see filename_1.jpg])\n
+        * In the lectureScript, reference the image with the filename (e.g., [filename_1.jpg])\n
         * For each referenced image, add a corresponding object to the Images list in the final JSON output.\n
         * Image filenames need to match the given namens.\n\n
         * Coherence: The final lectureScript must flow logically and be structured as a single, cohesive piece, not a list of disconnected facts.\n\n
