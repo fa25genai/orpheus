@@ -1,5 +1,8 @@
 # Orpheus **Status Service**
 
+Generation Status management service for **Orpheus**.
+This directory contains the project code for the **Generation Status Service**.
+
 ## Table of Contents
 
 - [Technology Stack](#technology-stack)
@@ -13,32 +16,36 @@
 
 ### Currently Used Frameworks
 
-TODO - Document the frameworks currently in use
+For Webservice serving: [Fastapi](https://fastapi.tiangolo.com/)
+OpenAPI Generator
+For Deployment: [Docker](https://docker.com)
+Python + Poetry as build system
 
 ### Good/Bad Experiences
 
-TODO - Document experiences, lessons learned, and recommendations
+**Good**:
+ - Configuration via environment variables in Docker working great
+ - Typed development in python allowing a better development experience
+ - OpenAPI as format for communication and as basis for code generation
+
+**Bad**:
+ - Python `asyncio.Lock` not being threadsafe &rArr; Use `threading.Lock` instead
 
 ---
 
 ## Overview
 
-tbd
+The **Generation Status Service** provides endpoints for the following operations:
+  - Updating a status for the lecture generated for a specific prompt
+  - Querying the current status of a generation process
 
 ---
 
 ## API-Usage
 
-The intended API-Usage is to call the `/v1/slides/generate` endpoint. This will start the slide generation.
-After the operation returns, the `/v1/slides/{promptId}/status` endpoint may be used to poll the generation status.
-Upon completion, it will also provide the URL to access the content.
-``
+The intended API-Usage is to call the `/v1/status/{promptId}/update` endpoint to apply a status patch.
+To retrieve the current status either call the `/v1/status/{promptId}` endpoint to get the current status **or** open a websocket connection to `/v1/status/{promptId}/live` to receive continuous updates.
 
 ## Configuration
 
-The following configuration options are available (using environment variables)
-
-| Environment Variable       | Description                                                                                                         | Default value                  |
-|----------------------------|---------------------------------------------------------------------------------------------------------------------|--------------------------------|
-| `SLIDES_DELIVERY_BASE_URL` | Base URL of the shared directory on the **Generated Slides Service**                                                | `http://slides-delivery:30608` |
-| `SLIDE_STORAGE_BASE_PATH`  | Local file path where the files are stored. This is the path that has to be mounted to **Generated Slides Service** | `/etc/orpheus/slides/storage`  |
+There are no supported configurations besides the global **`ORPHEUS_VERBOSE`**.
