@@ -122,7 +122,7 @@ async def summarize_and_send(
             return
         logger.info("Generating summary for prompt `{prompt_id}`")
         summary = summarize_content_with_llama(content, user_prompt)
-        logger.debug(f"Summary for prompt `{prompt_id}` (\"{user_prompt}\"): {summary}")
+        logger.debug(f'Summary for prompt `{prompt_id}` ("{user_prompt}\"): {summary}')
         await send_summary_to_endpoint(prompt_id, summary, client)
     except Exception as e:
         logger.error(f"Error summarizing content for prompt {prompt_id}", exc_info=e)
