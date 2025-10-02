@@ -94,7 +94,8 @@ tbd
 
 #### Student View
 
-tbd
+1. Choose level of expertise:
+![alt text](Snapshot_2025-10-02_16-41-23.png)
 
 ### Development Setup
 
