@@ -91,7 +91,7 @@ class VideoUploadService:
         Returns:
             Tuple of (video_bytes, original_filename)
         """
-        original_filename = "upload_default.mp4" # Standardwert
+        original_filename = "upload_default.mp4" 
         video_bytes = b''
         
         if isinstance(body, tuple):
