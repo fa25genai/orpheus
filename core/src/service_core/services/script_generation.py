@@ -156,8 +156,8 @@ def generate_script_llm(
             with open(log_path, "w", encoding="utf-8") as f:
                 f.write(raw)
 
-            # This will raise JSONDecodeError and trigger retry
-            json.loads(raw)
+            # Explicitly raise JSONDecodeError to trigger retry
+            raise json.JSONDecodeError("Failed to parse JSON", raw, 0)
 
         except json.JSONDecodeError as e:
             print(f"JSON parsing error on attempt {attempt + 1}: {e}")
