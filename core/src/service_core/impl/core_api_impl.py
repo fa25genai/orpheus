@@ -9,7 +9,6 @@ from ..app_state import app_state
 from ..models.prompt_request import PromptRequest
 from ..models.prompt_response import PromptResponse
 from ..services.client_handler import process_prompt
-from .tracker import tracker
 
 import logging
 
@@ -35,8 +34,7 @@ class CoreApiImpl(BaseCoreApi):  # type: ignore[no-untyped-call]
                     "User persona must be defined for prompt requests from client."
                 )
 
-            prompt_request.user_persona.id = uuid4()  # TODO: Remove this workaround when client provides user_persona.id (see issue #<issue-number>)
-            tracker.log(f"Initializing CoreThreadPoolExecutor for {prompt_id}")
+            prompt_request.user_persona.id = uuid4()  # TODO: Remove this workaround when client provides user_persona.id
             executor.submit(process_prompt_handler, prompt_id, prompt_request)
 
             return PromptResponse(promptId=prompt_id)
@@ -52,7 +50,6 @@ class CoreApiImpl(BaseCoreApi):  # type: ignore[no-untyped-call]
 def process_prompt_handler(prompt_id: UUID, prompt_request: PromptRequest) -> None:
     try:
         asyncio.run(process_prompt(str(prompt_id), prompt_request))
-        tracker.log(f"Closing CoreThreadPoolExecutor for {prompt_id}")
     except Exception as exception:
         logger.error(
             f"An unexpected error occurred for prompt `{prompt_id}`", exc_info=exception

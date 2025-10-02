@@ -281,12 +281,6 @@ async def generate_voice_scripts(
 
         slide_index = 0
 
-        await update_status(
-            prompt_id,
-            StatusPatch(stepAudioScriptGeneration=StepStatus.DONE),
-            client,
-        )
-
         async for voice_script_payload in narration_stream:
             logger.debug(
                 f"Received narration segment {slide_index}, scheduling avatar task."
@@ -297,6 +291,12 @@ async def generate_voice_scripts(
                 tasks.append(task)
 
             slide_index += 1
+        
+        await update_status(
+            prompt_id,
+            StatusPatch(stepAudioScriptGeneration=StepStatus.DONE),
+            client,
+        )
 
         return tasks
 
