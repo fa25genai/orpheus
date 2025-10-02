@@ -364,6 +364,7 @@ def generate_audio(
                 src_se=source_se,
                 tgt_se=target_se,
                 output_path=str(save_path),
+                tau = 1.0,
                 message="@MyShell",
             )
 
