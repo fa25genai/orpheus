@@ -200,6 +200,39 @@ Expected output: Python 3.13.7
     ```powershell
     Invoke-WebRequest -UseBasicParsing -Uri "https://raw.githubusercontent.com/pyenv-win/pyenv-win/master/pyenv-win/install-pyenv-win.ps1" -OutFile "./install-pyenv-win.ps1"; &"./install-pyenv-win.ps1"; Remove-Item "./install-pyenv-win.ps1"
     ```
+    <details>
+<summary>Troubleshooting Common Installation Issues</summary>
+
+### 1. Script Execution is Disabled
+-   **Issue:** You receive an error in PowerShell stating `...cannot be loaded because running scripts is disabled on this system.`
+-   **What to do:** This is due to PowerShell's Execution Policy. Run PowerShell as **Administrator** and execute the following command to allow the script to run for the current session, then try the installation command again.
+    ```powershell
+    Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process
+    ```
+
+### 2. `pyenv` Command Not Found After Installation
+-   **Issue:** After the installer finishes, opening a new terminal and typing `pyenv` results in a `command not found` error.
+-   **What to do:** The installer couldn't modify your User `PATH` environment variable correctly, or your terminal session needs to be refreshed.
+    1.  **Restart your terminal:** Close and reopen PowerShell/CMD completely.
+    2.  **Restart your computer:** A full restart will ensure environment variables are reloaded.
+    3.  **Manually add to PATH:** If it still fails, you must add the following two paths to your User `PATH` environment variables.
+        - `%USERPROFILE%\.pyenv\pyenv-win\bin`
+        - `%USERPROFILE%\.pyenv\pyenv-win\shims`
+
+### 3. System Python Overrides `pyenv` Version
+-   **Issue:** You've set a Python version with `pyenv global` or `pyenv local`, but running `python --version` shows your old system version (or opens the Microsoft Store).
+-   **What to do:** This is a `PATH` priority issue.
+    1.  **Disable Windows App Execution Aliases:** Go to `Start > Manage App Execution Aliases` and turn **off** the aliases for `python.exe` and `python3.exe`. This is the most common cause.
+    2.  **Check your `PATH` order:** Ensure the `pyenv` `shims` and `bin` paths appear *before* any other Python installation paths in your environment variables.
+
+### 4. Shims Are Not Working for New Packages
+-   **Issue:** You install a package with a command-line tool (like `pipx` or `poetry`) using `pip`, but the command isn't available in your terminal.
+-   **What to do:** You need to rebuild the `pyenv` shims so it's aware of the new executable.
+    ```powershell
+    pyenv rehash
+    ```
+
+</details>
 2. Add pyenv to your PowerShell session
    The following lines are automatically added to your $PROFILE.
    You may need to run them manually for the current session or restart your terminal.
