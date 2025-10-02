@@ -289,7 +289,7 @@ async def generate_voice_scripts(
             logger.debug(
                 f"Received narration segment {slide_index}, scheduling avatar task."
             )
-            logger.debug("narration for slide {}#{}: {}", prompt_id, slide_index, voice_script_payload.voiceTrack)
+            logger.debug("narration for slide %s#%s: %s", prompt_id, slide_index, voice_script_payload.voiceTrack)
 
             task = generate_avatar_video(voice_script_payload, client)
             if task:
@@ -373,7 +373,7 @@ async def process_prompt(prompt_id: str, prompt_request: PromptRequest) -> None:
             slides_data: GenerationAcceptedResponse = await generate_slides(
                 prompt_request, prompt_id, lecture_script, refined_output, client
             )
-            logger.debug("Generated slide pages: {}", slides_data.structure.pages)
+            logger.debug("Generated slide pages: %s", slides_data.structure.pages)
 
             if prompt_request.user_persona is None:
                 logger.error("User persona must be defined for voice scripts.")

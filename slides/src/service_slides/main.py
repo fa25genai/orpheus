@@ -54,6 +54,7 @@ logging.basicConfig(
 )
 logging.getLogger("httpcore").setLevel(logging.WARNING)
 logging.getLogger("asyncio").setLevel(logging.WARNING)
+logging.getLogger("botocore").setLevel(logging.WARNING)
 
 
 app = FastAPI(title="orpheus-service-slides", lifespan=lifespan)
