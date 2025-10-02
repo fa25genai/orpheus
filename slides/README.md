@@ -39,11 +39,13 @@ Python + Poetry as build system
  - `reveal.js` would have been easier to integrate with `Next.js`, but theming was more difficult
 
 **Bad**:
- - Integration of Slidev into Web-Frameworks (tested with Next.js, Microfrontend and Astro.js) being impossible &Rarr; Use of `iframe` necessary
- - Python `asyncio.Lock` not being threadsafe &Rarr; Use `threading.Lock` instead
- - OpenAPI Generator for fastapi not providing access to the `fastapi.Request` object (necessary to get app state) &Rarr; Manual edits in generated files necessary
- - For Postprocessing `poetry` and `npm` are necessary in the same container &Rarr; Huge image, long build times and complex recipe
- - Frequent LLM changes so no satisfying result was achieved
+ - Integration of Slidev into Web-Frameworks (tested with Next.js, Microfrontend and Astro.js) being impossible &rArr; Use of `iframe` necessary
+ - Python `asyncio.Lock` not being threadsafe &rArr; Use `threading.Lock` instead
+ - OpenAPI Generator for fastapi not providing access to the `fastapi.Request` object (necessary to get app state) &rArr; Manual edits in generated files necessary
+ - For Postprocessing `poetry` and `npm` are necessary in the same container &rArr; Huge image, long build times and complex recipe
+ - Frequent LLM changes &rArr; prompt optimization challenging
+ - Slide generation does not provide good error handling when generation of individual slides fail (executed in ThreadExecuter &rArr; no logging in console)
+
 
 ---
 
