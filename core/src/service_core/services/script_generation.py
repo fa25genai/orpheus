@@ -14,6 +14,7 @@ Output format:
 """
 
 import json
+import re
 
 # -----------------------------
 # JSON helpers
@@ -91,7 +92,8 @@ def generate_script_llm(
     prompt = f"""
         You are an expert AI assistant specializing in personalized educational content creation. Your purpose is to transform raw educational material into an engaging and effective lecture script tailored to a specific learner's profile.\n\n
         Your task is to synthesize the provided content into a single, coherent lecture script.
-        This script must be meticulously tailored to the specified learner PERSONA.\n\n
+        This script must be meticulously tailored to the specified learner PERSONA.\n
+        Focus on answering the provided question and only at the end give hints to adjacent topics.\n
         ---\n### INPUTS\n---\n\n1. PERSONA: A JSON object describing the target student.
             \njson\n{persona_str}\n\n\n
         2. RETRIEVED_CONTENT: A string of text containing the raw information for the lecture.\n\n{content_str}\n\n\n
@@ -99,12 +101,13 @@ def generate_script_llm(
         * Persona-Driven Adaptation: You MUST adapt the script based on the PERSONA object:\n
         * Tone & Style: Match the persona's preferred communication style (e.g., formal, conversational, enthusiastic, humorous).\n
         * Complexity & Depth: Adjust the technical jargon, depth of explanation, and complexity of concepts to the persona's knowledgeLevel (e.g., "Beginner", "Intermediate", "Expert").\n
-        * Examples & Analogies: Generate relevant and relatable examples, analogies, or case studies that align with the persona's interests and goals.\n
+        * Examples & Analogies: Use relevant examples from the retrieved content and adapt them to the persona's interests and preferences. You MUST NOT make up examples of your own.\n
         * Language: The entire lecture script MUST be written in the language specified in the persona's language field.\n\n
-        * Image Integration: Strategically identify points in the lecture where a given image would significantly enhance understanding.\n
+        * Code examples: If appropriate to the topic, you may provide code examples. Prefer to use existing examples from the content over creating your own. Your examples must be working and valid code. You always have to specify the language for an example.\n
+        * Image Integration: Strategically identify points in the lecture where a given image would significantly enhance understanding. You MUST ONLY use images from the given content. Do NOT make up images.\n
         * In the lectureScript, reference the image with the filename (e.g., [Here you can see filename_1.jpg])\n
         * For each referenced image, add a corresponding object to the Images list in the final JSON output.\n
-        * Image filenames need to match the given namens.\n\n
+        * Image filenames need to match the given namens. If there is no fitting image provided, try to use text instead.\n\n
         * Coherence: The final lectureScript must flow logically and be structured as a single, cohesive piece, not a list of disconnected facts.\n\n
         ---\n### OUTPUT FORMAT\n---\n\n
         Your response MUST be a single, valid JSON object and nothing else. Do not include any introductory text, explanations, or markdown formatting (like json) around the JSON object.
@@ -123,26 +126,26 @@ def generate_script_llm(
     }}
     """
     max_retries = 3
+
+    def extract_json(text: str) -> str:
+        # Remove code block markers and stray text
+        text = re.sub(r"^```json|```$", "", text, flags=re.MULTILINE).strip()
+        # Find first { ... } block
+        match = re.search(r"{.*?}", text, re.DOTALL)
+        if match:
+            return match.group(0)
+        return text
+
     for attempt in range(max_retries):
         try:
             raw_message = ask_llm(prompt)
-
             raw: str = str(raw_message)
             success, result = try_parse_json(raw)
 
-            # print(f"\nBreak point (attempt {attempt + 1}): {raw}")
-
             if not success:
-                # Clean the response: remove markdown and trim whitespace
-                if "```json" in raw:
-                    raw = raw.split("```json")[1].split("```")[0]
-                elif "```" in raw:
-                    raw = raw.split("```")[1].split("```")[0]
-
-                raw = raw.strip()
-
-                # Try to parse JSON
-                success, result = try_parse_json(raw)
+                # Try to extract JSON from messy output
+                cleaned: str = extract_json(raw)
+                success, result = try_parse_json(cleaned)
             if success:
                 print(json.dumps(result, indent=2, ensure_ascii=False))
                 return LectureScriptWithReducedAssets(**result)

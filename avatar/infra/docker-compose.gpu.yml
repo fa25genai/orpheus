@@ -13,7 +13,7 @@ services:
 
   voice-generation:
     build:
-      context: ../chatterbox
+      context: ../OpenVoice
       dockerfile: Dockerfile
     depends_on:
       openvoice-base:

@@ -77,7 +77,7 @@ def map_docint_file_to_slides_asset(
 
             if img_data is None or description is None:
                 logger.warning("Received asset with empty data/description.")
-                logger.debug("Data: {}; Description: {}".format(img_data, description))
+                logger.debug("Data: %s; Description: %s", img_data, description)
                 continue
 
             # Regex to extract MIME type and base64 data from the data URI

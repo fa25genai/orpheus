@@ -41,7 +41,7 @@ STATUS_API_URL = "http://status-service:19910"
 # AVATAR_API_URL = "http://localhost:9000"
 # STATUS_API_URL = "http://localhost:19910"
 
-DEBUG = int(os.getenv("ORPHEUS_DEBUG", "0"))  # DEBUG enabled by default
+DEBUG = int(os.getenv("ORPHEUS_DEBUG", "0"))  # DEBUG disabled by default
 
 logger = logging.getLogger("Client Handler")
 
@@ -60,30 +60,40 @@ async def update_status(
 async def retrieve_subqueries_from_prompt(
     prompt_request: PromptRequest, prompt_id: str, client: httpx.AsyncClient
 ) -> List[str]:
-    logger.info(f"Decomposing inputs for prompt `{prompt_id}`")
-    await update_status(
-        prompt_id, StatusPatch(stepUnderstanding=StepStatus.IN_PROGRESS), client
-    )
+    try:
+        logger.info(f"Decomposing inputs for prompt `{prompt_id}`")
+        await update_status(
+            prompt_id, StatusPatch(stepUnderstanding=StepStatus.IN_PROGRESS), client
+        )
 
-    subqueries: List[str]
-    if DEBUG:
-        subqueries = mock_service.create_decomposed_question().get("subqueries", [])
+        subqueries: List[str]
+        if DEBUG:
+            subqueries = mock_service.create_decomposed_question().get("subqueries", [])
+            await update_status(
+                prompt_id, StatusPatch(stepUnderstanding=StepStatus.DONE), client
+            )
+            return subqueries
+
+        subqueries = decompose_input.decompose_question(prompt_request.prompt).get(
+            "subqueries", []
+        )
+
+        logger.debug(f"subqueries retrieved from prompt: {subqueries}")
+
+        # FIX: [no-any-return]
         await update_status(
             prompt_id, StatusPatch(stepUnderstanding=StepStatus.DONE), client
         )
         return subqueries
-
-    subqueries = decompose_input.decompose_question(prompt_request.prompt).get(
-        "subqueries", []
-    )
-
-    logger.debug(f"subqueries retrieved from prompt: {subqueries}")
-
-    # FIX: [no-any-return]
-    await update_status(
-        prompt_id, StatusPatch(stepUnderstanding=StepStatus.DONE), client
-    )
-    return subqueries
+    except Exception as exception:
+        logger.error(
+            f"Failed to retrieve subqueries for prompt `{prompt_id}`",
+            exc_info=exception,
+        )
+        await update_status(
+            prompt_id, StatusPatch(stepUnderstanding=StepStatus.FAILED), client
+        )
+        raise
 
 
 async def send_summary_to_endpoint(
@@ -110,7 +120,9 @@ async def summarize_and_send(
             summary = "A for loop is a control flow statement that allows code to be executed repeatedly, typically used to iterate over sequences or iterable objects.\n\nIt features a basic syntax that specifies an item variable and an iterable collection of objects, such as a list or tuple.\n\nFor loops can be nested.\n\nThey often utilize functions like range() to generate number sequences.\n\nFlow control options include break to exit the loop prematurely, and continue to skip the current iteration.\n\nAn else block can be added, which executes after the loop finishes unless the loop was terminated by a break."
             await send_summary_to_endpoint(prompt_id, summary, client)
             return
+        logger.info("Generating summary for prompt `{prompt_id}`")
         summary = summarize_content_with_llama(content, user_prompt)
+        logger.debug(f'Summary for prompt `{prompt_id}` ("{user_prompt}): {summary}')
         await send_summary_to_endpoint(prompt_id, summary, client)
     except Exception as e:
         logger.error(f"Error summarizing content for prompt {prompt_id}", exc_info=e)
@@ -161,7 +173,7 @@ async def generate_script(
         logger.info(f"Generating script for prompt `{prompt_id}`")
         await update_status(
             prompt_id,
-            StatusPatch(stepAudioScriptGeneration=StepStatus.IN_PROGRESS),
+            StatusPatch(stepLectureScriptGeneration=StepStatus.IN_PROGRESS),
             client,
         )
 
@@ -181,8 +193,12 @@ async def generate_script(
         refined_output: LectureScriptWithAssets = script_generation.generate_script(
             retrieved_content, prompt_request.user_persona
         )
+        logger.debug(f"Generated Lecture Script:\n{refined_output.lecture_script}")
+        logger.debug(
+            f"Lecture script uses assets:\n{[asset.name for asset in refined_output.assets]}"
+        )
         await update_status(
-            prompt_id, StatusPatch(stepAudioScriptGeneration=StepStatus.DONE), client
+            prompt_id, StatusPatch(stepLectureScriptGeneration=StepStatus.DONE), client
         )
     except Exception as exception:
         logger.error(
@@ -190,7 +206,7 @@ async def generate_script(
         )
         await update_status(
             prompt_id,
-            StatusPatch(stepAudioScriptGeneration=StepStatus.FAILED),
+            StatusPatch(stepLectureScriptGeneration=StepStatus.FAILED),
             client,
         )
         raise exception
@@ -250,7 +266,7 @@ async def generate_voice_scripts(
     logger.info(f"Generating voice scripts for prompt `{prompt_id}`")
     await update_status(
         prompt_id,
-        StatusPatch(stepLectureScriptGeneration=StepStatus.IN_PROGRESS),
+        StatusPatch(stepAudioScriptGeneration=StepStatus.IN_PROGRESS),
         client,
     )
     try:
@@ -281,15 +297,15 @@ async def generate_voice_scripts(
 
         slide_index = 0
 
-        await update_status(
-            prompt_id,
-            StatusPatch(stepLectureScriptGeneration=StepStatus.DONE),
-            client,
-        )
-
         async for voice_script_payload in narration_stream:
             logger.debug(
                 f"Received narration segment {slide_index}, scheduling avatar task."
+            )
+            logger.debug(
+                "narration for slide %s#%s: %s",
+                prompt_id,
+                slide_index,
+                voice_script_payload.voiceTrack,
             )
 
             task = generate_avatar_video(voice_script_payload, client)
@@ -297,6 +313,12 @@ async def generate_voice_scripts(
                 tasks.append(task)
 
             slide_index += 1
+
+        await update_status(
+            prompt_id,
+            StatusPatch(stepAudioScriptGeneration=StepStatus.DONE),
+            client,
+        )
 
         return tasks
 
@@ -306,7 +328,7 @@ async def generate_voice_scripts(
         )
         await update_status(
             prompt_id,
-            StatusPatch(stepLectureScriptGeneration=StepStatus.FAILED),
+            StatusPatch(stepAudioScriptGeneration=StepStatus.FAILED),
             client,
         )
         return []
@@ -368,6 +390,10 @@ async def process_prompt(prompt_id: str, prompt_request: PromptRequest) -> None:
             slides_data: GenerationAcceptedResponse = await generate_slides(
                 prompt_request, prompt_id, lecture_script, refined_output, client
             )
+            logger.debug(
+                "Generated slide pages: %s",
+                slides_data.structure.pages if slides_data.structure else [],
+            )
 
             if prompt_request.user_persona is None:
                 logger.error("User persona must be defined for voice scripts.")
@@ -398,3 +424,7 @@ async def process_prompt(prompt_id: str, prompt_request: PromptRequest) -> None:
                 "If you started the server as docker component make sure the URLs for DI_API_URL are referencing docker addresses (e.g. http://docint:25565). "
                 "If you started the server as standalone make sure the URLs for DI_API_URL are pointing to the correct host and port (e.g. http://localhost:25565)."
             )
+
+        await update_status(
+            prompt_id, StatusPatch(stepUnderstanding=StepStatus.FAILED), client
+        )
