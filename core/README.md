@@ -19,13 +19,13 @@ This service is the core backend component responsible for orchestrating the AI-
 
 ### Currently Used Frameworks
 
-- Langchain (so we can exchange the models underneath)
-  (We are using it more like a library right now, we only use it to instantiate the connector to the LLM)
-- Amazon Nova Pro (Using langchain_aws, Ollama, and Gemini are also implemented → See /helpers/shared_llm.py)
-- Docker for Infrastructure
-- OpenAPI specification for endpoints (and generating code from it)
+- [Langchain](https://www.langchain.com/) (so we can exchange the models underneath) <br>
+  <i>We are using it more like a library right now, we only use it to instantiate the connector to the LLM</i>
+- [Amazon Nova Pro](https://eu-central-1.console.aws.amazon.com/bedrock/home?region=eu-central-1#/inference-profiles/eu.amazon.nova-pro-v1:0) (Using langchain_aws, Ollama, and Gemini are also implemented → See /helpers/shared_llm.py)
+- [Docker](https://www.docker.com/) for Infrastructure
+- [OpenAPI](https://www.openapis.org/) specification for endpoints (and generating code from it)
   [openapi-generator](https://formulae.brew.sh/formula/openapi-generator) 7.15.0
-- Pydantic models for data validation and type safety.
+- [Pydantic models](https://docs.pydantic.dev/latest/api/base_model/) for data validation and type safety.
 
 ### Good/Bad Experiences
 
