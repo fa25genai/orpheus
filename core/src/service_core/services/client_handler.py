@@ -161,7 +161,7 @@ async def generate_script(
         logger.info(f"Generating script for prompt `{prompt_id}`")
         await update_status(
             prompt_id,
-            StatusPatch(stepAudioScriptGeneration=StepStatus.IN_PROGRESS),
+            StatusPatch(stepLectureScriptGeneration=StepStatus.IN_PROGRESS),
             client,
         )
 
@@ -182,7 +182,7 @@ async def generate_script(
             retrieved_content, prompt_request.user_persona
         )
         await update_status(
-            prompt_id, StatusPatch(stepAudioScriptGeneration=StepStatus.DONE), client
+            prompt_id, StatusPatch(stepLectureScriptGeneration=StepStatus.DONE), client
         )
     except Exception as exception:
         logger.error(
@@ -190,7 +190,7 @@ async def generate_script(
         )
         await update_status(
             prompt_id,
-            StatusPatch(stepAudioScriptGeneration=StepStatus.FAILED),
+            StatusPatch(stepLectureScriptGeneration=StepStatus.FAILED),
             client,
         )
         raise exception
@@ -250,7 +250,7 @@ async def generate_voice_scripts(
     logger.info(f"Generating voice scripts for prompt `{prompt_id}`")
     await update_status(
         prompt_id,
-        StatusPatch(stepLectureScriptGeneration=StepStatus.IN_PROGRESS),
+        StatusPatch(stepAudioScriptGeneration=StepStatus.IN_PROGRESS),
         client,
     )
     try:
@@ -283,7 +283,7 @@ async def generate_voice_scripts(
 
         await update_status(
             prompt_id,
-            StatusPatch(stepLectureScriptGeneration=StepStatus.DONE),
+            StatusPatch(stepAudioScriptGeneration=StepStatus.DONE),
             client,
         )
 
@@ -306,7 +306,7 @@ async def generate_voice_scripts(
         )
         await update_status(
             prompt_id,
-            StatusPatch(stepLectureScriptGeneration=StepStatus.FAILED),
+            StatusPatch(stepAudioScriptGeneration=StepStatus.FAILED),
             client,
         )
         return []
