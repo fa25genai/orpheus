@@ -13,6 +13,11 @@ AWS_BEARER_TOKEN_BEDROCK=<api-key>
 # To use OpenAI as provider for LLMs
 # OPENAI_API_KEY=your_openai_api_key
 
+# To use Azure OpenAI as provider for LLMs
+# AZURE_OPENAI_API_VERSION=2025-04-01-preview
+# AZURE_OPENAI_API_BASE=https://ase-se01.openai.azure.com
+# AZURE_OPENAI_API_KEY=<api-key>
+
 # Ollama API key for Embedding
 OLLAMA_API_KEY=<api-key>
 
