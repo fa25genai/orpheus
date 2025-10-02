@@ -1,8 +1,0 @@
-# Copy this file to a .env file and populate the environment variables.
-
-OLLAMA_API_KEY=
-
-AZURE_OPENAI_API_KEY=
-
-# Uncomment next line to enable the debug mode
-# ORPHEUS_DEBUG=1 
