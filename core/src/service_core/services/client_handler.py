@@ -41,7 +41,7 @@ STATUS_API_URL = "http://status-service:19910"
 # AVATAR_API_URL = "http://localhost:9000"
 # STATUS_API_URL = "http://localhost:19910"
 
-DEBUG = int(os.getenv("ORPHEUS_DEBUG", "0"))  # DEBUG enabled by default
+DEBUG = int(os.getenv("ORPHEUS_DEBUG", "0"))  # DEBUG disabled by default
 
 logger = logging.getLogger("Client Handler")
 
@@ -161,7 +161,7 @@ async def generate_script(
         logger.info(f"Generating script for prompt `{prompt_id}`")
         await update_status(
             prompt_id,
-            StatusPatch(stepAudioScriptGeneration=StepStatus.IN_PROGRESS),
+            StatusPatch(stepLectureScriptGeneration=StepStatus.IN_PROGRESS),
             client,
         )
 
@@ -182,7 +182,7 @@ async def generate_script(
             retrieved_content, prompt_request.user_persona
         )
         await update_status(
-            prompt_id, StatusPatch(stepAudioScriptGeneration=StepStatus.DONE), client
+            prompt_id, StatusPatch(stepLectureScriptGeneration=StepStatus.DONE), client
         )
     except Exception as exception:
         logger.error(
@@ -190,7 +190,7 @@ async def generate_script(
         )
         await update_status(
             prompt_id,
-            StatusPatch(stepAudioScriptGeneration=StepStatus.FAILED),
+            StatusPatch(stepLectureScriptGeneration=StepStatus.FAILED),
             client,
         )
         raise exception
@@ -250,7 +250,7 @@ async def generate_voice_scripts(
     logger.info(f"Generating voice scripts for prompt `{prompt_id}`")
     await update_status(
         prompt_id,
-        StatusPatch(stepLectureScriptGeneration=StepStatus.IN_PROGRESS),
+        StatusPatch(stepAudioScriptGeneration=StepStatus.IN_PROGRESS),
         client,
     )
     try:
@@ -281,12 +281,6 @@ async def generate_voice_scripts(
 
         slide_index = 0
 
-        await update_status(
-            prompt_id,
-            StatusPatch(stepLectureScriptGeneration=StepStatus.DONE),
-            client,
-        )
-
         async for voice_script_payload in narration_stream:
             logger.debug(
                 f"Received narration segment {slide_index}, scheduling avatar task."
@@ -298,6 +292,12 @@ async def generate_voice_scripts(
 
             slide_index += 1
 
+        await update_status(
+            prompt_id,
+            StatusPatch(stepAudioScriptGeneration=StepStatus.DONE),
+            client,
+        )
+
         return tasks
 
     except Exception as exception:
@@ -306,7 +306,7 @@ async def generate_voice_scripts(
         )
         await update_status(
             prompt_id,
-            StatusPatch(stepLectureScriptGeneration=StepStatus.FAILED),
+            StatusPatch(stepAudioScriptGeneration=StepStatus.FAILED),
             client,
         )
         return []
@@ -398,3 +398,7 @@ async def process_prompt(prompt_id: str, prompt_request: PromptRequest) -> None:
                 "If you started the server as docker component make sure the URLs for DI_API_URL are referencing docker addresses (e.g. http://docint:25565). "
                 "If you started the server as standalone make sure the URLs for DI_API_URL are pointing to the correct host and port (e.g. http://localhost:25565)."
             )
+
+        await update_status(
+            prompt_id, StatusPatch(stepUnderstanding=StepStatus.FAILED), client
+        )
