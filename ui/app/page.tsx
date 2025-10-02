@@ -23,7 +23,7 @@ export default function Home() {
   const [messages, setMessages] = useState<string[]>([]);
   const [prompt, setPrompt] = useState<string>("");
   const [promptId, setPromptId] = useState<string>("");
-  const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
+  // const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
   const [sources, setSources] = useState<string[]>([]);
 
   const mockMode = useMemo(

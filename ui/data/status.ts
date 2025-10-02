@@ -40,6 +40,7 @@ export const mockStatusFinished: Status = {
   stepSlideStructureGeneration: StepStatus.Done,
   stepSlideGeneration: 5,
   stepSlidePostprocessing: StepStatus.Done,
+  stepAudioScriptGeneration: StepStatus.Done,
   stepsAvatarGeneration: [
     {video: StepStatus.Done, audio: StepStatus.Done},
     {video: StepStatus.Done, audio: StepStatus.Done},
@@ -48,4 +49,4 @@ export const mockStatusFinished: Status = {
     {video: StepStatus.Done, audio: StepStatus.Done},
   ],
   lectureSummary: "This is a mock lecture summary",
-}
+};
