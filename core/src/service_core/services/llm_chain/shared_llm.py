@@ -89,7 +89,7 @@ def create_base_model(model_name: str, temperature: float = 0.0, max_tokens: Opt
     # Try Azure OpenAI last
     if "AZURE_OPENAI_API_KEY" in os.environ and "AZURE_OPENAI_API_BASE" in os.environ and "AZURE_OPENAI_API_VERSION" in os.environ:
         return AzureChatOpenAI(
-            azure_deployment= model_name,
+            azure_deployment=model_name,
             api_version=os.environ["AZURE_OPENAI_API_VERSION"],
             azure_endpoint=os.environ["AZURE_OPENAI_API_BASE"],
             reasoning_effort="low",
