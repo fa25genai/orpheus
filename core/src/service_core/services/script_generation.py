@@ -149,17 +149,9 @@ def generate_script_llm(
                 print(json.dumps(result, indent=2, ensure_ascii=False))
                 return LectureScriptWithReducedAssets(**result)
 
-            # If it didn't work, log the raw output for debugging
-            log_dir = os.getenv("LLM_FAILED_LOG_DIR", os.path.join(os.getcwd(), "logs", "llm_failed_outputs"))
-            os.makedirs(log_dir, exist_ok=True)
-            log_path = os.path.join(log_dir, f"failed_output_attempt_{attempt+1}.txt")
-            with open(log_path, "w", encoding="utf-8") as f:
-                f.write(raw)
-
-            # Explicitly raise JSONDecodeError to trigger retry, include attempt number
-            raise json.JSONDecodeError(
-                f"Failed to parse JSON on attempt {attempt+1}", raw, 0
-            )
+            # If it didn't work, this will raise JSONDecodeError and trigger retry
+            # This is useful for debugging the raw output on failure.
+            json.loads(raw)
 
         except json.JSONDecodeError as e:
             print(f"JSON parsing error on attempt {attempt + 1}: {e}")
