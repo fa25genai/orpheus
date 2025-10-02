@@ -27,15 +27,21 @@ This service is the core backend component responsible for orchestrating the AI-
   [openapi-generator](https://formulae.brew.sh/formula/openapi-generator) 7.15.0
 - [Pydantic models](https://docs.pydantic.dev/latest/api/base_model/) for data validation and type safety.
 
+#### Following technologies are already implementated but where out of scope for demo use at Ferienakademie
+They are available in different branches (but where abondend through Ferienakademie):
+- AWS Amazon Bedrock Structured Output through tool use: [baeurle/aws-llm-with-structured-output](https://github.com/fa25genai/orpheus/tree/baeurle/aws-llm-with-structured-output)
+- Azure OpenAI with structured output through instructor (ONLY WAY TO ENSURE CORRECT ANSWER)(no parsing needed) :[baeurle/aws-llm-with-structured-output](https://github.com/fa25genai/orpheus/tree/baeurle/aws-llm-with-structured-output)
+
+If you have questions about these implementation (and of course other core stuff), reach out to Lukas Bäurle [st187218@stud.uni-stuttgart.de](mailto://st187218@stud.uni-stuttgart.de)
 ### Good/Bad Experiences
 
-- [AWS API key](https://eu-central-1.console.aws.amazon.com/bedrock/home?region=eu-central-1#/api-keys/long-term/create) expires every hour with our current hackathon licenses <br> 
-  - We are using AWS models because they are much faster than the Ollama instance
-  - We often ran into rate limits as we shared the keys with 3-5 people who were developing and testing the software
-  - We were only able to generate short-term keys and no long-term keys.
+- [AWS API key](https://eu-central-1.console.aws.amazon.com/bedrock/home?region=eu-central-1#/api-keys/long-term/create) expires every hour with our current hackathon licenses <br>
+    - We are using AWS models because they are much faster than the Ollama instance
+    - We often ran into rate limits as we shared the keys with 3-5 people who were developing and testing the software
+    - We were only able to generate short-term keys and no long-term keys.
 - [Ollama](https://ollama.com/) is responding with good answers but slow
 - [GPT5](https://platform.openai.com/docs/guides/latest-model) gives better script and voice tracks, but it takes too much time
-   - follows structured output (gives formal correct structured output, so no JSON parsing that could yield mistakes is required)
+- follows structured output (gives formally correct structured output, so no JSON parsing that could yield mistakes is required)
 - Response parsing has to be configured based on the LLM model used
 - Huge docker images that take O(10 minutes) to build
 - Smaller AWS model (Nova Lite and Nova Micro) is not able to find the connection between the retrieved content and the user query
