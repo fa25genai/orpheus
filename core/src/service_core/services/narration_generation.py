@@ -42,8 +42,10 @@ async def generate_narrations(
         prompt_request (PromptRequest): An object containing the user's profile and request data.
         prompt_id (str): The prompt identifier.
         debug (bool, optional): If True, enables debug output.
-    ---\n### RULES & GUIDELINES\n---\n\n    
-        * Text Formatting: The voice script should be human readable.Rewrite this to be readable by a tts module. Don't change content or meaning.\n\n
+    ---\n### RULES & GUIDELINES\n---\n\n
+        * Text Formatting: The voice script should be human readable. Rewrite this to be readable by a tts module. Don't change content or meaning.\n\n
+        * Symbols: Spell out symbols to ensure clarity in narration. For example, "&" should be read as "and", "%" as "percent", and "$" as "dollars".\n\n
+        * Special characters: remove any commas, periods, brackets, and other special Characters.\n\n
         * Coding text: If the lecture script contains code snippets, reformat them in an actual text that resembles code instead of code. Example: "System.out.println(abc[i])" should be read as "system dot out dot print line a b c index i".\n\n
         * Math text: If the lecture script contains mathematical expressions, reformat them in an actual text. Example "- should be minus", "> should be greater than", and so on.\n\n
         * Image References: When referring to images in the lectureScript, use the exact filenames provided in the Images list. For example, say "Here you can see filename_1" to reference an image named filename_1.jpg.\n\n
