@@ -94,9 +94,8 @@ tbd
 
 #### Student View
 
-1. Choose level of expertise: 
+1. Choose your level of expertise by selecting a suitable character: 
 ![alt text](StudentView_Step1.png)
-As a user it is possible to select a suitable character. 
 
 2. Enter your question or choose from the predefined ones: 
 ![alt text](StudentView_Step2.png)
