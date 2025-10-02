@@ -83,7 +83,7 @@ gather info about not yet exposed APIs (Slide Push Service, Video Push Service, 
 | **Avatar Generation Service**    | Produces short videos of lifelike professor avatars from a given text for the voice track with expressive narration.     | [Avatar Generation Service](./api/avatar_generation_service.yaml)                                                                                                                                                                                                                                  |
 | **Video Push Service**           | Uploads generated avatar videos to the `Generated Avatar Delivery` (CDN) for distribution.                               | TODO gather info                                                                                                                                                                                                                                                                                   |
 | **Content Location Service**     | Returns the CDN location of a slide / avatar video of a related `promptId`.                                              | Note: not these services are not used and implemented yet, currently still relying on polling and respective status requests <br> [Slides Content Location Service](./api/content_location_service_slides.yaml) <br> [Avatar Content Location Service](./api/content_location_service_avatar.yaml) |
-| **Generated Avatar Service**     | Provides the generated avatar videos, retrieved by related `promptId`.                                                   | TODO gather info about CDN                                                                                                                                                                                                                                                                         |
+| **Generated Avatar Service**     | Provides the generated avatar videos, retrieved by related `promptId`.                                                   | TODO gather info about CDN                                                                                                                                                                                                                          |
 | **Generated Slide Service**      | Provides the generated slides. Retrieval is done with the related `promptId`.                                            | [Generated Slides Service](slides/delivery/README.md)                                                                                                                                                                                                                                              |
 
 ## Getting Started
@@ -92,11 +92,72 @@ gather info about not yet exposed APIs (Slide Push Service, Video Push Service, 
 
 #### Lecturer View
 
-tbd
+The **lecturer view** can be accessed via the **Admin Button** located at the top right.
+
+To personalize the course delivery, the lecturer is required to upload both **avatar images** and **voice samples**, followed by the relevant **course materials**.
+
+---
+
+##### 👤 Avatar Uploads
+<div style="text-align: center;">
+  <img src="./lecturer-avatar-upload.png" alt="Lecturer Avatar Upload" style="max-width: 100%; height: auto;">
+</div>
+
+Three distinct avatars should be provided to represent different stages of the lecture:
+
+- **Beginning Avatar**  
+  - Used at the beginning of the lecture.  
+  - Recommended: a **happy facial expression** to create a welcoming atmosphere.  
+
+- **Default/Middle Avatar**  
+  - Used during the main lecture delivery.  
+  - Recommended: a **neutral facial expression** to maintain focus.  
+
+- **Ending Avatar**  
+  - Used at the end of the lecture.  
+  - Recommended: a **happy facial expression** to close on a positive note.  
+
+---
+
+##### 🎙️ Voice Samples
+<div style="text-align: center;">
+  <img src="./lecturer-audio-upload.png" alt="Lecturer Audio Upload" style="max-width: 100%; height: auto;">
+</div>
+
+Similarly, three voice samples should be uploaded, aligned with the same lecture stages as the avatars:
+
+- **Beginning Voice Sample** — welcoming and engaging.  
+- **Default/Middle Voice Sample** — clear and neutral delivery.  
+- **Ending Voice Sample** — positive and encouraging tone.  
+
+---
+
+##### 📑 Course Materials
+<div style="text-align: center;">
+  <img src="./lecturer-material-upload.png" alt="Lecturer Material Upload" style="max-width: 100%; height: auto;">
+</div>
+
+- Upload course slides and/or pre-recorded lecture videos.  
+- These materials will be processed and integrated into the system by the **Document Intelligence Team**.  
+- For further details, refer to the [Document Intelligence README](./document-intelligence/README.md).  
+
+---
+
+
 
 #### Student View
 
-tbd
+1. Choose your level of expertise by selecting a suitable character: 
+![alt text](StudentView_Step1.png)
+
+2. Enter your question or choose from the predefined ones: 
+![alt text](StudentView_Step2.png)
+
+3. Wait for for the generation process. In the meantime a textual answer will be given. The lectre will start as soon as the first video is done: 
+![alt text](StudentView_Step3.png)
+
+4. Watch the video:
+![alt text](StudentView_Step4.png)
 
 ### Development Setup
 
@@ -329,6 +390,6 @@ We use [Poetry](https://python-poetry.org/) as our dependency and environment ma
 Run this command in your root directory to build all services, start them up under the project name orpheus, and pull
 any necessary images:
 
-```powershell
+```bash
 docker compose -p orpheus up --build
 ```
