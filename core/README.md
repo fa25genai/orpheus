@@ -19,11 +19,22 @@ This service is the core backend component responsible for orchestrating the AI-
 
 ### Currently Used Frameworks
 
-TODO - Document the frameworks currently in use
+- Langchain (so we can exchange the models underneath)
+  (We are using it more like a library right now, we only use it to instantiate the connector to the LLM)
+- Amazon Nova Pro (Using langchain_aws, Ollama, and Gemini are also implemented → See /helpers/shared_llm.py)
+- Docker for Infrastructure
+- OpenAPI specification for endpoints (and generating code from it)
+  [openapi-generator](https://formulae.brew.sh/formula/openapi-generator) 7.15.0
+- Pydantic models for data validation and type safety.
 
 ### Good/Bad Experiences
 
-TODO - Document experiences, lessons learned, and recommendations
+- AWS API key expires every hour (we are only using it because it is much faster than the OLLAMA instance)
+- OLLAMA is responding with good answers but slow
+- GPT5 gives better script and voice tracks, but it takes too much time
+- follows structured output (gives formal correct structured output, so no JSON parsing that could yield mistakes is required)
+- Response parsing has to be configured based on the LLM model used
+- Smaller AWS model (nova lite and micro) is not able to find the connection between the retrieved content and the user query
 
 ## Prerequisites
 
