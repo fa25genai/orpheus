@@ -20,11 +20,30 @@ The [delivery](delivery/README.md) directory contains the configuration file for
 
 ### Currently Used Frameworks
 
-TODO - Document the frameworks currently in use
+For slide generation/display: [Slidev](https://sli.dev).
+For Webservice serving: [Fastapi](https://fastapi.tiangolo.com/)
+OpenAPI Generator
+For LLM integration: [Langchain](python.langchain.com) (AWS Bedrock, Google GenAI, Ollama, OpenAI, Azure OpenAI)
+For Deployment: [Docker](https://docker.com)
+For Content Delivery: [nginx](https://nginx.org)
+Python + Poetry as build system
 
 ### Good/Bad Experiences
 
-TODO - Document experiences, lessons learned, and recommendations
+**Good**:
+ - Slidev being Open-Source allowed for creating a fork to alleviate the pains of embedding it into an `iframe`
+ - Slidev theme creation being easy and powerful
+ - Configuration via environment variables in Docker working great
+ - Typed development in python allowing a better development experience
+ - OpenAPI as format for communication and as basis for code generation
+ - `reveal.js` would have been easier to integrate with `Next.js`, but theming was more difficult
+
+**Bad**:
+ - Integration of Slidev into Web-Frameworks (tested with Next.js, Microfrontend and Astro.js) being impossible &Rarr; Use of `iframe` necessary
+ - Python `asyncio.Lock` not being threadsafe &Rarr; Use `threading.Lock` instead
+ - OpenAPI Generator for fastapi not providing access to the `fastapi.Request` object (necessary to get app state) &Rarr; Manual edits in generated files necessary
+ - For Postprocessing `poetry` and `npm` are necessary in the same container &Rarr; Huge image, long build times and complex recipe
+ - Frequent LLM changes so no satisfying result was achieved
 
 ---
 
