@@ -37,6 +37,7 @@ class Status(BaseModel):
     step_lookup: StepStatus = Field(alias="stepLookup")
     step_lecture_script_generation: StepStatus = Field(alias="stepLectureScriptGeneration")
     step_slide_structure_generation: StepStatus = Field(alias="stepSlideStructureGeneration")
+    step_audio_script_generation: StepStatus = Field(alias="stepAudioScriptGeneration")
     step_slide_generation: StrictInt = Field(alias="stepSlideGeneration")
     step_slide_postprocessing: StepStatus = Field(alias="stepSlidePostprocessing")
     steps_avatar_generation: List[AvatarElementStatus] = Field(alias="stepsAvatarGeneration")

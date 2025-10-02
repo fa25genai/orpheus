@@ -40,10 +40,7 @@ def generate_audio_chatterbox(voiceTrack: str | None = None):
     model = ChatterboxMultilingualTTS.from_pretrained(device=device)
 
     if not voiceTrack:
-        voiceTrack = (
-            "Hello everyone! I want to give you a 182 minute talk about for-loops "
-            "and the great university of Munich."
-        )
+        voiceTrack = "Hello everyone! I want to give you a 182 minute talk about for-loops and the great university of Munich."
 
     voiceTrack = numbers_to_words(voiceTrack)
 

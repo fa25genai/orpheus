@@ -444,7 +444,6 @@ class StreamSDK:
                 item_buffer = np.zeros((0, aud_feat_dim), dtype=np.float32)
 
             while True:
-                # print("self.audio_feat.shape:", self.audio_feat.shape, "local_idx:", local_idx, "global_idx:", global_idx)
                 aud_feat = self.audio_feat[local_idx: local_idx+seq_frames]
                 real_valid_len = valid_clip_len
                 if len(aud_feat) == 0:

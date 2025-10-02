@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+import os
 from threading import Event, Thread
 
 from fastapi import FastAPI
@@ -10,6 +12,15 @@ from app.api.video import router as video_router
 from app.workers import audio as audio_worker
 from app.workers import cleanup as cleanup_worker
 from app.workers import video as video_worker
+
+logging.basicConfig(
+    level=logging.DEBUG if os.getenv("ORPHEUS_VERBOSE") else logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+    datefmt="%m/%d/%Y %I:%M:%S %p",
+)
+logging.getLogger("httpcore").setLevel(logging.WARNING)
+logging.getLogger("asyncio").setLevel(logging.WARNING)
+logging.getLogger("botocore").setLevel(logging.WARNING)
 
 app = FastAPI(title="Service Video-Generation APIs", version="0.1")
 
