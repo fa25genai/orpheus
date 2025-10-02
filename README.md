@@ -278,4 +278,14 @@ We use [Poetry](https://python-poetry.org/) as our dependency and environment ma
 
 ### Deployment
 
-TODO - add docker startup commands and instructions
+Run this command in your root directory to build all services, start them up under the project name orpheus, and pull any necessary images:
+
+##### Linux / macOS
+```bash
+docker-compose -p orpheus up --build
+```
+
+##### Windows (PowerShell)
+```powershell
+docker compose -p orpheus up --build
+```
