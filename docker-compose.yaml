@@ -73,6 +73,25 @@ services:
     depends_on:
       - docint-weaviate
 
+  layout-parser-service:
+    container_name: layout-parser
+    build:
+      context: ./layout-parser
+      dockerfile: Dockerfile
+    env_file:
+      - path: .env
+        required: false
+      - path: layout-parser/.env
+        required: false
+    environment:
+      WEIGHTS_DIR: /weights
+    ports:
+      - "8156:8156"
+    volumes:
+      - layout-parser-weights:/weights
+    networks:
+      - orpheus
+
   docint-weaviate:
     image: cr.weaviate.io/semitechnologies/weaviate:1.32.9
     command:
@@ -116,6 +135,7 @@ services:
       - orpheus
     depends_on:
       - docint-service
+      - layout-parser-service
       - slides-service
       - avatar-video-producer
       - status-service
@@ -172,3 +192,4 @@ volumes:
   slides-data:
   avatar_file_storage: {}
   weaviate_data:
+  layout-parser-weights:

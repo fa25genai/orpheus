@@ -1,0 +1,166 @@
+openapi: 3.1.0
+info:
+  title: Layout Parser Figure Extraction API
+  version: "0.1.0"
+  description: |
+    REST API that detects figure regions in slide images using LayoutParser + Detectron2.
+    The service accepts PNG/JPEG uploads and returns cropped figure regions as base64
+    encoded PNG payloads along with detection metadata.
+  termsOfService: "https://github.com/fa25genai/orpheus"
+  contact:
+    name: "Orpheus Project"
+    url: "https://github.com/fa25genai/orpheus/issues/new"
+  license:
+    name: MIT
+    url: "https://opensource.org/licenses/MIT"
+
+servers:
+  - url: "http://localhost:8156"
+    description: "Local development"
+  - url: "http://orpheus-layout-parser:8156"
+    description: "Cluster service DNS"
+
+tags:
+  - name: health
+    description: "Readiness and diagnostics"
+  - name: extraction
+    description: "Figure detection workflows"
+
+paths:
+  /healthz:
+    get:
+      tags: [health]
+      summary: "Readiness probe"
+      description: "Returns service status for orchestration platforms."
+      operationId: getHealth
+      responses:
+        "200":
+          description: "Service is ready to accept requests."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+
+  /extract:
+    post:
+      tags: [extraction]
+      summary: "Extract figures from a slide image"
+      description: |
+        Analyse an uploaded slide image (PNG/JPEG) and return all detected figure regions as
+        base64 encoded PNG crops.
+      operationId: extractFigures
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: "Slide image to analyse (PNG or JPEG)."
+      responses:
+        "200":
+          description: "Figures successfully detected."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExtractionResponse"
+        "400":
+          description: "The uploaded file was missing or not a valid image."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: "Detector backend failed to initialise or run."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components:
+  schemas:
+    HealthResponse:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          example: "ok"
+
+    ExtractionResponse:
+      type: object
+      required: [count, items]
+      properties:
+        count:
+          type: integer
+          minimum: 0
+          description: "Number of detected figures."
+        items:
+          type: array
+          description: "Detected figure crops ordered by detection confidence."
+          items:
+            $ref: "#/components/schemas/Detection"
+
+    Detection:
+      type: object
+      required: [score, box, image]
+      properties:
+        score:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          description: "Confidence score reported by the detector."
+        box:
+          $ref: "#/components/schemas/BoundingBox"
+        image:
+          $ref: "#/components/schemas/CroppedImage"
+
+    BoundingBox:
+      type: object
+      required: [x1, y1, x2, y2]
+      properties:
+        x1:
+          type: integer
+          description: "Left pixel coordinate of the bounding box."
+        y1:
+          type: integer
+          description: "Top pixel coordinate of the bounding box."
+        x2:
+          type: integer
+          description: "Right pixel coordinate of the bounding box."
+        y2:
+          type: integer
+          description: "Bottom pixel coordinate of the bounding box."
+
+    CroppedImage:
+      type: object
+      required: [format, width, height, data]
+      properties:
+        format:
+          type: string
+          enum: [png]
+          description: "Image encoding used for the crop."
+        width:
+          type: integer
+          minimum: 1
+          description: "Cropped image width in pixels."
+        height:
+          type: integer
+          minimum: 1
+          description: "Cropped image height in pixels."
+        data:
+          type: string
+          description: "Base64 encoded PNG bytes of the cropped region."
+
+    ErrorResponse:
+      type: object
+      required: [detail]
+      properties:
+        detail:
+          type: string
+          description: "Human readable explanation of the failure."

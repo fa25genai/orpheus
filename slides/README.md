@@ -1,9 +1,30 @@
-``# Orpheus **Slide Generation Service**
+# Orpheus **Slide Generation Service**
 
 Slide generation and delivery service for **Orpheus**.
 This directory contains the project code for the **Slide Generation Service**.
 The [postprocessing](postprocessing/README.md) directory contains the project code for the **Slide Postprocessing Service**.
 The [delivery](delivery/README.md) directory contains the configuration file for the **Generated Slide Service**.
+
+## Table of Contents
+
+- [Technology Stack](#technology-stack)
+  - [Currently Used Frameworks](#currently-used-frameworks)
+  - [Good/Bad Experiences](#goodbad-experiences)
+- [Overview](#overview)
+- [API-Usage](#api-usage)
+- [Local Setup](#local-setup)
+- [Quality Checks](#quality-checks)
+- [Configuration](#configuration)
+
+## Technology Stack
+
+### Currently Used Frameworks
+
+TODO - Document the frameworks currently in use
+
+### Good/Bad Experiences
+
+TODO - Document experiences, lessons learned, and recommendations
 
 ---
 

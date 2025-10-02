@@ -1,3 +1,27 @@
+# Orpheus **UI Service**
+tbd
+
+## Table of Contents
+
+- [Technology Stack](#technology-stack)
+  - [Currently Used Frameworks](#currently-used-frameworks)
+  - [Good/Bad Experiences](#goodbad-experiences)
+- [Getting Started](#getting-started)
+  - [Install dependencies](#install-dependencies)
+  - [Run the app](#run-the-app)
+  - [Generate the api clients with the openapi yaml specifications](#generate-the-api-clients-with-the-openapi-yaml-specifications)
+  - [Docker setup](#docker-setup)
+
+## Technology Stack
+
+### Currently Used Frameworks
+
+TODO - Document the frameworks currently in use
+
+### Good/Bad Experiences
+
+TODO - Document experiences, lessons learned, and recommendations
+
 ## Getting Started
 
 ### Install dependencies

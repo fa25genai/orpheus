@@ -3,6 +3,25 @@
 The Orpheus System transforms static slides into interactive lecture videos with lifelike professor avatars, combining
 expressive narration, visual presence, and dynamic content to create engaging, personalized learning experiences.
 
+## Table of Contents
+
+- [Architecture](#architecture)
+  - [Service Components](#service-components) 
+  - [API Interface Documentation](#api-interface-documentation)
+- [Getting Started](#getting-started)
+  - [User Guide](#user-guide)
+    - [Lecturer View](#lecturer-view)
+    - [Student View](#student-view)
+  - [Development Setup](#development-setup)
+    - [1. Install Python 3.13.7 using pyenv](#1-install-python-31317-using-pyenv)
+      - [Linux (Debian/Ubuntu)](#linux-debianubuntu)
+      - [macOS](#macos)
+      - [Windows (PowerShell, run as Administrator)](#windows-powershell-run-as-administrator)
+    - [2. Install Poetry 2.2.1](#2-install-poetry-221)
+      - [Linux / macOS](#linux--macos)
+      - [Windows (PowerShell)](#windows-powershell)
+  - [Deployment](#deployment)
+
 ## Architecture
 
 <!---
@@ -16,6 +35,19 @@ Once you edited the diagram, make sure to export it as svg to replace the existi
   <img src="./OrpheusArchitecture.png" alt="Orpheus System Architecture" style="max-width: 95%; height: auto;">
 </div>
 
+### Service Components
+
+The Orpheus system is composed of multiple specialized services, each handling different aspects of the lecture generation pipeline. Below you can find links to the technology-specific documentation and implementation details for each service component.
+
+| Service | Documentation |
+|---------|---------------|
+| **Avatar Service** | [orpheus/avatar](https://github.com/fa25genai/orpheus/tree/develop/avatar) |
+| **Core Service** | [orpheus/core](https://github.com/fa25genai/orpheus/tree/develop/core) |
+| **Document Intelligence Service** | [orpheus/docint](https://github.com/fa25genai/orpheus/tree/develop/document-intelligence) |
+| **Slides Service** | [orpheus/slides](https://github.com/fa25genai/orpheus/tree/develop/slides) |
+| **Status Service** | [orpheus/status](https://github.com/fa25genai/orpheus/tree/develop/status) |
+| **User Interface** | [orpheus/ui](https://github.com/fa25genai/orpheus/tree/develop/ui) |
+
 <!--
 TODOS
 Open questions:
@@ -23,7 +55,7 @@ Open questions:
 * "Answer Generation Service" is not an optimal name yet, "Orchestration" might be better but harder to understand what it actually does if you do not know the project at all?
 -->
 
-## API Interface Documentation
+### API Interface Documentation
 
 <!--
 TODO 
@@ -54,9 +86,15 @@ gather info about not yet exposed APIs (Slide Push Service, Video Push Service, 
 
 ## Getting Started
 
-### Deployment
+### User Guide
 
-TODO - add docker startup commands and instructions
+#### Lecturer View
+
+tbd
+
+#### Student View
+
+tbd
 
 ### Development Setup
 
@@ -236,3 +274,7 @@ We use [Poetry](https://python-poetry.org/) as our dependency and environment ma
     ```powershell
     poetry --version
     ```
+
+### Deployment
+
+TODO - add docker startup commands and instructions
