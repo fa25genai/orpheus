@@ -23,19 +23,30 @@ export const guideText = {
       },
     },
     {
-      topic: "Printing",
+      topic: "For Loops",
       subcategories: {
         "1min":
-          "Explain the basic command used to print 'Hello World' in code and why printing is useful.",
+          "Explain what a loop is in plain English, and why we might use a 'for loop' instead of repeating the same code many times.",
         "2min":
-          "Show how to write a short program that prints your name and age on separate lines, and explain how it works.",
+          "Show a small program that uses a 'for loop' to print numbers 1 through 5, and explain how the loop knows when to stop.",
         "4min":
-          "Demonstrate a short program that asks the user for input, then prints it back inside a sentence, explaining each step.",
+          "Demonstrate a 'for loop' that goes through a list of three names and prints a greeting for each, explaining how the loop repeats the same action for every item.",
       },
     },
   ],
 
   intermediate: [
+    {
+      topic: "For Loops",
+      subcategories: {
+        "1min":
+          "Explain the difference between a 'for loop' and a 'while loop', and give an example scenario where one would be more appropriate than the other.",
+        "2min":
+          "Write a program that uses a 'for loop' to print only the even numbers from 1 through 10, and explain how the loop uses conditions to decide which numbers to print.",
+        "4min":
+          "Demonstrate a 'for loop' that iterates over a dictionary of three key-value pairs (e.g., names and ages), printing a formatted string for each entry. Explain how the loop unpacks keys and values during iteration.",
+      },
+    },
     {
       topic: "Functions",
       subcategories: {
@@ -58,29 +69,18 @@ export const guideText = {
           "Demonstrate a program where a function changes a global variable, then explain what happens step by step.",
       },
     },
-    {
-      topic: "Input",
-      subcategories: {
-        "1min":
-          "Explain why it’s a problem if a program expects a number but the user types text instead.",
-        "2min":
-          "Show a program that asks for a number but crashes if the user types letters, and explain why the error happens.",
-        "4min":
-          "Improve the same program so it keeps asking until the user gives a valid number, and explain how the fix works.",
-      },
-    },
   ],
 
   expert: [
     {
-      topic: "Decomposition",
+      topic: "For Loops",
       subcategories: {
         "1min":
-          "Take a simple everyday task, like making tea, and explain the steps in order as if teaching decomposition.",
+          "Discuss the trade-offs between using explicit loops (like 'for') and higher-order functions (such as 'map', 'filter', or list comprehensions) in Python. In what situations might explicit loops still be preferable?",
         "2min":
-          "Pick a programming task, such as a calculator, and break it down into its main parts while explaining why decomposition helps.",
+          "Write a program that uses a nested 'for loop' to generate all possible ordered pairs (i, j) where i and j range from 1 to 3, excluding pairs where i == j. Explain how the loop structure enforces these constraints and how to optimize it for larger ranges.",
         "4min":
-          "Take a bigger project, like a to-do list app, and show how it can be broken into smaller functions or modules, explaining each piece briefly.",
+          "Demonstrate how to iterate over a very large dataset (e.g., millions of records) efficiently without loading it entirely into memory. Implement a generator-based 'for loop' example and explain how Python's iteration protocol and lazy evaluation help manage performance and memory usage.",
       },
     },
     {
