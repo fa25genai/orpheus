@@ -16,11 +16,67 @@ tbd
 
 ### Currently Used Frameworks
 
-TODO - Document the frameworks currently in use
+- [NextJS](https://nextjs.org/) 
+    - Used as Metaframework to wrap React
+    - Provides server-side rendering, static site generation, and routing
+    - Makes the app faster and easier to scale
+
+- [React](https://react.dev/)
+    - Core reactive javascript framework
+    - Enables a modular, component-based structure for reusability and maintainability
+
+- [shadcn ui](https://ui.shadcn.com/) 
+    - Prebuilt, customizable UI components built with Radix and Tailwind
+    - Helps speed up development with accessible and styled components 
+
+- [Tailwindcss](https://tailwindcss.com/) 
+    - Utility-first CSS framework
+    - Makes styling components faster with inline class-based styling
+    - Keeps the codebase clean by avoiding large CSS files and promoting a composable design approach.
+
+- [OpenAPI Generator](https://openapi-generator.tech/)
+    - Used to generate API clients automatically from OpenAPI specifications.  
+    - Reduces boilerplate when integrating with APIs
+    - Ensures consistency and type safety across API calls
+
+- [Typescript](https://www.typescriptlang.org/)
+    - Enables typing to JavaScript
+    - Helps catch errors at compile time instead of runtime
+    - Improves code readability and maintainability
+
+
 
 ### Good/Bad Experiences
 
-TODO - Document experiences, lessons learned, and recommendations
+#### Good
+- **TypeScript & OpenAPI Generator**  
+  - Provided a strongly typed environment across the project
+  - Enabled rapid updates whenever the APIs changed
+  - Automatically generated clients ensured reliable API calls, preventing issues like unprocessable entities or incorrect endpoints 
+
+- **Next.js & React**  
+  - Mature and widely adopted technologies with extensive documentation  
+  - Strong community support and abundant resources online
+  - Well-covered by Generative AI tools, making problem-solving faster
+
+- **shadcn/ui & Tailwind CSS**  
+  - Offered a great balance between flexibility and speed of development 
+  - Delivered solid starting points for UI components while still allowing custom design
+  - Helped maintain a consistent and polished interface
+
+- **Docker Integration**  
+  - Easy to set up and integrate with Next.js.  
+  - Simplified deployment and ensured consistent environments
+  - Supported by clear and well-structured Next.js documentation
+
+
+#### Bad
+- **CORS & Proxy Setup**  
+  - A proxy in Next.js was required to work around CORS restrictions with the Avatar Video Producer and Avatar Delivery
+  - Proxies only worked reliably inside the Docker environment 
+
+- **Development Limitations**  
+  - Running the frontend in local development with `pnpm dev` and connecting to the proxied endpoints (Avatar Video Producer and Avatar Delivery) running in Docker was not possible
 
 ## Getting Started
 
