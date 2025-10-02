@@ -200,7 +200,7 @@ Expected output: Python 3.13.7
     ```powershell
     Invoke-WebRequest -UseBasicParsing -Uri "https://raw.githubusercontent.com/pyenv-win/pyenv-win/master/pyenv-win/install-pyenv-win.ps1" -OutFile "./install-pyenv-win.ps1"; &"./install-pyenv-win.ps1"; Remove-Item "./install-pyenv-win.ps1"
     ```
-    <details>
+<details>
 <summary>Troubleshooting Common Installation Issues</summary>
 
 ### 1. Script Execution is Disabled
