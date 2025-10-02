@@ -26,7 +26,7 @@ class DocintApiImpl(BaseDocintApi):  # type: ignore[no-untyped-call]
         prompt_query: Annotated[StrictStr, Field(description="The user's query or prompt.")],
     ) -> RetrievalResponse:
         # Check environment variable for debug mode override
-        env_debug = os.getenv("ORPHEUS_DEBUG_MODE", "false").lower() == "true"
+        env_debug = int(os.getenv("ORPHEUS_DEBUG", "0")) # env_debug disabled by default
         # Use environment variable as default, but allow API parameter to override
         
         logger.debug(f"Retrieving data for course {courseId} with query {prompt_query}; debug={env_debug}")
