@@ -160,11 +160,21 @@ Similarly, three voice samples should be uploaded, aligned with the same lecture
     ```
 2. Make sure to supply values for at least one AI-Model (e.g. AWS) and define the respective model names (`MODEL_NAME`,
    `SPLITTING_MODEL`, `SLIDESGEN_MODEL`)
-    1. How to get AWS Keys?
+    1. How to get AWS Keys? (with Hackathon license)
         1. You need an AWS Hackathon Account
-        2. Go to https://slalom-hackathon.awsapps.com/start/#/?tab=accounts
-        3. Go to slalom_IsbUsersPS
-        4. ...
+        2. Login at https://slalom-hackathon.awsapps.com/start/#/?tab=accounts
+        3. Go to [slalom_IsbUsersPS](https://eu-central-1.console.aws.amazon.com/console/home?region=eu-central-1#) 
+        4. Go to [Amazon Bedrock](https://eu-central-1.console.aws.amazon.com/bedrock/home?region=eu-central-1#)
+        5. [View API keys](https://eu-central-1.console.aws.amazon.com/bedrock/home?region=eu-central-1#/api-keys?tab=short-term)
+        6. Click `Generate short-term API keys` (`Generate long-term API keys` did not work with our license)
+        7. Copy the upper `API Key` that starts with `bedrock-api-key...`
+    2. Update the model (AWS includes some user specific tag there, so API keys of other people won't work)
+        1. You need an AWS Hackathon Account
+        2. Login at https://slalom-hackathon.awsapps.com/start/#/?tab=accounts
+        3. Go to [slalom_IsbUsersPS](https://eu-central-1.console.aws.amazon.com/console/home?region=eu-central-1#)
+        4. Go to [Amazon Bedrock](https://eu-central-1.console.aws.amazon.com/bedrock/home?region=eu-central-1#)
+        5. [Infer -> Cross-region inference](https://eu-central-1.console.aws.amazon.com/bedrock/home?region=eu-central-1#/inference-profiles)
+        6. Choose the model that you want to use, copy the `Inference profile ARN` that starts with `arn:aws:bedrock:...`
 3. You can overwrite the global `.env` file values with service specific `.env` files
 
 #### 1. Install Python 3.13.7 using pyenv
