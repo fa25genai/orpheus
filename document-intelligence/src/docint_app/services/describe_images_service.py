@@ -1,0 +1,109 @@
+"""
+Image Description Service using Ollama API
+"""
+
+import base64
+import os
+from typing import Dict, List, Optional
+
+import ollama
+
+from docint_app.services.ollama_client_service import get_ollama_client
+
+
+class ImageDescriptionService:
+    def __init__(self, base_url: str = "https://gpu.aet.cit.tum.de/ollama"):
+        self.base_url = base_url.rstrip("/")
+        self.model = "gemma3:27b"
+        self._client: Optional[ollama.Client] = get_ollama_client()
+
+    @property
+    def client(self) -> ollama.Client:
+        """Lazy initialization of Ollama client."""
+        if self._client is None:
+            api_key = os.getenv("OLLAMA_API_KEY")
+            if not api_key:
+                raise ValueError("OLLAMA_API_KEY environment variable is required")
+
+            self._client = ollama.Client(host=self.base_url, headers={"Authorization": f"Bearer {api_key}"})
+        return self._client
+
+    def _get_image_caption(self, base64_string: str) -> str:
+        """
+        Generate a caption for a single image from base64 string.
+
+        Args:
+            base64_string: Base64 encoded image data
+
+        Returns:
+            Image caption as string
+        """
+        prompt = "Explain the given image. Write the explanation into a single, continuous string. Do not include any formatting, markdown, or commentary. Provide ONLY the raw, extracted text."
+
+        try:
+            image_bytes = base64.b64decode(base64_string.split(",")[-1])
+        except Exception as e:
+            print(f"Base64 decode error: {e}")
+            return ""
+
+        try:
+            response = self.client.chat(
+                model=self.model,
+                messages=[
+                    {
+                        "role": "user",
+                        "content": prompt,
+                        "images": [image_bytes],
+                    }
+                ],
+            )
+            return (response.get("message", {}).get("content", "") or "").strip()
+        except ollama.RequestError as e:
+            print(f"Ollama error: {e.error}")
+            if getattr(e, "status_code", None) == 401:
+                print("Authentication failed. Check OLLAMA_API_KEY.")
+            return ""
+        except Exception as e:
+            print(f"Unexpected error: {e}")
+            return ""
+
+    def caption_images_grouped(self, images_grouped: List[List[Dict[str, str]]]) -> List[List[Dict[str, str]]]:
+        """
+        Generate captions for grouped images (by pages).
+
+        Args:
+            images_grouped: List of pages, each containing list of images with 'data' key
+
+        Returns:
+            List of pages with images containing both 'data' and 'caption' keys
+        """
+        out: List[List[Dict[str, str]]] = []
+        for page_idx, page_items in enumerate(images_grouped, start=1):
+            if not page_items:
+                print(f"[Page {page_idx}] (no images found)")
+                out.append([])
+                continue
+
+            page_out = []
+            for img_idx, item in enumerate(page_items, start=1):
+                caption = self._get_image_caption(item["data"])
+                page_out.append({"data": item["data"], "caption": caption})
+                # Print caption directly
+                cap = caption or "<empty or blocked>"
+                print(f"[Page {page_idx}, image {img_idx}] {cap}")
+            out.append(page_out)
+
+        total = sum(len(p) for p in out)
+        print(f"Pages: {len(out)} | images: {total}")
+
+        return out
+
+
+_instance: Optional[ImageDescriptionService] = None
+
+
+def get_image_description_service() -> ImageDescriptionService:
+    global _instance
+    if _instance is None:
+        _instance = ImageDescriptionService()
+    return _instance

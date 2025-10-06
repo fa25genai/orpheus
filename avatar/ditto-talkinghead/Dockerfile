@@ -40,6 +40,8 @@ WORKDIR /app
 # TODO: To support multiple avatars, we can not rely on this COPY command to copy the example files into the image.
 COPY . /app/
 
+RUN pip install --no-cache-dir python-multipart
+
 # Expose the port the API server will run on
 EXPOSE 8000
 
@@ -47,6 +49,7 @@ EXPOSE 8000
 # These can be overridden during `docker run`.
 ENV DITTO_DATA_ROOT=./checkpoints/ditto_pytorch
 ENV DITTO_CFG_PKL=./checkpoints/ditto_cfg/v0.4_hubert_cfg_pytorch.pkl
+ENV DITTO_DEBUG_MP4_PATH=./debug/mock.mp4
 
 # Command to run the Uvicorn server for your FastAPI application.
 # It uses the filename and the FastAPI app instance name (`app`).

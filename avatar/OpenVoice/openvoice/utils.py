@@ -1,5 +1,6 @@
-import re
 import json
+import re
+
 import numpy as np
 
 
@@ -107,7 +108,6 @@ def split_sentences_latin(text, min_len=10):
     new_sent = []
     count_len = 0
     for ind, sent in enumerate(sentences):
-        # print(sent)
         new_sent.append(sent)
         count_len += len(sent.split(" "))
         if count_len > min_len or ind == len(sentences) - 1:

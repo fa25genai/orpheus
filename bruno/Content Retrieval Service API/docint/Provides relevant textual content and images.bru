@@ -1,0 +1,19 @@
+meta {
+  name: Provides relevant textual content and images
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/v1/retrieval/:courseId
+  body: none
+  auth: inherit
+}
+
+params:query {
+  promptQuery: 
+}
+
+params:path {
+  courseId: 
+}

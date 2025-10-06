@@ -1,7 +1,7 @@
 /* tslint:disable */
 /* eslint-disable */
 /**
- * Document Intelligence API
+ * Lecture Ingestion Service API
  * API for the Orpheus document intelligence orchestration. From the repository: \"The Orpheus System transforms static slides into interactive lecture videos with lifelike professor avatars, combining expressive narration, visual presence, and dynamic content to create engaging, personalized learning experiences.\" License: MIT (see repository).
  *
  * The version of the OpenAPI document: 0.1.0
@@ -15,26 +15,26 @@
 
 import * as runtime from '../runtime';
 import type {
-  RetrievalResponse,
   UploadResponse,
+  VideoUploadResponse,
 } from '../models/index';
 import {
-    RetrievalResponseFromJSON,
-    RetrievalResponseToJSON,
     UploadResponseFromJSON,
     UploadResponseToJSON,
+    VideoUploadResponseFromJSON,
+    VideoUploadResponseToJSON,
 } from '../models/index';
 
 export interface DeletesDocumentRequest {
     documentId: string;
 }
 
-export interface RetrievesDataForGenerationRequest {
+export interface UploadsDocumentRequest {
     courseId: string;
-    promptQuery: string;
+    body: Blob;
 }
 
-export interface UploadsDocumentRequest {
+export interface UploadsVideoRequest {
     courseId: string;
     body: Blob;
 }
@@ -81,54 +81,6 @@ export class DocintApi extends runtime.BaseAPI {
     }
 
     /**
-     * Provides relevant textual content and images
-     */
-    async retrievesDataForGenerationRaw(requestParameters: RetrievesDataForGenerationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<RetrievalResponse>> {
-        if (requestParameters['courseId'] == null) {
-            throw new runtime.RequiredError(
-                'courseId',
-                'Required parameter "courseId" was null or undefined when calling retrievesDataForGeneration().'
-            );
-        }
-
-        if (requestParameters['promptQuery'] == null) {
-            throw new runtime.RequiredError(
-                'promptQuery',
-                'Required parameter "promptQuery" was null or undefined when calling retrievesDataForGeneration().'
-            );
-        }
-
-        const queryParameters: any = {};
-
-        if (requestParameters['promptQuery'] != null) {
-            queryParameters['promptQuery'] = requestParameters['promptQuery'];
-        }
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-
-        let urlPath = `/v1/retrieval/{courseId}`;
-        urlPath = urlPath.replace(`{${"courseId"}}`, encodeURIComponent(String(requestParameters['courseId'])));
-
-        const response = await this.request({
-            path: urlPath,
-            method: 'GET',
-            headers: headerParameters,
-            query: queryParameters,
-        }, initOverrides);
-
-        return new runtime.JSONApiResponse(response, (jsonValue) => RetrievalResponseFromJSON(jsonValue));
-    }
-
-    /**
-     * Provides relevant textual content and images
-     */
-    async retrievesDataForGeneration(requestParameters: RetrievesDataForGenerationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<RetrievalResponse> {
-        const response = await this.retrievesDataForGenerationRaw(requestParameters, initOverrides);
-        return await response.value();
-    }
-
-    /**
      * uploads a PDF document
      */
     async uploadsDocumentRaw(requestParameters: UploadsDocumentRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<UploadResponse>> {
@@ -172,6 +124,53 @@ export class DocintApi extends runtime.BaseAPI {
      */
     async uploadsDocument(requestParameters: UploadsDocumentRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<UploadResponse> {
         const response = await this.uploadsDocumentRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * uploads a video file
+     */
+    async uploadsVideoRaw(requestParameters: UploadsVideoRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<VideoUploadResponse>> {
+        if (requestParameters['courseId'] == null) {
+            throw new runtime.RequiredError(
+                'courseId',
+                'Required parameter "courseId" was null or undefined when calling uploadsVideo().'
+            );
+        }
+
+        if (requestParameters['body'] == null) {
+            throw new runtime.RequiredError(
+                'body',
+                'Required parameter "body" was null or undefined when calling uploadsVideo().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'video/mp4';
+
+
+        let urlPath = `/v1/video/{courseId}`;
+        urlPath = urlPath.replace(`{${"courseId"}}`, encodeURIComponent(String(requestParameters['courseId'])));
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'POST',
+            headers: headerParameters,
+            query: queryParameters,
+            body: requestParameters['body'] as any,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => VideoUploadResponseFromJSON(jsonValue));
+    }
+
+    /**
+     * uploads a video file
+     */
+    async uploadsVideo(requestParameters: UploadsVideoRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<VideoUploadResponse> {
+        const response = await this.uploadsVideoRaw(requestParameters, initOverrides);
         return await response.value();
     }
 

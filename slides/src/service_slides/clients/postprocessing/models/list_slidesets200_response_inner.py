@@ -12,14 +12,14 @@ Do not edit the class manually.
 """  # noqa: E501
 
 from __future__ import annotations
+
+import json
 import pprint
 import re  # noqa: F401
-import json
-
 from datetime import datetime
+from typing import Any, ClassVar, Dict, List, Optional, Set
+
 from pydantic import BaseModel, ConfigDict, Field, StrictStr
-from typing import Any, ClassVar, Dict, List
-from typing import Optional, Set
 from typing_extensions import Self
 
 
@@ -80,7 +80,5 @@ class ListSlidesets200ResponseInner(BaseModel):
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
 
-        _obj = cls.model_validate(
-            {"promptId": obj.get("promptId"), "createdAt": obj.get("createdAt")}
-        )
+        _obj = cls.model_validate({"promptId": obj.get("promptId"), "createdAt": obj.get("createdAt")})
         return _obj

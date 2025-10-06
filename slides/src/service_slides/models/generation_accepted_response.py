@@ -12,13 +12,14 @@ Do not edit the class manually.
 """  # noqa: E501
 
 from __future__ import annotations
-import pprint
+
 import json
-
-
+import pprint
 from datetime import datetime
-from pydantic import BaseModel, Field, StrictStr, field_validator
 from typing import Any, ClassVar, Dict, List, Optional
+
+from pydantic import BaseModel, Field, StrictStr, field_validator
+
 from service_slides.models.slide_structure import SlideStructure
 
 try:
@@ -35,9 +36,7 @@ class GenerationAcceptedResponse(BaseModel):
     prompt_id: Optional[StrictStr] = Field(default=None, alias="promptId")
     status: Optional[StrictStr] = None
     created_at: Optional[datetime] = Field(default=None, alias="createdAt")
-    structure: Optional[SlideStructure] = Field(
-        default=None, description="Structure preview for progressing other generation steps"
-    )
+    structure: Optional[SlideStructure] = Field(default=None, description="Structure preview for progressing other generation steps")
     __properties: ClassVar[List[str]] = ["promptId", "status", "createdAt", "structure"]
 
     @field_validator("status")
@@ -108,9 +107,7 @@ class GenerationAcceptedResponse(BaseModel):
                 "promptId": obj.get("promptId"),
                 "status": obj.get("status"),
                 "createdAt": obj.get("createdAt"),
-                "structure": SlideStructure.from_dict(structure_data)
-                if (structure_data := obj.get("structure")) is not None
-                else None,
+                "structure": SlideStructure.from_dict(structure_data) if (structure_data := obj.get("structure")) is not None else None,
             }
         )
         return _obj

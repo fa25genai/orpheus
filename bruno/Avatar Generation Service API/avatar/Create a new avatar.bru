@@ -1,0 +1,15 @@
+meta {
+  name: Create a new avatar
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/v1/avatars
+  body: multipartForm
+  auth: inherit
+}
+
+body:multipart-form {
+  file: 
+}

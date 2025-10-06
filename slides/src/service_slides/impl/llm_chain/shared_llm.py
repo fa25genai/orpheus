@@ -1,15 +1,16 @@
 import os
-from typing import Optional, Any, TypeVar, Dict, cast
+from typing import Any, Dict, Optional, TypeVar, cast
 
+from langchain_aws import ChatBedrockConverse
+from langchain_core.language_models.base import BaseLanguageModel
 from langchain_core.output_parsers import BaseOutputParser, StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import Runnable
-from langchain_core.language_models.base import BaseLanguageModel
+from langchain_google_genai import ChatGoogleGenerativeAI
 
 # Provider-specific imports
 from langchain_ollama.llms import OllamaLLM
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_openai import ChatOpenAI
+from langchain_openai import AzureChatOpenAI, ChatOpenAI
 
 T = TypeVar("T")
 
@@ -37,9 +38,7 @@ def invoke_llm(
     return cast(Any, chain.invoke(input_data))
 
 
-def create_base_model(
-    model_name: str, temperature: float = 0.0, max_tokens: Optional[int] = None
-) -> BaseLanguageModel[Any]:
+def create_base_model(model_name: str, temperature: float = 0.0, max_tokens: Optional[int] = None) -> BaseLanguageModel[Any]:
     """Creates the best available model based on environment variables."""
 
     # Try OpenAI first
@@ -62,8 +61,8 @@ def create_base_model(
             model_kwargs["max_output_tokens"] = max_tokens
         return ChatGoogleGenerativeAI(**model_kwargs)
 
-    # Try Ollama last
-    if "OLLAMA_LLM_HOST" in os.environ and "OLLAMA_LLM_KEY" in os.environ:
+    # Try Ollama third
+    if "OLLAMA_LLM_HOST" in os.environ:
         model_kwargs = {
             "model": model_name,
             "base_url": os.environ["OLLAMA_LLM_HOST"],
@@ -73,13 +72,30 @@ def create_base_model(
         if max_tokens:
             model_kwargs["max_tokens"] = max_tokens
         if "OLLAMA_LLM_KEY" in os.environ:
-            model_kwargs["client_kwargs"] = {
-                "headers": {"Authorization": f"Bearer {os.environ['OLLAMA_LLM_KEY']}"}
-            }
+            model_kwargs["client_kwargs"] = {"headers": {"Authorization": f"Bearer {os.environ['OLLAMA_LLM_KEY']}"}}
         return OllamaLLM(**model_kwargs)  # type: ignore
 
-    raise RuntimeError(
-        "No LLM providers available. Please set one of: "
-        "OPENAI_API_KEY, GOOGLE_API_KEY, or OLLAMA_LLM_HOST "
-        "in your environment variables."
-    )
+    # Try AWS Bedrock fourth
+    if "AWS_BEARER_TOKEN_BEDROCK" in os.environ:
+        model_kwargs = {
+            "model_id": model_name,
+            "temperature": temperature,
+            "provider": os.environ["AWS_PROVIDER"],
+        }
+        if max_tokens:
+            model_kwargs["max_tokens"] = max_tokens
+        return ChatBedrockConverse(**model_kwargs)  # type: ignore
+
+    # Try Azure OpenAI last
+    if "AZURE_OPENAI_API_KEY" in os.environ and "AZURE_OPENAI_API_BASE" in os.environ and "AZURE_OPENAI_API_VERSION" in os.environ:
+        model_kwargs = {
+            "azure_deployment": model_name,
+            "api_version": os.environ["AZURE_OPENAI_API_VERSION"],
+            "azure_endpoint": os.environ["AZURE_OPENAI_API_BASE"],
+            # "temperature": temperature, # Currently not supported for gpt-5 models
+        }
+        if max_tokens:
+            model_kwargs["max_tokens"] = max_tokens
+        return AzureChatOpenAI(**model_kwargs)  # type: ignore
+
+    raise RuntimeError("No LLM providers available. Please set open ai, google, ollama, aws, or azure configurations in your environment variables.")

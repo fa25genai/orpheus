@@ -1,7 +1,7 @@
 /* tslint:disable */
 /* eslint-disable */
 /**
- * Orpheus Slide-Service API
+ * Slide Generation Service API
  * API for the Orpheus slide generation. From the repository: \"The Orpheus System transforms static slides into interactive lecture videos with lifelike professor avatars, combining expressive narration, visual presence, and dynamic content to create engaging, personalized learning experiences.\" License: MIT (see repository). 
  *
  * The version of the OpenAPI document: 0.1.0
@@ -51,6 +51,18 @@ export interface GenerationStatusResponse {
     lastUpdated?: Date;
     /**
      * 
+     * @type {string}
+     * @memberof GenerationStatusResponse
+     */
+    webUrl?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof GenerationStatusResponse
+     */
+    pdfUrl?: string;
+    /**
+     * 
      * @type {Error}
      * @memberof GenerationStatusResponse
      */
@@ -91,6 +103,8 @@ export function GenerationStatusResponseFromJSONTyped(json: any, ignoreDiscrimin
         'totalPages': json['totalPages'] == null ? undefined : json['totalPages'],
         'generatedPages': json['generatedPages'] == null ? undefined : json['generatedPages'],
         'lastUpdated': json['lastUpdated'] == null ? undefined : (new Date(json['lastUpdated'])),
+        'webUrl': json['webUrl'] == null ? undefined : json['webUrl'],
+        'pdfUrl': json['pdfUrl'] == null ? undefined : json['pdfUrl'],
         'error': json['error'] == null ? undefined : json['error'],
     };
 }
@@ -111,6 +125,8 @@ export function GenerationStatusResponseToJSONTyped(value?: GenerationStatusResp
         'totalPages': value['totalPages'],
         'generatedPages': value['generatedPages'],
         'lastUpdated': value['lastUpdated'] == null ? undefined : ((value['lastUpdated']).toISOString()),
+        'webUrl': value['webUrl'],
+        'pdfUrl': value['pdfUrl'],
         'error': value['error'],
     };
 }

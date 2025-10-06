@@ -1,0 +1,15 @@
+meta {
+  name: Return current generation status (polling)
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/v1/video/:promptId/status
+  body: none
+  auth: inherit
+}
+
+params:path {
+  promptId: 1fadb8aa-0ed0-4e32-a204-612b812be81a
+}

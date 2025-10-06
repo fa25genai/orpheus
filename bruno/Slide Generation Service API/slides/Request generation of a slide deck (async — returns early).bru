@@ -1,0 +1,27 @@
+meta {
+  name: Request generation of a slide deck (async — returns early)
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/v1/slides/generate
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "courseId": "1",
+    "promptId": "d80eeac1-3387-4a77-a46b-af677f0c39b0",
+    "lectureScript": "Hallo liebe Kinder. Heute lernen wir etwas über Katzen. Katzen sind Raubtiere und häufig Fleischfresser. Hier sehen wir das Bild einer Katze (cat.png). Sie können hoch springen und landen immer auf ihren Beinen. Sie sind flink und wendig.",
+    "user": {},
+    "assets": [
+      {
+        "name": "cat.png",
+        "assetDescription": "Image of a cat standing in a living room",
+        "mimeType": "image/PNG"
+      }
+    ]
+  }
+}

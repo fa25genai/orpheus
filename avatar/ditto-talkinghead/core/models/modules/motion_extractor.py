@@ -4,8 +4,8 @@
 Motion extractor(M), which directly predicts the canonical keypoints, head pose and expression deformation of the input image
 """
 
-from torch import nn
 import torch
+from torch import nn
 
 from .convnextv2 import convnextv2_tiny
 

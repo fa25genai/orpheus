@@ -11,22 +11,29 @@ WeaviateGraphStore — graph-first vector store wrapper (requests-based)
     - captionsText: text (optional fused image captions)
     - images: [SlideImage]  <-- cross-reference (graph edge)
 
-  SlideImage (image blobs; image vector optional later)
+  SlideImage (image b64 strings; image vector optional later)
     - courseId: text
     - documentId: text
     - slideNo: int
-    - imageBase64: blob
+    - imageBase64: text
     - description: text
+
+  VideoChunk (vectorized with text embedding from transcription)
+    - courseId: text (mandatory)
+    - chunkId: text (unique identifier)
+    - text: text (chunk content from transcription)
 
 - Key ops:
   * ensure_schema()               -> idempotent schema creation + reference property
   * upsert_slide(...)             -> create/replace Slide with text vector
   * upsert_images_and_link(...)   -> create SlideImage objects + link to Slide.images
   * search_slides_with_images(...) -> single GraphQL query: ANN + traverse images
+  * upsert_video_chunk(...)       -> create/replace VideoChunk with text vector
+  * search_video_chunks(...)      -> search VideoChunk objects by similarity
   * to_retrieval_response(...)    -> map hits -> OpenAPI RetrievalResponse
 
 Notes:
-- BYO embeddings: send your text vector when upserting Slide.
+- BYO embeddings: send your text vector when upserting Slide or VideoChunk.
 - Vectors are stored in the class's ANN index, keyed by UUID (not a user-defined property).
 - This uses raw REST/GraphQL; no weaviate-client dependency required.
 """
@@ -34,11 +41,15 @@ Notes:
 from __future__ import annotations
 
 import json
-import time
+import os
 import uuid
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
 import requests
+import weaviate
+from weaviate.classes.query import Filter, MetadataQuery
+
+from docint_app.services.embedding_service import get_embedding_service
 
 
 class WeaviateError(RuntimeError):
@@ -48,15 +59,16 @@ class WeaviateError(RuntimeError):
 class WeaviateGraphStore:
     def __init__(
         self,
-        base_url: str = "http://localhost:8080",
+        base_url: str = "http://docint-weaviate:28947",
         api_key: Optional[str] = None,
         timeout_s: int = 15,
     ):
         """
-        :param base_url: Weaviate HTTP endpoint (e.g., http://localhost:8080 or http://<host-ip>:8080)
+        :param base_url: Weaviate HTTP endpoint (e.g., http://localhost:28947 or http://<host-ip>:28947)
         :param api_key:  Optional API key (if we enable auth later)
         :param timeout_s: Default request timeout
         """
+        base_url = os.getenv("WEAVIATE_URL", base_url)
         self.base_url = base_url.rstrip("/")
         self.timeout_s = timeout_s
         self.session = requests.Session()
@@ -89,30 +101,24 @@ class WeaviateGraphStore:
         return r.json()
 
     def _post(self, path: str, payload: Dict[str, Any]) -> Dict[str, Any]:
-        r = self.session.post(
-            f"{self.base_url}{path}", data=json.dumps(payload), timeout=self.timeout_s
-        )
+        r = self.session.post(f"{self.base_url}{path}", data=json.dumps(payload), timeout=self.timeout_s)
         self._raise_for_bad(r, f"POST {path}")
         if r.text.strip():
             return r.json()
         return {}
 
     def _put(self, path: str, payload: Dict[str, Any]) -> Dict[str, Any]:
-        r = self.session.put(
-            f"{self.base_url}{path}", data=json.dumps(payload), timeout=self.timeout_s
-        )
+        r = self.session.put(f"{self.base_url}{path}", data=json.dumps(payload), timeout=self.timeout_s)
         self._raise_for_bad(r, f"PUT {path}")
         if r.text.strip():
             return r.json()
         return {}
-    
+
     def _delete(self, path: str, payload: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-        r = self.session.delete(f"{self.base_url}{path}",
-                                data=(json.dumps(payload) if payload is not None else None),
-                                timeout=self.timeout_s)
+        r = self.session.delete(f"{self.base_url}{path}", data=(json.dumps(payload) if payload is not None else None), timeout=self.timeout_s)
         self._raise_for_bad(r, f"DELETE {path}")
         return r.json() if r.text.strip() else {}
-    
+
     @staticmethod
     def _similarity_from_distance(distance: Optional[float]) -> float:
         """
@@ -179,7 +185,7 @@ class WeaviateGraphStore:
         }}
         """
         res = self._post("/v1/graphql", {"query": gql})
-        return (res.get("data", {}).get("Get", {}).get("SlideImage", []) or [])
+        return res.get("data", {}).get("Get", {}).get("SlideImage", []) or []
 
     # Schema
     def ensure_schema(self) -> None:
@@ -207,10 +213,27 @@ class WeaviateGraphStore:
                         {"name": "courseId", "dataType": ["text"]},
                         {"name": "documentId", "dataType": ["text"]},
                         {"name": "slideNo", "dataType": ["int"]},
-                        {"name": "imageBase64", "dataType": ["blob"]},
+                        {"name": "imageBase64", "dataType": ["text"]},
                         {"name": "description", "dataType": ["text"]},
                         {"name": "createdAt", "dataType": ["date"]},
                         {"name": "modifiedAt", "dataType": ["date"]},
+                    ],
+                },
+            )
+
+        # create VideoChunk (standalone, no references)
+        if "VideoChunk" not in existing_classes:
+            self._post(
+                "/v1/schema",
+                {
+                    "class": "VideoChunk",
+                    "description": "Video transcription chunks (vectorized with text embedding)",
+                    "vectorizer": "none",  # BYO vectors
+                    "properties": [
+                        {"name": "courseId", "dataType": ["text"]},
+                        {"name": "lectureId", "dataType": ["text"]},
+                        {"name": "chunkId", "dataType": ["text"]},
+                        {"name": "text", "dataType": ["text"]},
                     ],
                 },
             )
@@ -305,6 +328,7 @@ class WeaviateGraphStore:
             self._post("/v1/objects", payload)
         except WeaviateError as e:
             # Duplicate/exists -> update instead
+            print(f"Slide upsert POST failed, trying PUT: {e}")
             self._put(f"/v1/objects/{uid}", payload)
         return uid
 
@@ -354,7 +378,8 @@ class WeaviateGraphStore:
             # Create (POST), or update (PUT) if it already exists
             try:
                 self._post("/v1/objects", obj_payload)
-            except WeaviateError:
+            except WeaviateError as e:
+                print(f"SlideImage upsert POST failed, trying PUT: {e}")
                 self._put(f"/v1/objects/{img_id}", obj_payload)
 
             # Add reference from the slide to this image
@@ -365,229 +390,434 @@ class WeaviateGraphStore:
 
         return created_ids
 
+    def upsert_video_chunk(
+        self,
+        *,
+        course_id: str,
+        lecture_id: str,
+        chunk_id: str,
+        text: str,
+        text_vector: Sequence[float],
+    ) -> str:
+        """
+        Create/replace a VideoChunk object with its text embedding (BYO vector).
+        Uses POST to create; on conflict falls back to PUT to update (idempotent).
+        :return: UUID used for the video chunk
+        """
+        # Generate deterministic UUID from course_id and chunk_id
+        name = f"VideoChunk::{course_id}::{chunk_id}"
+        uid = str(uuid.uuid5(uuid.NAMESPACE_URL, name))
 
-    # Query (dual-channel with fusion: text on Slide + image-description on SlideImage)
-    def search_slides_fused_with_images(
+        payload = {
+            "class": "VideoChunk",
+            "id": uid,
+            "properties": {
+                "courseId": course_id,
+                "lectureId": lecture_id,
+                "chunkId": chunk_id,
+                "text": text,
+            },
+            "vector": list(text_vector),
+        }
+
+        # Try create first (POST); if it already exists, update (PUT)
+        try:
+            self._post("/v1/objects", payload)
+        except WeaviateError as e:
+            # Duplicate/exists -> update instead
+            print(f"VideoChunk upsert POST failed, trying PUT: {e}")
+            self._put(f"/v1/objects/{uid}", payload)
+        return uid
+
+    def test_upsert_video_chunk(self) -> str:
+        to_upsert = "A for loop is a control structure used to repeat a block of code a specific number of times. It is especially useful when you know in advance how many iterations you need. In most programming languages, a for loop consists of an initialization, a condition, and an update step. For example, it can be used to iterate over a range of numbers or through elements of a collection like a list. By using for loops, repetitive tasks can be written more concisely and clearly. This makes code easier to maintain and less error-prone compared to writing the same instructions multiple times."  # noqa: E501
+        text_vector = get_embedding_service().embed_text(to_upsert)
+        uid = self.upsert_video_chunk(course_id="W2", lecture_id="lecture456", chunk_id="chunk789", text=to_upsert, text_vector=text_vector)
+        return uid
+
+    def client_search_slides_fused_with_images(
+        self,
+        *,
+        query_vector: Sequence[float],
+        course_id: str,
+        k: int = 5,
+        similarity_threshold: float = 0.80,
+    ) -> List[Dict[str, Any]]:
+        """
+        Simple implementation using weaviate client to search slides and their images.
+        """
+        print("[WeaviateClientSearch] Starting client_search_slides_fused_with_images")
+        print("[WeaviateClientSearch] Parameters:")
+        print(f"[WeaviateClientSearch]   - course_id: {course_id}")
+        print(f"[WeaviateClientSearch]   - k: {k}")
+        print(f"[WeaviateClientSearch]   - query_vector length: {len(query_vector) if query_vector else 'None'}")
+
+        if not course_id:
+            print("[WeaviateClientSearch] ERROR: course_id is empty or None")
+            raise ValueError("course_id is required and cannot be None or empty")
+
+        print("[WeaviateClientSearch] Getting weaviate client...")
+        client = get_weaviate_client()
+        print(f"[WeaviateClientSearch] Client obtained: {type(client)}")
+
+        # Search slides using client
+        print("[WeaviateClientSearch] Building slide query...")
+        print(f"[WeaviateClientSearch] Query vector first 5 elements: {query_vector[:5] if len(query_vector) >= 5 else query_vector}")
+
+        slides = client.collections.get("Slide")
+        slideImages = client.collections.get("SlideImage")
+
+        slide_query = slides.query.near_vector(
+            near_vector=query_vector,  # your query vector goes here
+            limit=k,
+            certainty=similarity_threshold,
+            return_metadata=MetadataQuery(distance=True, certainty=True),
+            filters=Filter.by_property("courseId").equal(course_id),
+        )
+
+        slide_hits = slide_query.objects
+
+        slide_hits_document_ids = [(s.properties["documentId"], s.properties["slideNo"]) for s in slide_hits]
+
+        print(slide_hits_document_ids)
+
+        if len(slide_hits_document_ids) == 0:
+            print("[WeaviateClientSearch] No slide hits found, returning empty list")
+            return []
+
+        # Build filters for each (documentId, slideNo) pair
+        slide_image_filters = [Filter.all_of([Filter.by_property("documentId").equal(doc_id), Filter.by_property("slideNo").equal(slide_no)]) for doc_id, slide_no in slide_hits_document_ids]
+        slide_image_query = slideImages.query.fetch_objects(filters=Filter.any_of(slide_image_filters))
+
+        slide_image_hits = slide_image_query.objects
+        print(f"[WeaviateClientSearch] Retrieved {len(slide_image_hits)} slide images")
+        for i, img in enumerate(slide_image_hits):
+            print(f"[WeaviateClientSearch]   Image {i}: courseId={img.properties.get('courseId')}, slideNo={img.properties.get('slideNo')}, documentId={img.properties.get('documentId')}")
+            print(f"[WeaviateClientSearch]     Description preview: {(img.properties.get('description', '') or '')[:100]}...")
+            print(f"[WeaviateClientSearch]     ImageBase64 length: {len(img.properties.get('imageBase64', '') or '')}")
+
+            # build output
+        print("[WeaviateClientSearch] Building final results...")
+        final_results = []
+
+        # Group images by (documentId, slideNo)
+        from collections import defaultdict
+
+        images_by_slide = defaultdict(list)
+        for img in slide_image_hits:
+            key = (img.properties.get("documentId"), img.properties.get("slideNo"))
+            images_by_slide[key].append({"description": img.properties.get("description", ""), "imageBase64": img.properties.get("imageBase64", "")})
+
+        print(f"[WeaviateClientSearch] Grouped images by slide: {len(images_by_slide)} unique slides")
+
+        # Build results for each slide hit
+        for slide_idx, slide in enumerate(slide_hits):
+            print(f"[WeaviateClientSearch] Processing slide {slide_idx + 1}/{len(slide_hits)}")
+
+            slide_props = slide.properties
+            slide_metadata = slide.metadata
+
+            # Get images for this slide
+            slide_key = (slide_props.get("documentId"), slide_props.get("slideNo"))
+            slide_images = images_by_slide.get(slide_key, [])
+
+            print(f"[WeaviateClientSearch] Slide {slide_idx}: courseId={slide_props.get('courseId')}, slideNo={slide_props.get('slideNo')}")
+            print(f"[WeaviateClientSearch]   Distance: {slide_metadata.distance}, Certainty: {slide_metadata.certainty}")
+            print(f"[WeaviateClientSearch]   Found {len(slide_images)} images for this slide")
+
+            # Calculate similarity from distance
+            result_slide = {
+                "id": slide.uuid,
+                "courseId": slide_props.get("courseId"),
+                "documentId": slide_props.get("documentId"),
+                "slideNo": slide_props.get("slideNo"),
+                "slideDescription": slide_props.get("slideDescription", ""),
+                "distance": slide_metadata.distance,
+                "certainty": slide_metadata.certainty,
+                "images": slide_images,
+            }
+
+            print(f"[WeaviateClientSearch] Slide confidence scores - Distance: {slide_metadata.distance},    Certainty: {slide_metadata.certainty}")
+            print(f"[WeaviateClientSearch] Added slide {slide_props.get('slideNo')} with {len(slide_images)} images to results")
+
+            final_results.append(result_slide)
+
+        print("[WeaviateClientSearch] Completed processing all slides")
+        print(f"[WeaviateClientSearch] Final results count: {len(final_results)}")
+        print("[WeaviateClientSearch] Final results summary:")
+        for i, result in enumerate(final_results):
+            distance = result.get("distance")
+            similarity = result.get("similarity")
+            certainty = result.get("certainty")
+            print(f"[WeaviateClientSearch]   Result {i}: courseId={result.get('courseId')}, slideNo={result.get('slideNo')}, images_count={len(result.get('images', []))}")
+            print(f"[WeaviateClientSearch]   Confidence: distance={distance}, similarity={similarity}, certainty={certainty}")
+
+        print(f"[WeaviateClientSearch] Returning {len(final_results)} results")
+        return final_results
+
+    def client_search_video_chunks(
         self,
         *,
         query_vector: Sequence[float],
         course_id: Optional[str] = None,
         k: int = 5,
-        image_query_vector: Optional[Sequence[float]] = None,
-        alpha: float = 0.8,             # weight for text; (1 - alpha) for image
-        per_slide_image_agg: str = "max",  # "max" or "mean"
-        include_distance: bool = True,
+        similarity_threshold: float = 0.80,
     ) -> List[Dict[str, Any]]:
         """
-        Single 'logical' retrieval with score fusion across two channels:
+        Simple implementation using weaviate client to search video chunks.
+"""
+        print("[WeaviateClientSearch] Starting client_search_video_chunks")
+        print("[WeaviateClientSearch] Parameters:")
+        print(f"[WeaviateClientSearch]   - course_id: {course_id}")
+        print(f"[WeaviateClientSearch]   - k: {k}")
+        print(f"[WeaviateClientSearch]   - similarity_threshold: {similarity_threshold}")
+        print(f"[WeaviateClientSearch]   - query_vector length: {len(query_vector) if query_vector else 'None'}")
 
-          1) Text ANN on Slide (slideDescription vector)
-          2) Image-description ANN on SlideImage (caption vector)
-          3) Normalize both channels (min-max), fuse with weights, pick top-k
-          4) For each chosen slide, fetch ALL images for that slide and assemble
+        print("[WeaviateClientSearch] Getting weaviate client...")
+        client = get_weaviate_client()
+        print(f"[WeaviateClientSearch] Client obtained: {type(client)}")
 
-        Returns a list of hits (dicts) with Slide fields + nested images and
-        extra keys: distanceText, bestImageDistance, fusedScore.
-        """
-        # --- 1) Text ANN on Slide ---
-        where_clause = ""
+        # Search video chunks using client
+        print("[WeaviateClientSearch] Building video chunk query...")
+        print(f"[WeaviateClientSearch] Query vector first 5 elements: {query_vector[:5] if len(query_vector) >= 5 else query_vector}")
+
+        video_chunks = client.collections.get("VideoChunk")
+
+        # Build the query with optional course filter
         if course_id:
-            where_clause = (
-                'where: { operator: Equal, path: ["courseId"], valueText: "%s" }' % course_id
+            chunk_query = video_chunks.query.near_vector(
+                near_vector=query_vector,
+                limit=k,
+                certainty=similarity_threshold,  # Using similarity_threshold as certainty
+                return_metadata=MetadataQuery(distance=True, certainty=True),
+                filters=Filter.by_property("courseId").equal(course_id),
             )
+        else:
+            chunk_query = video_chunks.query.near_vector(
+                near_vector=query_vector,
+                limit=k,
+                certainty=similarity_threshold,
+                return_metadata=MetadataQuery(distance=True, certainty=True),
+            )
+
+        chunk_hits = chunk_query.objects
+        print(f"[WeaviateClientSearch] Found {len(chunk_hits)} video chunk hits")
+
+        if len(chunk_hits) == 0:
+            print("[WeaviateClientSearch] No video chunk hits found, returning empty list")
+            return []
+
+        # Build output
+        print("[WeaviateClientSearch] Building final results...")
+        final_results = []
+
+        # Build results for each chunk hit
+        for chunk_idx, chunk in enumerate(chunk_hits):
+            print(f"[WeaviateClientSearch] Processing chunk {chunk_idx + 1}/{len(chunk_hits)}")
+
+            chunk_props = chunk.properties
+            chunk_metadata = chunk.metadata
+
+            print(f"[WeaviateClientSearch] Chunk {chunk_idx}: courseId={chunk_props.get('courseId')}, chunkId={chunk_props.get('chunkId')}")
+            print(f"[WeaviateClientSearch]   Distance: {chunk_metadata.distance}, Certainty: {chunk_metadata.certainty}")
+            print(f"[WeaviateClientSearch]   Text preview: {(chunk_props.get('text', '') or '')[:100]}...")
+
+            # Calculate similarity from distance using the existing method
+            similarity = self._similarity_from_distance(chunk_metadata.distance)
+
+            result_chunk = {
+                "id": chunk.uuid,
+                "courseId": chunk_props.get("courseId"),
+                "lectureId": chunk_props.get("lectureId"),
+                "chunkId": chunk_props.get("chunkId"),
+                "text": chunk_props.get("text", ""),
+                "distance": chunk_metadata.distance,
+                "certainty": chunk_metadata.certainty,
+                "similarity": similarity,
+            }
+
+            print(f"[WeaviateClientSearch] Chunk confidence scores - Distance: {chunk_metadata.distance}, Certainty: {chunk_metadata.certainty}, Similarity: {similarity}")
+            print(f"[WeaviateClientSearch] Added chunk {chunk_props.get('chunkId')} to results")
+
+            final_results.append(result_chunk)
+
+        print("[WeaviateClientSearch] Completed processing all chunks")
+        print(f"[WeaviateClientSearch] Final results count: {len(final_results)}")
+        print("[WeaviateClientSearch] Final results summary:")
+        for i, result in enumerate(final_results):
+            distance = result.get("distance")
+            similarity = result.get("similarity")
+            certainty = result.get("certainty")
+            print(f"[WeaviateClientSearch]   Result {i}: courseId={result.get('courseId')}, chunkId={result.get('chunkId')}")
+            print(f"[WeaviateClientSearch]   Confidence: distance={distance}, similarity={similarity}, certainty={certainty}")
+
+        print(f"[WeaviateClientSearch] Returning {len(final_results)} results")
+        return final_results
+
+    def client_get_both_slides_and_video_chunks(self, *, query_vector: Sequence[float], course_id: Optional[str] = None, k: int = 5, similarity_threshold: float = 0.80) -> Dict[str, Any]:
+        slide_hits = self.client_search_slides_fused_with_images(query_vector=query_vector, course_id=course_id, k=k, similarity_threshold=similarity_threshold)
+
+        video_chunk_hits = self.client_search_video_chunks(
+            query_vector=query_vector,
+            course_id=course_id,
+            k=k,
+            similarity_threshold=similarity_threshold
+        )
+
+        print(f"Retrieved {len(slide_hits)} hits from store")
+
+        # Convert to OpenAPI format
+        response: Dict[str, Any] = self.to_retrieval_response(slide_hits, video_chunk_hits)
+        return response
+
+    # Test/Debug functions
+    def get_all_data_for_course(self, course_id: str) -> Dict[str, Any]:
+        """
+        Test function: Get all slides and images for a courseId (no vector search).
+        Returns all data for debugging purposes.
+        """
+        # Get all slides for the course
         gql_slides = f"""
         {{
           Get {{
             Slide(
-              nearVector: {{ vector: {json.dumps(list(query_vector))} }}
-              {where_clause}
-              limit: {int(max(k, 50))}   # pull a healthy candidate set; we will re-rank
+              where: {{ operator: Equal, path: ["courseId"], valueText: "{course_id}" }}
+              limit: 100
             ) {{
               courseId
               documentId
               slideNo
               slideDescription
-              _additional {{ id {"distance" if include_distance else ""} }}
+              _additional {{ id }}
             }}
           }}
         }}
         """
         res_slides = self._post("/v1/graphql", {"query": gql_slides})
-        slide_hits = res_slides.get("data", {}).get("Get", {}).get("Slide", []) or []
+        slides = res_slides.get("data", {}).get("Get", {}).get("Slide", []) or []
 
-        # Build text-channel score map: key = (courseId, slideNo)
-        text_scores: Dict[tuple, float] = {}
-        slide_meta: Dict[tuple, Dict[str, Any]] = {}
-        for s in slide_hits:
-            key = (s.get("courseId"), s.get("slideNo"))
-            dist = (s.get("_additional") or {}).get("distance")
-            sim = self._similarity_from_distance(dist if include_distance else None)
-            text_scores[key] = sim
-            slide_meta[key] = s  # keep for properties
-
-        # --- 2) Image-description ANN on SlideImage ---
-        # Use provided image_query_vector if given, else reuse query_vector
-        img_vec = image_query_vector if image_query_vector is not None else query_vector
-        where_img = ""
-        if course_id:
-            where_img = (
-                'where: { operator: Equal, path: ["courseId"], valueText: "%s" }' % course_id
-            )
+        # Get all images for the course
         gql_images = f"""
         {{
           Get {{
             SlideImage(
-              nearVector: {{ vector: {json.dumps(list(img_vec))} }}
-              {where_img}
-              limit: {int(max(k * 10, 100))}   # wider net; we aggregate per slide
+              where: {{ operator: Equal, path: ["courseId"], valueText: "{course_id}" }}
+              limit: 500
             ) {{
               courseId
               documentId
               slideNo
               description
-              _additional {{ id {"distance" if include_distance else ""} }}
+              imageBase64
+              _additional {{ id }}
             }}
           }}
         }}
         """
         res_images = self._post("/v1/graphql", {"query": gql_images})
-        img_hits = res_images.get("data", {}).get("Get", {}).get("SlideImage", []) or []
+        images = res_images.get("data", {}).get("Get", {}).get("SlideImage", []) or []
 
-        # Aggregate image channel per slide
-        from collections import defaultdict
-        per_slide_vals: Dict[tuple, List[float]] = defaultdict(list)
-        for im in img_hits:
-            key = (im.get("courseId"), im.get("slideNo"))
-            dist = (im.get("_additional") or {}).get("distance")
-            sim = self._similarity_from_distance(dist if include_distance else None)
-            per_slide_vals[key].append(sim)
-
-        image_scores: Dict[tuple, float] = {}
-        for key, vals in per_slide_vals.items():
-            if not vals:
-                continue
-            if per_slide_image_agg == "mean":
-                image_scores[key] = sum(vals) / len(vals)
-            else:
-                # default: max (best-matching image per slide)
-                image_scores[key] = max(vals)
-
-        # --- 3) Normalize & fuse ---
-        text_norm = self._minmax_normalize(text_scores)
-        img_norm = self._minmax_normalize(image_scores)
-
-        fused: List[Tuple[tuple, float]] = []
-        keys = set(text_norm.keys()) | set(img_norm.keys())
-        for key in keys:
-            t = text_norm.get(key, 0.0)
-            i = img_norm.get(key, 0.0)
-            fused_score = alpha * t + (1.0 - alpha) * i
-            fused.append((key, fused_score))
-
-        # Rank by fused score desc
-        fused.sort(key=lambda x: x[1], reverse=True)
-        top_keys = [k for (k, _) in fused[:k]]
-
-        # --- 4) Assemble: fetch ALL images for each selected slide ---
-        out: List[Dict[str, Any]] = []
-        for key in top_keys:
-            c_id, s_no = key
-            s_meta = slide_meta.get(key)
-            # If the slide wasn't in the text channel candidates, we still need properties:
-            if not s_meta:
-                # Fallback: fetch a minimal record for this slide via a filtered query
-                gql_one = f"""
-                {{
-                  Get {{
-                    Slide(
-                      where: {{
-                        operator: And
-                        operands: [
-                          {{ operator: Equal, path: ["courseId"], valueText: "{c_id}" }},
-                          {{ operator: Equal, path: ["slideNo"],  valueInt: {int(s_no)} }}
-                        ]
-                      }}
-                      limit: 1
-                    ) {{
-                      courseId
-                      documentId
-                      slideNo
-                      slideDescription
-                      _additional {{ id }}
-                    }}
-                  }}
-                }}
-                """
-                res_one = self._post("/v1/graphql", {"query": gql_one})
-                recs = res_one.get("data", {}).get("Get", {}).get("Slide", []) or []
-                s_meta = recs[0] if recs else {
-                    "courseId": c_id, "slideNo": s_no, "documentId": None,
-                    "slideDescription": "", "_additional": {"id": None}
-                }
-
-            # Fetch all images for this slide
-            images_full = self._fetch_all_images_for_slide(c_id, s_no, limit=64)
-
-            # Compose distances/scores
-            dist_text = (s_meta.get("_additional") or {}).get("distance") if include_distance else None
-            sim_text = text_scores.get(key, 0.0)
-            best_img_sim = image_scores.get(key, 0.0)
-
-            out.append(
-                {
-                    "id": (s_meta.get("_additional") or {}).get("id"),
-                    "courseId": s_meta.get("courseId"),
-                    "documentId": s_meta.get("documentId"),
-                    "slideNo": s_meta.get("slideNo"),
-                    "slideDescription": s_meta.get("slideDescription"),
-                    # channel metrics for transparency/debugging
-                    "distanceText": dist_text,
-                    "similarityText": sim_text,
-                    "bestImageSimilarity": best_img_sim,
-                    "fusedScore": next((score for (kk, score) in fused if kk == key), None),
-                    "images": [
-                        {
-                            "id": (im.get("_additional") or {}).get("id"),
-                            "description": im.get("description") or "",
-                            "imageBase64": im.get("imageBase64"),
-                        }
-                        for im in images_full
-                    ],
-                }
-            )
-
-        return out
+        return {"courseId": course_id, "totalSlides": len(slides), "totalImages": len(images), "slides": slides, "images": images}
 
     # Mapping to OpenAPI response shape
     @staticmethod
-    def to_retrieval_response(slide_hits: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def to_retrieval_response(
+        slide_hits: List[Dict[str, Any]] = None,
+        video_chunk_hits: List[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
         """
-        Convert hits into your OpenAPI RetrievalResponse:
-          {
+        Convert slide hits and video chunk hits into your OpenAPI RetrievalResponse:
+        {
             "content": ["string", ...],
             "images": [{"image":"<base64>", "description":"..."}, ...]
-          }
+        }
 
         Strategy:
-          - For content[], we include title + body (+ captionsText if present) concisely.
-          - For images[], we attach all images from the top hits.
+        - Merge slides and video chunks based on certainty scores (highest first)
+        - For content[], include slideDescription from slides and text from video chunks
+        - For images[], attach all images from slide hits only
+        - Items are ordered by certainty score descending
         """
         content: List[str] = []
         images: List[Dict[str, str]] = []
 
-        for h in slide_hits:
-            desc = (h.get("slideDescription") or "").strip()
-            if desc:
-                content.append(desc)
+        # Normalize inputs
+        slide_hits = slide_hits or []
+        video_chunk_hits = video_chunk_hits or []
 
-            for im in h.get("images", []):
-                img_b64 = im.get("imageBase64")
-                if img_b64:
-                    images.append(
-                        {
+        # Create combined list with type indicator and certainty score
+        combined_items = []
+
+        # Add slides to combined list
+        for slide in slide_hits:
+            certainty = slide.get("certainty", 0.0)
+            combined_items.append({
+                "type": "slide",
+                "certainty": certainty,
+                "item": slide
+            })
+
+        # Add video chunks to combined list
+        for chunk in video_chunk_hits:
+            certainty = chunk.get("certainty", 0.0)
+            combined_items.append({
+                "type": "video_chunk",
+                "certainty": certainty,
+                "item": chunk
+            })
+
+        # Sort combined items by certainty score (highest first)
+        combined_items.sort(key=lambda x: x["certainty"], reverse=True)
+
+        # Process items in order of certainty
+        for item in combined_items:
+            if item["type"] == "slide":
+                slide = item["item"]
+                desc = (slide.get("slideDescription") or "").strip()
+                if desc:
+                    content.append(desc)
+
+                # Collect images from slides
+                for im in slide.get("images", []):
+                    img_b64 = im.get("imageBase64")
+                    if img_b64:
+                        images.append({
                             "image": img_b64,
                             "description": im.get("description") or "",
-                        }
-                    )
+                        })
+
+            elif item["type"] == "video_chunk":
+                chunk = item["item"]
+                text = (chunk.get("text") or "").strip()
+                if text:
+                    content.append(text)
 
         return {"content": content, "images": images}
+
+
+_weaviate_instance: Optional[weaviate.WeaviateClient] = None
+
+
+def get_weaviate_client() -> weaviate.WeaviateClient:
+    global _weaviate_instance
+
+    if _weaviate_instance is None:
+        _weaviate_instance = weaviate.connect_to_local(host="docint-weaviate", port=28947)
+
+    if _weaviate_instance.is_connected() is False:
+        print("[WeaviateClient] WARNING: Weaviate client is not connected!")
+        # Optionally, raise an error or attempt reconnection here.
+        _weaviate_instance = weaviate.connect_to_local(host="docint-weaviate", port=28947)
+    return _weaviate_instance
+
+
+_store_instance: Optional[WeaviateGraphStore] = None
+
+
+def get_store() -> WeaviateGraphStore:
+    global _store_instance
+
+    if _store_instance is None:
+        _store_instance = WeaviateGraphStore()
+
+    return _store_instance

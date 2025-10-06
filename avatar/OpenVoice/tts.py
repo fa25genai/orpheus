@@ -1,9 +1,11 @@
 import os
-import torch
-from openvoice import se_extractor
-from openvoice.api import ToneColorConverter
+
 import nltk
+import torch
 from melo.api import TTS
+from openvoice.api import ToneColorConverter
+
+from openvoice import se_extractor
 
 # Set device
 device = "cuda:0" if torch.cuda.is_available() else "cpu"
@@ -26,7 +28,7 @@ tone_color_converter.load_ckpt(os.path.join(ckpt_converter, "checkpoint.pth"))
 os.makedirs(output_dir, exist_ok=True)
 
 # Here specify the reference speaker file you want to use
-voice_file = "kursche_voice.mp3"
+voice_file = "krusche_voice.mp3"
 reference_speaker = os.path.join(base_dir, voice_file) # This is the voice you want to clone
 target_se, audio_name = se_extractor.get_se(reference_speaker, tone_color_converter, vad=True)
 

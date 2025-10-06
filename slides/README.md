@@ -1,9 +1,51 @@
-``# Orpheus **Slide Generation Service**
+# Orpheus **Slide Generation Service**
 
 Slide generation and delivery service for **Orpheus**.
 This directory contains the project code for the **Slide Generation Service**.
 The [postprocessing](postprocessing/README.md) directory contains the project code for the **Slide Postprocessing Service**.
 The [delivery](delivery/README.md) directory contains the configuration file for the **Generated Slide Service**.
+
+## Table of Contents
+
+- [Technology Stack](#technology-stack)
+  - [Currently Used Frameworks](#currently-used-frameworks)
+  - [Good/Bad Experiences](#goodbad-experiences)
+- [Overview](#overview)
+- [API-Usage](#api-usage)
+- [Local Setup](#local-setup)
+- [Quality Checks](#quality-checks)
+- [Configuration](#configuration)
+
+## Technology Stack
+
+### Currently Used Frameworks
+
+For slide generation/display: [Slidev](https://sli.dev).
+For Webservice serving: [Fastapi](https://fastapi.tiangolo.com/)
+OpenAPI Generator
+For LLM integration: [Langchain](python.langchain.com) (AWS Bedrock, Google GenAI, Ollama, OpenAI, Azure OpenAI)
+For Deployment: [Docker](https://docker.com)
+For Content Delivery: [nginx](https://nginx.org)
+Python + Poetry as build system
+
+### Good/Bad Experiences
+
+**Good**:
+ - Slidev being Open-Source allowed for creating a fork to alleviate the pains of embedding it into an `iframe`
+ - Slidev theme creation being easy and powerful
+ - Configuration via environment variables in Docker working great
+ - Typed development in python allowing a better development experience
+ - OpenAPI as format for communication and as basis for code generation
+ - `reveal.js` would have been easier to integrate with `Next.js`, but theming was more difficult
+
+**Bad**:
+ - Integration of Slidev into Web-Frameworks (tested with Next.js, Microfrontend and Astro.js) being impossible &rArr; Use of `iframe` necessary
+ - Python `asyncio.Lock` not being threadsafe &rArr; Use `threading.Lock` instead
+ - OpenAPI Generator for fastapi not providing access to the `fastapi.Request` object (necessary to get app state) &rArr; Manual edits in generated files necessary
+ - For Postprocessing `poetry` and `npm` are necessary in the same container &rArr; Huge image, long build times and complex recipe
+ - Frequent LLM changes &rArr; prompt optimization challenging
+ - Slide generation does not provide good error handling when generation of individual slides fail (executed in ThreadExecuter &rArr; no logging in console)
+
 
 ---
 
@@ -25,11 +67,32 @@ After the operation returns, the `/v1/slides/{promptId}/status` endpoint may be 
 Upon completion, it will also provide the URL to access the content.
 ``
 
+## Local Setup
+
+```bash
+cd slides
+poetry install
+```
+
+## Quality Checks
+
+```bash
+poetry run ruff check .
+poetry run mypy src
+```
+
 ## Configuration
 
 The following configuration options are available (using environment variables)
 
-| Environment Variable       | Description                                                                                                         | Default value                  |
-|----------------------------|---------------------------------------------------------------------------------------------------------------------|--------------------------------|
-| `SLIDES_DELIVERY_BASE_URL` | Base URL of the shared directory on the **Generated Slides Service**                                                | `http://slides-delivery:30608` |
-| `SLIDE_STORAGE_BASE_PATH`  | Local file path where the files are stored. This is the path that has to be mounted to **Generated Slides Service** | `/etc/orpheus/slides/storage`  |
+| Environment Variable          | Description                                                                                         | Default value                        |
+|-------------------------------|-----------------------------------------------------------------------------------------------------|--------------------------------------|
+| `ORPHEUS_VERBOSE`             | Enable verbose logging.                                                                             |                                      |
+| `ORPHEUS_DEBUG`               | Replaces all LLM interactions with predefined stand-in data (independent of inputs).                |                                      |
+| `SPLITTING_MODEL`             | Name of the LLM, which should be used to perform distribution of the lecture content across slides. |                                      |
+| `SLIDESGEN_MODEL`             | Name of the LLM, which should be used to generate the slide content                                 |                                      |
+| `POSTPROCESSING_SERVICE_HOST` | Base URL of where to reach the **Slide Postprocessing Service**                                     | `http://slides-postprocessing:30607` |
+| `STATUS_SERVICE_HOST`         | Base URL of where to reach the **Generation Status Service**                                        | `http://status-service:19910`        |
+
+Depending on the selected LLM models, the appropriate environment variables with API secrets have to be defined as well.
+Please refer to the [.env.example](exampleEnv) file for further details.

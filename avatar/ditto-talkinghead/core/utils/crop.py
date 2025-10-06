@@ -4,10 +4,10 @@
 cropping function and the related preprocess functions for cropping
 """
 
-import numpy as np
-import os.path as osp
-from math import sin, cos, acos, degrees
+from math import acos, cos, degrees, sin
+
 import cv2
+import numpy as np
 
 DTYPE = np.float32
 CV2_INTERP = cv2.INTER_LINEAR
@@ -220,8 +220,6 @@ def parse_rect_from_landmark(
     ux = np.array((uy[1], -uy[0]), dtype=DTYPE)
 
     # the rotation degree of the x-axis, the clockwise is positive, the counterclockwise is negative (image coordinate system)
-    # print(uy)
-    # print(ux)
     angle = acos(ux[0])
     if ux[1] < 0:
         angle = -angle
@@ -326,9 +324,6 @@ def crop_image_by_bbox(
             ],
             dtype=DTYPE,
         )
-
-    # if flag_rot and angle is None:
-    # print('angle is None, but flag_rotate is True', style="bold yellow")
 
     img_crop = _transform_img(
         img, M_o2c, dsize=dsize, borderMode=kwargs.get("borderMode", None)

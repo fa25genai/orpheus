@@ -1,0 +1,28 @@
+# To use AWS as provider for LLMs.
+AWS_REGION=eu-central-1
+AWS_PROVIDER=amazon
+AWS_BEARER_TOKEN_BEDROCK=<key>
+# To use Ollama as provider for LLMs
+# OLLAMA_LLM_HOST=https://gpu.aet.cit.tum.de/ollama
+# OLLAMA_LLM_KEY=<your-ollama-api-key>
+# To use Google GenAI as provider for LLMs
+# GOOGLE_API_KEY=<your_api_key>
+# To use OpenAI as provider for LLMs
+# OPENAI_API_KEY=<your_openai_api_key>
+# Ollama API key for Embedding
+OLLAMA_API_KEY=<your_ollama_api_key>
+# Model to use for AI Core
+MODEL_NAME=<model-name-bound-to-user-if-aws>
+# Model to use for slide structuring
+SPLITTING_MODEL=<model-name-bound-to-user-if-aws>
+# Model to use for slide generation
+SLIDESGEN_MODEL=<model-name-bound-to-user-if-aws>
+# Only change when architecture deviates from default (i.e. you know what you are doing):
+POSTPROCESSING_SERVICE_HOST=http://slides-postprocessing:30607
+STATUS_SERVICE_HOST=http://status-service:19910
+SLIDES_DELIVERY_BASE_URL=http://slides-delivery:30608
+SLIDE_STORAGE_BASE_PATH=/etc/orpheus/slides/storage
+# Global: Use mocks for external services
+ORPHEUS_DEBUG=0
+# Global: Enable verbose logging (debug logs)
+ORPHEUS_VERBOSE=1

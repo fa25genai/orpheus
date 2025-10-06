@@ -1,6 +1,7 @@
 import {Configuration, CoreApi} from "@/generated-api-clients/core";
 import {
-  Configuration as AvatarConfiguration,
+  AvatarApi,
+  Configuration as VideoConfiguration,
   VideoApi,
 } from "@/generated-api-clients/avatar";
 import {
@@ -14,13 +15,19 @@ import {
 
 export const coreApi = new CoreApi(
   new Configuration({
-    basePath: "http://localhost:8080",
+    basePath: "http://localhost:8000",
   })
 );
 
-export const avatarApi = new VideoApi(
-  new AvatarConfiguration({
-    basePath: "http://localhost:8080",
+export const videoApi = new VideoApi(
+  new VideoConfiguration({
+    basePath: "http://localhost:9000",
+  })
+);
+
+export const avatarApi = new AvatarApi(
+  new VideoConfiguration({
+    basePath: "http://localhost:3000",
   })
 );
 
@@ -32,6 +39,6 @@ export const slidesApi = new SlidesApi(
 
 export const docintApi = new DocintApi(
   new DocintConfiguration({
-    basePath: "http://localhost:25565", //TODO: duplicate port with slides, needs to be fixed
+    basePath: "http://localhost:25565",
   })
 );

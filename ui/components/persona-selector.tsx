@@ -21,22 +21,23 @@ import {
 } from "@/components/ui/dialog";
 import {GraduationCap, User, Brain, Settings, ChevronDown} from "lucide-react";
 import {PersonaLevel} from "@/types/uploading";
+import {UserProfile} from "@/generated-api-clients/core";
+import { courseId } from "@/data/course";
 
 export interface Persona {
   id: string;
   name: string;
-  level: "beginner" | "intermediate" | "expert";
   description: string;
   characteristics: string[];
   icon: React.ReactNode;
   color: string;
+  userProfile: UserProfile;
 }
 
-const personas: Persona[] = [
+export const personas: Persona[] = [
   {
     id: "beginner",
     name: "Tom",
-    level: "beginner",
     description:
       "Tom 18 years old starts as a freshmen in computer science at University of Stuttgard",
     characteristics: [
@@ -48,11 +49,23 @@ const personas: Persona[] = [
     ],
     icon: <GraduationCap className="w-5 h-5" />,
     color: "bg-green-500/10 text-green-500 border-green-500/20",
+    // request body fields
+    userProfile: {
+      id: crypto.randomUUID(),
+      role: "student",
+      language: "english",
+      preferences: {
+        answerLength: "short",
+        languageLevel: "intermediate", // could differ per persona if you want
+        expertiseLevel: "beginner",
+        includePictures: "many",
+      },
+      enrolledCourses: [courseId],
+    },
   },
   {
     id: "intermediate",
     name: "Aurora",
-    level: "intermediate",
     description:
       "Aurora 21 years old just graduated from TUM with B.Sc. Informatics",
     characteristics: [
@@ -64,11 +77,21 @@ const personas: Persona[] = [
     ],
     icon: <User className="w-5 h-5" />,
     color: "bg-blue-500/10 text-blue-500 border-blue-500/20",
+    userProfile: {
+      role: "student",
+      language: "english",
+      preferences: {
+        answerLength: "medium",
+        languageLevel: "intermediate", 
+        expertiseLevel: "intermediate",
+        includePictures: "few",
+      },
+      enrolledCourses: ["SE001", "cs001"],
+    }
   },
   {
     id: "expert",
     name: "Linda",
-    level: "expert",
     description:
       "Linda 30 years old is a Ph.D. candidate in computer science at MIT",
     characteristics: [
@@ -80,6 +103,17 @@ const personas: Persona[] = [
     ],
     icon: <Brain className="w-5 h-5" />,
     color: "bg-purple-500/10 text-purple-500 border-purple-500/20",
+    userProfile: {
+      role: "student",
+      language: "english",
+      preferences: {
+        answerLength: "long",
+        languageLevel: "advanced", 
+        expertiseLevel: "expert",
+        includePictures: "few",
+      },
+      enrolledCourses: ["SE001", "cs001"],
+    }
   },
 ];
 
@@ -109,7 +143,7 @@ export function PersonaSelector({
               <div className="flex flex-col">
                 <span className="font-medium">{currentPersona.name}</span>
                 <span className="text-xs text-muted-foreground capitalize">
-                  {currentPersona.level}
+                  {currentPersona.id}
                 </span>
               </div>
               <ChevronDown className="opacity-50" />
@@ -147,7 +181,7 @@ export function PersonaSelector({
                       {persona.name}
                     </div>
                     <Badge className={persona.color} variant="outline">
-                      {persona.level}
+                      {persona.id}
                     </Badge>
                   </CardTitle>
                   <CardDescription className="text-sm">

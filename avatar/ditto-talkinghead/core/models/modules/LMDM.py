@@ -1,6 +1,7 @@
 # Latent Motion Diffusion Model
 import torch
 import torch.nn as nn
+
 from .lmdm_modules.model import MotionDecoder
 from .lmdm_modules.utils import extract, make_beta_schedule
 

@@ -1,4 +1,5 @@
 from enum import Enum
+
 import numpy as np
 
 from ..utils.load_model import load_model

@@ -4,10 +4,20 @@ networks:
   gpu-core: {}
 
 services:
+  openvoice-base:
+    build:
+      context: ../OpenVoice
+      dockerfile: Dockerfile.orpheus-openvoice-base
+    image: orpheus-openvoice-base:latest
+    command: ["true"]
+
   voice-generation:
     build:
       context: ../OpenVoice
       dockerfile: Dockerfile
+    depends_on:
+      openvoice-base:
+        condition: service_completed_successfully
     networks: [gpu-core]
     ports:
       - "7000:8000"
@@ -17,7 +27,13 @@ services:
       timeout: 3s
       retries: 5
       start_period: 20s
-    restart: on-failure
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [ gpu ]
 
   avatar-generation:
     build:
@@ -35,4 +51,10 @@ services:
       retries: 5
       start_period: 30s
     restart: on-failure
-    gpus: all
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [ gpu ]

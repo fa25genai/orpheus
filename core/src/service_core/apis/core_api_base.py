@@ -4,7 +4,7 @@ from typing import ClassVar, Dict, List, Tuple  # noqa: F401
 
 from pydantic import Field
 from typing_extensions import Annotated
-from service_core.models.error import Error
+
 from service_core.models.prompt_request import PromptRequest
 from service_core.models.prompt_response import PromptResponse
 

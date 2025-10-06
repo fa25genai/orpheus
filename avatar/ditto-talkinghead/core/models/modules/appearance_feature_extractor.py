@@ -6,7 +6,8 @@ Appearance extractor(F) defined in paper, which maps the source image s to a 3D 
 
 import torch
 from torch import nn
-from .util import SameBlock2d, DownBlock2d, ResBlock3d
+
+from .util import DownBlock2d, ResBlock3d, SameBlock2d
 
 
 class AppearanceFeatureExtractor(nn.Module):
