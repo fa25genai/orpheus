@@ -71,7 +71,7 @@ make sure that services and subteams are actually using the apis from the api fo
 | **Generated Slide Service**      | Provides the generated slides. Retrieval is done with the related `promptId`.                                            | [Generated Slides Service](slides/delivery/README.md)                   |
 | **Lecture Ingestion Service**    | Loads received lectures into vector database and allows deleting information related to already uploaded lecture slides. | [Lecture Ingestion Service](./api/lecture_ingestion_service.yaml)       |
 | **Slide Generation Service**     | Generates lecture slides that conform to the layout of the respective course from a detailed lecture script.             | [Slide Generation Service](./api/slide_generation_service.yaml)         |
-| **Slide Postprocessing Service** | Converts slides to HTML and uploads generated code to the `Generated Slide Delivery` (CDN) for distribution.             | [Slide Postprocessing Service](./api/slide-postprocessing_service.yaml) |
+| **Slide Postprocessing Service** | Converts slides to HTML and uploads generated code to the `Generated Slide Delivery` (CDN) for distribution.             | [Slide Postprocessing Service](./api/slide_postprocessing_service.yaml) |
 | **Video Push Service**           | Uploads generated avatar videos to the `Generated Avatar Delivery` (CDN) for distribution.                               | TODO gather info                                                        |
 
 ## Getting Started
