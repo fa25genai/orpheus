@@ -1,7 +1,9 @@
-# Video Assets (NGINX)
+# **Generated Avatar Service**
 
 This service is a lightweight NGINX container that serves MP4 files produced by the Python service.  
 Files are written to a shared Docker volume and exposed over HTTP at `/videos/<id>.mp4`.
+
+If the service is started via the [top level docker compose](../../docker-compose.yaml) you can access the videos via `http://localhost:3000/videos/jobs/<promptId>/<zeroBasedAvatarVideoIndex>.mp4`
 
 ## Structure
 ```

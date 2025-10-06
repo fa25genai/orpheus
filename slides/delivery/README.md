@@ -1,4 +1,4 @@
-# Orpheus **Generated Slides Service**
+# **Generated Slides Service**
 
 This component serves previously generated slidesets to use in the frontend.
 
