@@ -63,16 +63,16 @@ make sure that services and subteams are actually using the apis from the api fo
 
 | Service                          | Description                                                                                                              | OpenAPI Specification                                                   |
 |----------------------------------|--------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------|
-| **Lecture Ingestion Service**    | Loads received lectures into vector database and allows deleting information related to already uploaded lecture slides. | [Lecture Ingestion Service](./api/lecture_ingestion_service.yaml)       |
 | **Answer Generation Service**    | Handles user prompts, creates lecture generation jobs, and returns a lectureId.                                          | [Answer Generation Service](./api/answer_generation_service.yaml)       |
+| **Avatar Generation Service**    | Produces short videos of lifelike professor avatars from a given text for the voice track with expressive narration.     | [Avatar Generation Service](./api/avatar_generation_service.yaml)       |
 | **Content Retrieval Service**    | Extracts and retrieves relevant content from instructor-provided slides and materials to support question answering.     | [Content Retrieval Service](./api/content_retrieval_service.yaml)       |
+| **Generation Status Service**    | Handles the status of a lecture generation job.                                                                          | [Generation Status Service](./api/generation_status_service.yaml)       |
+| **Generated Avatar Service**     | Provides the generated avatar videos, retrieved by related `promptId`.                                                   | [Generated Avatar Service](avatar/assets/README.md)                     |
+| **Generated Slide Service**      | Provides the generated slides. Retrieval is done with the related `promptId`.                                            | [Generated Slides Service](slides/delivery/README.md)                   |
+| **Lecture Ingestion Service**    | Loads received lectures into vector database and allows deleting information related to already uploaded lecture slides. | [Lecture Ingestion Service](./api/lecture_ingestion_service.yaml)       |
 | **Slide Generation Service**     | Generates lecture slides that conform to the layout of the respective course from a detailed lecture script.             | [Slide Generation Service](./api/slide_generation_service.yaml)         |
 | **Slide Postprocessing Service** | Converts slides to HTML and uploads generated code to the `Generated Slide Delivery` (CDN) for distribution.             | [Slide Postprocessing Service](./api/slide-postprocessing_service.yaml) |
-| **Avatar Generation Service**    | Produces short videos of lifelike professor avatars from a given text for the voice track with expressive narration.     | [Avatar Generation Service](./api/avatar_generation_service.yaml)       |
 | **Video Push Service**           | Uploads generated avatar videos to the `Generated Avatar Delivery` (CDN) for distribution.                               | TODO gather info                                                        |
-| **Generation Status Service**    | Handles the status of a lecture generation job.                                                                          | [Generation Status Service](./api/generation_status_service.yaml)       |
-| **Generated Slide Service**      | Provides the generated slides. Retrieval is done with the related `promptId`.                                            | [Generated Slides Service](slides/delivery/README.md)                   |
-| **Generated Avatar Service**     | Provides the generated avatar videos, retrieved by related `promptId`.                                                   | [Generated Avatar Service](avatar/assets/README.md)                     |
 
 ## Getting Started
 
