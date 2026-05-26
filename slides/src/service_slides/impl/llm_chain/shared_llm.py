@@ -88,14 +88,12 @@ def create_base_model(model_name: str, temperature: float = 0.0, max_tokens: Opt
 
     # Try Azure OpenAI last
     if "AZURE_OPENAI_API_KEY" in os.environ and "AZURE_OPENAI_API_BASE" in os.environ and "AZURE_OPENAI_API_VERSION" in os.environ:
-        model_kwargs = {
-            "azure_deployment": model_name,
-            "api_version": os.environ["AZURE_OPENAI_API_VERSION"],
-            "azure_endpoint": os.environ["AZURE_OPENAI_API_BASE"],
-            # "temperature": temperature, # Currently not supported for gpt-5 models
-        }
-        if max_tokens:
-            model_kwargs["max_tokens"] = max_tokens
-        return AzureChatOpenAI(**model_kwargs)  # type: ignore
+        return AzureChatOpenAI(
+            azure_deployment=model_name,
+            api_version=os.environ["AZURE_OPENAI_API_VERSION"],
+            azure_endpoint=os.environ["AZURE_OPENAI_API_BASE"],
+            reasoning_effort="low",
+            max_tokens=max_tokens,
+        )
 
     raise RuntimeError("No LLM providers available. Please set open ai, google, ollama, aws, or azure configurations in your environment variables.")
